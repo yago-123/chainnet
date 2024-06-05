@@ -1,5 +1,9 @@
 package persistence
 
+import (
+	"chainnet/block"
+)
+
 type Persistence interface {
-	SerializeBlock(b Block) []byte
+	SerializeBlock(b block.Block) []byte
 }

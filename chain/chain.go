@@ -1,17 +1,26 @@
-package chain
+package blockchain
+
+import (
+	"chainnet/block"
+	"chainnet/config"
+	"chainnet/consensus"
+)
 
 type Blockchain struct {
 	Chain  []string
-	Blocks map[string]*Block
+	Blocks map[string]*block.Block
 
-	cfg *Config
+	consensus consensus.Consensus
+
+	cfg *config.Config
 }
 
-func NewBlockchain(cfg *Config) *Blockchain {
+func NewBlockchain(cfg *config.Config, consensus consensus.Consensus) *Blockchain {
 	bc := &Blockchain{
-		Chain:  []string{},
-		Blocks: make(map[string]*Block),
-		cfg:    cfg,
+		Chain:     []string{},
+		Blocks:    make(map[string]*block.Block),
+		consensus: consensus,
+		cfg:       cfg,
 	}
 
 	bc.NewGenesisBlock()
@@ -19,17 +28,25 @@ func NewBlockchain(cfg *Config) *Blockchain {
 	return bc
 }
 
-func (bc *Blockchain) NewGenesisBlock() *Block {
-	newBlock := NewBlock("Genesis block", []byte{}, bc.cfg)
+func (bc *Blockchain) NewGenesisBlock() *block.Block {
+	newBlock := block.NewBlock("Genesis block", []byte{})
+
+	hash, nonce := bc.consensus.Calculate(newBlock)
+	newBlock.SetHashAndNonce(hash, nonce)
+
 	bc.Blocks[string(newBlock.Hash)] = newBlock
 	bc.Chain = append(bc.Chain, string(newBlock.Hash))
 
 	return newBlock
 }
 
-func (bc *Blockchain) AddBlock(data string) *Block {
+func (bc *Blockchain) AddBlock(data string) *block.Block {
 	prevBlock := bc.Blocks[bc.Chain[len(bc.Chain)-1]]
-	newBlock := NewBlock(data, prevBlock.Hash, bc.cfg)
+	newBlock := block.NewBlock(data, prevBlock.Hash)
+
+	hash, nonce := bc.consensus.Calculate(newBlock)
+	newBlock.SetHashAndNonce(hash, nonce)
+
 	bc.Blocks[string(newBlock.Hash)] = newBlock
 	bc.Chain = append(bc.Chain, string(newBlock.Hash))
 

@@ -1,6 +1,9 @@
 package main
 
 import (
+	"chainnet/chain"
+	"chainnet/config"
+	"chainnet/consensus"
 	"github.com/sirupsen/logrus"
 	"math"
 )
@@ -12,9 +15,9 @@ const (
 
 func main() {
 	logger := logrus.New()
-	cfg := &Config{logger}
+	cfg := config.NewConfig(logger, MINING_DIFFICULTY, MAX_NONCE)
 
-	bc := NewBlockchain(cfg)
+	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg))
 
 	bc.AddBlock("Send 1 BTC to Ivan")
 	bc.AddBlock("Send 2 more BTC to Ivan")
@@ -24,6 +27,6 @@ func main() {
 		logger.Infof("Prev. hash: %x", bc.Blocks[blockHash].PrevBlockHash)
 		logger.Infof("Data: %s", bc.Blocks[blockHash].Data)
 		logger.Infof("Hash: %x", bc.Blocks[blockHash].Hash)
-		logger.Infof("PoW: %t", NewProofOfWork(bc.Blocks[blockHash], cfg).Validate())
+		logger.Infof("PoW: %t", consensus.NewProofOfWork(cfg).Validate(bc.Blocks[blockHash]))
 	}
 }

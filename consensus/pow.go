@@ -2,44 +2,45 @@ package consensus
 
 import (
 	"bytes"
+	"chainnet/block"
+	"chainnet/config"
 	"crypto/sha256"
 	"math/big"
 )
 
 type ProofOfWork struct {
-	block  *Block
 	target *big.Int
 
-	cfg *Config
+	cfg *config.Config
 }
 
-func NewProofOfWork(block *Block, cfg *Config) *ProofOfWork {
+func NewProofOfWork(cfg *config.Config) *ProofOfWork {
 	target := big.NewInt(1)
-	target.Lsh(target, uint(256-MINING_DIFFICULTY))
+	target.Lsh(target, uint(256-cfg.DifficultyPoW))
 
-	return &ProofOfWork{block, target, cfg}
+	return &ProofOfWork{cfg, target}
 }
 
-func (pow *ProofOfWork) assembleProofData(nonce int) []byte {
+func (pow *ProofOfWork) assembleProofData(block *block.Block) []byte {
 	data := [][]byte{
-		pow.block.PrevBlockHash,
-		pow.block.Data,
-		[]byte(string(pow.block.Timestamp)),
-		[]byte(string(MINING_DIFFICULTY)),
-		[]byte(string(nonce)),
+		block.PrevBlockHash,
+		block.Data,
+		[]byte(string(block.Timestamp)),
+		[]byte(string(pow.cfg.DifficultyPoW)),
+		[]byte(string(block.Nonce)),
 	}
 
 	return bytes.Join(data, []byte{})
 }
 
-func (pow *ProofOfWork) Calculate() (int, []byte) {
+func (pow *ProofOfWork) Calculate(block *block.Block) ([]byte, uint) {
 	var hashInt big.Int
 	var hash [32]byte
-	nonce := 0
+	nonce := uint(0)
 
-	pow.cfg.logger.Infof("Mining the block containing: %s", string(pow.block.Data))
-	for nonce < MAX_NONCE {
-		data := pow.assembleProofData(nonce)
+	pow.cfg.Logger.Infof("Mining the block containing: %s", string(block.Data))
+	for nonce < pow.cfg.MaxNoncePoW {
+		data := pow.assembleProofData(block)
 		hash = sha256.Sum256(data)
 		hashInt.SetBytes(hash[:])
 
@@ -50,13 +51,13 @@ func (pow *ProofOfWork) Calculate() (int, []byte) {
 		nonce++
 	}
 
-	return nonce, hash[:]
+	return hash[:], nonce
 }
 
-func (pow *ProofOfWork) Validate() bool {
+func (pow *ProofOfWork) Validate(block *block.Block) bool {
 	var hashInt big.Int
 
-	data := pow.assembleProofData(pow.block.Nonce)
+	data := pow.assembleProofData(block)
 	hash := sha256.Sum256(data)
 	hashInt.SetBytes(hash[:])
 
