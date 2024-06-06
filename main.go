@@ -4,6 +4,8 @@ import (
 	"chainnet/chain"
 	"chainnet/config"
 	"chainnet/consensus"
+	"chainnet/encoding"
+	"chainnet/storage"
 	"github.com/sirupsen/logrus"
 	"math"
 )
@@ -17,7 +19,7 @@ func main() {
 	logger := logrus.New()
 	cfg := config.NewConfig(logger, MINING_DIFFICULTY, MAX_NONCE)
 
-	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg))
+	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(logger), logger))
 
 	bc.AddBlock("Send 1 BTC to Ivan")
 	bc.AddBlock("Send 2 more BTC to Ivan")

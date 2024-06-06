@@ -4,27 +4,39 @@ import (
 	"chainnet/block"
 	"chainnet/config"
 	"chainnet/consensus"
+	"chainnet/storage"
+	"github.com/sirupsen/logrus"
 )
 
 type Blockchain struct {
 	Chain  []string
 	Blocks map[string]*block.Block
 
-	consensus consensus.Consensus
+	consensus   consensus.Consensus
+	persistence storage.Storage
 
-	cfg *config.Config
+	logger *logrus.Logger
+	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, consensus consensus.Consensus) *Blockchain {
+func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistence storage.Storage) *Blockchain {
 	bc := &Blockchain{
-		Chain:     []string{},
-		Blocks:    make(map[string]*block.Block),
-		consensus: consensus,
-		cfg:       cfg,
+		Chain:       []string{},
+		Blocks:      make(map[string]*block.Block),
+		consensus:   consensus,
+		persistence: persistence,
+		logger:      cfg.Logger,
+		cfg:         cfg,
 	}
 
-	bc.NewGenesisBlock()
+	numBlocks, err := persistence.NumberOfBlocks()
+	if err != nil {
+		logrus.Panicf("Error creating genesis block: %s", err)
+	}
 
+	if numBlocks == 0 {
+		bc.NewGenesisBlock()
+	}
 	return bc
 }
 

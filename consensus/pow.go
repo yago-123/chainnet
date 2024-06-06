@@ -18,7 +18,7 @@ func NewProofOfWork(cfg *config.Config) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-cfg.DifficultyPoW))
 
-	return &ProofOfWork{cfg, target}
+	return &ProofOfWork{target, cfg}
 }
 
 func (pow *ProofOfWork) assembleProofData(block *block.Block) []byte {
