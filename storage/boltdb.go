@@ -3,6 +3,7 @@ package storage
 import (
 	"chainnet/block"
 	"chainnet/encoding"
+	"fmt"
 	boltdb "github.com/boltdb/bolt"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -42,7 +43,6 @@ func (bolt *BoltDB) NumberOfBlocks() (uint, error) {
 }
 
 func (bolt *BoltDB) PersistBlock(block block.Block) error {
-	var bucket *boltdb.Bucket
 	var err error
 
 	dataBlock, err := bolt.encoding.SerializeBlock(block)
@@ -51,9 +51,9 @@ func (bolt *BoltDB) PersistBlock(block block.Block) error {
 	}
 
 	err = bolt.db.Update(func(tx *boltdb.Tx) error {
-		bucket = tx.Bucket([]byte(bolt.bucket))
+		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		// create bucket if does not exist yet
-		if bucket == nil {
+		if !exists {
 			bucket, err = tx.CreateBucket([]byte(bolt.bucket))
 			if err != nil {
 				return err
@@ -69,4 +69,31 @@ func (bolt *BoltDB) PersistBlock(block block.Block) error {
 	})
 
 	return err
+}
+
+func (bolt *BoltDB) GetLastBlock() (*block.Block, error) {
+	var err error
+	var lastBlock []byte
+
+	err = bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		if !exists {
+			return fmt.Errorf("last block have not been found")
+		}
+
+		lastBlock = bucket.Get([]byte(LastBlockKey))
+
+		return nil
+	})
+
+	if err != nil {
+		return &block.Block{}, err
+	}
+
+	return bolt.encoding.DeserializeBlock(lastBlock)
+}
+
+func (bolt *BoltDB) bucketExists(bucketName string, tx *boltdb.Tx) (bool, *boltdb.Bucket) {
+	bucket := tx.Bucket([]byte(bucketName))
+	return bucket != nil, bucket
 }

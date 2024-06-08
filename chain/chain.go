@@ -9,8 +9,9 @@ import (
 )
 
 type Blockchain struct {
-	Chain  []string
-	Blocks map[string]*block.Block
+	Chain         []string
+	Blocks        map[string]*block.Block
+	lastBlockHash []byte
 
 	consensus   consensus.Consensus
 	persistence storage.Storage
@@ -31,7 +32,7 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistenc
 
 	numBlocks, err := persistence.NumberOfBlocks()
 	if err != nil {
-		logrus.Panicf("Error creating genesis block: %s", err)
+		logrus.Panicf("Error retrieving number of blocks during startup: %s", err)
 	}
 
 	if numBlocks == 0 {
