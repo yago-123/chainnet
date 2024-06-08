@@ -32,8 +32,8 @@ func (bolt *BoltDB) NumberOfBlocks() (uint, error) {
 	var numKeys uint
 
 	err := bolt.db.View(func(tx *boltdb.Tx) error {
-		bucket := tx.Bucket([]byte(bolt.bucket))
-		if bucket != nil {
+		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		if exists {
 			numKeys = uint(bucket.Stats().KeyN)
 		}
 		return nil
@@ -78,7 +78,7 @@ func (bolt *BoltDB) GetLastBlock() (*block.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		if !exists {
-			return fmt.Errorf("last block have not been found")
+			return fmt.Errorf("bucket does not exist")
 		}
 
 		lastBlock = bucket.Get([]byte(LastBlockKey))
@@ -91,6 +91,27 @@ func (bolt *BoltDB) GetLastBlock() (*block.Block, error) {
 	}
 
 	return bolt.encoding.DeserializeBlock(lastBlock)
+}
+
+func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*block.Block, error) {
+	var err error
+	var blockBytes []byte
+	err = bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		if !exists {
+			return fmt.Errorf("bucket does not exist")
+		}
+
+		blockBytes = bucket.Get(hash)
+
+		return nil
+	})
+
+	if err != nil {
+		return &block.Block{}, err
+	}
+
+	return bolt.encoding.DeserializeBlock(blockBytes)
 }
 
 func (bolt *BoltDB) bucketExists(bucketName string, tx *boltdb.Tx) (bool, *boltdb.Bucket) {

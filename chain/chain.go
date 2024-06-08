@@ -10,7 +10,6 @@ import (
 
 type Blockchain struct {
 	Chain         []string
-	Blocks        map[string]*block.Block
 	lastBlockHash []byte
 
 	consensus   consensus.Consensus
@@ -23,45 +22,48 @@ type Blockchain struct {
 func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistence storage.Storage) *Blockchain {
 	bc := &Blockchain{
 		Chain:       []string{},
-		Blocks:      make(map[string]*block.Block),
 		consensus:   consensus,
 		persistence: persistence,
 		logger:      cfg.Logger,
 		cfg:         cfg,
 	}
 
-	numBlocks, err := persistence.NumberOfBlocks()
-	if err != nil {
-		logrus.Panicf("Error retrieving number of blocks during startup: %s", err)
-	}
-
-	if numBlocks == 0 {
-		bc.NewGenesisBlock()
-	}
 	return bc
 }
 
-func (bc *Blockchain) NewGenesisBlock() *block.Block {
-	newBlock := block.NewBlock("Genesis block", []byte{})
+func (bc *Blockchain) AddBlock(data string) (*block.Block, error) {
+	var newBlock *block.Block
+
+	numBlocks, err := bc.persistence.NumberOfBlocks()
+	if err != nil {
+		return &block.Block{}, err
+	}
+
+	// if no blocks exist, create genesis block
+	if numBlocks == 0 {
+		newBlock = block.NewBlock(data, []byte{})
+	}
+
+	// if blocks exist, create new block tied to the previous
+	if numBlocks > 0 {
+		newBlock = block.NewBlock(data, bc.lastBlockHash)
+	}
 
 	hash, nonce := bc.consensus.Calculate(newBlock)
 	newBlock.SetHashAndNonce(hash, nonce)
 
-	bc.Blocks[string(newBlock.Hash)] = newBlock
+	// persist block and update information
+	err = bc.persistence.PersistBlock(*newBlock)
+	if err != nil {
+		return &block.Block{}, err
+	}
+
+	bc.lastBlockHash = newBlock.Hash
 	bc.Chain = append(bc.Chain, string(newBlock.Hash))
 
-	return newBlock
+	return newBlock, nil
 }
 
-func (bc *Blockchain) AddBlock(data string) *block.Block {
-	prevBlock := bc.Blocks[bc.Chain[len(bc.Chain)-1]]
-	newBlock := block.NewBlock(data, prevBlock.Hash)
-
-	hash, nonce := bc.consensus.Calculate(newBlock)
-	newBlock.SetHashAndNonce(hash, nonce)
-
-	bc.Blocks[string(newBlock.Hash)] = newBlock
-	bc.Chain = append(bc.Chain, string(newBlock.Hash))
-
-	return newBlock
+func (bc *Blockchain) GetBlock(hash string) (*block.Block, error) {
+	return bc.persistence.RetrieveBlockByHash([]byte(hash))
 }
