@@ -1,3 +1,4 @@
 _fixture/
+__debug_bin*
 main
 .idea
