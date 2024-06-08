@@ -25,11 +25,13 @@ func main() {
 	bc.AddBlock("Send 1 BTC to Ivan")
 	bc.AddBlock("Send 2 more BTC to Ivan")
 
-	for _, blockHash := range bc.Chain {
-		block, err := bc.GetBlock(blockHash)
+	iterator := bc.CreateIterator()
+	for iterator.HasNext() {
+		block, err := iterator.GetNextBlock()
 		if err != nil {
 			logger.Panicf("Error getting block: %s", err)
 		}
+
 		logger.Infof("----------------------")
 		logger.Infof("Prev. hash: %x", block.PrevBlockHash)
 		logger.Infof("Data: %s", block.Data)

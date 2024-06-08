@@ -12,8 +12,8 @@ type Blockchain struct {
 	Chain         []string
 	lastBlockHash []byte
 
-	consensus   consensus.Consensus
-	persistence storage.Storage
+	consensus consensus.Consensus
+	storage   storage.Storage
 
 	logger *logrus.Logger
 	cfg    *config.Config
@@ -21,11 +21,11 @@ type Blockchain struct {
 
 func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistence storage.Storage) *Blockchain {
 	bc := &Blockchain{
-		Chain:       []string{},
-		consensus:   consensus,
-		persistence: persistence,
-		logger:      cfg.Logger,
-		cfg:         cfg,
+		Chain:     []string{},
+		consensus: consensus,
+		storage:   persistence,
+		logger:    cfg.Logger,
+		cfg:       cfg,
 	}
 
 	return bc
@@ -34,7 +34,7 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistenc
 func (bc *Blockchain) AddBlock(data string) (*block.Block, error) {
 	var newBlock *block.Block
 
-	numBlocks, err := bc.persistence.NumberOfBlocks()
+	numBlocks, err := bc.storage.NumberOfBlocks()
 	if err != nil {
 		return &block.Block{}, err
 	}
@@ -53,7 +53,7 @@ func (bc *Blockchain) AddBlock(data string) (*block.Block, error) {
 	newBlock.SetHashAndNonce(hash, nonce)
 
 	// persist block and update information
-	err = bc.persistence.PersistBlock(*newBlock)
+	err = bc.storage.PersistBlock(*newBlock)
 	if err != nil {
 		return &block.Block{}, err
 	}
@@ -65,5 +65,9 @@ func (bc *Blockchain) AddBlock(data string) (*block.Block, error) {
 }
 
 func (bc *Blockchain) GetBlock(hash string) (*block.Block, error) {
-	return bc.persistence.RetrieveBlockByHash([]byte(hash))
+	return bc.storage.RetrieveBlockByHash([]byte(hash))
+}
+
+func (bc *Blockchain) CreateIterator() Iterator {
+	return NewIterator(bc.lastBlockHash, bc.storage, bc.cfg)
 }
