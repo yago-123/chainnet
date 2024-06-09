@@ -8,6 +8,10 @@ build:
 run:
 	go run main.go
 
+.PHONY: test
+test:
+	go test ./...
+
 .PHONY: debug
 debug: 
 	dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient

@@ -5,6 +5,7 @@ import (
 	"chainnet/pkg/block"
 	"chainnet/pkg/config"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 )
 
@@ -25,9 +26,9 @@ func (pow *ProofOfWork) assembleProofData(block *block.Block, nonce uint) []byte
 	data := [][]byte{
 		block.PrevBlockHash,
 		pow.hashTransactions(block.Transactions),
-		[]byte(string(block.Timestamp)),
-		[]byte(string(pow.cfg.DifficultyPoW)),
-		[]byte(string(nonce)),
+		[]byte(fmt.Sprintf("%d", block.Timestamp)),
+		[]byte(fmt.Sprintf("%d", pow.cfg.DifficultyPoW)),
+		[]byte(fmt.Sprintf("%d", nonce)),
 	}
 
 	return bytes.Join(data, []byte{})
