@@ -2,7 +2,7 @@ package encoding
 
 import (
 	"bytes"
-	"chainnet/block"
+	"chainnet/pkg/block"
 	"encoding/gob"
 	"github.com/sirupsen/logrus"
 )

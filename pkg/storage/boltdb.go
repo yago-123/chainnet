@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"chainnet/block"
-	"chainnet/encoding"
+	"chainnet/pkg/block"
+	"chainnet/pkg/encoding"
 	"fmt"
 	boltdb "github.com/boltdb/bolt"
 	"github.com/sirupsen/logrus"

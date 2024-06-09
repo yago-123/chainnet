@@ -1,7 +1,7 @@
 package encoding
 
 import (
-	"chainnet/block"
+	"chainnet/pkg/block"
 )
 
 type Encoding interface {

@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"chainnet/block"
+	"chainnet/pkg/block"
 )
 
 type Consensus interface {

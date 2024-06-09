@@ -1,11 +1,12 @@
 package main
 
 import (
-	"chainnet/chain"
-	"chainnet/config"
-	"chainnet/consensus"
-	"chainnet/encoding"
-	"chainnet/storage"
+	block "chainnet/pkg/block"
+	"chainnet/pkg/chain"
+	"chainnet/pkg/config"
+	"chainnet/pkg/consensus"
+	"chainnet/pkg/encoding"
+	"chainnet/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"math"
 )
@@ -21,9 +22,9 @@ func main() {
 
 	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(logger), logger))
 
-	bc.AddBlock("Create Genesis block")
-	bc.AddBlock("Send 1 BTC to Ivan")
-	bc.AddBlock("Send 2 more BTC to Ivan")
+	bc.AddBlock([]*block.Transaction{block.NewCoinbaseTx("me", "data")})
+	bc.AddBlock([]*block.Transaction{})
+	bc.AddBlock([]*block.Transaction{})
 
 	iterator := bc.CreateIterator()
 	for iterator.HasNext() {
@@ -34,7 +35,7 @@ func main() {
 
 		logger.Infof("----------------------")
 		logger.Infof("Prev. hash: %x", block.PrevBlockHash)
-		logger.Infof("Data: %s", block.Data)
+		logger.Infof("Num transactions: %d", len(block.Transactions))
 		logger.Infof("Hash: %x", block.Hash)
 		logger.Infof("PoW: %t", consensus.NewProofOfWork(cfg).Validate(block))
 	}

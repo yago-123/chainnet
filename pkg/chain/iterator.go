@@ -1,9 +1,9 @@
 package blockchain
 
 import (
-	"chainnet/block"
-	"chainnet/config"
-	"chainnet/storage"
+	"chainnet/pkg/block"
+	"chainnet/pkg/config"
+	"chainnet/pkg/storage"
 )
 
 type Iterator interface {

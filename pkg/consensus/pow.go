@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"bytes"
-	"chainnet/block"
-	"chainnet/config"
+	"chainnet/pkg/block"
+	"chainnet/pkg/config"
 	"crypto/sha256"
 	"math/big"
 )
@@ -24,7 +24,7 @@ func NewProofOfWork(cfg *config.Config) *ProofOfWork {
 func (pow *ProofOfWork) assembleProofData(block *block.Block, nonce uint) []byte {
 	data := [][]byte{
 		block.PrevBlockHash,
-		block.Data,
+		pow.hashTransactions(block.Transactions),
 		[]byte(string(block.Timestamp)),
 		[]byte(string(pow.cfg.DifficultyPoW)),
 		[]byte(string(nonce)),
@@ -33,12 +33,25 @@ func (pow *ProofOfWork) assembleProofData(block *block.Block, nonce uint) []byte
 	return bytes.Join(data, []byte{})
 }
 
+func (pow *ProofOfWork) hashTransactions(transactions []*block.Transaction) []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
+}
+
 func (pow *ProofOfWork) Calculate(block *block.Block) ([]byte, uint) {
 	var hashInt big.Int
 	var hash [32]byte
 	nonce := uint(0)
 
-	pow.cfg.Logger.Infof("Mining the block containing: %s", string(block.Data))
+	pow.cfg.Logger.Infof("Mining the block containing %d transactions", len(block.Transactions))
 	for nonce < pow.cfg.MaxNoncePoW {
 		data := pow.assembleProofData(block, nonce)
 		hash = sha256.Sum256(data)

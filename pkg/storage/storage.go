@@ -1,6 +1,6 @@
 package storage
 
-import "chainnet/block"
+import "chainnet/pkg/block"
 
 type Storage interface {
 	NumberOfBlocks() (uint, error)
