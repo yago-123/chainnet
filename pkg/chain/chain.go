@@ -6,6 +6,7 @@ import (
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/storage"
 	"encoding/hex"
+	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -130,6 +131,68 @@ func isOutputSpent(spentTXOs map[string][]int, txID string, outIdx int) bool {
 	return false
 }
 
+func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+	unspentOutputs := make(map[string][]int)
+	unspentTXs := bc.FindUnspentTransactions(address)
+	accumulated := 0
+
+	// retrieve all unspent transactions and sum them
+	for _, tx := range unspentTXs {
+		txID := hex.EncodeToString(tx.ID)
+
+		for outIdx, out := range tx.Vout {
+			if out.CanBeUnlockedWith(address) {
+				accumulated += out.Amount
+				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+
+				// return once we reached the required amount
+				if accumulated >= amount {
+					return accumulated, unspentOutputs
+				}
+			}
+		}
+	}
+
+	// there is a chance that we don't have enough amount for this address
+	return accumulated, unspentOutputs
+}
+
+func (bc *Blockchain) NewUTXOTransaction(from, to string, amount int) (*block.Transaction, error) {
+	var inputs []block.TxInput
+	var outputs []block.TxOutput
+
+	acc, validOutputs := bc.FindSpendableOutputs(from, amount)
+
+	if acc < amount {
+		return &block.Transaction{}, fmt.Errorf("not enough funds for transaction from %s, expected tx amount: %d, actual balance: %d", from, amount, acc)
+	}
+
+	// build a list of inputs
+	for txid, outs := range validOutputs {
+		txID, err := hex.DecodeString(txid)
+		if err != nil {
+			return &block.Transaction{}, err
+		}
+
+		for _, out := range outs {
+			input := block.TxInput{txID, out, from}
+			inputs = append(inputs, input)
+		}
+	}
+
+	// build a list of outputs
+	outputs = append(outputs, block.TxOutput{amount, to})
+	// add the spare change in a different transaction
+	if acc > amount {
+		outputs = append(outputs, block.TxOutput{acc - amount, from}) // a change
+	}
+
+	tx := block.Transaction{nil, inputs, outputs}
+	tx.SetID()
+
+	return &tx, nil
+}
+
 func (bc *Blockchain) FindUTXO(address string) []block.TxOutput {
 	var UTXOs []block.TxOutput
 	unspentTransactions := bc.FindUnspentTransactions(address)
@@ -143,6 +206,12 @@ func (bc *Blockchain) FindUTXO(address string) []block.TxOutput {
 	}
 
 	return UTXOs
+}
+
+func (bc *Blockchain) MineBlock(transactions []*block.Transaction) *block.Block {
+	newBlock := block.NewBlock(transactions, bc.lastBlockHash)
+
+	return newBlock
 }
 
 func (bc *Blockchain) GetBlock(hash string) (*block.Block, error) {

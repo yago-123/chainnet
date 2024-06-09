@@ -1,9 +1,16 @@
 package block
 
+import "github.com/google/uuid"
+
 type Transaction struct {
 	ID   []byte
 	Vin  []TxInput
 	Vout []TxOutput
+}
+
+func (tx *Transaction) SetID() {
+	// todo() temporary solution
+	tx.ID = []byte(uuid.New().String())
 }
 
 type TxInput struct {
@@ -33,7 +40,7 @@ func NewCoinbaseTx(to, data string) *Transaction {
 	txin := TxInput{[]byte{}, -1, data}
 	txout := TxOutput{100, to}
 	tx := Transaction{nil, []TxInput{txin}, []TxOutput{txout}}
-	//tx.SetID()
+	tx.SetID()
 
 	return &tx
 }
