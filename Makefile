@@ -1,20 +1,28 @@
 # Define the output directory for the compiled binary
 OUTPUT_DIR := bin
 
-# Define the name of the binary file
+# Define the name of the CLI binary file
 CLI_BINARY_NAME := chainnet-cli
+NODE_BINARY_NAME := chainnet-node
 
 # Define the source file for the CLI application
 CLI_SOURCE := $(wildcard cmd/cli/*.go)
+NODE_SOURCE := $(wildcard cmd/node/*.go)
 
 .PHONY: all
-all: chainnet-cli test
+all: test chainnet-cli chainnet-node
 
 .PHONY: chainnet-cli
 chainnet-cli:
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "Building chainnet CLI..."
 	@go build -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
+
+.PHONY: chainnet-node
+chainnet-node:
+	@mkdir -p $(OUTPUT_DIR)
+	@echo "Building chainnet node..."
+	@go build -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
 
 .PHONY: test
 test:
