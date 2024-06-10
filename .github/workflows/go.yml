@@ -10,8 +10,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -27,8 +26,10 @@ jobs:
     - name: Build Node
       run: make chainnet-node
 
-    - name: Lint
-      run: make lint
-
-    - name: Test
+    - name: Test code
       run: make test
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
