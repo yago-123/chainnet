@@ -33,8 +33,6 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-    - name: golangci-lint
+    - name: Run linter
       uses: golangci/golangci-lint-action@v3
-      with:
-        args: --no-config --issues-exit-code=0 --timeout=5m --max-same-issues=0 run
-        version: v1.56
+      run: make lint
