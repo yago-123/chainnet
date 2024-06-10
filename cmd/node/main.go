@@ -7,9 +7,7 @@ import (
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
-	"fmt"
 	"github.com/sirupsen/logrus"
-	"log"
 	"math"
 	"net/http"
 )
@@ -45,6 +43,6 @@ func main() {
 
 	router := NewRouter()
 
-	fmt.Println("Server listening on %s", cfg.BaseURL)
-	log.Fatal(http.ListenAndServe(cfg.BaseURL, router))
+	logger.Infof("Server listening on %s", cfg.BaseURL)
+	logger.Fatalf("Error running node: %s", http.ListenAndServe(cfg.BaseURL, router))
 }
