@@ -27,5 +27,8 @@ jobs:
     - name: Build Node
       run: make chainnet-node
 
+    - name: Lint
+      run: make lint
+
     - name: Test
       run: make test

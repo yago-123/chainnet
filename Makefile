@@ -10,7 +10,7 @@ CLI_SOURCE := $(wildcard cmd/cli/*.go)
 NODE_SOURCE := $(wildcard cmd/node/*.go)
 
 .PHONY: all
-all: test chainnet-cli chainnet-node
+all: test lint chainnet-cli chainnet-node
 
 .PHONY: chainnet-cli
 chainnet-cli:
@@ -23,6 +23,10 @@ chainnet-node:
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "Building chainnet node..."
 	@go build -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
+
+.PHONY: lint
+lint:
+	golangci-lint run
 
 .PHONY: test
 test:
