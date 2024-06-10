@@ -27,7 +27,7 @@ chainnet-node:
 .PHONY: lint
 lint:
 	@echo "Running linter..."
-	@golangci-lint run
+	@golangci-lint run ./...
 
 .PHONY: test
 test:
