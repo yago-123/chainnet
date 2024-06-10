@@ -1,5 +1,3 @@
-.PHONY: all clean test
-
 # Define the output directory for the compiled binary
 OUTPUT_DIR := bin
 
@@ -7,26 +5,28 @@ OUTPUT_DIR := bin
 CLI_BINARY_NAME := chainnet-cli
 
 # Define the source file for the CLI application
-CLI_SOURCE := cmd/main.go
+CLI_SOURCE := $(wildcard cmd/cli/*.go)
 
+.PHONY: all
 all: chainnet-cli test
 
+.PHONY: chainnet-cli
 chainnet-cli:
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "Building chainnet CLI..."
 	@go build -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
 
+.PHONY: test
 test:
 	@echo "Running tests..."
 	@go test ./...
 
+.PHONY: clean
 clean:
 	@echo "Cleaning up..."
 	@rm -rf $(OUTPUT_DIR)
 	rm -f __debug_bin*
 	rm -f _fixture/*
-	rm -f main
-	rm -f cli/chainnet-cli
 
 
 .PHONY: debug
