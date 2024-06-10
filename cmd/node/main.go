@@ -1,4 +1,4 @@
-package main
+package node
 
 import (
 	"chainnet/config"
@@ -7,8 +7,11 @@ import (
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"log"
 	"math"
+	"net/http"
 )
 
 const (
@@ -39,4 +42,9 @@ func main() {
 		logger.Infof("Hash: %x", block.Hash)
 		logger.Infof("PoW: %t", consensus.NewProofOfWork(cfg).Validate(block))
 	}
+
+	router := NewRouter()
+
+	fmt.Println("Server listening on %s", cfg.BaseURL)
+	log.Fatal(http.ListenAndServe(cfg.BaseURL, router))
 }
