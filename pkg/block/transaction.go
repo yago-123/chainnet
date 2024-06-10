@@ -46,9 +46,5 @@ func NewCoinbaseTx(to, data string) *Transaction {
 }
 
 func (tx *Transaction) IsCoinbase() bool {
-	if len(tx.Vin) == 0 {
-		return true
-	}
-
-	return false
+	return len(tx.Vin) == 0
 }

@@ -1,8 +1,8 @@
-package node
+package main
 
 import (
 	"chainnet/config"
-	block "chainnet/pkg/block"
+	"chainnet/pkg/block"
 	"chainnet/pkg/chain"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
@@ -23,9 +23,9 @@ func main() {
 
 	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(logger), logger))
 
-	bc.AddBlock([]*block.Transaction{block.NewCoinbaseTx("me", "data")})
-	bc.AddBlock([]*block.Transaction{})
-	bc.AddBlock([]*block.Transaction{})
+	_, _ = bc.AddBlock([]*block.Transaction{block.NewCoinbaseTx("me", "data")})
+	_, _ = bc.AddBlock([]*block.Transaction{})
+	_, _ = bc.AddBlock([]*block.Transaction{})
 
 	iterator := bc.CreateIterator()
 	for iterator.HasNext() {

@@ -1,4 +1,4 @@
-package cli
+package main
 
 import (
 	"chainnet/config"
@@ -28,7 +28,7 @@ func Execute(config *config.Config) {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.chainnet-cli.yaml)")
-	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 }
 
 func initConfig() {

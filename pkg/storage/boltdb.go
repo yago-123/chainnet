@@ -61,9 +61,16 @@ func (bolt *BoltDB) PersistBlock(block block.Block) error {
 		}
 
 		// add the new k/v
-		bucket.Put(block.Hash, dataBlock)
+		err := bucket.Put(block.Hash, dataBlock)
+		if err != nil {
+			return err
+		}
+
 		// update key pointing to last block
-		bucket.Put([]byte(LastBlockKey), block.Hash)
+		err = bucket.Put([]byte(LastBlockKey), block.Hash)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})

@@ -1,9 +1,9 @@
-package cli
+package main
 
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -20,7 +20,7 @@ var balanceCmd = &cobra.Command{
 			return
 		}
 		defer response.Body.Close()
-		body, _ := ioutil.ReadAll(response.Body)
+		body, _ := io.ReadAll(response.Body)
 		fmt.Println("Balance:", string(body))
 	},
 }
@@ -28,5 +28,8 @@ var balanceCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(balanceCmd)
 	balanceCmd.Flags().StringVarP(&wallet, "wallet", "w", "", "Wallet address to retrieve balance for")
-	balanceCmd.MarkFlagRequired("wallet")
+	err := balanceCmd.MarkFlagRequired("wallet")
+	if err != nil {
+		fmt.Println(err)
+	}
 }

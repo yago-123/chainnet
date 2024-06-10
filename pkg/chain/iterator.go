@@ -38,9 +38,5 @@ func (it *IteratorStruct) GetNextBlock() (*block.Block, error) {
 }
 
 func (it *IteratorStruct) HasNext() bool {
-	if len(it.prevBlockHash) > 0 {
-		return true
-	}
-
-	return false
+	return len(it.prevBlockHash) > 0
 }

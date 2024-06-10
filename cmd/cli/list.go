@@ -1,9 +1,9 @@
-package cli
+package main
 
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -40,7 +40,7 @@ func listTransactions() {
 		return
 	}
 	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
+	body, _ := io.ReadAll(response.Body)
 	fmt.Println("Transactions:", string(body))
 }
 
@@ -52,7 +52,7 @@ func listUTXOs() {
 		return
 	}
 	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
+	body, _ := io.ReadAll(response.Body)
 	fmt.Println("UTXOs:", string(body))
 }
 
@@ -64,6 +64,6 @@ func listBlocks() {
 		return
 	}
 	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
+	body, _ := io.ReadAll(response.Body)
 	fmt.Println("Blocks:", string(body))
 }

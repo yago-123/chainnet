@@ -116,7 +116,7 @@ func TestBlockchain_FindUTXO(t *testing.T) {
 				logger:        tt.fields.logger,
 				cfg:           tt.fields.cfg,
 			}
-			if got := bc.FindUTXO(tt.args.address); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := bc.FindUTXO(tt.args.address); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FindUTXO() = %v, want %v", got, tt.want)
 			}
 		})
@@ -153,7 +153,7 @@ func TestBlockchain_FindUnspentTransactions(t *testing.T) {
 				logger:        tt.fields.logger,
 				cfg:           tt.fields.cfg,
 			}
-			if got := bc.FindUnspentTransactions(tt.args.address); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := bc.FindUnspentTransactions(tt.args.address); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FindUnspentTransactions() = %v, want %v", got, tt.want)
 			}
 		})

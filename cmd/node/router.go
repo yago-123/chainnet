@@ -1,4 +1,4 @@
-package node
+package main
 
 import (
 	"chainnet/pkg/block"
@@ -20,17 +20,26 @@ func NewRouter() *httprouter.Router {
 
 func listTransactions(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	transactions := []block.Transaction{}
-	json.NewEncoder(w).Encode(transactions)
+	err := json.NewEncoder(w).Encode(transactions)
+	if err != nil {
+		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
+	}
 }
 
 func listUTXOs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	utxos := []block.Transaction{}
-	json.NewEncoder(w).Encode(utxos)
+	err := json.NewEncoder(w).Encode(utxos)
+	if err != nil {
+		http.Error(w, "Failed to encode UTXOs", http.StatusInternalServerError)
+	}
 }
 
 func listBlocks(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	blocks := []block.Block{}
-	json.NewEncoder(w).Encode(blocks)
+	err := json.NewEncoder(w).Encode(blocks)
+	if err != nil {
+		http.Error(w, "Failed to encode blocks", http.StatusInternalServerError)
+	}
 }
 
 func getWalletBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -62,5 +71,8 @@ func getWalletBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 
 	// Write the balance response to the response writer
-	json.NewEncoder(w).Encode(balanceResponse)
+	err = json.NewEncoder(w).Encode(balanceResponse)
+	if err != nil {
+		http.Error(w, "Failed to encode balance", http.StatusInternalServerError)
+	}
 }

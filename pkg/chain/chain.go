@@ -69,7 +69,7 @@ func (bc *Blockchain) AddBlock(transactions []*block.Transaction) (*block.Block,
 // FindUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
-func (bc *Blockchain) FindUnspentTransactions(address string) []*block.Transaction {
+func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transaction, error) {
 	var unspentTXs []*block.Transaction
 	spentTXOs := make(map[string][]int)
 
@@ -80,7 +80,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*block.Transacti
 		// Get the next block using the iterator
 		confirmedBlock, err := bciterator.GetNextBlock()
 		if err != nil {
-			// todo() handle error
+			return []*block.Transaction{}, err
 		}
 
 		// iterate through each transaction in the block
@@ -114,7 +114,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*block.Transacti
 	}
 
 	// Return the list of unspent transactions
-	return unspentTXs
+	return unspentTXs, nil
 }
 
 func isOutputSpent(spentTXOs map[string][]int, txID string, outIdx int) bool {
@@ -131,9 +131,13 @@ func isOutputSpent(spentTXOs map[string][]int, txID string, outIdx int) bool {
 	return false
 }
 
-func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int, error) {
 	unspentOutputs := make(map[string][]int)
-	unspentTXs := bc.FindUnspentTransactions(address)
+	unspentTXs, err := bc.FindUnspentTransactions(address)
+	if err != nil {
+		return 0, unspentOutputs, err
+	}
+
 	accumulated := 0
 
 	// retrieve all unspent transactions and sum them
@@ -147,21 +151,24 @@ func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map
 
 				// return once we reached the required amount
 				if accumulated >= amount {
-					return accumulated, unspentOutputs
+					return accumulated, unspentOutputs, nil
 				}
 			}
 		}
 	}
 
 	// there is a chance that we don't have enough amount for this address
-	return accumulated, unspentOutputs
+	return accumulated, unspentOutputs, nil
 }
 
 func (bc *Blockchain) NewUTXOTransaction(from, to string, amount int) (*block.Transaction, error) {
 	var inputs []block.TxInput
 	var outputs []block.TxOutput
 
-	acc, validOutputs := bc.FindSpendableOutputs(from, amount)
+	acc, validOutputs, err := bc.FindSpendableOutputs(from, amount)
+	if err != nil {
+		return &block.Transaction{}, err
+	}
 
 	if acc < amount {
 		return &block.Transaction{}, fmt.Errorf("not enough funds for transaction from %s, expected tx amount: %d, actual balance: %d", from, amount, acc)
@@ -175,27 +182,30 @@ func (bc *Blockchain) NewUTXOTransaction(from, to string, amount int) (*block.Tr
 		}
 
 		for _, out := range outs {
-			input := block.TxInput{txID, out, from}
+			input := block.TxInput{Txid: txID, Vout: out, ScriptSig: from}
 			inputs = append(inputs, input)
 		}
 	}
 
 	// build a list of outputs
-	outputs = append(outputs, block.TxOutput{amount, to})
+	outputs = append(outputs, block.TxOutput{Amount: amount, ScriptPubKey: to})
 	// add the spare change in a different transaction
 	if acc > amount {
-		outputs = append(outputs, block.TxOutput{acc - amount, from}) // a change
+		outputs = append(outputs, block.TxOutput{Amount: acc - amount, ScriptPubKey: from}) // a change
 	}
 
-	tx := block.Transaction{nil, inputs, outputs}
+	tx := block.Transaction{ID: nil, Vin: inputs, Vout: outputs}
 	tx.SetID()
 
 	return &tx, nil
 }
 
-func (bc *Blockchain) FindUTXO(address string) []block.TxOutput {
+func (bc *Blockchain) FindUTXO(address string) ([]block.TxOutput, error) {
 	var UTXOs []block.TxOutput
-	unspentTransactions := bc.FindUnspentTransactions(address)
+	unspentTransactions, err := bc.FindUnspentTransactions(address)
+	if err != nil {
+		return []block.TxOutput{}, err
+	}
 
 	for _, tx := range unspentTransactions {
 		for _, out := range tx.Vout {
@@ -205,7 +215,7 @@ func (bc *Blockchain) FindUTXO(address string) []block.TxOutput {
 		}
 	}
 
-	return UTXOs
+	return UTXOs, nil
 }
 
 func (bc *Blockchain) MineBlock(transactions []*block.Transaction) *block.Block {
