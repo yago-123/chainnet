@@ -1,9 +1,9 @@
 package main
 
 import (
+	"chainnet/config"
 	block "chainnet/pkg/block"
 	"chainnet/pkg/chain"
-	"chainnet/pkg/config"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
@@ -18,7 +18,7 @@ const (
 
 func main() {
 	logger := logrus.New()
-	cfg := config.NewConfig(logger, MINING_DIFFICULTY, MAX_NONCE)
+	cfg := config.NewConfig(logger, MINING_DIFFICULTY, MAX_NONCE, "http://localhost:8080")
 
 	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(logger), logger))
 

@@ -1,4 +1,6 @@
 _fixture/
 __debug_bin*
 main
+cli/chainnet-cli
 .idea
+bin/

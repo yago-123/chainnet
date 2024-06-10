@@ -1,8 +1,8 @@
 package blockchain
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/block"
-	"chainnet/pkg/config"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/storage"
 	"github.com/sirupsen/logrus"

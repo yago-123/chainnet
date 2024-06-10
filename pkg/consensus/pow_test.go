@@ -1,8 +1,8 @@
 package consensus
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/block"
-	"chainnet/pkg/config"
 	"math/big"
 	"reflect"
 	"testing"

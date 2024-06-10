@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"bytes"
+	"chainnet/config"
 	"chainnet/pkg/block"
-	"chainnet/pkg/config"
 	"crypto/sha256"
 	"fmt"
 	"math/big"
