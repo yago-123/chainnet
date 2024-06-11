@@ -206,7 +206,7 @@ func TestNewBoltDB(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewBoltDB(tt.args.dbFile, tt.args.bucket, tt.args.encoding, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := NewBoltDB(tt.args.dbFile, tt.args.bucket, tt.args.encoding, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewBoltDB() = %v, want %v", got, tt.want)
 			}
 		})

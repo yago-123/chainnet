@@ -18,7 +18,6 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute(config *config.Config) {
-	cfg = config
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func NewRouter() *httprouter.Router {
+func NewHTTPRouter() *httprouter.Router {
 	router := httprouter.New()
 	router.GET("/transactions", listTransactions)
 	router.GET("/utxos", listUTXOs)
@@ -45,32 +45,29 @@ func listBlocks(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func getWalletBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	wallet := ps.ByName("wallet")
 
-	// Construct the URL using the base URL and the wallet address
+	// construct the URL using the base URL and the wallet address
 	url := fmt.Sprintf("wallet/%s/balance", wallet)
 
-	// Make an HTTP GET request to the URL to retrieve the balance
+	// make an HTTP GET request to the URL to retrieve the balance
 	response, err := http.Get(url)
 	if err != nil {
-		// Handle error
 		http.Error(w, "Failed to retrieve balance", http.StatusInternalServerError)
 		return
 	}
 	defer response.Body.Close()
 
-	// Decode the response body and write it to the response writer
+	// decode the response body and write it to the response writer
 	if response.StatusCode != http.StatusOK {
-		// Handle non-200 status code
 		http.Error(w, "Failed to retrieve balance", response.StatusCode)
 		return
 	}
 	balanceResponse := uint(0)
 	if err := json.NewDecoder(response.Body).Decode(&balanceResponse); err != nil {
-		// Handle decoding error
 		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
 		return
 	}
 
-	// Write the balance response to the response writer
+	// write the balance response to the response writer
 	err = json.NewEncoder(w).Encode(balanceResponse)
 	if err != nil {
 		http.Error(w, "Failed to encode balance", http.StatusInternalServerError)

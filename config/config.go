@@ -3,7 +3,9 @@ package config
 import "github.com/sirupsen/logrus"
 
 type Config struct {
-	Logger        *logrus.Logger
+	Logger *logrus.Logger
+
+	// node-only configurations
 	DifficultyPoW uint
 	MaxNoncePoW   uint
 	BaseURL       string

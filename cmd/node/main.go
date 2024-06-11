@@ -3,46 +3,51 @@ package main
 import (
 	"chainnet/config"
 	"chainnet/pkg/block"
-	"chainnet/pkg/chain"
+	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
 	"github.com/sirupsen/logrus"
-	"math"
 	"net/http"
 )
 
-const (
-	MINING_DIFFICULTY = 1
-	MAX_NONCE         = math.MaxInt64
-)
-
 func main() {
-	logger := logrus.New()
-	cfg := config.NewConfig(logger, MINING_DIFFICULTY, MAX_NONCE, "http://localhost:8080")
+	difficultyPoW := uint(4)
+	maxNoncePoW := uint(100)
+	baseURL := "localhost:8080"
 
-	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(logger), logger))
+	cfg := config.NewConfig(logrus.New(), difficultyPoW, maxNoncePoW, baseURL)
+	// Initialize your blockchain and other components
+	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(cfg.Logger), cfg.Logger)
+	if err != nil {
+		cfg.Logger.Fatalf("Failed to initialize BoltDB: %s", err)
+	}
 
+	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), bolt)
+
+	// Add blocks
 	_, _ = bc.AddBlock([]*block.Transaction{block.NewCoinbaseTx("me", "data")})
 	_, _ = bc.AddBlock([]*block.Transaction{})
 	_, _ = bc.AddBlock([]*block.Transaction{})
 
+	// Iterate through blocks
 	iterator := bc.CreateIterator()
 	for iterator.HasNext() {
-		block, err := iterator.GetNextBlock()
+		blk, err := iterator.GetNextBlock()
 		if err != nil {
-			logger.Panicf("Error getting block: %s", err)
+			cfg.Logger.Panicf("Error getting block: %s", err)
 		}
 
-		logger.Infof("----------------------")
-		logger.Infof("Prev. hash: %x", block.PrevBlockHash)
-		logger.Infof("Num transactions: %d", len(block.Transactions))
-		logger.Infof("Hash: %x", block.Hash)
-		logger.Infof("PoW: %t", consensus.NewProofOfWork(cfg).Validate(block))
+		cfg.Logger.Infof("----------------------")
+		cfg.Logger.Infof("Prev. hash: %x", blk.PrevBlockHash)
+		cfg.Logger.Infof("Num transactions: %d", len(blk.Transactions))
+		cfg.Logger.Infof("Hash: %x", blk.Hash)
+		cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(cfg).Validate(blk))
 	}
 
-	router := NewRouter()
-
-	logger.Infof("Server listening on %s", cfg.BaseURL)
-	logger.Fatalf("Error running node: %s", http.ListenAndServe(cfg.BaseURL, router))
+	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
+	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter())
+	if err != nil {
+		cfg.Logger.Fatalf("Failed to start server: %s", err)
+	}
 }

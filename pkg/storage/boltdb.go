@@ -19,13 +19,13 @@ type BoltDB struct {
 	logger   *logrus.Logger
 }
 
-func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding, logger *logrus.Logger) *BoltDB {
+func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding, logger *logrus.Logger) (*BoltDB, error) {
 	db, err := boltdb.Open(dbFile, 0600, &boltdb.Options{Timeout: 5 * time.Second})
 	if err != nil {
-		logger.Errorf("Error opening BoltDB: %s", err)
+		return nil, fmt.Errorf("Error opening BoltDB: %s", err)
 	}
 
-	return &BoltDB{db, bucket, encoding, logger}
+	return &BoltDB{db, bucket, encoding, logger}, nil
 }
 
 func (bolt *BoltDB) NumberOfBlocks() (uint, error) {

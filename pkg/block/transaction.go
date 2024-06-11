@@ -9,7 +9,7 @@ type Transaction struct {
 }
 
 func (tx *Transaction) SetID() {
-	// todo() temporary solution
+	// todo() create proper set ID method, temporary solution
 	tx.ID = []byte(uuid.New().String())
 }
 

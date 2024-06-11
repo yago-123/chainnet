@@ -3,7 +3,7 @@ OUTPUT_DIR := bin
 
 # Define the name of the CLI binary file
 CLI_BINARY_NAME := chainnet-cli
-NODE_BINARY_NAME := chainnet-node
+NODE_BINARY_NAME := chainnet
 
 # Define the source file for the CLI application
 CLI_SOURCE := $(wildcard cmd/cli/*.go)

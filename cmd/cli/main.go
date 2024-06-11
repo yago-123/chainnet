@@ -9,7 +9,6 @@ import (
 func main() {
 	logger := logrus.New()
 
-	// Load configuration values from viper
 	difficultyPoW := viper.GetUint("DIFFICULTY_POW")
 	maxNoncePoW := viper.GetUint("MAX_NONCE_POW")
 	baseURL := viper.GetString("BASE_URL")
