@@ -46,7 +46,7 @@ func main() {
 	}
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
-	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter())
+	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(bc))
 	if err != nil {
 		cfg.Logger.Fatalf("Failed to start server: %s", err)
 	}

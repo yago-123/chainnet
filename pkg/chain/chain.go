@@ -131,7 +131,29 @@ func isOutputSpent(spentTXOs map[string][]int, txID string, outIdx int) bool {
 	return false
 }
 
-func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int, error) {
+func (bc *Blockchain) FindSpendableOutputs(address string) (int, error) {
+	unspentTXs, err := bc.FindUnspentTransactions(address)
+	if err != nil {
+		return 0, err
+	}
+
+	accumulated := 0
+
+	// retrieve all unspent transactions and sum them
+	for _, tx := range unspentTXs {
+		for _, out := range tx.Vout {
+			if out.CanBeUnlockedWith(address) {
+				accumulated += out.Amount
+			}
+		}
+	}
+
+	// there is a chance that we don't have enough amount for this address
+	return accumulated, nil
+
+}
+
+func (bc *Blockchain) FindAmountSpendableOutputs(address string, amount int) (int, map[string][]int, error) {
 	unspentOutputs := make(map[string][]int)
 	unspentTXs, err := bc.FindUnspentTransactions(address)
 	if err != nil {
@@ -165,7 +187,7 @@ func (bc *Blockchain) NewUTXOTransaction(from, to string, amount int) (*block.Tr
 	var inputs []block.TxInput
 	var outputs []block.TxOutput
 
-	acc, validOutputs, err := bc.FindSpendableOutputs(from, amount)
+	acc, validOutputs, err := bc.FindAmountSpendableOutputs(from, amount)
 	if err != nil {
 		return &block.Transaction{}, err
 	}
