@@ -9,6 +9,9 @@ NODE_BINARY_NAME := chainnet
 CLI_SOURCE := $(wildcard cmd/cli/*.go)
 NODE_SOURCE := $(wildcard cmd/node/*.go)
 
+# Define build flags
+GCFLAGS := -gcflags "all=-N -l"
+
 .PHONY: all
 all: test lint chainnet-cli chainnet-node
 
@@ -16,13 +19,13 @@ all: test lint chainnet-cli chainnet-node
 chainnet-cli:
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "Building chainnet CLI..."
-	@go build -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
+	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
 
 .PHONY: chainnet-node
 chainnet-node:
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "Building chainnet node..."
-	@go build -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
+	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
 
 .PHONY: lint
 lint:
@@ -43,7 +46,6 @@ clean:
 
 
 .PHONY: debug
-debug: 
-	dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient
-
+debug: chainnet-node
+	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet
 
