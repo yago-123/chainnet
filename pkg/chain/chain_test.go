@@ -3,14 +3,11 @@ package blockchain
 import (
 	"chainnet/config"
 	"chainnet/pkg/block"
-	"chainnet/pkg/consensus"
-	"chainnet/pkg/storage"
 	mockConsensus "chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
 	mockUtil "chainnet/tests/mocks/util"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 )
 
@@ -164,463 +161,47 @@ func TestBlockchain_AddBlockWithInvalidTransaction(t *testing.T) {
 
 }
 
-func TestBlockchain_CalculateAddressBalance(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		address string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    int
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			got, err := bc.CalculateAddressBalance(tt.args.address)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CalculateAddressBalance() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("CalculateAddressBalance() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestBlockchain_CreateIterator(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   Iterator
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			if got := bc.CreateIterator(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CreateIterator() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestBlockchain_FindAmountSpendableOutputs(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		address string
-		amount  int
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    int
-		want1   map[string][]int
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			got, got1, err := bc.FindAmountSpendableOutputs(tt.args.address, tt.args.amount)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FindAmountSpendableOutputs() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("FindAmountSpendableOutputs() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("FindAmountSpendableOutputs() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
-	}
-}
-
-func TestBlockchain_FindUTXO(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		address string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []block.TxOutput
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			got, err := bc.FindUTXO(tt.args.address)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FindUTXO() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FindUTXO() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestBlockchain_FindUnspentTransactions(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		address string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []*block.Transaction
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			got, err := bc.FindUnspentTransactions(tt.args.address)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FindUnspentTransactions() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FindUnspentTransactions() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	_ = NewBlockchain(
+		config.NewConfig(logrus.New(), 1, 1, ""),
+		&mockConsensus.MockConsensus{},
+		&mockStorage.MockStorage{},
+	)
 }
 
-func TestBlockchain_GetBlock(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		hash string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *block.Block
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			got, err := bc.GetBlock(tt.args.hash)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetBlock() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetBlock() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestBlockchain_FindAmountSpendableOutput(t *testing.T) {
+
 }
 
-func TestBlockchain_MineBlock(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		transactions []*block.Transaction
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *block.Block
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			if got := bc.MineBlock(tt.args.transactions); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MineBlock() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestBlockchain_FindUTXOd(t *testing.T) {
+
 }
 
-func TestBlockchain_NewUTXOTransaction(t *testing.T) {
-	type fields struct {
-		Chain         []string
-		lastBlockHash []byte
-		consensus     consensus.Consensus
-		storage       storage.Storage
-		logger        *logrus.Logger
-		cfg           *config.Config
-	}
-	type args struct {
-		from   string
-		to     string
-		amount int
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *block.Transaction
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &Blockchain{
-				Chain:         tt.fields.Chain,
-				lastBlockHash: tt.fields.lastBlockHash,
-				consensus:     tt.fields.consensus,
-				storage:       tt.fields.storage,
-				logger:        tt.fields.logger,
-				cfg:           tt.fields.cfg,
-			}
-			got, err := bc.NewTransaction(tt.args.from, tt.args.to, tt.args.amount)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewTransaction() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewTransaction() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+/////
+
+func TestBlockchain_isOutputSpent(t *testing.T) {
+	spentTXOs := make(map[string][]int)
+
+	spentTXOs["tx-spent-1"] = []int{0, 1}
+	spentTXOs["tx-spent-2"] = []int{0}
+	spentTXOs["tx-spent-3"] = []int{3}
+
+	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-1", 0))
+	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-1", 1))
+	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-2", 0))
+	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-3", 3))
+
+	assert.Equal(t, false, isOutputSpent(spentTXOs, "tx-spent-1", 2))
+	assert.Equal(t, false, isOutputSpent(spentTXOs, "tx-spent-2", 1))
+	assert.Equal(t, false, isOutputSpent(spentTXOs, "tx-spent-3", 0))
 }
 
-func TestIteratorStruct_GetNextBlock(t *testing.T) {
-	type fields struct {
-		prevBlockHash []byte
-		storage       storage.Storage
-		cfg           *config.Config
+func TestBlockchain_retrieveBalanceFrom(t *testing.T) {
+	utxos := []block.TxOutput{
+		{Amount: 1, ScriptPubKey: "random-1"},
+		{Amount: 2, ScriptPubKey: "random-2"},
+		{Amount: 100, ScriptPubKey: "random-3"},
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		want    *block.Block
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			it := &IteratorStruct{
-				prevBlockHash: tt.fields.prevBlockHash,
-				storage:       tt.fields.storage,
-				cfg:           tt.fields.cfg,
-			}
-			got, err := it.GetNextBlock()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetNextBlock() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetNextBlock() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
-func TestIteratorStruct_HasNext(t *testing.T) {
-	type fields struct {
-		prevBlockHash []byte
-		storage       storage.Storage
-		cfg           *config.Config
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			it := &IteratorStruct{
-				prevBlockHash: tt.fields.prevBlockHash,
-				storage:       tt.fields.storage,
-				cfg:           tt.fields.cfg,
-			}
-			if got := it.HasNext(); got != tt.want {
-				t.Errorf("HasNext() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewBlockchain(t *testing.T) {
-	type args struct {
-		cfg         *config.Config
-		consensus   consensus.Consensus
-		persistence storage.Storage
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Blockchain
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewBlockchain(tt.args.cfg, tt.args.consensus, tt.args.persistence); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewBlockchain() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewIterator(t *testing.T) {
-	type args struct {
-		lastBlockHash []byte
-		storage       storage.Storage
-		cfg           *config.Config
-	}
-	tests := []struct {
-		name string
-		args args
-		want *IteratorStruct
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewIterator(tt.args.lastBlockHash, tt.args.storage, tt.args.cfg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewIterator() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_isOutputSpent(t *testing.T) {
-	type args struct {
-		spentTXOs map[string][]int
-		txID      string
-		outIdx    int
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isOutputSpent(tt.args.spentTXOs, tt.args.txID, tt.args.outIdx); got != tt.want {
-				t.Errorf("isOutputSpent() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	assert.Equal(t, 103, retrieveBalanceFrom(utxos))
 }

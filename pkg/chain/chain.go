@@ -134,36 +134,13 @@ func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transact
 	return unspentTXs, nil
 }
 
-func isOutputSpent(spentTXOs map[string][]int, txID string, outIdx int) bool {
-	// check if the outputs have been already spent by an input before
-	if spentOuts, spent := spentTXOs[txID]; spent {
-		for _, spentOut := range spentOuts {
-			// check if the output index matches
-			if spentOut == outIdx {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 func (bc *Blockchain) CalculateAddressBalance(address string) (int, error) {
 	unspentTXs, err := bc.FindUTXO(address)
 	if err != nil {
 		return 0, err
 	}
 
-	accumulated := 0
-
-	// calculate total amount of unspent transactions
-	for _, out := range unspentTXs {
-		accumulated += out.Amount
-	}
-
-	// there is a chance that we don't have enough amount for this address
-	return accumulated, nil
-
+	return retrieveBalanceFrom(unspentTXs), nil
 }
 
 func (bc *Blockchain) FindAmountSpendableOutputs(address string, amount int) (int, map[string][]int, error) {
@@ -286,4 +263,30 @@ func (bc *Blockchain) GetBlock(hash string) (*block.Block, error) {
 
 func (bc *Blockchain) CreateIterator() Iterator {
 	return NewIterator(bc.lastBlockHash, bc.storage, bc.cfg)
+}
+
+// isOutputSpent checks if the output has been already spent by another input
+func isOutputSpent(spentTXOs map[string][]int, txID string, outIdx int) bool {
+	// check if the outputs have been already spent by an input before
+	if spentOuts, spent := spentTXOs[txID]; spent {
+		for _, spentOut := range spentOuts {
+			// check if the output index matches
+			if spentOut == outIdx {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// retrieveBalanceFrom calculates the total amount of unspent transactions
+func retrieveBalanceFrom(UTXOs []block.TxOutput) int {
+	accumulated := 0
+
+	for _, out := range UTXOs {
+		accumulated += out.Amount
+	}
+
+	return accumulated
 }
