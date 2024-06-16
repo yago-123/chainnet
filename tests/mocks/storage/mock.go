@@ -14,14 +14,8 @@ type Storage interface {
 	RetrieveBlockByHash(hash []byte) (*block.Block, error)
 }
 
-// MockStorage struct modified to embed testify/mock
 type MockStorage struct {
 	mock.Mock
-}
-
-// NewMockStorage initializes MockStorage
-func NewMockStorage() *MockStorage {
-	return &MockStorage{}
 }
 
 func (ms *MockStorage) NumberOfBlocks() (uint, error) {

@@ -38,3 +38,27 @@ func (gobenc *GobEncoder) DeserializeBlock(data []byte) (*block.Block, error) {
 
 	return &b, nil
 }
+
+func (gobenc *GobEncoder) SerializeTransaction(tx block.Transaction) ([]byte, error) {
+	var result bytes.Buffer
+
+	enc := gob.NewEncoder(&result)
+	err := enc.Encode(tx)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result.Bytes(), nil
+}
+
+func (gobenc *GobEncoder) DeserializeTransaction(data []byte) (*block.Transaction, error) {
+	var tx *block.Transaction
+
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&tx)
+	if err != nil {
+		return &block.Transaction{}, err
+	}
+
+	return tx, nil
+}

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"time"
 )
 
 type ProofOfWork struct {
@@ -19,45 +18,32 @@ func NewProofOfWork(target uint) *ProofOfWork {
 	return &ProofOfWork{target: target}
 }
 
-func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) (*block.Block, error) {
+func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error) {
 	var hashInt big.Int
 	var hash [32]byte
 
 	hashDifficulty := big.NewInt(1)
 	hashDifficulty.Lsh(hashDifficulty, uint(256-b.Target))
 
-	b.Target = pow.target
+	maxNonce := ^uint(0)
+	nonce := uint(0)
 
-	for {
-		timestamp := time.Now().Unix()
-		maxNonce := ^uint(0)
-		nonce := uint(0)
+	for nonce < maxNonce {
+		data := pow.assembleProofBlock(b, nonce)
+		hash = sha256.Sum256(data)
 
-		for nonce < maxNonce {
-			b.Timestamp = timestamp
-			b.Nonce = nonce
-
-			data := pow.assembleProofBlock(b, nonce, timestamp)
-			hash = sha256.Sum256(data)
-
-			if hashInt.Cmp(hashDifficulty) == -1 {
-				b.Timestamp = timestamp
-				b.Nonce = nonce
-				b.Hash = hash[:]
-
-				return b, nil
-			}
-
-			nonce++
+		if hashInt.Cmp(hashDifficulty) == -1 {
+			return hash[:], nonce, nil
 		}
 
+		nonce++
 	}
 
-	return &block.Block{}, errors.New("could not find hash for block")
+	return []byte{}, 0, errors.New("could not find hash for block")
 }
 
 func (pow *ProofOfWork) ValidateBlock(b *block.Block) bool {
-	data := pow.assembleProofBlock(b, b.Nonce, b.Timestamp)
+	data := pow.assembleProofBlock(b, b.Nonce)
 	hash := sha256.Sum256(data)
 
 	return reflect.DeepEqual(hash, b.Hash)
@@ -70,21 +56,19 @@ func (pow *ProofOfWork) ValidateTx(tx *block.Transaction) bool {
 	return reflect.DeepEqual(hash, tx.ID)
 }
 
-func (pow *ProofOfWork) CalculateTxHash(tx *block.Transaction) (*block.Transaction, error) {
+func (pow *ProofOfWork) CalculateTxHash(tx *block.Transaction) ([]byte, error) {
 	data := pow.assembleProofTx(tx)
 	hash := sha256.Sum256(data)
 
-	tx.ID = hash[:]
-
-	return tx, nil
+	return hash[:], nil
 }
 
-func (pow *ProofOfWork) assembleProofBlock(block *block.Block, nonce uint, timestamp int64) []byte {
+func (pow *ProofOfWork) assembleProofBlock(b *block.Block, nonce uint) []byte {
 	data := [][]byte{
-		block.PrevBlockHash,
-		pow.hashTransactionIDs(block.Transactions),
-		[]byte(fmt.Sprintf("%d", block.Target)),
-		[]byte(fmt.Sprintf("%d", timestamp)),
+		b.PrevBlockHash,
+		pow.hashTransactionIDs(b.Transactions),
+		[]byte(fmt.Sprintf("%d", b.Target)),
+		[]byte(fmt.Sprintf("%d", b.Timestamp)),
 		[]byte(fmt.Sprintf("%d", nonce)),
 	}
 

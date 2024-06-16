@@ -3,6 +3,7 @@ package storage
 import (
 	"chainnet/pkg/block"
 	"chainnet/pkg/encoding"
+	"errors"
 	"fmt"
 	boltdb "github.com/boltdb/bolt"
 	"github.com/sirupsen/logrus"
@@ -85,7 +86,7 @@ func (bolt *BoltDB) GetLastBlock() (*block.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		if !exists {
-			return fmt.Errorf("bucket does not exist")
+			return errors.New("bucket does not exist")
 		}
 
 		lastBlock = bucket.Get([]byte(LastBlockKey))
@@ -106,7 +107,7 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*block.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		if !exists {
-			return fmt.Errorf("bucket does not exist")
+			return errors.New("bucket does not exist")
 		}
 
 		blockBytes = bucket.Get(hash)

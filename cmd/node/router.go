@@ -55,7 +55,7 @@ func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, bc 
 func getAddressBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params, bc *blockchain.Blockchain) {
 	address := ps.ByName("address")
 
-	balanceResponse, err := bc.FindSpendableOutputs(address)
+	balanceResponse, err := bc.CalculateAddressBalance(address)
 	if err != nil {
 		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
 	}

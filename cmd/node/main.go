@@ -20,15 +20,38 @@ func main() {
 	// Initialize your blockchain and other components
 	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(cfg.Logger), cfg.Logger)
 	if err != nil {
-		cfg.Logger.Fatalf("Failed to initialize BoltDB: %s", err)
+		cfg.Logger.Errorf("Failed to initialize BoltDB: %s", err)
 	}
 
-	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg), bolt)
+	// create blockchain
+	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW), bolt)
 
-	// Add blocks
-	_, _ = bc.AddBlock([]*block.Transaction{block.NewCoinbaseTx("me", "data")})
-	_, _ = bc.AddBlock([]*block.Transaction{})
-	_, _ = bc.AddBlock([]*block.Transaction{})
+	// create tx0 and add block
+	tx0, _ := bc.NewCoinbaseTransaction("me", "data")
+	_, err = bc.AddBlock([]*block.Transaction{tx0})
+	if err != nil {
+		cfg.Logger.Errorf("Failed to add block: %s", err)
+	}
+
+	// create tx1 and add block
+	tx1, err := bc.NewTransaction("me", "you", 10)
+	if err != nil {
+		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
+	}
+	_, err = bc.AddBlock([]*block.Transaction{tx1})
+	if err != nil {
+		cfg.Logger.Errorf("Failed to add block: %s", err)
+	}
+
+	// create tx2 and add block
+	tx2, err := bc.NewTransaction("me", "you", 20)
+	if err != nil {
+		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
+	}
+	_, err = bc.AddBlock([]*block.Transaction{tx2})
+	if err != nil {
+		cfg.Logger.Errorf("Failed to add block: %s", err)
+	}
 
 	// Iterate through blocks
 	iterator := bc.CreateIterator()
@@ -42,7 +65,7 @@ func main() {
 		cfg.Logger.Infof("Prev. hash: %x", blk.PrevBlockHash)
 		cfg.Logger.Infof("Num transactions: %d", len(blk.Transactions))
 		cfg.Logger.Infof("Hash: %x", blk.Hash)
-		cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(cfg).Validate(blk))
+		cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(1).ValidateBlock(blk))
 	}
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)

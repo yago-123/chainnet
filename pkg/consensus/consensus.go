@@ -6,9 +6,9 @@ import (
 
 // Consensus is designed to allow more than one consensus algorithm to be implemented
 type Consensus interface {
-	ValidateBlock(block *block.Block) bool
-	CalculateBlockHash(block *block.Block) (*block.Block, error)
+	ValidateBlock(b *block.Block) bool
+	CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 
 	ValidateTx(tx *block.Transaction) bool
-	CalculateTxHash(tx *block.Transaction) (*block.Transaction, error)
+	CalculateTxHash(tx *block.Transaction) ([]byte, error)
 }
