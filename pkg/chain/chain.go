@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// ADJUST_DIFFICULTY_HEIGHT adjusts difficulty every 2016 blocks (~2 weeks)
+const ADJUST_DIFFICULTY_HEIGHT = 2016
+
 type Blockchain struct {
 	Chain         []string
 	lastBlockHash []byte
@@ -47,7 +50,7 @@ func (bc *Blockchain) AddBlock(transactions []*block.Transaction) (*block.Block,
 
 	// if no blocks exist, create genesis block
 	if numBlocks == 0 {
-		newBlock = block.NewBlock(transactions, []byte{})
+		newBlock = block.NewGenesisBlock(transactions)
 	}
 
 	// if blocks exist, create new block tied to the previous
@@ -119,6 +122,7 @@ func (bc *Blockchain) findUnspentTransactions(address string, revIterator *itera
 			}
 
 			// we skip the coinbase transactions
+			// todo() remove this part, we should ignore genesis block indeed not coinbase tx
 			if tx.IsCoinbase() {
 				continue
 			}
@@ -179,18 +183,16 @@ func (bc *Blockchain) FindAmountSpendableOutputs(address string, amount int) (in
 }
 
 func (bc *Blockchain) NewCoinbaseTransaction(to, data string) (*block.Transaction, error) {
-	txin := block.TxInput{Txid: []byte{}, Vout: -1, ScriptSig: data}
-	txout := block.TxOutput{Amount: block.COINBASE_AMOUNT, ScriptPubKey: to}
-	tx := block.Transaction{ID: nil, Vin: []block.TxInput{txin}, Vout: []block.TxOutput{txout}}
+	tx := block.NewCoinbaseTransaction(to, data)
 
-	txHash, err := bc.consensus.CalculateTxHash(&tx)
+	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	tx.ID = txHash[:]
+	tx.SetID(txHash[:])
 
-	return &tx, nil
+	return tx, nil
 }
 
 func (bc *Blockchain) NewTransaction(from, to string, amount int) (*block.Transaction, error) {
@@ -207,6 +209,7 @@ func (bc *Blockchain) NewTransaction(from, to string, amount int) (*block.Transa
 	}
 
 	// build a list of inputs
+	// todo() move to another function
 	for txid, outs := range validOutputs {
 		txID, err := hex.DecodeString(txid)
 		if err != nil {
@@ -226,16 +229,16 @@ func (bc *Blockchain) NewTransaction(from, to string, amount int) (*block.Transa
 		outputs = append(outputs, block.TxOutput{Amount: acc - amount, ScriptPubKey: from}) // a change
 	}
 
-	tx := block.Transaction{ID: nil, Vin: inputs, Vout: outputs}
+	tx := block.NewTransaction(inputs, outputs)
 
-	txHash, err := bc.consensus.CalculateTxHash(&tx)
+	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
 		return &block.Transaction{}, err
 	}
 
-	tx.ID = txHash[:]
+	tx.SetID(txHash[:])
 
-	return &tx, nil
+	return tx, nil
 }
 
 func (bc *Blockchain) FindUnspentTransactionsOutputs(address string) ([]block.TxOutput, error) {
