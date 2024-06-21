@@ -79,18 +79,32 @@ func TestReverseIterator(t *testing.T) {
 	assert.Equal(t, false, reverseIterator.HasNext(), "more elements were found when the chain must have ended")
 }
 
-func TestNewReverseIterator(t *testing.T) {
+func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
+	// set up genesis block with coinbase transaction
+	coinbaseTx := block.NewCoinbaseTransaction("address-1", "data")
+	coinbaseTx.SetID([]byte("coinbase-genesis-block-id"))
+	genesisBlock := block.NewGenesisBlock([]*block.Transaction{coinbaseTx})
+	genesisBlock.SetHashAndNonce([]byte("genesis-block-hash"), 1)
 
-}
+	// set up the storage mock with the corresponding returns
+	storage := &mockStorage.MockStorage{}
+	storage.
+		On("RetrieveBlockByHash", genesisBlock.Hash).
+		Return(genesisBlock, nil)
 
-func TestReverseIterator_Initialize(t *testing.T) {
+	// check that the iterator works as expected
+	reverseIterator := NewReverseIterator(storage)
 
-}
+	// initialize iterator with the last block hash
+	err := reverseIterator.Initialize(genesisBlock.Hash)
+	assert.NoError(t, err)
 
-func TestReverseIterator_GetNextBlock(t *testing.T) {
+	// check if we have next element and retrieve genesis block
+	assert.Equal(t, true, reverseIterator.HasNext(), "error checking if next block exists")
+	b, err := reverseIterator.GetNextBlock()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("genesis-block-hash"), b.Hash, "failure retrieving genesis block")
 
-}
-
-func TestReverseIterator_HasNext(t *testing.T) {
-
+	// verify that we don't have more elements available
+	assert.Equal(t, false, reverseIterator.HasNext(), "more elements were found when the chain must have ended")
 }
