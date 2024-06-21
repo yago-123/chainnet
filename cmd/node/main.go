@@ -4,6 +4,7 @@ import (
 	"chainnet/config"
 	"chainnet/pkg/block"
 	blockchain "chainnet/pkg/chain"
+	iterator "chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
@@ -54,9 +55,11 @@ func main() {
 	}
 
 	// Iterate through blocks
-	iterator := bc.CreateIterator()
-	for iterator.HasNext() {
-		blk, err := iterator.GetNextBlock()
+	reverseIterator := iterator.NewReverseIterator(bolt)
+
+	_ = reverseIterator.Initialize(bc.GetLastBlockHash())
+	for reverseIterator.HasNext() {
+		blk, err := reverseIterator.GetNextBlock()
 		if err != nil {
 			cfg.Logger.Panicf("Error getting block: %s", err)
 		}

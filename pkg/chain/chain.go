@@ -3,6 +3,7 @@ package blockchain
 import (
 	"chainnet/config"
 	"chainnet/pkg/block"
+	"chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/storage"
 	"encoding/hex"
@@ -80,19 +81,23 @@ func (bc *Blockchain) AddBlock(transactions []*block.Transaction) (*block.Block,
 	return newBlock, nil
 }
 
-// FindUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
+func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transaction, error) {
+	return bc.findUnspentTransactions(address, iterator.NewReverseIterator(bc.storage))
+}
+
+// findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
-func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transaction, error) {
+func (bc *Blockchain) findUnspentTransactions(address string, revIterator *iterator.ReverseIterator) ([]*block.Transaction, error) {
 	var unspentTXs []*block.Transaction
 	spentTXOs := make(map[string][]int)
 
-	// Get the blockchain iterator
-	bciterator := bc.CreateIterator()
+	// Get the blockchain revIterator
+	_ = revIterator.Initialize(bc.lastBlockHash)
 
-	for bciterator.HasNext() {
-		// Get the next block using the iterator
-		confirmedBlock, err := bciterator.GetNextBlock()
+	for revIterator.HasNext() {
+		// Get the next block using the revIterator
+		confirmedBlock, err := revIterator.GetNextBlock()
 		if err != nil {
 			return []*block.Transaction{}, err
 		}
@@ -135,7 +140,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transact
 }
 
 func (bc *Blockchain) CalculateAddressBalance(address string) (int, error) {
-	unspentTXs, err := bc.FindUTXO(address)
+	unspentTXs, err := bc.FindUnspentTransactionsOutputs(address)
 	if err != nil {
 		return 0, err
 	}
@@ -233,22 +238,27 @@ func (bc *Blockchain) NewTransaction(from, to string, amount int) (*block.Transa
 	return &tx, nil
 }
 
-func (bc *Blockchain) FindUTXO(address string) ([]block.TxOutput, error) {
-	var UTXOs []block.TxOutput
+func (bc *Blockchain) FindUnspentTransactionsOutputs(address string) ([]block.TxOutput, error) {
 	unspentTransactions, err := bc.FindUnspentTransactions(address)
 	if err != nil {
 		return []block.TxOutput{}, err
 	}
 
+	return bc.findUnspentTransactionsOutputs(address, unspentTransactions)
+}
+
+func (bc *Blockchain) findUnspentTransactionsOutputs(address string, unspentTransactions []*block.Transaction) ([]block.TxOutput, error) {
+	var utxos []block.TxOutput
+
 	for _, tx := range unspentTransactions {
 		for _, out := range tx.Vout {
 			if out.CanBeUnlockedWith(address) {
-				UTXOs = append(UTXOs, out)
+				utxos = append(utxos, out)
 			}
 		}
 	}
 
-	return UTXOs, nil
+	return utxos, nil
 }
 
 func (bc *Blockchain) MineBlock(transactions []*block.Transaction) *block.Block {
@@ -261,8 +271,8 @@ func (bc *Blockchain) GetBlock(hash string) (*block.Block, error) {
 	return bc.storage.RetrieveBlockByHash([]byte(hash))
 }
 
-func (bc *Blockchain) CreateIterator() Iterator {
-	return NewIterator(bc.lastBlockHash, bc.storage, bc.cfg)
+func (bc *Blockchain) GetLastBlockHash() []byte {
+	return bc.lastBlockHash
 }
 
 // isOutputSpent checks if the output has been already spent by another input
