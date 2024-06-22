@@ -3,24 +3,24 @@ package consensus
 import (
 	"bytes"
 	"chainnet/pkg/block"
-	"crypto/sha256"
+	"chainnet/pkg/hash"
 	"errors"
 	"fmt"
 	"math/big"
-	"reflect"
 )
 
 type ProofOfWork struct {
-	target uint
+	target  uint
+	hashing hash.Hashing
 }
 
-func NewProofOfWork(target uint) *ProofOfWork {
-	return &ProofOfWork{target: target}
+func NewProofOfWork(target uint, hashing hash.Hashing) *ProofOfWork {
+	return &ProofOfWork{target: target, hashing: hashing}
 }
 
 func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error) {
 	var hashInt big.Int
-	var hash [32]byte
+	var hash []byte
 
 	hashDifficulty := big.NewInt(1)
 	hashDifficulty.Lsh(hashDifficulty, uint(256-b.Target))
@@ -30,8 +30,9 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 
 	for nonce < maxNonce {
 		data := pow.assembleProofBlock(b, nonce)
-		hash = sha256.Sum256(data)
+		hash = pow.hashing.Hash(data)
 
+		// todo() recheck this part
 		if hashInt.Cmp(hashDifficulty) == -1 {
 			return hash[:], nonce, nil
 		}
@@ -44,23 +45,22 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 
 func (pow *ProofOfWork) ValidateBlock(b *block.Block) bool {
 	data := pow.assembleProofBlock(b, b.Nonce)
-	hash := sha256.Sum256(data)
 
-	return reflect.DeepEqual(hash, b.Hash)
+	// todo() add more validations
+
+	return pow.hashing.Verify(b.Hash, data)
 }
 
 func (pow *ProofOfWork) ValidateTx(tx *block.Transaction) bool {
 	data := pow.assembleProofTx(tx)
-	hash := sha256.Sum256(data)
 
-	return reflect.DeepEqual(hash, tx.ID)
+	return pow.hashing.Verify(tx.ID, data)
 }
 
 func (pow *ProofOfWork) CalculateTxHash(tx *block.Transaction) ([]byte, error) {
 	data := pow.assembleProofTx(tx)
-	hash := sha256.Sum256(data)
 
-	return hash[:], nil
+	return pow.hashing.Hash(data), nil
 }
 
 func (pow *ProofOfWork) assembleProofBlock(b *block.Block, nonce uint) []byte {
@@ -94,13 +94,10 @@ func (pow *ProofOfWork) assembleProofTx(tx *block.Transaction) []byte {
 
 func (pow *ProofOfWork) hashTransactionIDs(transactions []*block.Transaction) []byte {
 	var txHashes [][]byte
-	var txHash [32]byte
 
 	for _, tx := range transactions {
 		txHashes = append(txHashes, tx.ID)
 	}
 
-	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
-
-	return txHash[:]
+	return pow.hashing.Hash(bytes.Join(txHashes, []byte{}))
 }
