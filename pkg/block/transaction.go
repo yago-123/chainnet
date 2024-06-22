@@ -14,8 +14,8 @@ type TxInput struct {
 	ScriptSig string
 }
 
-func (in *TxInput) CanUnlockOutputWith(unlockingData string) bool {
-	return in.ScriptSig == unlockingData
+func (in *TxInput) CanUnlockOutputWith(address string) bool {
+	return in.ScriptSig == address
 }
 
 type TxOutput struct {
@@ -23,8 +23,8 @@ type TxOutput struct {
 	ScriptPubKey string
 }
 
-func (out *TxOutput) CanBeUnlockedWith(unlockingData string) bool {
-	return out.ScriptPubKey == unlockingData
+func (out *TxOutput) CanBeUnlockedWith(address string) bool {
+	return out.ScriptPubKey == address
 }
 
 func (tx *Transaction) IsCoinbase() bool {

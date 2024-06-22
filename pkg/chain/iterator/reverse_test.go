@@ -10,23 +10,23 @@ import (
 func TestReverseIterator(t *testing.T) {
 	// set up genesis block with coinbase transaction
 	coinbaseTx := block.NewCoinbaseTransaction("address-1", "data")
-	coinbaseTx.SetID([]byte("coinbase-genesis-block-id"))
+	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
 	genesisBlock := block.NewGenesisBlock([]*block.Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-block-hash"), 1)
 
 	// set up block 1 with one coinbase transaction
 	coinbaseTx2 := block.NewCoinbaseTransaction("address-2", "data")
-	coinbaseTx2.SetID([]byte("coinbase-block-1-id"))
+	coinbaseTx2.SetID([]byte("coinbase-transaction-block-1-id"))
 	block1 := block.NewBlock([]*block.Transaction{coinbaseTx2}, genesisBlock.Hash)
 	block1.SetHashAndNonce([]byte("block-hash-1"), 1)
 
 	// set up block 2 with one coinbase transaction and one regular transaction
 	coinbaseTx3 := block.NewCoinbaseTransaction("address-3", "data")
-	coinbaseTx3.SetID([]byte("coinbase-block-2-id"))
+	coinbaseTx3.SetID([]byte("coinbase-transaction-block-2-id"))
 	regularTx := block.NewTransaction(
 		[]block.TxInput{
 			{
-				Txid:      []byte("coinbase-block-1-id"),
+				Txid:      []byte("coinbase-transaction-block-1-id"),
 				Vout:      0,
 				ScriptSig: "ScriptSig",
 			},
@@ -34,7 +34,7 @@ func TestReverseIterator(t *testing.T) {
 		[]block.TxOutput{
 			{Amount: 1, ScriptPubKey: "ScriptPubKey"},
 		})
-	regularTx.SetID([]byte("regular-tx-block-2-id"))
+	regularTx.SetID([]byte("regular-tx-2-id"))
 	block2 := block.NewBlock([]*block.Transaction{coinbaseTx3, regularTx}, block1.Hash)
 	block2.SetHashAndNonce([]byte("block-hash-2"), 1)
 

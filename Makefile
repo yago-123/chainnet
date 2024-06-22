@@ -35,7 +35,7 @@ lint:
 .PHONY: test
 test:
 	@echo "Running tests..."
-	@go test ./...
+	@go test -v -cover ./...
 
 .PHONY: clean
 clean:

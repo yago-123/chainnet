@@ -5,7 +5,7 @@ import (
 )
 
 type Iterator interface {
-	Initialize(reference []byte)
+	Initialize(reference []byte) error
 	GetNextBlock() (*block.Block, error)
 	HasNext() bool
 }

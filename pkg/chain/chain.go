@@ -91,16 +91,16 @@ func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transact
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
-func (bc *Blockchain) findUnspentTransactions(address string, revIterator *iterator.ReverseIterator) ([]*block.Transaction, error) {
+func (bc *Blockchain) findUnspentTransactions(address string, it iterator.Iterator) ([]*block.Transaction, error) {
 	var unspentTXs []*block.Transaction
 	spentTXOs := make(map[string][]int)
 
 	// Get the blockchain revIterator
-	_ = revIterator.Initialize(bc.lastBlockHash)
+	_ = it.Initialize(bc.lastBlockHash)
 
-	for revIterator.HasNext() {
+	for it.HasNext() {
 		// Get the next block using the revIterator
-		confirmedBlock, err := revIterator.GetNextBlock()
+		confirmedBlock, err := it.GetNextBlock()
 		if err != nil {
 			return []*block.Transaction{}, err
 		}
@@ -122,7 +122,7 @@ func (bc *Blockchain) findUnspentTransactions(address string, revIterator *itera
 			}
 
 			// we skip the coinbase transactions
-			// todo() remove this part, we should ignore genesis block indeed not coinbase tx
+			// todo() we should ignore genesis block
 			if tx.IsCoinbase() {
 				continue
 			}
@@ -138,6 +138,8 @@ func (bc *Blockchain) findUnspentTransactions(address string, revIterator *itera
 			}
 		}
 	}
+
+	// todo() may be worth to output the utxos directly instead of the whole transaction
 
 	// return the list of unspent transactions
 	return unspentTXs, nil
