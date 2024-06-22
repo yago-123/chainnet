@@ -1,8 +1,8 @@
 package hash
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"reflect"
 )
 
 type Sha256 struct {
@@ -18,5 +18,5 @@ func (h *Sha256) Hash(payload []byte) []byte {
 }
 
 func (h *Sha256) Verify(hash []byte, payload []byte) bool {
-	return reflect.DeepEqual(hash, h.Hash(payload))
+	return bytes.Equal(hash, h.Hash(payload))
 }

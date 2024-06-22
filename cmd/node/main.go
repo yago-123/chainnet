@@ -7,6 +7,7 @@ import (
 	iterator "chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/hash"
 	"chainnet/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	// create blockchain
-	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW), bolt)
+	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt)
 
 	// create tx0 and add block
 	tx0, _ := bc.NewCoinbaseTransaction("me", "data")
@@ -68,7 +69,7 @@ func main() {
 		cfg.Logger.Infof("Prev. hash: %x", blk.PrevBlockHash)
 		cfg.Logger.Infof("Num transactions: %d", len(blk.Transactions))
 		cfg.Logger.Infof("Hash: %x", blk.Hash)
-		cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(1).ValidateBlock(blk))
+		cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(1, hash.NewSHA256()).ValidateBlock(blk))
 	}
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
