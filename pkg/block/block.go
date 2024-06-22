@@ -48,5 +48,5 @@ func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 }
 
 func (tx *Transaction) SetID(hash []byte) {
-	tx.ID = hash[:]
+	tx.ID = hash
 }

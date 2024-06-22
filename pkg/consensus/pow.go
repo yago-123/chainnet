@@ -3,7 +3,7 @@ package consensus
 import (
 	"bytes"
 	"chainnet/pkg/block"
-	"chainnet/pkg/hash"
+	"chainnet/pkg/crypto/hash"
 	"errors"
 	"fmt"
 	"math/big"
@@ -34,7 +34,7 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 
 		// todo() recheck this part
 		if hashInt.Cmp(hashDifficulty) == -1 {
-			return hash[:], nonce, nil
+			return hash, nonce, nil
 		}
 
 		nonce++

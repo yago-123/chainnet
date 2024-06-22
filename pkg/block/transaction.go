@@ -1,5 +1,11 @@
 package block
 
+import (
+	"bytes"
+	"chainnet/pkg/crypto/hash"
+	"github.com/btcsuite/btcutil/base58"
+)
+
 const COINBASE_AMOUNT = 50
 
 type Transaction struct {
@@ -11,20 +17,29 @@ type Transaction struct {
 type TxInput struct {
 	Txid      []byte
 	Vout      int
-	ScriptSig string
+	Signature []byte
+	PubKey    []byte
 }
 
-func (in *TxInput) CanUnlockOutputWith(address string) bool {
-	return in.ScriptSig == address
+func (in *TxInput) UsesKey(pubKeyHash []byte, hashing hash.Hashing) bool {
+	lockingHash := hashing.Hash(in.PubKey)
+
+	return bytes.Equal(lockingHash, pubKeyHash)
 }
 
 type TxOutput struct {
-	Amount       int
-	ScriptPubKey string
+	Amount     int
+	PubKeyHash []byte
 }
 
-func (out *TxOutput) CanBeUnlockedWith(address string) bool {
-	return out.ScriptPubKey == address
+func (out *TxOutput) Lock(address []byte) {
+	pubKeyHash := base58.Decode(string(address))
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	out.PubKeyHash = pubKeyHash
+}
+
+func (out *TxOutput) IsLockedWithKey(pubKeyHash []byte) bool {
+	return bytes.Equal(out.PubKeyHash, pubKeyHash)
 }
 
 func (tx *Transaction) IsCoinbase() bool {
