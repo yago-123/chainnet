@@ -3,7 +3,7 @@ package consensus
 import (
 	"bytes"
 	"chainnet/pkg/block"
-	"chainnet/pkg/hash"
+	"chainnet/pkg/crypto/hash"
 	"errors"
 	"fmt"
 	"math/big"
