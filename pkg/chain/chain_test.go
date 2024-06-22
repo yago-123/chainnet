@@ -189,10 +189,10 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 			},
 		},
 		[]block.TxOutput{
-			{Amount: 1, ScriptPubKey: "address2"},
 			{Amount: 2, ScriptPubKey: "address3"},
 			{Amount: 3, ScriptPubKey: "address4"},
 			{Amount: 44, ScriptPubKey: "address5"},
+			{Amount: 1, ScriptPubKey: "address2"},
 		})
 	regularTx.SetID([]byte("regular-transaction-block-2-id"))
 	block2 := block.NewBlock([]*block.Transaction{coinbaseTx2, regularTx}, block1.Hash)
@@ -205,12 +205,12 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 		[]block.TxInput{
 			{
 				Txid:      []byte("regular-transaction-block-2-id"),
-				Vout:      2,
+				Vout:      1,
 				ScriptSig: "address4",
 			},
 			{
 				Txid:      []byte("regular-transaction-block-2-id"),
-				Vout:      3,
+				Vout:      2,
 				ScriptSig: "address5",
 			},
 		},
@@ -221,32 +221,56 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 		},
 	)
 	regularTx2.SetID([]byte("regular-transaction-block-3-id"))
-	block3 := block.NewBlock([]*block.Transaction{coinbaseTx3, regularTx2}, block2.Hash)
+	regularTx3 := block.NewTransaction(
+		[]block.TxInput{
+			{
+				Txid:      []byte("regular-transaction-block-2-id"),
+				Vout:      0,
+				ScriptSig: "address3",
+			},
+		},
+		[]block.TxOutput{
+			{Amount: 1, ScriptPubKey: "address6"},
+			{Amount: 1, ScriptPubKey: "address3"},
+		},
+	)
+	regularTx3.SetID([]byte("regular-transaction-2-block-3-id"))
+	block3 := block.NewBlock([]*block.Transaction{coinbaseTx3, regularTx2, regularTx3}, block2.Hash)
 	block3.SetHashAndNonce([]byte("block-hash-3"), 1)
+
+	// set up block 4 with one coinbase transaction
+	coinbaseTx4 := block.NewCoinbaseTransaction("address7", "data")
+	coinbaseTx4.SetID([]byte("coinbase-transaction-block-4-id"))
+	block4 := block.NewBlock([]*block.Transaction{coinbaseTx4}, block3.Hash)
+	block4.SetHashAndNonce([]byte("block-hash-4"), 1)
 
 	bc := NewBlockchain(
 		config.NewConfig(logrus.New(), 1, 1, ""),
 		&mockConsensus.MockConsensus{},
 		&mockStorage.MockStorage{},
 	)
-	bc.lastBlockHash = []byte("block-hash-3")
+	bc.lastBlockHash = []byte("block-hash-4")
 
 	restartedMockIterator := func() iterator.Iterator {
 		reverseIterator := &mockIterator.MockIterator{}
 
 		reverseIterator.
-			On("Initialize", []byte("block-hash-3")).
+			On("Initialize", []byte("block-hash-4")).
 			Return(nil)
 
 		reverseIterator.
 			On("HasNext").
 			Return(true).
-			Times(4)
+			Times(5)
 		reverseIterator.
 			On("HasNext").
 			Return(false).
 			Once()
 
+		reverseIterator.
+			On("GetNextBlock").
+			Return(block4, nil).
+			Once()
 		reverseIterator.
 			On("GetNextBlock").
 			Return(block3, nil).
@@ -281,7 +305,7 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
-	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
+	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
 
 	txs, err = bc.findUnspentTransactions("address4", restartedMockIterator())
 	assert.NoError(t, err)
@@ -291,6 +315,16 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	txs, err = bc.findUnspentTransactions("address5", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
+
+	txs, err = bc.findUnspentTransactions("address6", restartedMockIterator())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(txs))
+	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
+
+	txs, err = bc.findUnspentTransactions("address7", restartedMockIterator())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(txs))
+	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
 
 }
 

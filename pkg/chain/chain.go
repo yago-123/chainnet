@@ -121,8 +121,7 @@ func (bc *Blockchain) findUnspentTransactions(address string, it iterator.Iterat
 				}
 			}
 
-			// we skip the coinbase transactions
-			// todo() we should ignore genesis block
+			// we skip the coinbase transactions inputs
 			if tx.IsCoinbase() {
 				continue
 			}
