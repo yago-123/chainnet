@@ -13,16 +13,16 @@ type Wallet struct {
 	version    []byte
 }
 
-func NewWallet(version []byte, signature sign.Signature) *Wallet {
+func NewWallet(version []byte, signature sign.Signature) (*Wallet, error) {
 	privateKey, publicKey, err := signature.NewKeyPair()
 	if err != nil {
-
+		return nil, err
 	}
 
 	// todo() this should be passed by argument in NewWallet
 	multiHash, err := hash.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
-
+		return nil, err
 	}
 
 	return &Wallet{
@@ -30,7 +30,7 @@ func NewWallet(version []byte, signature sign.Signature) *Wallet {
 		PublicKey:  publicKey,
 		hasher:     multiHash,
 		version:    version,
-	}
+	}, nil
 }
 
 // GetAddress returns one wallet address
