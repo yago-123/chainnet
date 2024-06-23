@@ -5,7 +5,6 @@ import (
 	"chainnet/pkg/block"
 	"chainnet/pkg/crypto/hash"
 	"errors"
-	"fmt"
 	"math/big"
 )
 
@@ -28,8 +27,9 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 	maxNonce := ^uint(0)
 	nonce := uint(0)
 
+	txsID := pow.hashTransactionIDs(b.Transactions)
 	for nonce < maxNonce {
-		data := pow.assembleProofBlock(b, nonce)
+		data := b.Assemble(nonce, txsID)
 		hash = pow.hashing.Hash(data)
 
 		// todo() recheck this part
@@ -44,52 +44,20 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 }
 
 func (pow *ProofOfWork) ValidateBlock(b *block.Block) bool {
-	data := pow.assembleProofBlock(b, b.Nonce)
-
+	data := b.Assemble(b.Nonce, pow.hashTransactionIDs(b.Transactions))
 	// todo() add more validations
 
 	return pow.hashing.Verify(b.Hash, data)
 }
 
 func (pow *ProofOfWork) ValidateTx(tx *block.Transaction) bool {
-	data := pow.assembleProofTx(tx)
-
+	data := tx.Assemble()
 	return pow.hashing.Verify(tx.ID, data)
 }
 
 func (pow *ProofOfWork) CalculateTxHash(tx *block.Transaction) ([]byte, error) {
-	data := pow.assembleProofTx(tx)
-
+	data := tx.Assemble()
 	return pow.hashing.Hash(data), nil
-}
-
-func (pow *ProofOfWork) assembleProofBlock(b *block.Block, nonce uint) []byte {
-	data := [][]byte{
-		b.PrevBlockHash,
-		pow.hashTransactionIDs(b.Transactions),
-		[]byte(fmt.Sprintf("%d", b.Target)),
-		[]byte(fmt.Sprintf("%d", b.Timestamp)),
-		[]byte(fmt.Sprintf("%d", nonce)),
-	}
-
-	return bytes.Join(data, []byte{})
-}
-
-func (pow *ProofOfWork) assembleProofTx(tx *block.Transaction) []byte {
-	var data []byte
-
-	for _, input := range tx.Vin {
-		data = append(data, input.Txid...)
-		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
-		data = append(data, []byte(input.ScriptSig)...)
-	}
-
-	for _, output := range tx.Vout {
-		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
-		data = append(data, []byte(output.ScriptPubKey)...)
-	}
-
-	return data
 }
 
 func (pow *ProofOfWork) hashTransactionIDs(transactions []*block.Transaction) []byte {

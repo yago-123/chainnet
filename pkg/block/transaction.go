@@ -1,6 +1,9 @@
 package block
 
-import "chainnet/pkg/script"
+import (
+	"chainnet/pkg/script"
+	"fmt"
+)
 
 // COINBASE_AMOUNT represents the reward for mining a block
 const COINBASE_AMOUNT = 50
@@ -17,6 +20,40 @@ type Transaction struct {
 	Vout []TxOutput
 
 	// Version, lock time...
+}
+
+func NewCoinbaseTransaction(to string) *Transaction {
+	txin := NewCoinbaseInput()
+	txout := NewCoinbaseOutput(script.P2PK, to)
+
+	return NewTransaction([]TxInput{txin}, []TxOutput{txout})
+}
+
+func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
+	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
+}
+
+func (tx *Transaction) SetID(hash []byte) {
+	tx.ID = hash[:]
+}
+
+func (tx *Transaction) Assemble() []byte {
+	var data []byte
+
+	for _, input := range tx.Vin {
+		data = append(data, input.Txid...)
+		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
+		data = append(data, []byte(input.ScriptSig)...)
+		data = append(data, []byte(input.PubKey)...)
+	}
+
+	for _, output := range tx.Vout {
+		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
+		data = append(data, []byte(output.ScriptPubKey)...)
+		data = append(data, []byte(output.PubKey)...)
+	}
+
+	return data
 }
 
 // TxInput represents the source of the transaction balance
@@ -41,8 +78,8 @@ func NewCoinbaseInput() TxInput {
 }
 
 // NewInput represents the source of the transactions
-func NewInput(txid []byte, Vout uint, ScriptSig string, PubKey string) *TxInput {
-	return &TxInput{
+func NewInput(txid []byte, Vout uint, ScriptSig string, PubKey string) TxInput {
+	return TxInput{
 		Txid:      txid,
 		Vout:      Vout,
 		ScriptSig: ScriptSig,

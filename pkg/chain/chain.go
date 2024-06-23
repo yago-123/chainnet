@@ -223,7 +223,7 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*block.Trans
 		}
 
 		for _, out := range outs {
-			input := block.TxInput{Txid: txID, Vout: out, ScriptSig: from, PubKey: from}
+			input := block.NewInput(txID, out, from, from)
 			inputs = append(inputs, input)
 		}
 	}

@@ -64,7 +64,6 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 	switch scriptType {
 	case P2PK:
 		script = Script{PUB_KEY, OP_CHECKSIG}
-		break
 	}
 
 	// todo() the render will switch to a hex string eventually
@@ -87,7 +86,6 @@ func (s Script) String(pubKey []byte) string {
 			switch element {
 			case PUB_KEY:
 				toRender = string(pubKey)
-				break
 			}
 		}
 

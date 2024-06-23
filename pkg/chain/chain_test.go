@@ -2,8 +2,9 @@ package blockchain
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/block"
+	. "chainnet/pkg/block"
 	"chainnet/pkg/chain/iterator"
+	"chainnet/pkg/script"
 
 	mockIterator "chainnet/tests/mocks/chain/iterator"
 	mockConsensus "chainnet/tests/mocks/consensus"
@@ -21,63 +22,40 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 		&mockStorage.MockStorage{},
 	)
 
-	coinbaseTx := []*block.Transaction{
+	coinbaseTx := []*Transaction{
 		{
 			ID: nil,
-			Vin: []block.TxInput{
-				block.NewCoinbaseInput(),
+			Vin: []TxInput{
+				NewCoinbaseInput(),
 			},
-			Vout: []block.TxOutput{
-				{
-					Amount:       block.COINBASE_AMOUNT,
-					ScriptPubKey: "pubKey",
-				},
+			Vout: []TxOutput{
+				NewCoinbaseOutput(script.P2PK, "pubKey"),
 			},
 		},
 	}
 
-	secondTx := []*block.Transaction{
+	secondTx := []*Transaction{
 		{
 			ID: []byte("second-tx-id"),
-			Vin: []block.TxInput{
-				{
-					Txid:      []byte("random"),
-					Vout:      0,
-					ScriptSig: "random-script-sig",
-				},
+			Vin: []TxInput{
+				NewInput([]byte("random"), 0, "random-script-sig", "random-script-sig"),
 			},
-			Vout: []block.TxOutput{
-				{
-					Amount:       100,
-					ScriptPubKey: "random-pub-key",
-				},
-				{
-					Amount:       200,
-					ScriptPubKey: "random-pub-key-2",
-				},
+			Vout: []TxOutput{
+				NewOutput(100, script.P2PK, "random-pub-key"),
+				NewOutput(200, script.P2PK, "random-script-sig"),
 			},
 		},
 	}
 
-	thirdTx := []*block.Transaction{
+	thirdTx := []*Transaction{
 		{
 			ID: []byte("third-tx-id"),
-			Vin: []block.TxInput{
-				{
-					Txid:      []byte("random"),
-					Vout:      0,
-					ScriptSig: "random-script-sig",
-				},
+			Vin: []TxInput{
+				NewInput([]byte("random"), 0, "random-script-sig", "random-script-sig"),
 			},
-			Vout: []block.TxOutput{
-				{
-					Amount:       101,
-					ScriptPubKey: "random-pub-key-3",
-				},
-				{
-					Amount:       201,
-					ScriptPubKey: "random-pub-key-4",
-				},
+			Vout: []TxOutput{
+				NewOutput(101, script.P2PK, "random-pub-key-3"),
+				NewOutput(201, script.P2PK, "random-pub-key-4"),
 			},
 		},
 	}
@@ -162,82 +140,66 @@ func TestBlockchain_AddBlockWithInvalidTransaction(t *testing.T) {
 
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	// set up genesis block with coinbase transaction
-	coinbaseTx := block.NewCoinbaseTransaction("pubKey-1")
+	coinbaseTx := NewCoinbaseTransaction("pubKey-1")
 	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
-	genesisBlock := block.NewGenesisBlock([]*block.Transaction{coinbaseTx})
+	genesisBlock := NewGenesisBlock([]*Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-block-hash"), 1)
 
 	// set up block 1 with one coinbase transaction
-	coinbaseTx1 := block.NewCoinbaseTransaction("pubKey-2")
+	coinbaseTx1 := NewCoinbaseTransaction("pubKey-2")
 	coinbaseTx1.SetID([]byte("coinbase-transaction-block-1-id"))
-	block1 := block.NewBlock([]*block.Transaction{coinbaseTx1}, genesisBlock.Hash)
+	block1 := NewBlock([]*Transaction{coinbaseTx1}, genesisBlock.Hash)
 	block1.SetHashAndNonce([]byte("block-hash-1"), 1)
 
 	// set up block 2 with one coinbase transaction and one regular transaction
-	coinbaseTx2 := block.NewCoinbaseTransaction("pubKey-3")
+	coinbaseTx2 := NewCoinbaseTransaction("pubKey-3")
 	coinbaseTx2.SetID([]byte("coinbase-transaction-block-2-id"))
-	regularTx := block.NewTransaction(
-		[]block.TxInput{
-			{
-				Txid:   []byte("coinbase-transaction-block-1-id"),
-				Vout:   0,
-				PubKey: "pubKey-2",
-			},
+	regularTx := NewTransaction(
+		[]TxInput{
+			NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2", "pubKey-2"),
 		},
-		[]block.TxOutput{
-			{Amount: 2, PubKey: "pubKey-3"},
-			{Amount: 3, PubKey: "pubKey-4"},
-			{Amount: 44, PubKey: "pubKey-5"},
-			{Amount: 1, PubKey: "pubKey-2"},
+		[]TxOutput{
+			NewOutput(2, script.P2PK, "pubKey-3"),
+			NewOutput(3, script.P2PK, "pubKey-4"),
+			NewOutput(44, script.P2PK, "pubKey-5"),
+			NewOutput(1, script.P2PK, "pubKey-2"),
 		})
 	regularTx.SetID([]byte("regular-transaction-block-2-id"))
-	block2 := block.NewBlock([]*block.Transaction{coinbaseTx2, regularTx}, block1.Hash)
+	block2 := NewBlock([]*Transaction{coinbaseTx2, regularTx}, block1.Hash)
 	block2.SetHashAndNonce([]byte("block-hash-2"), 1)
 
 	// set up block 3 with one coinbase transaction and two regular transactions
-	coinbaseTx3 := block.NewCoinbaseTransaction("pubKey-4")
+	coinbaseTx3 := NewCoinbaseTransaction("pubKey-4")
 	coinbaseTx3.SetID([]byte("coinbase-transaction-block-3-id"))
-	regularTx2 := block.NewTransaction(
-		[]block.TxInput{
-			{
-				Txid:   []byte("regular-transaction-block-2-id"),
-				Vout:   1,
-				PubKey: "pubKey-4",
-			},
-			{
-				Txid:   []byte("regular-transaction-block-2-id"),
-				Vout:   2,
-				PubKey: "pubKey-5",
-			},
+	regularTx2 := NewTransaction(
+		[]TxInput{
+			NewInput([]byte("regular-transaction-block-2-id"), 1, "pubKey-4", "pubKey-4"),
+			NewInput([]byte("regular-transaction-block-2-id"), 2, "pubKey-5", "pubKey-5"),
 		},
-		[]block.TxOutput{
-			{Amount: 4, PubKey: "pubKey-2"},
-			{Amount: 2, PubKey: "pubKey-3"},
-			{Amount: 41, PubKey: "pubKey-4"},
+		[]TxOutput{
+			NewOutput(4, script.P2PK, "pubKey-2"),
+			NewOutput(2, script.P2PK, "pubKey-3"),
+			NewOutput(41, script.P2PK, "pubKey-4"),
 		},
 	)
 	regularTx2.SetID([]byte("regular-transaction-block-3-id"))
-	regularTx3 := block.NewTransaction(
-		[]block.TxInput{
-			{
-				Txid:   []byte("regular-transaction-block-2-id"),
-				Vout:   0,
-				PubKey: "pubKey-3",
-			},
+	regularTx3 := NewTransaction(
+		[]TxInput{
+			NewInput([]byte("regular-transaction-block-2-id"), 0, "pubKey-3", "pubKey-3"),
 		},
-		[]block.TxOutput{
-			{Amount: 1, PubKey: "pubKey-6"},
-			{Amount: 1, PubKey: "pubKey-3"},
+		[]TxOutput{
+			NewOutput(1, script.P2PK, "pubKey-6"),
+			NewOutput(1, script.P2PK, "pubKey-3"),
 		},
 	)
 	regularTx3.SetID([]byte("regular-transaction-2-block-3-id"))
-	block3 := block.NewBlock([]*block.Transaction{coinbaseTx3, regularTx2, regularTx3}, block2.Hash)
+	block3 := NewBlock([]*Transaction{coinbaseTx3, regularTx2, regularTx3}, block2.Hash)
 	block3.SetHashAndNonce([]byte("block-hash-3"), 1)
 
 	// set up block 4 with one coinbase transaction
-	coinbaseTx4 := block.NewCoinbaseTransaction("pubKey-7")
+	coinbaseTx4 := NewCoinbaseTransaction("pubKey-7")
 	coinbaseTx4.SetID([]byte("coinbase-transaction-block-4-id"))
-	block4 := block.NewBlock([]*block.Transaction{coinbaseTx4}, block3.Hash)
+	block4 := NewBlock([]*Transaction{coinbaseTx4}, block3.Hash)
 	block4.SetHashAndNonce([]byte("block-hash-4"), 1)
 
 	bc := NewBlockchain(
@@ -354,10 +316,10 @@ func TestBlockchain_isOutputSpent(t *testing.T) {
 }
 
 func TestBlockchain_retrieveBalanceFrom(t *testing.T) {
-	utxos := []block.TxOutput{
-		{Amount: 1, ScriptPubKey: "random-1"},
-		{Amount: 2, ScriptPubKey: "random-2"},
-		{Amount: 100, ScriptPubKey: "random-3"},
+	utxos := []TxOutput{
+		NewOutput(1, script.P2PK, "random-1"),
+		NewOutput(2, script.P2PK, "random-2"),
+		NewOutput(100, script.P2PK, "random-3"),
 	}
 
 	assert.Equal(t, uint(103), retrieveBalanceFrom(utxos))
