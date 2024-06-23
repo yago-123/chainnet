@@ -16,7 +16,7 @@ func (m *MockSign) NewKeyPair() ([]byte, []byte, error) {
 }
 
 func (m *MockSign) Sign(payload []byte) []byte {
-	return append(payload, []byte("-signed"))
+	return append(payload, []byte("-signed")...)
 }
 
 func (m *MockSign) Verify(signature []byte, payload []byte) bool {
