@@ -29,7 +29,7 @@ func main() {
 	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt)
 
 	// create tx0 and add block
-	tx0, _ := bc.NewCoinbaseTransaction("me", "data")
+	tx0, _ := bc.NewCoinbaseTransaction("me")
 	_, err = bc.AddBlock([]*block.Transaction{tx0})
 	if err != nil {
 		cfg.Logger.Errorf("Failed to add block: %s", err)

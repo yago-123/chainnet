@@ -95,14 +95,19 @@ func (bc *Blockchain) findUnspentTransactions(address string, it iterator.Iterat
 	var unspentTXs []*block.Transaction
 	spentTXOs := make(map[string][]int)
 
-	// Get the blockchain revIterator
+	// get the blockchain revIterator
 	_ = it.Initialize(bc.lastBlockHash)
 
 	for it.HasNext() {
-		// Get the next block using the revIterator
+		// get the next block using the revIterator
 		confirmedBlock, err := it.GetNextBlock()
 		if err != nil {
 			return []*block.Transaction{}, err
+		}
+
+		// skip the genesis block
+		if confirmedBlock.IsGenesisBlock() {
+			continue
 		}
 
 		// iterate through each transaction in the block
@@ -183,8 +188,8 @@ func (bc *Blockchain) FindAmountSpendableOutputs(address string, amount int) (in
 	return accumulated, unspentOutputs, nil
 }
 
-func (bc *Blockchain) NewCoinbaseTransaction(to, data string) (*block.Transaction, error) {
-	tx := block.NewCoinbaseTransaction(to, data)
+func (bc *Blockchain) NewCoinbaseTransaction(to string) (*block.Transaction, error) {
+	tx := block.NewCoinbaseTransaction(to)
 
 	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
@@ -218,16 +223,16 @@ func (bc *Blockchain) NewTransaction(from, to string, amount int) (*block.Transa
 		}
 
 		for _, out := range outs {
-			input := block.TxInput{Txid: txID, Vout: out, ScriptSig: from}
+			input := block.TxInput{Txid: txID, Vout: out, ScriptSig: from, PubKey: from}
 			inputs = append(inputs, input)
 		}
 	}
 
 	// build a list of outputs
-	outputs = append(outputs, block.TxOutput{Amount: amount, ScriptPubKey: to})
+	outputs = append(outputs, block.TxOutput{Amount: amount, ScriptPubKey: to, PubKey: to})
 	// add the spare change in a different transaction
 	if acc > amount {
-		outputs = append(outputs, block.TxOutput{Amount: acc - amount, ScriptPubKey: from}) // a change
+		outputs = append(outputs, block.TxOutput{Amount: acc - amount, ScriptPubKey: from, PubKey: from}) // a change
 	}
 
 	tx := block.NewTransaction(inputs, outputs)
