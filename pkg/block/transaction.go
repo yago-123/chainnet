@@ -12,7 +12,7 @@ type Transaction struct {
 	// Vout are the destination of the funds
 	Vout []TxOutput
 
-	// Version, lock time
+	// Version, lock time...
 }
 
 // TxInput represents the source of the transaction balance

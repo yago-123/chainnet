@@ -166,58 +166,58 @@ func TestBlockchain_AddBlockWithInvalidTransaction(t *testing.T) {
 
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	// set up genesis block with coinbase transaction
-	coinbaseTx := block.NewCoinbaseTransaction("address-1")
+	coinbaseTx := block.NewCoinbaseTransaction("pubKey-1")
 	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
 	genesisBlock := block.NewGenesisBlock([]*block.Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-block-hash"), 1)
 
 	// set up block 1 with one coinbase transaction
-	coinbaseTx1 := block.NewCoinbaseTransaction("address-2")
+	coinbaseTx1 := block.NewCoinbaseTransaction("pubKey-2")
 	coinbaseTx1.SetID([]byte("coinbase-transaction-block-1-id"))
 	block1 := block.NewBlock([]*block.Transaction{coinbaseTx1}, genesisBlock.Hash)
 	block1.SetHashAndNonce([]byte("block-hash-1"), 1)
 
 	// set up block 2 with one coinbase transaction and one regular transaction
-	coinbaseTx2 := block.NewCoinbaseTransaction("address-3")
+	coinbaseTx2 := block.NewCoinbaseTransaction("pubKey-3")
 	coinbaseTx2.SetID([]byte("coinbase-transaction-block-2-id"))
 	regularTx := block.NewTransaction(
 		[]block.TxInput{
 			{
 				Txid:   []byte("coinbase-transaction-block-1-id"),
 				Vout:   0,
-				PubKey: "address-2",
+				PubKey: "pubKey-2",
 			},
 		},
 		[]block.TxOutput{
-			{Amount: 2, PubKey: "address-3"},
-			{Amount: 3, PubKey: "address-4"},
-			{Amount: 44, PubKey: "address-5"},
-			{Amount: 1, PubKey: "address-2"},
+			{Amount: 2, PubKey: "pubKey-3"},
+			{Amount: 3, PubKey: "pubKey-4"},
+			{Amount: 44, PubKey: "pubKey-5"},
+			{Amount: 1, PubKey: "pubKey-2"},
 		})
 	regularTx.SetID([]byte("regular-transaction-block-2-id"))
 	block2 := block.NewBlock([]*block.Transaction{coinbaseTx2, regularTx}, block1.Hash)
 	block2.SetHashAndNonce([]byte("block-hash-2"), 1)
 
 	// set up block 3 with one coinbase transaction and two regular transactions
-	coinbaseTx3 := block.NewCoinbaseTransaction("address-4")
+	coinbaseTx3 := block.NewCoinbaseTransaction("pubKey-4")
 	coinbaseTx3.SetID([]byte("coinbase-transaction-block-3-id"))
 	regularTx2 := block.NewTransaction(
 		[]block.TxInput{
 			{
 				Txid:   []byte("regular-transaction-block-2-id"),
 				Vout:   1,
-				PubKey: "address-4",
+				PubKey: "pubKey-4",
 			},
 			{
 				Txid:   []byte("regular-transaction-block-2-id"),
 				Vout:   2,
-				PubKey: "address-5",
+				PubKey: "pubKey-5",
 			},
 		},
 		[]block.TxOutput{
-			{Amount: 4, PubKey: "address-2"},
-			{Amount: 2, PubKey: "address-3"},
-			{Amount: 41, PubKey: "address-4"},
+			{Amount: 4, PubKey: "pubKey-2"},
+			{Amount: 2, PubKey: "pubKey-3"},
+			{Amount: 41, PubKey: "pubKey-4"},
 		},
 	)
 	regularTx2.SetID([]byte("regular-transaction-block-3-id"))
@@ -226,12 +226,12 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 			{
 				Txid:   []byte("regular-transaction-block-2-id"),
 				Vout:   0,
-				PubKey: "address-3",
+				PubKey: "pubKey-3",
 			},
 		},
 		[]block.TxOutput{
-			{Amount: 1, PubKey: "address-6"},
-			{Amount: 1, PubKey: "address-3"},
+			{Amount: 1, PubKey: "pubKey-6"},
+			{Amount: 1, PubKey: "pubKey-3"},
 		},
 	)
 	regularTx3.SetID([]byte("regular-transaction-2-block-3-id"))
@@ -239,7 +239,7 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	block3.SetHashAndNonce([]byte("block-hash-3"), 1)
 
 	// set up block 4 with one coinbase transaction
-	coinbaseTx4 := block.NewCoinbaseTransaction("address-7")
+	coinbaseTx4 := block.NewCoinbaseTransaction("pubKey-7")
 	coinbaseTx4.SetID([]byte("coinbase-transaction-block-4-id"))
 	block4 := block.NewBlock([]*block.Transaction{coinbaseTx4}, block3.Hash)
 	block4.SetHashAndNonce([]byte("block-hash-4"), 1)
@@ -291,40 +291,39 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 		return reverseIterator
 	}
 
-	// todo() we should be ignoring genesis block outputs
-	txs, err := bc.findUnspentTransactions("address-1", restartedMockIterator())
+	txs, err := bc.findUnspentTransactions("pubKey-1", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
 
-	txs, err = bc.findUnspentTransactions("address-2", restartedMockIterator())
+	txs, err = bc.findUnspentTransactions("pubKey-2", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
 
-	txs, err = bc.findUnspentTransactions("address-3", restartedMockIterator())
+	txs, err = bc.findUnspentTransactions("pubKey-3", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(txs))
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), txs[2].ID)
 
-	txs, err = bc.findUnspentTransactions("address-4", restartedMockIterator())
+	txs, err = bc.findUnspentTransactions("pubKey-4", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(txs[0].ID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(txs[1].ID))
 
-	txs, err = bc.findUnspentTransactions("address-5", restartedMockIterator())
+	txs, err = bc.findUnspentTransactions("pubKey-5", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
 
-	txs, err = bc.findUnspentTransactions("address-6", restartedMockIterator())
+	txs, err = bc.findUnspentTransactions("pubKey-6", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
 
-	txs, err = bc.findUnspentTransactions("address-7", restartedMockIterator())
+	txs, err = bc.findUnspentTransactions("pubKey-7", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
