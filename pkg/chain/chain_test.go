@@ -25,11 +25,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 		{
 			ID: nil,
 			Vin: []block.TxInput{
-				{
-					Txid:      []byte{},
-					Vout:      -1,
-					ScriptSig: "randomSig",
-				},
+				block.NewCoinbaseInput(),
 			},
 			Vout: []block.TxOutput{
 				{
@@ -341,11 +337,11 @@ func TestBlockchain_FindUTXO(t *testing.T) {
 /////
 
 func TestBlockchain_isOutputSpent(t *testing.T) {
-	spentTXOs := make(map[string][]int)
+	spentTXOs := make(map[string][]uint)
 
-	spentTXOs["tx-spent-1"] = []int{0, 1}
-	spentTXOs["tx-spent-2"] = []int{0}
-	spentTXOs["tx-spent-3"] = []int{3}
+	spentTXOs["tx-spent-1"] = []uint{0, 1}
+	spentTXOs["tx-spent-2"] = []uint{0}
+	spentTXOs["tx-spent-3"] = []uint{3}
 
 	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-1", 0))
 	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-1", 1))
@@ -364,5 +360,5 @@ func TestBlockchain_retrieveBalanceFrom(t *testing.T) {
 		{Amount: 100, ScriptPubKey: "random-3"},
 	}
 
-	assert.Equal(t, 103, retrieveBalanceFrom(utxos))
+	assert.Equal(t, uint(103), retrieveBalanceFrom(utxos))
 }

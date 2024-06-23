@@ -36,7 +36,7 @@ func (block *Block) IsGenesisBlock() bool {
 
 // todo() make coinbase transaction change amount based on block height
 func NewCoinbaseTransaction(to string) *Transaction {
-	txin := TxInput{Txid: []byte{}, Vout: -1, ScriptSig: "", PubKey: ""}
+	txin := TxInput{}
 	txout := TxOutput{Amount: COINBASE_AMOUNT, ScriptPubKey: to, PubKey: to}
 	tx := Transaction{ID: nil, Vin: []TxInput{txin}, Vout: []TxOutput{txout}}
 
