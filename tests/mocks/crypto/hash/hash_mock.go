@@ -1,17 +1,17 @@
 package hash
 
-import "github.com/stretchr/testify/mock"
+import (
+	"bytes"
+)
 
+// MockHashing adds "-hashed" to the payload provided so the hash can be predictable during tests
 type MockHashing struct {
-	mock.Mock
 }
 
 func (mh *MockHashing) Hash(payload []byte) []byte {
-	args := mh.Called(payload)
-	return args.Get(0).([]byte)
+	return append(payload, []byte("-hashed")...)
 }
 
 func (mh *MockHashing) Verify(hash []byte, payload []byte) bool {
-	args := mh.Called(hash, payload)
-	return args.Bool(0)
+	return bytes.Equal(hash, mh.Hash(payload))
 }

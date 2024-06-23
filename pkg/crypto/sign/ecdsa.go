@@ -26,10 +26,10 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 	return private.D.Bytes(), pubKey, nil
 }
 
-func (ecdsaSign *ECDSASigner) Sign([]byte) ([]byte, error) {
-	return []byte{}, nil
+func (ecdsaSign *ECDSASigner) Sign(payload []byte) []byte {
+	return []byte{}
 }
 
-func (ecdsaSign *ECDSASigner) Verify([]byte, []byte) error {
-	return nil
+func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte) bool {
+	return false
 }
