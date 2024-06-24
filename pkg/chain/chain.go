@@ -5,6 +5,7 @@ import (
 	"chainnet/pkg/block"
 	"chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
 	"encoding/hex"
 	"fmt"
@@ -229,10 +230,11 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*block.Trans
 	}
 
 	// build a list of outputs
-	outputs = append(outputs, block.TxOutput{Amount: amount, ScriptPubKey: to, PubKey: to})
+	outputs = append(outputs, block.NewOutput(amount, script.P2PK, to))
+
 	// add the spare change in a different transaction
 	if acc > amount {
-		outputs = append(outputs, block.TxOutput{Amount: acc - amount, ScriptPubKey: from, PubKey: from}) // a change
+		outputs = append(outputs, block.NewOutput(acc-amount, script.P2PK, from))
 	}
 
 	tx := block.NewTransaction(inputs, outputs)
