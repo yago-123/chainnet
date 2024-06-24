@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"chainnet/pkg/crypto"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	base58 "github.com/btcsuite/btcutil/base58"
@@ -20,7 +21,7 @@ func NewWallet(version []byte, signature sign.Signature) (*Wallet, error) {
 	}
 
 	// todo() this should be passed by argument in NewWallet
-	multiHash, err := hash.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+	multiHash, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
 		return nil, err
 	}
