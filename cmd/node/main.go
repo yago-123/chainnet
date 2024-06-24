@@ -2,12 +2,12 @@ package main
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/block"
 	blockchain "chainnet/pkg/chain"
 	iterator "chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -28,31 +28,31 @@ func main() {
 	// create blockchain
 	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt)
 
-	// create tx0 and add block
+	// create tx0 and add kernel
 	tx0, _ := bc.NewCoinbaseTransaction("me")
-	_, err = bc.AddBlock([]*block.Transaction{tx0})
+	_, err = bc.AddBlock([]*kernel.Transaction{tx0})
 	if err != nil {
-		cfg.Logger.Errorf("Failed to add block: %s", err)
+		cfg.Logger.Errorf("Failed to add kernel: %s", err)
 	}
 
-	// create tx1 and add block
+	// create tx1 and add kernel
 	tx1, err := bc.NewTransaction("me", "you", 10)
 	if err != nil {
 		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
 	}
-	_, err = bc.AddBlock([]*block.Transaction{tx1})
+	_, err = bc.AddBlock([]*kernel.Transaction{tx1})
 	if err != nil {
-		cfg.Logger.Errorf("Failed to add block: %s", err)
+		cfg.Logger.Errorf("Failed to add kernel: %s", err)
 	}
 
-	// create tx2 and add block
+	// create tx2 and add kernel
 	tx2, err := bc.NewTransaction("me", "you", 20)
 	if err != nil {
 		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
 	}
-	_, err = bc.AddBlock([]*block.Transaction{tx2})
+	_, err = bc.AddBlock([]*kernel.Transaction{tx2})
 	if err != nil {
-		cfg.Logger.Errorf("Failed to add block: %s", err)
+		cfg.Logger.Errorf("Failed to add kernel: %s", err)
 	}
 
 	// Iterate through blocks
@@ -62,7 +62,7 @@ func main() {
 	for reverseIterator.HasNext() {
 		blk, err := reverseIterator.GetNextBlock()
 		if err != nil {
-			cfg.Logger.Panicf("Error getting block: %s", err)
+			cfg.Logger.Panicf("Error getting kernel: %s", err)
 		}
 
 		cfg.Logger.Infof("----------------------")

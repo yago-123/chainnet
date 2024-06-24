@@ -2,8 +2,8 @@ package blockchain
 
 import (
 	"chainnet/config"
-	. "chainnet/pkg/block"
 	"chainnet/pkg/chain/iterator"
+	. "chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 
 	mockIterator "chainnet/tests/mocks/chain/iterator"
@@ -69,65 +69,65 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 		Return(nil)
 	bc.consensus.(*mockConsensus.MockConsensus).
 		On("CalculateBlockHash", mockUtil.MatchByPreviousBlockPointer([]byte{})).
-		Return([]byte("genesis-block-hash"), uint(1), nil)
+		Return([]byte("genesis-kernel-hash"), uint(1), nil)
 
-	// add genesis block
+	// add genesis kernel
 	blockAdded, err := bc.AddBlock(coinbaseTx)
 
 	// check that the blockAdded has been added correctly
 	assert.Equal(t, nil, err, "errors while adding genesis blockAdded")
 	assert.Equal(t, 0, len(blockAdded.PrevBlockHash), "genesis blockAdded contains previous blockAdded hash when it shouldn't")
-	assert.Equal(t, []byte("genesis-block-hash"), blockAdded.Hash, "blockAdded hash incorrect")
+	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
-	assert.Equal(t, []byte("genesis-block-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
+	assert.Equal(t, []byte("genesis-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
 	assert.Equal(t, 1, len(bc.Chain), "blockchain chain length not updated")
-	assert.Equal(t, "genesis-block-hash", bc.Chain[0], "blockchain chain not updated with new blockAdded hash")
+	assert.Equal(t, "genesis-kernel-hash", bc.Chain[0], "blockchain chain not updated with new blockAdded hash")
 
 	// setup the return values for the internal AddBlock calls
 	bc.storage.(*mockStorage.MockStorage).
 		On("NumberOfBlocks").
 		Return(uint(1), nil).Once()
 	bc.storage.(*mockStorage.MockStorage).
-		On("PersistBlock", mockUtil.MatchByPreviousBlock([]byte("genesis-block-hash"))).
+		On("PersistBlock", mockUtil.MatchByPreviousBlock([]byte("genesis-kernel-hash"))).
 		Return(nil)
 	bc.consensus.(*mockConsensus.MockConsensus).
-		On("CalculateBlockHash", mockUtil.MatchByPreviousBlockPointer([]byte("genesis-block-hash"))).
-		Return([]byte("second-block-hash"), uint(1), nil)
+		On("CalculateBlockHash", mockUtil.MatchByPreviousBlockPointer([]byte("genesis-kernel-hash"))).
+		Return([]byte("second-kernel-hash"), uint(1), nil)
 
-	// add another block
+	// add another kernel
 	blockAdded, err = bc.AddBlock(secondTx)
 
 	// check that the blockAdded has been added correctly
 	assert.Equal(t, nil, err, "errors while adding genesis blockAdded")
-	assert.Equal(t, []byte("genesis-block-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
-	assert.Equal(t, []byte("second-block-hash"), blockAdded.Hash, "blockAdded hash incorrect")
+	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
+	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
-	assert.Equal(t, []byte("second-block-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
+	assert.Equal(t, []byte("second-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
 	assert.Equal(t, 2, len(bc.Chain), "blockchain chain length not updated")
-	assert.Equal(t, "second-block-hash", bc.Chain[1], "blockchain chain not updated with new blockAdded hash")
+	assert.Equal(t, "second-kernel-hash", bc.Chain[1], "blockchain chain not updated with new blockAdded hash")
 
 	// setup the return values for the internal AddBlock calls
 	bc.storage.(*mockStorage.MockStorage).
 		On("NumberOfBlocks").
 		Return(uint(2), nil).Once()
 	bc.storage.(*mockStorage.MockStorage).
-		On("PersistBlock", mockUtil.MatchByPreviousBlock([]byte("second-block-hash"))).
+		On("PersistBlock", mockUtil.MatchByPreviousBlock([]byte("second-kernel-hash"))).
 		Return(nil)
 	bc.consensus.(*mockConsensus.MockConsensus).
-		On("CalculateBlockHash", mockUtil.MatchByPreviousBlockPointer([]byte("second-block-hash"))).
-		Return([]byte("third-block-hash"), uint(1), nil)
+		On("CalculateBlockHash", mockUtil.MatchByPreviousBlockPointer([]byte("second-kernel-hash"))).
+		Return([]byte("third-kernel-hash"), uint(1), nil)
 
-	// add another block
+	// add another kernel
 	blockAdded, err = bc.AddBlock(thirdTx)
 
 	// check that the blockAdded has been added correctly
 	assert.Equal(t, nil, err, "errors while adding genesis blockAdded")
-	assert.Equal(t, []byte("second-block-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
-	assert.Equal(t, []byte("third-block-hash"), blockAdded.Hash, "blockAdded hash incorrect")
+	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
+	assert.Equal(t, []byte("third-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
-	assert.Equal(t, []byte("third-block-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
+	assert.Equal(t, []byte("third-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
 	assert.Equal(t, 3, len(bc.Chain), "blockchain chain length not updated")
-	assert.Equal(t, "third-block-hash", bc.Chain[2], "blockchain chain not updated with new blockAdded hash")
+	assert.Equal(t, "third-kernel-hash", bc.Chain[2], "blockchain chain not updated with new blockAdded hash")
 }
 
 func TestBlockchain_AddBlockWithErrors(t *testing.T) {
@@ -139,24 +139,24 @@ func TestBlockchain_AddBlockWithInvalidTransaction(t *testing.T) {
 }
 
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
-	// set up genesis block with coinbase transaction
+	// set up genesis kernel with coinbase transaction
 	coinbaseTx := NewCoinbaseTransaction("pubKey-1")
 	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
 	genesisBlock := NewGenesisBlock([]*Transaction{coinbaseTx})
-	genesisBlock.SetHashAndNonce([]byte("genesis-block-hash"), 1)
+	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
 
-	// set up block 1 with one coinbase transaction
+	// set up kernel 1 with one coinbase transaction
 	coinbaseTx1 := NewCoinbaseTransaction("pubKey-2")
-	coinbaseTx1.SetID([]byte("coinbase-transaction-block-1-id"))
+	coinbaseTx1.SetID([]byte("coinbase-transaction-kernel-1-id"))
 	block1 := NewBlock([]*Transaction{coinbaseTx1}, genesisBlock.Hash)
-	block1.SetHashAndNonce([]byte("block-hash-1"), 1)
+	block1.SetHashAndNonce([]byte("kernel-hash-1"), 1)
 
-	// set up block 2 with one coinbase transaction and one regular transaction
+	// set up kernel 2 with one coinbase transaction and one regular transaction
 	coinbaseTx2 := NewCoinbaseTransaction("pubKey-3")
-	coinbaseTx2.SetID([]byte("coinbase-transaction-block-2-id"))
+	coinbaseTx2.SetID([]byte("coinbase-transaction-kernel-2-id"))
 	regularTx := NewTransaction(
 		[]TxInput{
-			NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2", "pubKey-2"),
+			NewInput([]byte("coinbase-transaction-kernel-1-id"), 0, "pubKey-2", "pubKey-2"),
 		},
 		[]TxOutput{
 			NewOutput(2, script.P2PK, "pubKey-3"),
@@ -164,17 +164,17 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 			NewOutput(44, script.P2PK, "pubKey-5"),
 			NewOutput(1, script.P2PK, "pubKey-2"),
 		})
-	regularTx.SetID([]byte("regular-transaction-block-2-id"))
+	regularTx.SetID([]byte("regular-transaction-kernel-2-id"))
 	block2 := NewBlock([]*Transaction{coinbaseTx2, regularTx}, block1.Hash)
-	block2.SetHashAndNonce([]byte("block-hash-2"), 1)
+	block2.SetHashAndNonce([]byte("kernel-hash-2"), 1)
 
-	// set up block 3 with one coinbase transaction and two regular transactions
+	// set up kernel 3 with one coinbase transaction and two regular transactions
 	coinbaseTx3 := NewCoinbaseTransaction("pubKey-4")
-	coinbaseTx3.SetID([]byte("coinbase-transaction-block-3-id"))
+	coinbaseTx3.SetID([]byte("coinbase-transaction-kernel-3-id"))
 	regularTx2 := NewTransaction(
 		[]TxInput{
-			NewInput([]byte("regular-transaction-block-2-id"), 1, "pubKey-4", "pubKey-4"),
-			NewInput([]byte("regular-transaction-block-2-id"), 2, "pubKey-5", "pubKey-5"),
+			NewInput([]byte("regular-transaction-kernel-2-id"), 1, "pubKey-4", "pubKey-4"),
+			NewInput([]byte("regular-transaction-kernel-2-id"), 2, "pubKey-5", "pubKey-5"),
 		},
 		[]TxOutput{
 			NewOutput(4, script.P2PK, "pubKey-2"),
@@ -182,38 +182,38 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 			NewOutput(41, script.P2PK, "pubKey-4"),
 		},
 	)
-	regularTx2.SetID([]byte("regular-transaction-block-3-id"))
+	regularTx2.SetID([]byte("regular-transaction-kernel-3-id"))
 	regularTx3 := NewTransaction(
 		[]TxInput{
-			NewInput([]byte("regular-transaction-block-2-id"), 0, "pubKey-3", "pubKey-3"),
+			NewInput([]byte("regular-transaction-kernel-2-id"), 0, "pubKey-3", "pubKey-3"),
 		},
 		[]TxOutput{
 			NewOutput(1, script.P2PK, "pubKey-6"),
 			NewOutput(1, script.P2PK, "pubKey-3"),
 		},
 	)
-	regularTx3.SetID([]byte("regular-transaction-2-block-3-id"))
+	regularTx3.SetID([]byte("regular-transaction-2-kernel-3-id"))
 	block3 := NewBlock([]*Transaction{coinbaseTx3, regularTx2, regularTx3}, block2.Hash)
-	block3.SetHashAndNonce([]byte("block-hash-3"), 1)
+	block3.SetHashAndNonce([]byte("kernel-hash-3"), 1)
 
-	// set up block 4 with one coinbase transaction
+	// set up kernel 4 with one coinbase transaction
 	coinbaseTx4 := NewCoinbaseTransaction("pubKey-7")
-	coinbaseTx4.SetID([]byte("coinbase-transaction-block-4-id"))
+	coinbaseTx4.SetID([]byte("coinbase-transaction-kernel-4-id"))
 	block4 := NewBlock([]*Transaction{coinbaseTx4}, block3.Hash)
-	block4.SetHashAndNonce([]byte("block-hash-4"), 1)
+	block4.SetHashAndNonce([]byte("kernel-hash-4"), 1)
 
 	bc := NewBlockchain(
 		config.NewConfig(logrus.New(), 1, 1, ""),
 		&mockConsensus.MockConsensus{},
 		&mockStorage.MockStorage{},
 	)
-	bc.lastBlockHash = []byte("block-hash-4")
+	bc.lastBlockHash = []byte("kernel-hash-4")
 
 	restartedMockIterator := func() iterator.Iterator {
 		reverseIterator := &mockIterator.MockIterator{}
 
 		reverseIterator.
-			On("Initialize", []byte("block-hash-4")).
+			On("Initialize", []byte("kernel-hash-4")).
 			Return(nil)
 
 		reverseIterator.
@@ -256,21 +256,21 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	txs, err = bc.findUnspentTransactions("pubKey-2", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
-	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
-	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
+	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
+	assert.Equal(t, []byte("regular-transaction-kernel-2-id"), txs[1].ID)
 
 	txs, err = bc.findUnspentTransactions("pubKey-3", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(txs))
-	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
-	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
-	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), txs[2].ID)
+	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
+	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[1].ID)
+	assert.Equal(t, []byte("coinbase-transaction-kernel-2-id"), txs[2].ID)
 
 	txs, err = bc.findUnspentTransactions("pubKey-4", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
-	assert.Equal(t, "coinbase-transaction-block-3-id", string(txs[0].ID))
-	assert.Equal(t, "regular-transaction-block-3-id", string(txs[1].ID))
+	assert.Equal(t, "coinbase-transaction-kernel-3-id", string(txs[0].ID))
+	assert.Equal(t, "regular-transaction-kernel-3-id", string(txs[1].ID))
 
 	txs, err = bc.findUnspentTransactions("pubKey-5", restartedMockIterator())
 	assert.NoError(t, err)
@@ -279,12 +279,12 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	txs, err = bc.findUnspentTransactions("pubKey-6", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
-	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
+	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[0].ID)
 
 	txs, err = bc.findUnspentTransactions("pubKey-7", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
-	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
+	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), txs[0].ID)
 
 }
 

@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"bytes"
-	"chainnet/pkg/block"
 	"chainnet/pkg/crypto/hash"
+	"chainnet/pkg/kernel"
 	"errors"
 	"math/big"
 )
@@ -17,7 +17,7 @@ func NewProofOfWork(target uint, hashing hash.Hashing) *ProofOfWork {
 	return &ProofOfWork{target: target, hashing: hashing}
 }
 
-func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error) {
+func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error) {
 	var hashInt big.Int
 	var hash []byte
 
@@ -40,27 +40,27 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 		nonce++
 	}
 
-	return []byte{}, 0, errors.New("could not find hash for block")
+	return []byte{}, 0, errors.New("could not find hash for kernel")
 }
 
-func (pow *ProofOfWork) ValidateBlock(b *block.Block) bool {
+func (pow *ProofOfWork) ValidateBlock(b *kernel.Block) bool {
 	data := b.Assemble(b.Nonce, pow.hashTransactionIDs(b.Transactions))
 	// todo() add more validations
 
 	return pow.hashing.Verify(b.Hash, data)
 }
 
-func (pow *ProofOfWork) ValidateTx(tx *block.Transaction) bool {
+func (pow *ProofOfWork) ValidateTx(tx *kernel.Transaction) bool {
 	data := tx.Assemble()
 	return pow.hashing.Verify(tx.ID, data)
 }
 
-func (pow *ProofOfWork) CalculateTxHash(tx *block.Transaction) ([]byte, error) {
+func (pow *ProofOfWork) CalculateTxHash(tx *kernel.Transaction) ([]byte, error) {
 	data := tx.Assemble()
 	return pow.hashing.Hash(data), nil
 }
 
-func (pow *ProofOfWork) hashTransactionIDs(transactions []*block.Transaction) []byte {
+func (pow *ProofOfWork) hashTransactionIDs(transactions []*kernel.Transaction) []byte {
 	var txHashes [][]byte
 
 	for _, tx := range transactions {

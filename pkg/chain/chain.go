@@ -2,9 +2,9 @@ package blockchain
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/block"
 	"chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
 	"encoding/hex"
@@ -39,29 +39,29 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistenc
 	return bc
 }
 
-// AddBlock takes transactions and creates a new block, then it calculates the hash and nonce for the block
-// and persists it in the storage. It also updates the last block hash and the chain
-func (bc *Blockchain) AddBlock(transactions []*block.Transaction) (*block.Block, error) {
-	var newBlock *block.Block
+// AddBlock takes transactions and creates a new kernel, then it calculates the hash and nonce for the kernel
+// and persists it in the storage. It also updates the last kernel hash and the chain
+func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Block, error) {
+	var newBlock *kernel.Block
 
 	numBlocks, err := bc.storage.NumberOfBlocks()
 	if err != nil {
-		return &block.Block{}, err
+		return &kernel.Block{}, err
 	}
 
-	// if no blocks exist, create genesis block
+	// if no blocks exist, create genesis kernel
 	if numBlocks == 0 {
-		newBlock = block.NewGenesisBlock(transactions)
+		newBlock = kernel.NewGenesisBlock(transactions)
 	}
 
-	// if blocks exist, create new block tied to the previous
+	// if blocks exist, create new kernel tied to the previous
 	if numBlocks > 0 {
-		newBlock = block.NewBlock(transactions, bc.lastBlockHash)
+		newBlock = kernel.NewBlock(transactions, bc.lastBlockHash)
 	}
 
 	newBlock.Target = bc.cfg.DifficultyPoW
 
-	// calculate hash and nonce for the block
+	// calculate hash and nonce for the kernel
 	// todo() not really a very good approach, clear it or split in more funcs: Mine for example
 	for {
 		newBlock.Timestamp = time.Now().Unix()
@@ -73,10 +73,10 @@ func (bc *Blockchain) AddBlock(transactions []*block.Transaction) (*block.Block,
 		}
 	}
 
-	// persist block and update information
+	// persist kernel and update information
 	err = bc.storage.PersistBlock(*newBlock)
 	if err != nil {
-		return &block.Block{}, err
+		return &kernel.Block{}, err
 	}
 
 	bc.lastBlockHash = newBlock.Hash
@@ -85,33 +85,33 @@ func (bc *Blockchain) AddBlock(transactions []*block.Transaction) (*block.Block,
 	return newBlock, nil
 }
 
-func (bc *Blockchain) FindUnspentTransactions(address string) ([]*block.Transaction, error) {
+func (bc *Blockchain) FindUnspentTransactions(address string) ([]*kernel.Transaction, error) {
 	return bc.findUnspentTransactions(address, iterator.NewReverseIterator(bc.storage))
 }
 
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
-func (bc *Blockchain) findUnspentTransactions(address string, it iterator.Iterator) ([]*block.Transaction, error) {
-	var unspentTXs []*block.Transaction
+func (bc *Blockchain) findUnspentTransactions(address string, it iterator.Iterator) ([]*kernel.Transaction, error) {
+	var unspentTXs []*kernel.Transaction
 	spentTXOs := make(map[string][]uint)
 
 	// get the blockchain revIterator
 	_ = it.Initialize(bc.lastBlockHash)
 
 	for it.HasNext() {
-		// get the next block using the revIterator
+		// get the next kernel using the revIterator
 		confirmedBlock, err := it.GetNextBlock()
 		if err != nil {
-			return []*block.Transaction{}, err
+			return []*kernel.Transaction{}, err
 		}
 
-		// skip the genesis block
+		// skip the genesis kernel
 		if confirmedBlock.IsGenesisBlock() {
 			continue
 		}
 
-		// iterate through each transaction in the block
+		// iterate through each transaction in the kernel
 		for _, tx := range confirmedBlock.Transactions {
 			txID := hex.EncodeToString(tx.ID)
 
@@ -189,8 +189,8 @@ func (bc *Blockchain) FindAmountSpendableOutputs(address string, amount uint) (u
 	return accumulated, unspentOutputs, nil
 }
 
-func (bc *Blockchain) NewCoinbaseTransaction(to string) (*block.Transaction, error) {
-	tx := block.NewCoinbaseTransaction(to)
+func (bc *Blockchain) NewCoinbaseTransaction(to string) (*kernel.Transaction, error) {
+	tx := kernel.NewCoinbaseTransaction(to)
 
 	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
@@ -202,17 +202,17 @@ func (bc *Blockchain) NewCoinbaseTransaction(to string) (*block.Transaction, err
 	return tx, nil
 }
 
-func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*block.Transaction, error) {
-	var inputs []block.TxInput
-	var outputs []block.TxOutput
+func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Transaction, error) {
+	var inputs []kernel.TxInput
+	var outputs []kernel.TxOutput
 
 	acc, validOutputs, err := bc.FindAmountSpendableOutputs(from, amount)
 	if err != nil {
-		return &block.Transaction{}, err
+		return &kernel.Transaction{}, err
 	}
 
 	if acc < amount {
-		return &block.Transaction{}, fmt.Errorf("not enough funds for transaction from %s, expected tx amount: %d, actual balance: %d", from, amount, acc)
+		return &kernel.Transaction{}, fmt.Errorf("not enough funds for transaction from %s, expected tx amount: %d, actual balance: %d", from, amount, acc)
 	}
 
 	// build a list of inputs
@@ -220,28 +220,28 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*block.Trans
 	for txid, outs := range validOutputs {
 		txID, err := hex.DecodeString(txid)
 		if err != nil {
-			return &block.Transaction{}, err
+			return &kernel.Transaction{}, err
 		}
 
 		for _, out := range outs {
-			input := block.NewInput(txID, out, from, from)
+			input := kernel.NewInput(txID, out, from, from)
 			inputs = append(inputs, input)
 		}
 	}
 
 	// build a list of outputs
-	outputs = append(outputs, block.NewOutput(amount, script.P2PK, to))
+	outputs = append(outputs, kernel.NewOutput(amount, script.P2PK, to))
 
 	// add the spare change in a different transaction
 	if acc > amount {
-		outputs = append(outputs, block.NewOutput(acc-amount, script.P2PK, from))
+		outputs = append(outputs, kernel.NewOutput(acc-amount, script.P2PK, from))
 	}
 
-	tx := block.NewTransaction(inputs, outputs)
+	tx := kernel.NewTransaction(inputs, outputs)
 
 	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
-		return &block.Transaction{}, err
+		return &kernel.Transaction{}, err
 	}
 
 	tx.SetID(txHash[:])
@@ -249,17 +249,17 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*block.Trans
 	return tx, nil
 }
 
-func (bc *Blockchain) FindUnspentTransactionsOutputs(address string) ([]block.TxOutput, error) {
+func (bc *Blockchain) FindUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error) {
 	unspentTransactions, err := bc.FindUnspentTransactions(address)
 	if err != nil {
-		return []block.TxOutput{}, err
+		return []kernel.TxOutput{}, err
 	}
 
 	return bc.findUnspentTransactionsOutputs(address, unspentTransactions)
 }
 
-func (bc *Blockchain) findUnspentTransactionsOutputs(address string, unspentTransactions []*block.Transaction) ([]block.TxOutput, error) {
-	var utxos []block.TxOutput
+func (bc *Blockchain) findUnspentTransactionsOutputs(address string, unspentTransactions []*kernel.Transaction) ([]kernel.TxOutput, error) {
+	var utxos []kernel.TxOutput
 
 	for _, tx := range unspentTransactions {
 		for _, out := range tx.Vout {
@@ -272,13 +272,13 @@ func (bc *Blockchain) findUnspentTransactionsOutputs(address string, unspentTran
 	return utxos, nil
 }
 
-func (bc *Blockchain) MineBlock(transactions []*block.Transaction) *block.Block {
-	newBlock := block.NewBlock(transactions, bc.lastBlockHash)
+func (bc *Blockchain) MineBlock(transactions []*kernel.Transaction) *kernel.Block {
+	newBlock := kernel.NewBlock(transactions, bc.lastBlockHash)
 
 	return newBlock
 }
 
-func (bc *Blockchain) GetBlock(hash string) (*block.Block, error) {
+func (bc *Blockchain) GetBlock(hash string) (*kernel.Block, error) {
 	return bc.storage.RetrieveBlockByHash([]byte(hash))
 }
 
@@ -302,7 +302,7 @@ func isOutputSpent(spentTXOs map[string][]uint, txID string, outIdx uint) bool {
 }
 
 // retrieveBalanceFrom calculates the total amount of unspent transactions
-func retrieveBalanceFrom(UTXOs []block.TxOutput) uint {
+func retrieveBalanceFrom(UTXOs []kernel.TxOutput) uint {
 	accumulated := uint(0)
 
 	for _, out := range UTXOs {

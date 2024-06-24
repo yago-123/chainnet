@@ -1,11 +1,11 @@
 package iterator
 
 import (
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 )
 
 type Iterator interface {
 	Initialize(reference []byte) error
-	GetNextBlock() (*block.Block, error)
+	GetNextBlock() (*kernel.Block, error)
 	HasNext() bool
 }

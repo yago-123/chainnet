@@ -1,12 +1,23 @@
-package block
+package kernel
 
 import (
 	"chainnet/pkg/script"
 	"fmt"
 )
 
-// COINBASE_AMOUNT represents the reward for mining a block
+// COINBASE_AMOUNT represents the reward for mining a kernel
 const COINBASE_AMOUNT = 50
+
+// SignatureType represents the different signatures that can be performed over a transaction
+type SignatureType byte
+
+const (
+	// sign everything
+	SIGHASH_ALL SignatureType = iota
+	// SIGHASH_NONE
+	// SIGHASH_SINGLE
+	// SIGHASH_ANYONECANPAY
+)
 
 // Transaction
 type Transaction struct {
@@ -64,6 +75,9 @@ type TxInput struct {
 	// Vout is the index of the unspent transaction output (UTXO) that is going to be unlocked
 	Vout uint
 
+	// SignType is the type of signature required
+	// SignType SignatureType
+
 	// ScriptSig is the solved challenge presented by the output in order to unlock the funds
 	ScriptSig string
 
@@ -89,6 +103,10 @@ func NewInput(txid []byte, Vout uint, ScriptSig string, PubKey string) TxInput {
 
 func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
 	return in.PubKey == pubKey
+}
+
+func (in *TxInput) UnlockWith(scriptSig string) {
+	in.ScriptSig = scriptSig
 }
 
 // TxOutput represents the destination of the transaction balance
@@ -119,10 +137,6 @@ func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutpu
 
 func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
-}
-
-func (out *TxOutput) LockWith(scriptType script.ScriptType, pubKey []byte) {
-	out.ScriptPubKey = script.NewScript(scriptType, pubKey)
 }
 
 func (tx *Transaction) IsCoinbase() bool {

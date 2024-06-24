@@ -2,7 +2,7 @@ package encoding
 
 import (
 	"bytes"
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 	"encoding/gob"
 	"github.com/sirupsen/logrus"
 )
@@ -15,7 +15,7 @@ func NewGobEncoder(logger *logrus.Logger) *GobEncoder {
 	return &GobEncoder{logger}
 }
 
-func (gobenc *GobEncoder) SerializeBlock(b block.Block) ([]byte, error) {
+func (gobenc *GobEncoder) SerializeBlock(b kernel.Block) ([]byte, error) {
 	var result bytes.Buffer
 
 	encoder := gob.NewEncoder(&result)
@@ -27,19 +27,19 @@ func (gobenc *GobEncoder) SerializeBlock(b block.Block) ([]byte, error) {
 	return result.Bytes(), nil
 }
 
-func (gobenc *GobEncoder) DeserializeBlock(data []byte) (*block.Block, error) {
-	var b block.Block
+func (gobenc *GobEncoder) DeserializeBlock(data []byte) (*kernel.Block, error) {
+	var b kernel.Block
 
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&b)
 	if err != nil {
-		return &block.Block{}, err
+		return &kernel.Block{}, err
 	}
 
 	return &b, nil
 }
 
-func (gobenc *GobEncoder) SerializeTransaction(tx block.Transaction) ([]byte, error) {
+func (gobenc *GobEncoder) SerializeTransaction(tx kernel.Transaction) ([]byte, error) {
 	var result bytes.Buffer
 
 	enc := gob.NewEncoder(&result)
@@ -51,13 +51,13 @@ func (gobenc *GobEncoder) SerializeTransaction(tx block.Transaction) ([]byte, er
 	return result.Bytes(), nil
 }
 
-func (gobenc *GobEncoder) DeserializeTransaction(data []byte) (*block.Transaction, error) {
-	var tx *block.Transaction
+func (gobenc *GobEncoder) DeserializeTransaction(data []byte) (*kernel.Transaction, error) {
+	var tx *kernel.Transaction
 
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&tx)
 	if err != nil {
-		return &block.Transaction{}, err
+		return &kernel.Transaction{}, err
 	}
 
 	return tx, nil

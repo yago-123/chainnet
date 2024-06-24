@@ -1,23 +1,23 @@
 package util
 
 import (
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 	"github.com/stretchr/testify/mock"
 	"reflect"
 )
 
 // MatchByPreviousBlockPointer creates an argument matcher
-// based on the PrevBlockHash field of a block.Block instance.
+// based on the PrevBlockHash field of a kernel.Block instance.
 func MatchByPreviousBlockPointer(prevBlockHash []byte) interface{} {
-	return mock.MatchedBy(func(innerBlock *block.Block) bool {
+	return mock.MatchedBy(func(innerBlock *kernel.Block) bool {
 		return reflect.DeepEqual(innerBlock.PrevBlockHash, prevBlockHash)
 	})
 }
 
 // MatchByPreviousBlock creates an argument matcher
-// based on the PrevBlockHash field of a block.Block instance.
+// based on the PrevBlockHash field of a kernel.Block instance.
 func MatchByPreviousBlock(prevBlockHash []byte) interface{} {
-	return mock.MatchedBy(func(innerBlock block.Block) bool {
+	return mock.MatchedBy(func(innerBlock kernel.Block) bool {
 		return reflect.DeepEqual(innerBlock.PrevBlockHash, prevBlockHash)
 	})
 }
