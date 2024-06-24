@@ -26,6 +26,6 @@ var endpoint string
 var profile string
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "ep", BaseURL, "Default endpoint to connect")
-	rootCmd.PersistentFlags().StringVarP(&profile, "profile", "p", "", "Wallet profile to use")
+	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", BaseURL, "Default endpoint to connect")
+	rootCmd.PersistentFlags().StringVarP(&profile, "profile", "p", "default", "Wallet profile to use")
 }
