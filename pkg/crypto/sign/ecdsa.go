@@ -62,7 +62,7 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 
 func (ecdsaSign *ECDSASigner) convertToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	// convert the public key to ASN.1/DER encoded form
-	publicKey, err := x509.MarshalPKIXPublicKey(&pubKey)
+	publicKey, err := x509.MarshalPKIXPublicKey(pubKey)
 	if err != nil {
 		return []byte{}, []byte{}, err
 	}
