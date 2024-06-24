@@ -15,10 +15,10 @@ func (m *MockSign) NewKeyPair() ([]byte, []byte, error) {
 	return args.Get(0).([]byte), args.Get(1).([]byte), args.Error(2)
 }
 
-func (m *MockSign) Sign(payload []byte) []byte {
-	return append(payload, []byte("-signed")...)
+func (m *MockSign) Sign(payload []byte, privKey []byte) ([]byte, error) {
+	return append(payload, []byte("-signed")...), nil
 }
 
-func (m *MockSign) Verify(signature []byte, payload []byte) bool {
-	return bytes.Equal(signature, m.Sign(payload))
+func (m *MockSign) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
+	return bytes.Equal(signature, append(payload, []byte("-signed")...)), nil
 }

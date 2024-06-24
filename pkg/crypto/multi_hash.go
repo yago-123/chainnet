@@ -1,15 +1,16 @@
-package hash
+package crypto
 
 import (
 	"bytes"
+	"chainnet/pkg/crypto/hash"
 	"errors"
 )
 
 type MultiHash struct {
-	hashers []Hashing
+	hashers []hash.Hashing
 }
 
-func NewMultiHash(hashers []Hashing) (*MultiHash, error) {
+func NewMultiHash(hashers []hash.Hashing) (*MultiHash, error) {
 	if len(hashers) < 1 {
 		return nil, errors.New("unable to start a multihasher with 0 or 1 hashers")
 	}
