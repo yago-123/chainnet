@@ -48,6 +48,8 @@ func (tx *Transaction) SetID(hash []byte) {
 	tx.ID = hash[:]
 }
 
+// Assemble retrieves all the data from the transaction in order to perform operations
+// like extracting the tx ID
 func (tx *Transaction) Assemble() []byte {
 	var data []byte
 
@@ -56,6 +58,26 @@ func (tx *Transaction) Assemble() []byte {
 		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
 		data = append(data, []byte(input.ScriptSig)...)
 		data = append(data, []byte(input.PubKey)...)
+	}
+
+	for _, output := range tx.Vout {
+		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
+		data = append(data, []byte(output.ScriptPubKey)...)
+		data = append(data, []byte(output.PubKey)...)
+	}
+
+	return data
+}
+
+// AssembleForSigning retrieves all data from the transaction to perform operations
+// like generating the signature for unlocking outputs. Differs from Assemble because
+// the input.ScriptSig field must be not included (otherwise the transaction can't be verified)
+func (tx *Transaction) AssembleForSigning() []byte {
+	var data []byte
+
+	for _, input := range tx.Vin {
+		data = append(data, input.Txid...)
+		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
 	}
 
 	for _, output := range tx.Vout {
