@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -10,22 +10,22 @@ type MockConsensus struct {
 	mock.Mock
 }
 
-func (m *MockConsensus) ValidateBlock(b *block.Block) bool {
+func (m *MockConsensus) ValidateBlock(b *kernel.Block) bool {
 	args := m.Called(b)
 	return args.Bool(0)
 }
 
-func (m *MockConsensus) CalculateBlockHash(b *block.Block) ([]byte, uint, error) {
+func (m *MockConsensus) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error) {
 	args := m.Called(b)
 	return args.Get(0).([]byte), args.Get(1).(uint), args.Error(2)
 }
 
-func (m *MockConsensus) ValidateTx(tx *block.Transaction) bool {
+func (m *MockConsensus) ValidateTx(tx *kernel.Transaction) bool {
 	args := m.Called(tx)
 	return args.Bool(0)
 }
 
-func (m *MockConsensus) CalculateTxHash(tx *block.Transaction) ([]byte, error) {
+func (m *MockConsensus) CalculateTxHash(tx *kernel.Transaction) ([]byte, error) {
 	args := m.Called(tx)
 	return args.Get(0).([]byte), args.Error(1)
 }

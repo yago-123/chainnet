@@ -1,7 +1,7 @@
 package encoding
 
 import (
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 	"github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
@@ -18,7 +18,7 @@ func TestGobEncoder_DeserializeBlock(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *block.Block
+		want    *kernel.Block
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -45,7 +45,7 @@ func TestGobEncoder_SerializeBlock(t *testing.T) {
 		logger *logrus.Logger
 	}
 	type args struct {
-		b block.Block
+		b kernel.Block
 	}
 	tests := []struct {
 		name    string

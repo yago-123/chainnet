@@ -1,7 +1,7 @@
 package iterator
 
 import (
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -14,9 +14,9 @@ func (i *MockIterator) Initialize(reference []byte) error {
 	return args.Error(0)
 }
 
-func (i *MockIterator) GetNextBlock() (*block.Block, error) {
+func (i *MockIterator) GetNextBlock() (*kernel.Block, error) {
 	args := i.Called()
-	return args.Get(0).(*block.Block), args.Error(1)
+	return args.Get(0).(*kernel.Block), args.Error(1)
 }
 
 func (i *MockIterator) HasNext() bool {

@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"chainnet/pkg/block"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/kernel"
 	boltdb "github.com/boltdb/bolt"
 	"github.com/sirupsen/logrus"
 	"reflect"
@@ -19,7 +19,7 @@ func TestBoltDB_GetLastBlock(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    *block.Block
+		want    *kernel.Block
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -87,7 +87,7 @@ func TestBoltDB_PersistBlock(t *testing.T) {
 		logger   *logrus.Logger
 	}
 	type args struct {
-		block block.Block
+		block kernel.Block
 	}
 	tests := []struct {
 		name    string
@@ -126,7 +126,7 @@ func TestBoltDB_RetrieveBlockByHash(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *block.Block
+		want    *kernel.Block
 		wantErr bool
 	}{
 		// TODO: Add test cases.

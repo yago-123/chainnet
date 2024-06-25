@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"chainnet/pkg/block"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/kernel"
 	"errors"
 	"fmt"
 	boltdb "github.com/boltdb/bolt"
@@ -43,7 +43,7 @@ func (bolt *BoltDB) NumberOfBlocks() (uint, error) {
 	return numKeys, err
 }
 
-func (bolt *BoltDB) PersistBlock(block block.Block) error {
+func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 	var err error
 
 	dataBlock, err := bolt.encoding.SerializeBlock(block)
@@ -67,7 +67,7 @@ func (bolt *BoltDB) PersistBlock(block block.Block) error {
 			return err
 		}
 
-		// update key pointing to last block
+		// update key pointing to last kernel
 		err = bucket.Put([]byte(LastBlockKey), block.Hash)
 		if err != nil {
 			return err
@@ -79,7 +79,7 @@ func (bolt *BoltDB) PersistBlock(block block.Block) error {
 	return err
 }
 
-func (bolt *BoltDB) GetLastBlock() (*block.Block, error) {
+func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	var err error
 	var lastBlock []byte
 
@@ -95,13 +95,13 @@ func (bolt *BoltDB) GetLastBlock() (*block.Block, error) {
 	})
 
 	if err != nil {
-		return &block.Block{}, err
+		return &kernel.Block{}, err
 	}
 
 	return bolt.encoding.DeserializeBlock(lastBlock)
 }
 
-func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*block.Block, error) {
+func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	var err error
 	var blockBytes []byte
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
@@ -116,7 +116,7 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*block.Block, error) {
 	})
 
 	if err != nil {
-		return &block.Block{}, err
+		return &kernel.Block{}, err
 	}
 
 	return bolt.encoding.DeserializeBlock(blockBytes)

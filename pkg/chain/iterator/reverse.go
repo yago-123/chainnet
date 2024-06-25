@@ -1,7 +1,7 @@
 package iterator
 
 import (
-	"chainnet/pkg/block"
+	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 )
 
@@ -22,7 +22,7 @@ func (it *ReverseIterator) Initialize(reference []byte) error {
 	return nil
 }
 
-func (it *ReverseIterator) GetNextBlock() (*block.Block, error) {
+func (it *ReverseIterator) GetNextBlock() (*kernel.Block, error) {
 	block, err := it.storage.RetrieveBlockByHash(it.prevBlockHash)
 	if err != nil {
 		return nil, err

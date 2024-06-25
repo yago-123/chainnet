@@ -2,10 +2,9 @@ package consensus
 
 import (
 	"bytes"
-	"chainnet/pkg/block"
 	"chainnet/pkg/crypto/hash"
+	"chainnet/pkg/kernel"
 	"errors"
-	"fmt"
 	"math/big"
 )
 
@@ -18,7 +17,7 @@ func NewProofOfWork(target uint, hashing hash.Hashing) *ProofOfWork {
 	return &ProofOfWork{target: target, hashing: hashing}
 }
 
-func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error) {
+func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error) {
 	var hashInt big.Int
 	var hash []byte
 
@@ -28,8 +27,9 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 	maxNonce := ^uint(0)
 	nonce := uint(0)
 
+	txsID := pow.hashTransactionIDs(b.Transactions)
 	for nonce < maxNonce {
-		data := pow.assembleProofBlock(b, nonce)
+		data := b.Assemble(nonce, txsID)
 		hash = pow.hashing.Hash(data)
 
 		// todo() recheck this part
@@ -40,59 +40,27 @@ func (pow *ProofOfWork) CalculateBlockHash(b *block.Block) ([]byte, uint, error)
 		nonce++
 	}
 
-	return []byte{}, 0, errors.New("could not find hash for block")
+	return []byte{}, 0, errors.New("could not find hash for kernel")
 }
 
-func (pow *ProofOfWork) ValidateBlock(b *block.Block) bool {
-	data := pow.assembleProofBlock(b, b.Nonce)
-
+func (pow *ProofOfWork) ValidateBlock(b *kernel.Block) bool {
+	data := b.Assemble(b.Nonce, pow.hashTransactionIDs(b.Transactions))
 	// todo() add more validations
 
 	return pow.hashing.Verify(b.Hash, data)
 }
 
-func (pow *ProofOfWork) ValidateTx(tx *block.Transaction) bool {
-	data := pow.assembleProofTx(tx)
-
+func (pow *ProofOfWork) ValidateTx(tx *kernel.Transaction) bool {
+	data := tx.Assemble()
 	return pow.hashing.Verify(tx.ID, data)
 }
 
-func (pow *ProofOfWork) CalculateTxHash(tx *block.Transaction) ([]byte, error) {
-	data := pow.assembleProofTx(tx)
-
+func (pow *ProofOfWork) CalculateTxHash(tx *kernel.Transaction) ([]byte, error) {
+	data := tx.Assemble()
 	return pow.hashing.Hash(data), nil
 }
 
-func (pow *ProofOfWork) assembleProofBlock(b *block.Block, nonce uint) []byte {
-	data := [][]byte{
-		b.PrevBlockHash,
-		pow.hashTransactionIDs(b.Transactions),
-		[]byte(fmt.Sprintf("%d", b.Target)),
-		[]byte(fmt.Sprintf("%d", b.Timestamp)),
-		[]byte(fmt.Sprintf("%d", nonce)),
-	}
-
-	return bytes.Join(data, []byte{})
-}
-
-func (pow *ProofOfWork) assembleProofTx(tx *block.Transaction) []byte {
-	var data []byte
-
-	for _, input := range tx.Vin {
-		data = append(data, input.Txid...)
-		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
-		data = append(data, []byte(input.ScriptSig)...)
-	}
-
-	for _, output := range tx.Vout {
-		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
-		data = append(data, []byte(output.ScriptPubKey)...)
-	}
-
-	return data
-}
-
-func (pow *ProofOfWork) hashTransactionIDs(transactions []*block.Transaction) []byte {
+func (pow *ProofOfWork) hashTransactionIDs(transactions []*kernel.Transaction) []byte {
 	var txHashes [][]byte
 
 	for _, tx := range transactions {

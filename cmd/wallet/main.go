@@ -1,6 +1,8 @@
 package main
 
-import "chainnet/cmd/cli/cmd"
+import (
+	"chainnet/cmd/wallet/cmd"
+)
 
 func main() {
 	cmd.Execute()

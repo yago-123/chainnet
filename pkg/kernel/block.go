@@ -1,4 +1,9 @@
-package block
+package kernel
+
+import (
+	"bytes"
+	"fmt"
+)
 
 type Block struct {
 	Timestamp     int64
@@ -34,19 +39,14 @@ func (block *Block) IsGenesisBlock() bool {
 	return len(block.PrevBlockHash) == 0
 }
 
-// todo() make coinbase transaction change amount based on block height
-func NewCoinbaseTransaction(to, data string) *Transaction {
-	txin := TxInput{Txid: []byte{}, Vout: -1, ScriptSig: data}
-	txout := TxOutput{Amount: COINBASE_AMOUNT, ScriptPubKey: to}
-	tx := Transaction{ID: nil, Vin: []TxInput{txin}, Vout: []TxOutput{txout}}
+func (block *Block) Assemble(nonce uint, txsID []byte) []byte {
+	data := [][]byte{
+		block.PrevBlockHash,
+		txsID,
+		[]byte(fmt.Sprintf("%d", block.Target)),
+		[]byte(fmt.Sprintf("%d", block.Timestamp)),
+		[]byte(fmt.Sprintf("%d", nonce)),
+	}
 
-	return &tx
-}
-
-func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
-	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
-}
-
-func (tx *Transaction) SetID(hash []byte) {
-	tx.ID = hash
+	return bytes.Join(data, []byte{})
 }
