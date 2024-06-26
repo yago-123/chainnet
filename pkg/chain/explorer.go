@@ -118,11 +118,9 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 
 		// iterate through each transaction in the block
 		for _, tx := range confirmedBlock.Transactions {
-			txID := hex.EncodeToString(tx.ID)
-
 			for outIdx, out := range tx.Vout {
 				// in case is already spent, continue
-				if isOutputSpent(spentTXOs, txID, uint(outIdx)) {
+				if isOutputSpent(spentTXOs, string(tx.ID), uint(outIdx)) {
 					continue
 				}
 
@@ -144,10 +142,8 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 			// if not coinbase, iterate through inputs and save the already spent outputs
 			for _, in := range tx.Vin {
 				if in.CanUnlockOutputWith(pubKey) {
-					inTxID := hex.EncodeToString(in.Txid)
-
 					// mark the output as spent
-					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
+					spentTXOs[string(in.Txid)] = append(spentTXOs[string(in.Txid)], in.Vout)
 				}
 			}
 		}
