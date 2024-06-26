@@ -17,7 +17,6 @@ type Consensus interface {
 // like for example the ones performed by wallets before sending transactions to the nodes and miners
 type LightValidator interface {
 	ValidateTx(tx *kernel.Transaction) bool
-	ValidateBlock(b *kernel.Block) bool
 }
 
 // HeavyValidator performs the same validations as LightValidator but also validates the previous
