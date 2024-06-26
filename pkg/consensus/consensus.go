@@ -6,10 +6,8 @@ import (
 
 // Consensus is designed to allow more than one consensus algorithm to be implemented
 type Consensus interface {
-	ValidateTx(tx *kernel.Transaction) bool
 	CalculateTxHash(tx *kernel.Transaction) ([]byte, error)
 
-	ValidateBlock(b *kernel.Block) bool
 	CalculateBlockHash(b *kernel.Block) ([]byte, uint, error)
 }
 

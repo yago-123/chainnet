@@ -1,9 +1,12 @@
 package consensus
 
-import "chainnet/pkg/kernel"
+import (
+	"chainnet/pkg/kernel"
+)
 
 type HValidator struct {
 	lv LightValidator
+	// storage storage.Storage
 }
 
 func NewHeavyValidator(lv LightValidator) *HValidator {
@@ -11,9 +14,7 @@ func NewHeavyValidator(lv LightValidator) *HValidator {
 }
 
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) bool {
-	if !hv.lv.ValidateTx(tx) {
-		return false
-	}
+	return !hv.lv.ValidateTx(tx)
 
 	// todo(): validate double spending check
 
@@ -21,10 +22,11 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) bool {
 
 	// todo(): maturity checks?
 
-	return true
 }
 
 func (hv *HValidator) ValidateBlock(b *kernel.Block) bool {
+	// todo(): validate hashes
+
 	// todo(): validate block size limit
 
 	// todo(): validate block reward and fees

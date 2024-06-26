@@ -69,7 +69,7 @@ func main() {
 		cfg.Logger.Infof("Prev. hash: %x", blk.PrevBlockHash)
 		cfg.Logger.Infof("Num transactions: %d", len(blk.Transactions))
 		cfg.Logger.Infof("Hash: %x", blk.Hash)
-		cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(1, hash.NewSHA256()).ValidateBlock(blk))
+		// cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(1, hash.NewSHA256()).ValidateBlock(blk))
 	}
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)

@@ -43,18 +43,6 @@ func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error
 	return []byte{}, 0, errors.New("could not find hash for kernel")
 }
 
-func (pow *ProofOfWork) ValidateBlock(b *kernel.Block) bool {
-	data := b.Assemble(b.Nonce, pow.hashTransactionIDs(b.Transactions))
-	// todo() add more validations
-
-	return pow.hashing.Verify(b.Hash, data)
-}
-
-func (pow *ProofOfWork) ValidateTx(tx *kernel.Transaction) bool {
-	data := tx.Assemble()
-	return pow.hashing.Verify(tx.ID, data)
-}
-
 func (pow *ProofOfWork) CalculateTxHash(tx *kernel.Transaction) ([]byte, error) {
 	data := tx.Assemble()
 	return pow.hashing.Hash(data), nil

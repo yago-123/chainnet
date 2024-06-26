@@ -35,6 +35,7 @@ func validateOutputs(tx *kernel.Transaction) bool {
 }
 
 func validateBalance(tx *kernel.Transaction) bool {
+
 	// todo(): check that inputs equal outputs balance (take into account transaction fee too)
 	return false
 }
