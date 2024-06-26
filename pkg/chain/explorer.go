@@ -15,14 +15,14 @@ func NewExplorer(storage storage.Storage) *Explorer {
 	return &Explorer{storage: storage}
 }
 
-func (explorer *Explorer) FindUnspentTransactions(address string) ([]*kernel.Transaction, error) {
-	return explorer.findUnspentTransactions(address, iterator.NewReverseIterator(explorer.storage))
+func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
+	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseIterator(explorer.storage))
 }
 
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
-func (explorer *Explorer) findUnspentTransactions(address string, it iterator.Iterator) ([]*kernel.Transaction, error) {
+func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Iterator) ([]*kernel.Transaction, error) {
 	var unspentTXs []*kernel.Transaction
 	spentTXOs := make(map[string][]uint)
 
@@ -56,8 +56,8 @@ func (explorer *Explorer) findUnspentTransactions(address string, it iterator.It
 					continue
 				}
 
-				// check if the output can be unlocked with the given address
-				if out.CanBeUnlockedWith(address) {
+				// check if the output can be unlocked with the given pubKey
+				if out.CanBeUnlockedWith(pubKey) {
 					unspentTXs = append(unspentTXs, tx)
 				}
 			}
@@ -69,7 +69,7 @@ func (explorer *Explorer) findUnspentTransactions(address string, it iterator.It
 
 			// if not coinbase, iterate through inputs and save the already spent outputs
 			for _, in := range tx.Vin {
-				if in.CanUnlockOutputWith(address) {
+				if in.CanUnlockOutputWith(pubKey) {
 					inTxID := hex.EncodeToString(in.Txid)
 
 					// mark the output as spent
@@ -85,8 +85,8 @@ func (explorer *Explorer) findUnspentTransactions(address string, it iterator.It
 	return unspentTXs, nil
 }
 
-func (explorer *Explorer) CalculateAddressBalance(address string) (uint, error) {
-	unspentTXs, err := explorer.FindUnspentTransactionsOutputs(address)
+func (explorer *Explorer) CalculateAddressBalance(pubKey string) (uint, error) {
+	unspentTXs, err := explorer.FindUnspentTransactionsOutputs(pubKey)
 	if err != nil {
 		return 0, err
 	}
@@ -94,9 +94,9 @@ func (explorer *Explorer) CalculateAddressBalance(address string) (uint, error) 
 	return retrieveBalanceFrom(unspentTXs), nil
 }
 
-func (explorer *Explorer) FindAmountSpendableOutputs(address string, amount uint) (uint, map[string][]uint, error) {
+func (explorer *Explorer) FindAmountSpendableOutputs(pubKey string, amount uint) (uint, map[string][]uint, error) {
 	unspentOutputs := make(map[string][]uint)
-	unspentTXs, err := explorer.FindUnspentTransactions(address)
+	unspentTXs, err := explorer.FindUnspentTransactions(pubKey)
 	if err != nil {
 		return uint(0), unspentOutputs, err
 	}
@@ -108,7 +108,7 @@ func (explorer *Explorer) FindAmountSpendableOutputs(address string, amount uint
 		txID := hex.EncodeToString(tx.ID)
 
 		for outIdx, out := range tx.Vout {
-			if out.CanBeUnlockedWith(address) {
+			if out.CanBeUnlockedWith(pubKey) {
 				accumulated += out.Amount
 				unspentOutputs[txID] = append(unspentOutputs[txID], uint(outIdx))
 
@@ -120,25 +120,25 @@ func (explorer *Explorer) FindAmountSpendableOutputs(address string, amount uint
 		}
 	}
 
-	// there is a chance that we don't have enough amount for this address
+	// there is a chance that we don't have enough amount for this pubKey
 	return accumulated, unspentOutputs, nil
 }
 
-func (explorer *Explorer) FindUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error) {
-	unspentTransactions, err := explorer.FindUnspentTransactions(address)
+func (explorer *Explorer) FindUnspentTransactionsOutputs(pubKey string) ([]kernel.TxOutput, error) {
+	unspentTransactions, err := explorer.FindUnspentTransactions(pubKey)
 	if err != nil {
 		return []kernel.TxOutput{}, err
 	}
 
-	return explorer.findUnspentTransactionsOutputs(address, unspentTransactions)
+	return explorer.findUnspentTransactionsOutputs(pubKey, unspentTransactions)
 }
 
-func (explorer *Explorer) findUnspentTransactionsOutputs(address string, unspentTransactions []*kernel.Transaction) ([]kernel.TxOutput, error) {
+func (explorer *Explorer) findUnspentTransactionsOutputs(pubKey string, unspentTransactions []*kernel.Transaction) ([]kernel.TxOutput, error) {
 	var utxos []kernel.TxOutput
 
 	for _, tx := range unspentTransactions {
 		for _, out := range tx.Vout {
-			if out.CanBeUnlockedWith(address) {
+			if out.CanBeUnlockedWith(pubKey) {
 				utxos = append(utxos, out)
 			}
 		}
