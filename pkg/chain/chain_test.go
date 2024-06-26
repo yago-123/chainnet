@@ -202,10 +202,11 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	block4 := NewBlock([]*Transaction{coinbaseTx4}, block3.Hash)
 	block4.SetHashAndNonce([]byte("kernel-hash-4"), 1)
 
+	storageInstance := &mockStorage.MockStorage{}
 	bc := NewBlockchain(
 		config.NewConfig(logrus.New(), 1, 1, ""),
 		&mockConsensus.MockConsensus{},
-		&mockStorage.MockStorage{},
+		storageInstance,
 	)
 	bc.lastBlockHash = []byte("kernel-hash-4")
 
@@ -249,39 +250,41 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 		return reverseIterator
 	}
 
-	txs, err := bc.findUnspentTransactions("pubKey-1", restartedMockIterator())
+	explorer := NewExplorer(storageInstance)
+
+	txs, err := explorer.findUnspentTransactions("pubKey-1", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
 
-	txs, err = bc.findUnspentTransactions("pubKey-2", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-2", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-kernel-2-id"), txs[1].ID)
 
-	txs, err = bc.findUnspentTransactions("pubKey-3", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-3", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(txs))
 	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[1].ID)
 	assert.Equal(t, []byte("coinbase-transaction-kernel-2-id"), txs[2].ID)
 
-	txs, err = bc.findUnspentTransactions("pubKey-4", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-4", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, "coinbase-transaction-kernel-3-id", string(txs[0].ID))
 	assert.Equal(t, "regular-transaction-kernel-3-id", string(txs[1].ID))
 
-	txs, err = bc.findUnspentTransactions("pubKey-5", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-5", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
 
-	txs, err = bc.findUnspentTransactions("pubKey-6", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-6", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[0].ID)
 
-	txs, err = bc.findUnspentTransactions("pubKey-7", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-7", restartedMockIterator())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), txs[0].ID)

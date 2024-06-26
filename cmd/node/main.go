@@ -73,7 +73,9 @@ func main() {
 	}
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
-	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(bc))
+
+	explorer := blockchain.NewExplorer(bolt)
+	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(explorer))
 	if err != nil {
 		cfg.Logger.Fatalf("Failed to start server: %s", err)
 	}

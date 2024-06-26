@@ -7,27 +7,27 @@ import (
 	"net/http"
 )
 
-func NewHTTPRouter(bc *blockchain.Blockchain) *httprouter.Router {
+func NewHTTPRouter(explorer *blockchain.Explorer) *httprouter.Router {
 	router := httprouter.New()
 
 	router.GET("/address/:address/transactions", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		listTransactions(w, r, ps, bc)
+		listTransactions(w, r, ps, explorer)
 	})
 	router.GET("/address/:address/utxos", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		listUTXOs(w, r, ps, bc)
+		listUTXOs(w, r, ps, explorer)
 	})
 	router.GET("/address/:address/balance", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		getAddressBalance(w, r, ps, bc)
+		getAddressBalance(w, r, ps, explorer)
 	})
 
 	return router
 }
 
-func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Params, bc *blockchain.Blockchain) {
+func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	// todo() replace this method with all transactions instead of only non-spent ones
-	transactions, err := bc.FindUnspentTransactions(address)
+	transactions, err := explorer.FindUnspentTransactions(address)
 	if err != nil {
 		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
 	}
@@ -38,10 +38,10 @@ func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 }
 
-func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, bc *blockchain.Blockchain) {
+func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
-	utxos, err := bc.FindUnspentTransactions(address)
+	utxos, err := explorer.FindUnspentTransactions(address)
 	if err != nil {
 		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
 	}
@@ -52,10 +52,10 @@ func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, bc 
 	}
 }
 
-func getAddressBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params, bc *blockchain.Blockchain) {
+func getAddressBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
-	balanceResponse, err := bc.CalculateAddressBalance(address)
+	balanceResponse, err := explorer.CalculateAddressBalance(address)
 	if err != nil {
 		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
 	}
