@@ -35,18 +35,18 @@ func (explorer *Explorer) findUnspentTransactions(address string, it iterator.It
 	_ = it.Initialize(lastBlock.Hash)
 
 	for it.HasNext() {
-		// get the next kernel using the revIterator
+		// get the next block using the revIterator
 		confirmedBlock, err := it.GetNextBlock()
 		if err != nil {
 			return []*kernel.Transaction{}, err
 		}
 
-		// skip the genesis kernel
+		// skip the genesis block
 		if confirmedBlock.IsGenesisBlock() {
 			continue
 		}
 
-		// iterate through each transaction in the kernel
+		// iterate through each transaction in the block
 		for _, tx := range confirmedBlock.Transactions {
 			txID := hex.EncodeToString(tx.ID)
 
