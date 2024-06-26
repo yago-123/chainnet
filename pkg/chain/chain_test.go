@@ -213,6 +213,10 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	restartedMockIterator := func() iterator.Iterator {
 		reverseIterator := &mockIterator.MockIterator{}
 
+		storageInstance.
+			On("GetLastBlock").
+			Return(block4, nil)
+
 		reverseIterator.
 			On("Initialize", []byte("kernel-hash-4")).
 			Return(nil)
