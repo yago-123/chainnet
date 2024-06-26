@@ -7,6 +7,12 @@ import (
 	"encoding/hex"
 )
 
+type UnspentOutput struct {
+	TxId   []byte
+	OutIdx uint
+	Output kernel.TxOutput
+}
+
 type Explorer struct {
 	storage storage.Storage
 }
@@ -71,9 +77,9 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Ite
 			for _, in := range tx.Vin {
 				if in.CanUnlockOutputWith(pubKey) {
 					inTxID := hex.EncodeToString(in.Txid)
-
+unspentTXos
 					// mark the output as spent
-					spentTXOs[inTxID] = append(spentTXOs[inTxID], uint(in.Vout))
+					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
 				}
 			}
 		}
@@ -83,6 +89,73 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Ite
 
 	// return the list of unspent transactions
 	return unspentTXs, nil
+}
+
+// findUnspentOutputs
+func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]UnspentOutput, error) {
+	unspentTXOs := []UnspentOutput{}
+	spentTXOs := make(map[string][]uint)
+
+	lastBlock, err := explorer.storage.GetLastBlock()
+	if err != nil {
+		return []UnspentOutput{}, err
+	}
+
+	// get the blockchain revIterator
+	_ = it.Initialize(lastBlock.Hash)
+
+	for it.HasNext() {
+		// get the next block using the revIterator
+		confirmedBlock, err := it.GetNextBlock()
+		if err != nil {
+			return []UnspentOutput, err
+		}
+
+		// skip the genesis block
+		if confirmedBlock.IsGenesisBlock() {
+			continue
+		}
+
+		// iterate through each transaction in the block
+		for _, tx := range confirmedBlock.Transactions {
+			txID := hex.EncodeToString(tx.ID)
+
+			for outIdx, out := range tx.Vout {
+				// in case is already spent, continue
+				if isOutputSpent(spentTXOs, txID, uint(outIdx)) {
+					continue
+				}
+
+				// check if the output can be unlocked with the given pubKey
+				if out.CanBeUnlockedWith(pubKey) {
+					unspentTXOs = append(unspentTXOs, UnspentOutput{
+						TxId: tx.ID,
+						OutIdx: uint(outIdx),
+						Output: out,
+					})
+				}
+			}
+
+			// we skip the coinbase transactions inputs
+			if tx.IsCoinbase() {
+				continue
+			}
+
+			// if not coinbase, iterate through inputs and save the already spent outputs
+			for _, in := range tx.Vin {
+				if in.CanUnlockOutputWith(pubKey) {
+					inTxID := hex.EncodeToString(in.Txid)
+
+					// mark the output as spent
+					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
+				}
+			}
+		}
+	}
+
+	// return the list of unspent transactions
+	return unspentTXOs, nil
+
 }
 
 func (explorer *Explorer) CalculateAddressBalance(pubKey string) (uint, error) {
