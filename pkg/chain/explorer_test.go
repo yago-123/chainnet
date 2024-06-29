@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// set up genesis kernel with coinbase transaction
+// set up genesis block with coinbase transaction
 var GenesisBlock = &Block{
 	Timestamp: 0,
 	Transactions: []*Transaction{
@@ -26,15 +26,15 @@ var GenesisBlock = &Block{
 	},
 	PrevBlockHash: []byte{},
 	Nonce:         1,
-	Hash:          []byte("genesis-kernel-hash"),
+	Hash:          []byte("genesis-block-hash"),
 }
 
-// set up kernel 1 with one coinbase transaction
+// set up block 1 with one coinbase transaction
 var Block1 = &Block{
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
-			ID: []byte("coinbase-transaction-kernel-1-id"),
+			ID: []byte("coinbase-transaction-block-1-id"),
 			Vin: []TxInput{
 				NewCoinbaseInput(),
 			},
@@ -45,15 +45,15 @@ var Block1 = &Block{
 	},
 	PrevBlockHash: GenesisBlock.Hash,
 	Nonce:         1,
-	Hash:          []byte("kernel-hash-1"),
+	Hash:          []byte("block-hash-1"),
 }
 
-// set up kernel 2 with one coinbase transaction and one regular transaction
+// set up block 2 with one coinbase transaction and one regular transaction
 var Block2 = &Block{
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
-			ID: []byte("coinbase-transaction-kernel-2-id"),
+			ID: []byte("coinbase-transaction-block-2-id"),
 			Vin: []TxInput{
 				NewCoinbaseInput(),
 			},
@@ -62,9 +62,9 @@ var Block2 = &Block{
 			},
 		},
 		{
-			ID: []byte("regular-transaction-kernel-2-id"),
+			ID: []byte("regular-transaction-block-2-id"),
 			Vin: []TxInput{
-				NewInput([]byte("coinbase-transaction-kernel-1-id"), 0, "pubKey-2", "pubKey-2"),
+				NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2", "pubKey-2"),
 			},
 			Vout: []TxOutput{
 				NewOutput(2, script.P2PK, "pubKey-3"),
@@ -76,15 +76,15 @@ var Block2 = &Block{
 	},
 	PrevBlockHash: Block1.Hash,
 	Nonce:         1,
-	Hash:          []byte("kernel-hash-2"),
+	Hash:          []byte("block-hash-2"),
 }
 
-// set up kernel 3 with one coinbase transaction and two regular transactions
+// set up block 3 with one coinbase transaction and two regular transactions
 var Block3 = &Block{
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
-			ID: []byte("coinbase-transaction-kernel-3-id"),
+			ID: []byte("coinbase-transaction-block-3-id"),
 			Vin: []TxInput{
 				NewCoinbaseInput(),
 			},
@@ -93,10 +93,10 @@ var Block3 = &Block{
 			},
 		},
 		{
-			ID: []byte("regular-transaction-kernel-3-id"),
+			ID: []byte("regular-transaction-block-3-id"),
 			Vin: []TxInput{
-				NewInput([]byte("regular-transaction-kernel-2-id"), 1, "pubKey-4", "pubKey-4"),
-				NewInput([]byte("regular-transaction-kernel-2-id"), 2, "pubKey-5", "pubKey-5"),
+				NewInput([]byte("regular-transaction-block-2-id"), 1, "pubKey-4", "pubKey-4"),
+				NewInput([]byte("regular-transaction-block-2-id"), 2, "pubKey-5", "pubKey-5"),
 			},
 			Vout: []TxOutput{
 				NewOutput(4, script.P2PK, "pubKey-2"),
@@ -105,9 +105,9 @@ var Block3 = &Block{
 			},
 		},
 		{
-			ID: []byte("regular-transaction-2-kernel-3-id"),
+			ID: []byte("regular-transaction-2-block-3-id"),
 			Vin: []TxInput{
-				NewInput([]byte("regular-transaction-kernel-2-id"), 0, "pubKey-3", "pubKey-3"),
+				NewInput([]byte("regular-transaction-block-2-id"), 0, "pubKey-3", "pubKey-3"),
 			},
 			Vout: []TxOutput{
 				NewOutput(1, script.P2PK, "pubKey-6"),
@@ -117,15 +117,15 @@ var Block3 = &Block{
 	},
 	PrevBlockHash: Block2.Hash,
 	Nonce:         1,
-	Hash:          []byte("kernel-hash-3"),
+	Hash:          []byte("block-hash-3"),
 }
 
-// set up kernel 4 with one coinbase transaction
+// set up block 4 with one coinbase transaction
 var Block4 = &Block{
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
-			ID: []byte("coinbase-transaction-kernel-4-id"),
+			ID: []byte("coinbase-transaction-block-4-id"),
 			Vin: []TxInput{
 				NewCoinbaseInput(),
 			},
@@ -136,7 +136,7 @@ var Block4 = &Block{
 	},
 	PrevBlockHash: Block3.Hash,
 	Nonce:         1,
-	Hash:          []byte("kernel-hash-4"),
+	Hash:          []byte("block-hash-4"),
 }
 
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
@@ -155,21 +155,21 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	txs, err = explorer.findUnspentTransactions("pubKey-2", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
-	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
-	assert.Equal(t, []byte("regular-transaction-kernel-2-id"), txs[1].ID)
+	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
+	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-3", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(txs))
-	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
-	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[1].ID)
-	assert.Equal(t, []byte("coinbase-transaction-kernel-2-id"), txs[2].ID)
+	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
+	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
+	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), txs[2].ID)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-4", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
-	assert.Equal(t, "coinbase-transaction-kernel-3-id", string(txs[0].ID))
-	assert.Equal(t, "regular-transaction-kernel-3-id", string(txs[1].ID))
+	assert.Equal(t, "coinbase-transaction-block-3-id", string(txs[0].ID))
+	assert.Equal(t, "regular-transaction-block-3-id", string(txs[1].ID))
 
 	txs, err = explorer.findUnspentTransactions("pubKey-5", initializeMockedChain())
 	assert.NoError(t, err)
@@ -178,12 +178,12 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	txs, err = explorer.findUnspentTransactions("pubKey-6", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
-	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[0].ID)
+	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-7", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
-	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), txs[0].ID)
+	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
 }
 
 func TestBlockchain_findUnspentOutputs(t *testing.T) {
@@ -203,21 +203,21 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	utxo, err = explorer.findUnspentOutputs("pubKey-2", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(utxo))
-	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), utxo[0].TxId)
-	assert.Equal(t, []byte("regular-transaction-kernel-2-id"), utxo[1].TxId)
+	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxId)
+	assert.Equal(t, []byte("regular-transaction-block-2-id"), utxo[1].TxId)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-3", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(utxo))
-	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), utxo[0].TxId)
-	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), utxo[1].TxId)
-	assert.Equal(t, []byte("coinbase-transaction-kernel-2-id"), utxo[2].TxId)
+	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxId)
+	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[1].TxId)
+	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), utxo[2].TxId)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-4", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(utxo))
-	assert.Equal(t, "coinbase-transaction-kernel-3-id", string(utxo[0].TxId))
-	assert.Equal(t, "regular-transaction-kernel-3-id", string(utxo[1].TxId))
+	assert.Equal(t, "coinbase-transaction-block-3-id", string(utxo[0].TxId))
+	assert.Equal(t, "regular-transaction-block-3-id", string(utxo[1].TxId))
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-5", initializeMockedChain())
 	assert.NoError(t, err)
@@ -226,12 +226,12 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	utxo, err = explorer.findUnspentOutputs("pubKey-6", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(utxo))
-	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), utxo[0].TxId)
+	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[0].TxId)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-7", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(utxo))
-	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), utxo[0].TxId)
+	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxId)
 }
 
 func TestBlockchain_FindAmountSpendableOutput(t *testing.T) {
@@ -273,7 +273,7 @@ func initializeMockedChain() iterator.Iterator {
 	reverseIterator := &mockIterator.MockIterator{}
 
 	reverseIterator.
-		On("Initialize", []byte("kernel-hash-4")).
+		On("Initialize", []byte("block-hash-4")).
 		Return(nil)
 
 	reverseIterator.
