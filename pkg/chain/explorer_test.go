@@ -1,14 +1,11 @@
 package blockchain
 
 import (
-	"chainnet/config"
 	"chainnet/pkg/chain/iterator"
 	. "chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	mockIterator "chainnet/tests/mocks/chain/iterator"
-	mockConsensus "chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -143,94 +140,47 @@ var Block4 = &Block{
 }
 
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
-
 	storageInstance := &mockStorage.MockStorage{}
-	bc := NewBlockchain(
-		config.NewConfig(logrus.New(), 1, 1, ""),
-		&mockConsensus.MockConsensus{},
-		storageInstance,
-	)
-	bc.lastBlockHash = []byte("kernel-hash-4")
-
-	restartedMockIterator := func() iterator.Iterator {
-		reverseIterator := &mockIterator.MockIterator{}
-
-		storageInstance.
-			On("GetLastBlock").
-			Return(Block4, nil)
-
-		reverseIterator.
-			On("Initialize", []byte("kernel-hash-4")).
-			Return(nil)
-
-		reverseIterator.
-			On("HasNext").
-			Return(true).
-			Times(5)
-		reverseIterator.
-			On("HasNext").
-			Return(false).
-			Once()
-
-		reverseIterator.
-			On("GetNextBlock").
-			Return(Block4, nil).
-			Once()
-		reverseIterator.
-			On("GetNextBlock").
-			Return(Block3, nil).
-			Once()
-		reverseIterator.
-			On("GetNextBlock").
-			Return(Block2, nil).
-			Once()
-		reverseIterator.
-			On("GetNextBlock").
-			Return(Block1, nil).
-			Once()
-		reverseIterator.
-			On("GetNextBlock").
-			Return(GenesisBlock, nil).
-			Once()
-
-		return reverseIterator
-	}
+	storageInstance.
+		On("GetLastBlock").
+		Return(Block4, nil)
 
 	explorer := NewExplorer(storageInstance)
 
-	txs, err := explorer.findUnspentTransactions("pubKey-1", restartedMockIterator())
+	// todo(): split each pubKey check into a separate test so is more descriptive
+	txs, err := explorer.findUnspentTransactions("pubKey-1", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
 
-	txs, err = explorer.findUnspentTransactions("pubKey-2", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-2", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-kernel-2-id"), txs[1].ID)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-3", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-3", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(txs))
 	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[1].ID)
 	assert.Equal(t, []byte("coinbase-transaction-kernel-2-id"), txs[2].ID)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-4", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-4", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(txs))
 	assert.Equal(t, "coinbase-transaction-kernel-3-id", string(txs[0].ID))
 	assert.Equal(t, "regular-transaction-kernel-3-id", string(txs[1].ID))
 
-	txs, err = explorer.findUnspentTransactions("pubKey-5", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-5", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(txs))
 
-	txs, err = explorer.findUnspentTransactions("pubKey-6", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-6", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), txs[0].ID)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-7", restartedMockIterator())
+	txs, err = explorer.findUnspentTransactions("pubKey-7", initializeMockedChain())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), txs[0].ID)
@@ -270,4 +220,44 @@ func TestBlockchain_retrieveBalanceFrom(t *testing.T) {
 	}
 
 	assert.Equal(t, uint(103), retrieveBalanceFrom(utxos))
+}
+
+func initializeMockedChain() iterator.Iterator {
+	reverseIterator := &mockIterator.MockIterator{}
+
+	reverseIterator.
+		On("Initialize", []byte("kernel-hash-4")).
+		Return(nil)
+
+	reverseIterator.
+		On("HasNext").
+		Return(true).
+		Times(5)
+	reverseIterator.
+		On("HasNext").
+		Return(false).
+		Once()
+
+	reverseIterator.
+		On("GetNextBlock").
+		Return(Block4, nil).
+		Once()
+	reverseIterator.
+		On("GetNextBlock").
+		Return(Block3, nil).
+		Once()
+	reverseIterator.
+		On("GetNextBlock").
+		Return(Block2, nil).
+		Once()
+	reverseIterator.
+		On("GetNextBlock").
+		Return(Block1, nil).
+		Once()
+	reverseIterator.
+		On("GetNextBlock").
+		Return(GenesisBlock, nil).
+		Once()
+
+	return reverseIterator
 }
