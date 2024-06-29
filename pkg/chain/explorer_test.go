@@ -13,6 +13,135 @@ import (
 	"testing"
 )
 
+// set up genesis kernel with coinbase transaction
+var GenesisBlock = &Block{
+	Timestamp: 0,
+	Transactions: []*Transaction{
+		{
+			ID: []byte("coinbase-transaction-genesis-id"),
+			Vin: []TxInput{
+				NewCoinbaseInput(),
+			},
+			Vout: []TxOutput{
+				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-1"),
+			},
+		},
+	},
+	PrevBlockHash: []byte{},
+	Nonce:         1,
+	Hash:          []byte("genesis-kernel-hash"),
+}
+
+// set up kernel 1 with one coinbase transaction
+var Block1 = &Block{
+	Timestamp: 0,
+	Transactions: []*Transaction{
+		{
+			ID: []byte("coinbase-transaction-kernel-1-id"),
+			Vin: []TxInput{
+				NewCoinbaseInput(),
+			},
+			Vout: []TxOutput{
+				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-2"),
+			},
+		},
+	},
+	PrevBlockHash: GenesisBlock.Hash,
+	Nonce:         1,
+	Hash:          []byte("kernel-hash-1"),
+}
+
+// set up kernel 2 with one coinbase transaction and one regular transaction
+var Block2 = &Block{
+	Timestamp: 0,
+	Transactions: []*Transaction{
+		{
+			ID: []byte("coinbase-transaction-kernel-2-id"),
+			Vin: []TxInput{
+				NewCoinbaseInput(),
+			},
+			Vout: []TxOutput{
+				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-3"),
+			},
+		},
+		{
+			ID: []byte("regular-transaction-kernel-1-id"),
+			Vin: []TxInput{
+				NewInput([]byte("coinbase-transaction-kernel-1-id"), 0, "pubKey-2", "pubKey-2"),
+			},
+			Vout: []TxOutput{
+				NewOutput(2, script.P2PK, "pubKey-3"),
+				NewOutput(3, script.P2PK, "pubKey-4"),
+				NewOutput(44, script.P2PK, "pubKey-5"),
+				NewOutput(1, script.P2PK, "pubKey-2"),
+			},
+		},
+	},
+	PrevBlockHash: Block1.Hash,
+	Nonce:         1,
+	Hash:          []byte("kernel-hash-2"),
+}
+
+// set up kernel 3 with one coinbase transaction and two regular transactions
+var Block3 = &Block{
+	Timestamp: 0,
+	Transactions: []*Transaction{
+		{
+			ID: []byte("coinbase-transaction-kernel-3-id"),
+			Vin: []TxInput{
+				NewCoinbaseInput(),
+			},
+			Vout: []TxOutput{
+				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-4"),
+			},
+		},
+		{
+			ID: []byte("regular-transaction-kernel-3-id"),
+			Vin: []TxInput{
+				NewInput([]byte("regular-transaction-kernel-2-id"), 1, "pubKey-4", "pubKey-4"),
+				NewInput([]byte("regular-transaction-kernel-2-id"), 2, "pubKey-5", "pubKey-5"),
+			},
+			Vout: []TxOutput{
+				NewOutput(4, script.P2PK, "pubKey-2"),
+				NewOutput(2, script.P2PK, "pubKey-3"),
+				NewOutput(41, script.P2PK, "pubKey-4"),
+			},
+		},
+		{
+			ID: []byte("regular-transaction-2-kernel-3-id"),
+			Vin: []TxInput{
+				NewInput([]byte("regular-transaction-kernel-2-id"), 0, "pubKey-3", "pubKey-3"),
+			},
+			Vout: []TxOutput{
+				NewOutput(1, script.P2PK, "pubKey-6"),
+				NewOutput(1, script.P2PK, "pubKey-3"),
+			},
+		},
+	},
+	PrevBlockHash: Block2.Hash,
+	Nonce:         1,
+	Hash:          []byte("kernel-hash-3"),
+}
+
+// set up kernel 4 with one coinbase transaction
+var Block4 = &Block{
+	Timestamp: 0,
+	Transactions: []*Transaction{
+		{
+			ID: []byte("coinbase-transaction-kernel-4-id"),
+			Vin: []TxInput{
+				NewCoinbaseInput(),
+			},
+			Vout: []TxOutput{
+				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-7"),
+			},
+		},
+	},
+	PrevBlockHash: Block3.Hash,
+	Nonce:         1,
+	Hash:          []byte("kernel-hash-4"),
+}
+
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
 	coinbaseTx := NewCoinbaseTransaction("pubKey-1")

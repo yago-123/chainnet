@@ -16,6 +16,8 @@ func NewHeavyValidator(lv LightValidator) *HValidator {
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) bool {
 	return !hv.lv.ValidateTx(tx)
 
+	// todo(): validate that outputs have not been spent yet
+
 	// todo(): validate double spending check
 
 	// todo(): validate timelock / block height constraints

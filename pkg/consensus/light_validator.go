@@ -20,6 +20,8 @@ func validateInputs(tx *kernel.Transaction) bool {
 		return false
 	}
 
+	// todo(): make sure there is only one coinbase input
+
 	// todo(): check ownership of inputs
 	return false
 }

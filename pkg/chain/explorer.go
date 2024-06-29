@@ -77,7 +77,7 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Ite
 			for _, in := range tx.Vin {
 				if in.CanUnlockOutputWith(pubKey) {
 					inTxID := hex.EncodeToString(in.Txid)
-unspentTXos
+
 					// mark the output as spent
 					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
 				}
@@ -108,7 +108,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 		// get the next block using the revIterator
 		confirmedBlock, err := it.GetNextBlock()
 		if err != nil {
-			return []UnspentOutput, err
+			return []UnspentOutput{}, err
 		}
 
 		// skip the genesis block
@@ -127,7 +127,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 				// check if the output can be unlocked with the given pubKey
 				if out.CanBeUnlockedWith(pubKey) {
 					unspentTXOs = append(unspentTXOs, UnspentOutput{
-						TxId: tx.ID,
+						TxId:   tx.ID,
 						OutIdx: uint(outIdx),
 						Output: out,
 					})
