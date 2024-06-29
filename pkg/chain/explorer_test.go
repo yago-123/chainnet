@@ -184,7 +184,54 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(txs))
 	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), txs[0].ID)
+}
 
+func TestBlockchain_findUnspentOutputs(t *testing.T) {
+	storageInstance := &mockStorage.MockStorage{}
+	storageInstance.
+		On("GetLastBlock").
+		Return(Block4, nil)
+
+	explorer := NewExplorer(storageInstance)
+
+	// todo(): split each pubKey check into a separate test so is more descriptive
+	// todo(): add additional checks for the other fields in the TxOutput struct
+	utxo, err := explorer.findUnspentOutputs("pubKey-1", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(utxo))
+
+	utxo, err = explorer.findUnspentOutputs("pubKey-2", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(utxo))
+	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), utxo[0].TxId)
+	assert.Equal(t, []byte("regular-transaction-kernel-2-id"), utxo[1].TxId)
+
+	utxo, err = explorer.findUnspentOutputs("pubKey-3", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(utxo))
+	assert.Equal(t, []byte("regular-transaction-kernel-3-id"), utxo[0].TxId)
+	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), utxo[1].TxId)
+	assert.Equal(t, []byte("coinbase-transaction-kernel-2-id"), utxo[2].TxId)
+
+	utxo, err = explorer.findUnspentOutputs("pubKey-4", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(utxo))
+	assert.Equal(t, "coinbase-transaction-kernel-3-id", string(utxo[0].TxId))
+	assert.Equal(t, "regular-transaction-kernel-3-id", string(utxo[1].TxId))
+
+	utxo, err = explorer.findUnspentOutputs("pubKey-5", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(utxo))
+
+	utxo, err = explorer.findUnspentOutputs("pubKey-6", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(utxo))
+	assert.Equal(t, []byte("regular-transaction-2-kernel-3-id"), utxo[0].TxId)
+
+	utxo, err = explorer.findUnspentOutputs("pubKey-7", initializeMockedChain())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(utxo))
+	assert.Equal(t, []byte("coinbase-transaction-kernel-4-id"), utxo[0].TxId)
 }
 
 func TestBlockchain_FindAmountSpendableOutput(t *testing.T) {

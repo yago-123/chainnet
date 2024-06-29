@@ -28,6 +28,7 @@ func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Tran
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
+// todo() remove this method, we will be using findUnspentOutputs instead most likely
 func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Iterator) ([]*kernel.Transaction, error) {
 	var unspentTXs []*kernel.Transaction
 	spentTXOs := make(map[string][]uint)
