@@ -105,8 +105,29 @@ func (hv *HValidator) validateInputRemainUnspent(tx *kernel.Transaction) bool {
 	return true
 }
 
+// validateBalance checks that the input balance is equal or lower than the output balance of a transaction
+// todo() very similar to validateInputRemainUnspent, refactor eventually to avoid code duplication
 func (hv *HValidator) validateBalance(tx *kernel.Transaction) bool {
-	// todo(): check that inputs equal outputs balance (take into account transaction fee too)
+	inputBalance := uint(0)
+	outputBalance := uint(0)
 
-	return true
+	// retrieve the input balance
+	for _, vin := range tx.Vin {
+		// fetch the unspent outputs for the input's public key
+		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
+		for _, utxo := range utxos {
+			// if there is match, retrieve the amount
+			if utxo.EqualInput(vin) {
+				inputBalance += utxo.Output.Amount
+			}
+		}
+	}
+
+	// retrieve the output balance
+	for _, vout := range tx.Vout {
+		outputBalance += vout.Amount
+	}
+
+	// make sure that the input balance is greater than the output balance (can be equal)
+	return inputBalance < outputBalance
 }
