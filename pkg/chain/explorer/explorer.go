@@ -1,4 +1,4 @@
-package blockchain
+package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
@@ -6,12 +6,6 @@ import (
 	"chainnet/pkg/storage"
 	"encoding/hex"
 )
-
-type UnspentOutput struct {
-	TxId   []byte
-	OutIdx uint
-	Output kernel.TxOutput
-}
 
 type Explorer struct {
 	storage storage.Storage
@@ -92,14 +86,18 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Ite
 	return unspentTXs, nil
 }
 
+func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UnspentOutput, error) {
+	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseIterator(explorer.storage))
+}
+
 // findUnspentOutputs
-func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]UnspentOutput, error) {
-	unspentTXOs := []UnspentOutput{}
+func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]kernel.UnspentOutput, error) {
+	unspentTXOs := []kernel.UnspentOutput{}
 	spentTXOs := make(map[string][]uint)
 
 	lastBlock, err := explorer.storage.GetLastBlock()
 	if err != nil {
-		return []UnspentOutput{}, err
+		return []kernel.UnspentOutput{}, err
 	}
 
 	// get the blockchain revIterator
@@ -109,7 +107,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 		// get the next block using the revIterator
 		confirmedBlock, err := it.GetNextBlock()
 		if err != nil {
-			return []UnspentOutput{}, err
+			return []kernel.UnspentOutput{}, err
 		}
 
 		// skip the genesis block
@@ -127,7 +125,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 
 				// check if the output can be unlocked with the given pubKey
 				if out.CanBeUnlockedWith(pubKey) {
-					unspentTXOs = append(unspentTXOs, UnspentOutput{
+					unspentTXOs = append(unspentTXOs, kernel.UnspentOutput{
 						TxId:   tx.ID,
 						OutIdx: uint(outIdx),
 						Output: out,
@@ -152,7 +150,6 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 
 	// return the list of unspent transactions
 	return unspentTXOs, nil
-
 }
 
 func (explorer *Explorer) CalculateAddressBalance(pubKey string) (uint, error) {

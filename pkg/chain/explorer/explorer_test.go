@@ -1,4 +1,4 @@
-package blockchain
+package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
