@@ -2,7 +2,8 @@ package main
 
 import (
 	"chainnet/config"
-	blockchain "chainnet/pkg/chain"
+	"chainnet/pkg/chain"
+	"chainnet/pkg/chain/explorer"
 	iterator "chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/crypto/hash"
@@ -74,7 +75,7 @@ func main() {
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
 
-	explorer := blockchain.NewExplorer(bolt)
+	explorer := explorer.NewExplorer(bolt)
 	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(explorer))
 	if err != nil {
 		cfg.Logger.Fatalf("Failed to start server: %s", err)
