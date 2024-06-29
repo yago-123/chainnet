@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"chainnet/config"
+	. "chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"

@@ -1,6 +1,8 @@
 package consensus
 
-import "chainnet/pkg/kernel"
+import (
+	"chainnet/pkg/kernel"
+)
 
 type LValidator struct {
 }
@@ -10,34 +12,37 @@ func NewLightValidator() *LValidator {
 }
 
 func (lv *LValidator) ValidateTx(tx *kernel.Transaction) bool {
-	// validate that the hash
-	return validateInputs(tx) && validateOutputs(tx) && validateBalance(tx)
-}
-
-func validateInputs(tx *kernel.Transaction) bool {
-	// check that there is at least one input
-	if len(tx.Vin) < 1 {
+	// check that there is at least one input in non-coinbase transactions
+	if !tx.HaveInputs() && !tx.IsCoinbase() {
 		return false
 	}
 
-	// todo(): make sure there is only one coinbase input
-
-	// todo(): check ownership of inputs
-	return false
-}
-
-func validateOutputs(tx *kernel.Transaction) bool {
-	if len(tx.Vout) < 1 {
+	// make sure that there are outputs in the transaction
+	if !tx.HaveOutputs() {
 		return false
 	}
+
+	// validate there are not multiple Vins with same source
+	if !lv.validateInputsDontMatch(tx) {
+		return false
+	}
+
+	// todo(): check ownership of inputs and validate signatures
 
 	// todo(): check that there is transaction fee
 
-	return false
+	return true
 }
 
-func validateBalance(tx *kernel.Transaction) bool {
+// validateInputsDontMatch checks that the inputs don't match creating double spending problems
+func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) bool {
+	for i := 0; i < len(tx.Vin); i++ {
+		for j := i + 1; j < len(tx.Vin); j++ {
+			if tx.Vin[i].EqualInput(tx.Vin[j]) {
+				return false
+			}
+		}
+	}
 
-	// todo(): check that inputs equal outputs balance (take into account transaction fee too)
-	return false
+	return true
 }
