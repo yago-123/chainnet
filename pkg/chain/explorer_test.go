@@ -65,7 +65,7 @@ var Block2 = &Block{
 			},
 		},
 		{
-			ID: []byte("regular-transaction-kernel-1-id"),
+			ID: []byte("regular-transaction-kernel-2-id"),
 			Vin: []TxInput{
 				NewInput([]byte("coinbase-transaction-kernel-1-id"), 0, "pubKey-2", "pubKey-2"),
 			},
@@ -143,68 +143,6 @@ var Block4 = &Block{
 }
 
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
-	// set up genesis kernel with coinbase transaction
-	coinbaseTx := NewCoinbaseTransaction("pubKey-1")
-	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
-	genesisBlock := NewGenesisBlock([]*Transaction{coinbaseTx})
-	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
-
-	// set up kernel 1 with one coinbase transaction
-	coinbaseTx1 := NewCoinbaseTransaction("pubKey-2")
-	coinbaseTx1.SetID([]byte("coinbase-transaction-kernel-1-id"))
-	block1 := NewBlock([]*Transaction{coinbaseTx1}, genesisBlock.Hash)
-	block1.SetHashAndNonce([]byte("kernel-hash-1"), 1)
-
-	// set up kernel 2 with one coinbase transaction and one regular transaction
-	coinbaseTx2 := NewCoinbaseTransaction("pubKey-3")
-	coinbaseTx2.SetID([]byte("coinbase-transaction-kernel-2-id"))
-	regularTx := NewTransaction(
-		[]TxInput{
-			NewInput([]byte("coinbase-transaction-kernel-1-id"), 0, "pubKey-2", "pubKey-2"),
-		},
-		[]TxOutput{
-			NewOutput(2, script.P2PK, "pubKey-3"),
-			NewOutput(3, script.P2PK, "pubKey-4"),
-			NewOutput(44, script.P2PK, "pubKey-5"),
-			NewOutput(1, script.P2PK, "pubKey-2"),
-		})
-	regularTx.SetID([]byte("regular-transaction-kernel-2-id"))
-	block2 := NewBlock([]*Transaction{coinbaseTx2, regularTx}, block1.Hash)
-	block2.SetHashAndNonce([]byte("kernel-hash-2"), 1)
-
-	// set up kernel 3 with one coinbase transaction and two regular transactions
-	coinbaseTx3 := NewCoinbaseTransaction("pubKey-4")
-	coinbaseTx3.SetID([]byte("coinbase-transaction-kernel-3-id"))
-	regularTx2 := NewTransaction(
-		[]TxInput{
-			NewInput([]byte("regular-transaction-kernel-2-id"), 1, "pubKey-4", "pubKey-4"),
-			NewInput([]byte("regular-transaction-kernel-2-id"), 2, "pubKey-5", "pubKey-5"),
-		},
-		[]TxOutput{
-			NewOutput(4, script.P2PK, "pubKey-2"),
-			NewOutput(2, script.P2PK, "pubKey-3"),
-			NewOutput(41, script.P2PK, "pubKey-4"),
-		},
-	)
-	regularTx2.SetID([]byte("regular-transaction-kernel-3-id"))
-	regularTx3 := NewTransaction(
-		[]TxInput{
-			NewInput([]byte("regular-transaction-kernel-2-id"), 0, "pubKey-3", "pubKey-3"),
-		},
-		[]TxOutput{
-			NewOutput(1, script.P2PK, "pubKey-6"),
-			NewOutput(1, script.P2PK, "pubKey-3"),
-		},
-	)
-	regularTx3.SetID([]byte("regular-transaction-2-kernel-3-id"))
-	block3 := NewBlock([]*Transaction{coinbaseTx3, regularTx2, regularTx3}, block2.Hash)
-	block3.SetHashAndNonce([]byte("kernel-hash-3"), 1)
-
-	// set up kernel 4 with one coinbase transaction
-	coinbaseTx4 := NewCoinbaseTransaction("pubKey-7")
-	coinbaseTx4.SetID([]byte("coinbase-transaction-kernel-4-id"))
-	block4 := NewBlock([]*Transaction{coinbaseTx4}, block3.Hash)
-	block4.SetHashAndNonce([]byte("kernel-hash-4"), 1)
 
 	storageInstance := &mockStorage.MockStorage{}
 	bc := NewBlockchain(
@@ -219,7 +157,7 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 
 		storageInstance.
 			On("GetLastBlock").
-			Return(block4, nil)
+			Return(Block4, nil)
 
 		reverseIterator.
 			On("Initialize", []byte("kernel-hash-4")).
@@ -236,23 +174,23 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 
 		reverseIterator.
 			On("GetNextBlock").
-			Return(block4, nil).
+			Return(Block4, nil).
 			Once()
 		reverseIterator.
 			On("GetNextBlock").
-			Return(block3, nil).
+			Return(Block3, nil).
 			Once()
 		reverseIterator.
 			On("GetNextBlock").
-			Return(block2, nil).
+			Return(Block2, nil).
 			Once()
 		reverseIterator.
 			On("GetNextBlock").
-			Return(block1, nil).
+			Return(Block1, nil).
 			Once()
 		reverseIterator.
 			On("GetNextBlock").
-			Return(genesisBlock, nil).
+			Return(GenesisBlock, nil).
 			Once()
 
 		return reverseIterator
