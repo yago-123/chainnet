@@ -19,12 +19,12 @@ type ScriptElement uint
 
 const (
 	// Special elements
-	PUB_KEY ScriptElement = iota
+	PubKey ScriptElement = iota
 
 	// Operators
-	OP_CHECKSIG
+	OpChecksig
 
-	UNDEFINED
+	Undefined
 )
 
 var operatorNames = [...]string{
@@ -40,12 +40,12 @@ func (op ScriptElement) OutsideBoundaries() bool {
 
 func (op ScriptElement) IsSpecialCase() bool {
 	// todo() extend with more other special cases
-	return op >= PUB_KEY && op <= PUB_KEY
+	return op >= PubKey && op <= PubKey
 }
 
 func (op ScriptElement) String() string {
 	if op >= ScriptElement(len(operatorNames)) {
-		// return UNDEFINED element
+		// return Undefined element
 		return operatorNames[len(operatorNames)-1]
 	}
 
@@ -53,17 +53,17 @@ func (op ScriptElement) String() string {
 }
 
 func NewScript(scriptType ScriptType, pubKey []byte) string {
-	script := Script{UNDEFINED}
+	script := Script{Undefined}
 
 	// if there is no public key, return undefined directly
 	if len(pubKey) == 0 {
-		return UNDEFINED.String()
+		return Undefined.String()
 	}
 
 	// generate script based on type
 	switch scriptType {
 	case P2PK:
-		script = Script{PUB_KEY, OP_CHECKSIG}
+		script = Script{PubKey, OpChecksig}
 	}
 
 	// todo() the render will switch to a hex string eventually
@@ -78,13 +78,13 @@ func (s Script) String(pubKey []byte) string {
 		toRender := ""
 
 		if element.OutsideBoundaries() {
-			return UNDEFINED.String()
+			return Undefined.String()
 		}
 
 		// render special cases
 		if element.IsSpecialCase() {
 			switch element {
-			case PUB_KEY:
+			case PubKey:
 				toRender = string(pubKey)
 			}
 		}
@@ -94,9 +94,9 @@ func (s Script) String(pubKey []byte) string {
 			toRender = element.String()
 		}
 
-		// if no element has been rendered, return UNDEFINED
+		// if no element has been rendered, return Undefined
 		if toRender == "" {
-			return UNDEFINED.String()
+			return Undefined.String()
 		}
 
 		rendered = append(rendered, toRender)

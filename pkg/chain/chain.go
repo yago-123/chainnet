@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// ADJUST_DIFFICULTY_HEIGHT adjusts difficulty every 2016 blocks (~2 weeks)
-const ADJUST_DIFFICULTY_HEIGHT = 2016
+// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
+const AdjustDifficultyHeight = 2016
 
 type Blockchain struct {
 	Chain         []string
@@ -68,7 +68,7 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 		// calculate until the max nonce, if does not match, try again with different timestamp
 		hash, nonce, err := bc.consensus.CalculateBlockHash(newBlock)
 		if err == nil {
-			newBlock.SetHashAndNonce(hash[:], nonce)
+			newBlock.SetHashAndNonce(hash, nonce)
 			break
 		}
 	}
@@ -93,7 +93,7 @@ func (bc *Blockchain) NewCoinbaseTransaction(to string) (*kernel.Transaction, er
 		return nil, err
 	}
 
-	tx.SetID(txHash[:])
+	tx.SetID(txHash)
 
 	return tx, nil
 }

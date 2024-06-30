@@ -6,7 +6,7 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
-	"fmt"
+	"errors"
 	base58 "github.com/btcsuite/btcutil/base58"
 )
 
@@ -47,7 +47,7 @@ func (w *Wallet) GetAddress() []byte {
 	pubKeyHash := w.hasher.Hash(w.PublicKey)
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append(w.version, pubKeyHash...)
+	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic
 	checksum := w.hasher.Hash(versionedPayload)
 
 	// return the base58 of the versioned payload and the checksum
@@ -82,7 +82,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	}
 
 	// perform simple validations (light validator) before broadcasting the transaction
-	if err := w.validator.ValidateTxLight(tx); err != nil {
+	if err = w.validator.ValidateTxLight(tx); err != nil {
 		return &kernel.Transaction{}, err
 	}
 
@@ -125,7 +125,7 @@ func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.
 		}
 	}
 
-	return []kernel.TxInput{}, balance, fmt.Errorf("not enough funds to perform the transaction")
+	return []kernel.TxInput{}, balance, errors.New("not enough funds to perform the transaction")
 }
 
 // generateOutputs

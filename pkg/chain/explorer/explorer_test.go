@@ -182,7 +182,7 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 
 	txs, err = explorer.findUnspentTransactions("pubKey-7", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(txs))
+	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
 }
 
@@ -198,17 +198,17 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	// todo(): add additional checks for the other fields in the TxOutput struct
 	utxo, err := explorer.findUnspentOutputs("pubKey-1", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(utxo))
+	assert.Len(t, utxo, 0)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-2", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(utxo))
+	assert.Len(t, utxo, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxId)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), utxo[1].TxId)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-3", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(utxo))
+	assert.Len(t, utxo, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxId)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[1].TxId)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), utxo[2].TxId)
@@ -221,16 +221,16 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-5", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(utxo))
+	assert.Len(t, utxo, 0)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-6", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(utxo))
+	assert.Len(t, utxo, 1, utxo)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[0].TxId)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-7", initializeMockedChain())
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(utxo))
+	assert.Len(t, utxo, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxId)
 }
 

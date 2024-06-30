@@ -90,7 +90,7 @@ func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UnspentOut
 	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseIterator(explorer.storage))
 }
 
-// findUnspentOutputs
+// findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
 func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]kernel.UnspentOutput, error) {
 	unspentTXOs := []kernel.UnspentOutput{}
 	spentTXOs := make(map[string][]uint)
@@ -229,7 +229,7 @@ func isOutputSpent(spentTXOs map[string][]uint, txID string, outIdx uint) bool {
 	return false
 }
 
-// retrieveBalanceFrom calculates the total amount of unspent transactions
+// retrieveBalanceFrom calculates the total amount of unspent transactions outputs
 func retrieveBalanceFrom(UTXOs []kernel.TxOutput) uint {
 	accumulated := uint(0)
 
