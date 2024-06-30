@@ -14,13 +14,16 @@ type Consensus interface {
 // LightValidator represents a validator that does not require having the whole chain downloaded locally
 // like for example the ones performed by wallets before sending transactions to the nodes and miners
 type LightValidator interface {
-	ValidateTx(tx *kernel.Transaction) bool
+	ValidateTx(tx *kernel.Transaction) error
 }
 
 // HeavyValidator performs the same validations as LightValidator but also validates the previous
 // information like the validity of the chain and transactions without funds. This validator is used
 // by nodes and miners
 type HeavyValidator interface {
-	ValidateTx(tx *kernel.Transaction) bool
-	ValidateBlock(b *kernel.Block) bool
+	ValidateTx(tx *kernel.Transaction) error
+	ValidateBlock(b *kernel.Block) error
 }
+
+type ValidatorTxFunc func(tx *kernel.Transaction) error
+type ValidatorBlockFunc func(b *kernel.Block) error
