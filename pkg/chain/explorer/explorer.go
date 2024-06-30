@@ -230,10 +230,10 @@ func isOutputSpent(spentTXOs map[string][]uint, txID string, outIdx uint) bool {
 }
 
 // retrieveBalanceFrom calculates the total amount of unspent transactions outputs
-func retrieveBalanceFrom(UTXOs []kernel.TxOutput) uint {
+func retrieveBalanceFrom(utxos []kernel.TxOutput) uint {
 	accumulated := uint(0)
 
-	for _, out := range UTXOs {
+	for _, out := range utxos {
 		accumulated += out.Amount
 	}
 

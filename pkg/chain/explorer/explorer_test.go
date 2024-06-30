@@ -7,6 +7,7 @@ import (
 	mockIterator "chainnet/tests/mocks/chain/iterator"
 	mockStorage "chainnet/tests/mocks/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -149,39 +150,39 @@ func TestBlockchain_findUnspentTransactions(t *testing.T) {
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	txs, err := explorer.findUnspentTransactions("pubKey-1", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(txs))
+	require.NoError(t, err)
+	assert.Empty(t, txs)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-2", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(txs))
+	require.NoError(t, err)
+	assert.Len(t, txs, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-3", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(txs))
+	require.NoError(t, err)
+	assert.Len(t, txs, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), txs[2].ID)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-4", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(txs))
+	require.NoError(t, err)
+	assert.Len(t, txs, 2)
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(txs[0].ID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(txs[1].ID))
 
 	txs, err = explorer.findUnspentTransactions("pubKey-5", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(txs))
+	require.NoError(t, err)
+	assert.Empty(t, txs)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-6", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(txs))
+	require.NoError(t, err)
+	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
 
 	txs, err = explorer.findUnspentTransactions("pubKey-7", initializeMockedChain())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
 }
@@ -197,39 +198,39 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	// todo(): add additional checks for the other fields in the TxOutput struct
 	utxo, err := explorer.findUnspentOutputs("pubKey-1", initializeMockedChain())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, utxo, 0)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-2", initializeMockedChain())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, utxo, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), utxo[1].TxID)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-3", initializeMockedChain())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, utxo, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[1].TxID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), utxo[2].TxID)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-4", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(utxo))
+	require.NoError(t, err)
+	assert.Len(t, utxo, 2)
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(utxo[0].TxID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(utxo[1].TxID))
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-5", initializeMockedChain())
-	assert.NoError(t, err)
-	assert.Len(t, utxo, 0)
+	require.NoError(t, err)
+	assert.Empty(t, utxo)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-6", initializeMockedChain())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, utxo, 1, utxo)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[0].TxID)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-7", initializeMockedChain())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, utxo, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxID)
 }
@@ -249,10 +250,10 @@ func TestBlockchain_isOutputSpent(t *testing.T) {
 	spentTXOs["tx-spent-2"] = []uint{0}
 	spentTXOs["tx-spent-3"] = []uint{3}
 
-	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-1", 0))
-	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-1", 1))
-	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-2", 0))
-	assert.Equal(t, true, isOutputSpent(spentTXOs, "tx-spent-3", 3))
+	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-1", 0))
+	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-1", 1))
+	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-2", 0))
+	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-3", 3))
 
 	assert.False(t, isOutputSpent(spentTXOs, "tx-spent-1", 2))
 	assert.False(t, isOutputSpent(spentTXOs, "tx-spent-2", 1))
