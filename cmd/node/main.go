@@ -2,7 +2,7 @@ package main
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/chain"
+	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
 	iterator "chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
@@ -10,8 +10,9 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
-	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 func main() {

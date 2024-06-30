@@ -3,9 +3,10 @@ package iterator
 import (
 	"chainnet/pkg/kernel"
 	mockStorage "chainnet/tests/mocks/storage"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestReverseIterator(t *testing.T) {

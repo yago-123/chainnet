@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"chainnet/pkg/kernel"
+
 	"github.com/stretchr/testify/mock"
 )
 

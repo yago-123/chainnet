@@ -5,9 +5,10 @@ import (
 	"chainnet/pkg/kernel"
 	"errors"
 	"fmt"
+	"time"
+
 	boltdb "github.com/boltdb/bolt"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (

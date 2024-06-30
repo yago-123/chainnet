@@ -3,8 +3,9 @@ package main
 import (
 	blockchain "chainnet/pkg/chain/explorer"
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func NewHTTPRouter(explorer *blockchain.Explorer) *httprouter.Router {

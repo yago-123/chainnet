@@ -2,9 +2,10 @@ package encoding
 
 import (
 	"chainnet/pkg/kernel"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 )
 
 func TestGobEncoder_DeserializeBlock(t *testing.T) {

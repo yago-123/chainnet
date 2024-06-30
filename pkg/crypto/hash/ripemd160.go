@@ -2,8 +2,9 @@ package hash
 
 import (
 	"bytes"
-	"golang.org/x/crypto/ripemd160" //nolint:gosec
 	"hash"
+
+	"golang.org/x/crypto/ripemd160" //nolint:gosec
 )
 
 type Ripemd160 struct {

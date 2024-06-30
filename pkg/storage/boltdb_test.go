@@ -3,10 +3,11 @@ package storage
 import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
-	boltdb "github.com/boltdb/bolt"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
+
+	boltdb "github.com/boltdb/bolt"
+	"github.com/sirupsen/logrus"
 )
 
 func TestBoltDB_GetLastBlock(t *testing.T) {

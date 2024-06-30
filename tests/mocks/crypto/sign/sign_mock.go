@@ -2,6 +2,7 @@ package sign
 
 import (
 	"bytes"
+
 	"github.com/stretchr/testify/mock"
 )
 

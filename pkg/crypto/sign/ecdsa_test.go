@@ -1,9 +1,10 @@
 package sign
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestECDSASigner_Verify(t *testing.T) {

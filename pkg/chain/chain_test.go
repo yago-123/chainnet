@@ -8,9 +8,10 @@ import (
 	mockConsensus "chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
 	mockUtil "chainnet/tests/mocks/util"
+	"testing"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {

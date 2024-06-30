@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"errors"
+
 	base58 "github.com/btcsuite/btcutil/base58"
 )
 

@@ -9,8 +9,9 @@ import (
 	"chainnet/pkg/storage"
 	"encoding/hex"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)

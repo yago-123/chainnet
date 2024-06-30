@@ -14,7 +14,7 @@ type SignatureType byte
 
 const (
 	// sign everything
-	SIGHASH_ALL SignatureType = iota
+	SighashAll SignatureType = iota
 	// SIGHASH_NONE
 	// SIGHASH_SINGLE
 	// SIGHASH_ANYONECANPAY

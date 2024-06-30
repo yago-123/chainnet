@@ -2,8 +2,9 @@ package util
 
 import (
 	"chainnet/pkg/kernel"
-	"github.com/stretchr/testify/mock"
 	"reflect"
+
+	"github.com/stretchr/testify/mock"
 )
 
 // MatchByPreviousBlockPointer creates an argument matcher

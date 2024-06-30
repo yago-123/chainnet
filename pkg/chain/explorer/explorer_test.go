@@ -6,9 +6,10 @@ import (
 	"chainnet/pkg/script"
 	mockIterator "chainnet/tests/mocks/chain/iterator"
 	mockStorage "chainnet/tests/mocks/storage"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // set up genesis block with coinbase transaction
@@ -199,7 +200,7 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	// todo(): add additional checks for the other fields in the TxOutput struct
 	utxo, err := explorer.findUnspentOutputs("pubKey-1", initializeMockedChain())
 	require.NoError(t, err)
-	assert.Len(t, utxo, 0)
+	assert.Empty(t, utxo)
 
 	utxo, err = explorer.findUnspentOutputs("pubKey-2", initializeMockedChain())
 	require.NoError(t, err)
