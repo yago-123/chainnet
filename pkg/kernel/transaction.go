@@ -34,15 +34,15 @@ type Transaction struct {
 	// Version, lock time...
 }
 
+func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
+	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
+}
+
 func NewCoinbaseTransaction(to string) *Transaction {
 	txin := NewCoinbaseInput()
 	txout := NewCoinbaseOutput(script.P2PK, to)
 
 	return NewTransaction([]TxInput{txin}, []TxOutput{txout})
-}
-
-func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
-	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
 }
 
 func (tx *Transaction) SetID(hash []byte) {

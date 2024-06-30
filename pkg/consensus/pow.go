@@ -34,7 +34,7 @@ func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error
 
 		// todo() recheck this part
 		if hashInt.Cmp(hashDifficulty) == -1 {
-			return hash[:], nonce, nil
+			return hash, nonce, nil
 		}
 
 		nonce++
