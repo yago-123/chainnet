@@ -22,6 +22,7 @@ const (
 
 func main() {
 	baseURL := "localhost:8080"
+	var blk *kernel.Block
 
 	cfg := config.NewConfig(logrus.New(), DifficultyPoW, MaxNoncePoW, baseURL)
 	// Initialize your blockchain and other components
@@ -65,7 +66,7 @@ func main() {
 
 	_ = reverseIterator.Initialize(bc.GetLastBlockHash())
 	for reverseIterator.HasNext() {
-		blk, err := reverseIterator.GetNextBlock()
+		blk, err = reverseIterator.GetNextBlock()
 		if err != nil {
 			cfg.Logger.Panicf("Error getting kernel: %s", err)
 		}

@@ -86,7 +86,7 @@ func (s Script) String(pubKey []byte) string {
 
 		// render special cases
 		if element.IsSpecialCase() {
-			switch element {
+			switch element { //nolint:gocritic,exhaustive // number of elements will be increased in the future
 			case PubKey:
 				toRender = string(pubKey)
 			}

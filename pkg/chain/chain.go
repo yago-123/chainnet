@@ -43,6 +43,8 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistenc
 // AddBlock takes transactions and creates a new kernel, then it calculates the hash and nonce for the kernel
 // and persists it in the storage. It also updates the last kernel hash and the chain
 func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Block, error) {
+	var hash []byte
+	var nonce uint
 	var newBlock *kernel.Block
 
 	numBlocks, err := bc.storage.NumberOfBlocks()
@@ -67,7 +69,7 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 	for {
 		newBlock.Timestamp = time.Now().Unix()
 		// calculate until the max nonce, if does not match, try again with different timestamp
-		hash, nonce, err := bc.consensus.CalculateBlockHash(newBlock)
+		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock)
 		if err == nil {
 			newBlock.SetHashAndNonce(hash, nonce)
 			break
@@ -117,8 +119,9 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 
 	// build a list of inputs
 	// todo() move to another function
+	var txID []byte
 	for txid, outs := range validOutputs {
-		txID, err := hex.DecodeString(txid)
+		txID, err = hex.DecodeString(txid)
 		if err != nil {
 			return &kernel.Transaction{}, err
 		}
