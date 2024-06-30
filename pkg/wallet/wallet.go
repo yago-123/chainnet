@@ -21,7 +21,7 @@ type Wallet struct {
 }
 
 func (w *Wallet) ID() string {
-	return string(w.hasher.Hash(w.PublicKey))
+	return string(w.hasher.Hash(w.publicKey))
 }
 
 func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
@@ -44,7 +44,7 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetAddress() []byte {
 	// hash the public key
-	pubKeyHash := w.hasher.Hash(w.PublicKey)
+	pubKeyHash := w.hasher.Hash(w.publicKey)
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
 	versionedPayload := append(w.version, pubKeyHash...)
@@ -98,8 +98,8 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction) (*kernel.Transaction, err
 	txData := tx.AssembleForSigning()
 
 	for _, vin := range tx.Vin {
-		if vin.CanUnlockOutputWith(string(w.PublicKey)) {
-			signature, err := w.signer.Sign(txData, w.PrivateKey)
+		if vin.CanUnlockOutputWith(string(w.publicKey)) {
+			signature, err := w.signer.Sign(txData, w.privateKey)
 			if err != nil {
 				return nil, err
 			}
