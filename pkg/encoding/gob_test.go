@@ -1,4 +1,4 @@
-package encoding
+package encoding //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/kernel"

@@ -1,4 +1,4 @@
-package blockchain
+package blockchain //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/config"

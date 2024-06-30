@@ -1,4 +1,4 @@
-package storage
+package storage //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/encoding"

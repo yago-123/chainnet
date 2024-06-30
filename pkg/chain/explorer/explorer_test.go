@@ -1,4 +1,4 @@
-package explorer
+package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/chain/iterator"
