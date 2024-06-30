@@ -1,10 +1,11 @@
-package encoding
+package encoding //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/kernel"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 )
 
 func TestGobEncoder_DeserializeBlock(t *testing.T) {

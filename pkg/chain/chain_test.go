@@ -1,16 +1,19 @@
-package blockchain
+package blockchain //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/config"
-	. "chainnet/pkg/kernel"
+	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
+
+	"github.com/stretchr/testify/require"
 
 	mockConsensus "chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
 	mockUtil "chainnet/tests/mocks/util"
+	"testing"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
@@ -73,12 +76,12 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	blockAdded, err := bc.AddBlock(coinbaseTx)
 
 	// check that the blockAdded has been added correctly
-	assert.Equal(t, nil, err, "errors while adding genesis blockAdded")
-	assert.Equal(t, 0, len(blockAdded.PrevBlockHash), "genesis blockAdded contains previous blockAdded hash when it shouldn't")
+	require.NoError(t, err, "errors while adding genesis blockAdded")
+	assert.Empty(t, blockAdded.PrevBlockHash, "genesis blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("genesis-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
-	assert.Equal(t, 1, len(bc.Chain), "blockchain chain length not updated")
+	assert.Len(t, bc.Chain, 1, "blockchain chain length not updated")
 	assert.Equal(t, "genesis-kernel-hash", bc.Chain[0], "blockchain chain not updated with new blockAdded hash")
 
 	// setup the return values for the internal AddBlock calls
@@ -96,12 +99,12 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	blockAdded, err = bc.AddBlock(secondTx)
 
 	// check that the blockAdded has been added correctly
-	assert.Equal(t, nil, err, "errors while adding genesis blockAdded")
+	require.NoError(t, err, "errors while adding genesis blockAdded")
 	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("second-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
-	assert.Equal(t, 2, len(bc.Chain), "blockchain chain length not updated")
+	assert.Len(t, bc.Chain, 2, "blockchain chain length not updated")
 	assert.Equal(t, "second-kernel-hash", bc.Chain[1], "blockchain chain not updated with new blockAdded hash")
 
 	// setup the return values for the internal AddBlock calls
@@ -119,19 +122,19 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	blockAdded, err = bc.AddBlock(thirdTx)
 
 	// check that the blockAdded has been added correctly
-	assert.Equal(t, nil, err, "errors while adding genesis blockAdded")
+	require.NoError(t, err, "errors while adding genesis blockAdded")
 	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("third-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("third-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
-	assert.Equal(t, 3, len(bc.Chain), "blockchain chain length not updated")
+	assert.Len(t, bc.Chain, 3, "blockchain chain length not updated")
 	assert.Equal(t, "third-kernel-hash", bc.Chain[2], "blockchain chain not updated with new blockAdded hash")
 }
 
-func TestBlockchain_AddBlockWithErrors(t *testing.T) {
+func TestBlockchain_AddBlockWithErrors(_ *testing.T) {
 
 }
 
-func TestBlockchain_AddBlockWithInvalidTransaction(t *testing.T) {
+func TestBlockchain_AddBlockWithInvalidTransaction(_ *testing.T) {
 
 }

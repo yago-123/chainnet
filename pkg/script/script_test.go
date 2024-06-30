@@ -1,4 +1,4 @@
-package script
+package script //nolint:testpackage // don't create separate package for tests
 
 import "testing"
 
@@ -13,7 +13,7 @@ func TestNewScript(t *testing.T) {
 		want string
 	}{
 		{"check regular script generation for P2PK", args{scriptType: P2PK, pubKey: []byte("public-key")}, "public-key OP_CHECKSIG"},
-		{"generation with empty public key", args{scriptType: P2PK, pubKey: []byte{}}, UNDEFINED.String()},
+		{"generation with empty public key", args{scriptType: P2PK, pubKey: []byte{}}, Undefined.String()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

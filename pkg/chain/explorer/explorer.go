@@ -23,8 +23,10 @@ func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Tran
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
 // todo() remove this method, we will be using findUnspentOutputs instead most likely
-func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Iterator) ([]*kernel.Transaction, error) {
+func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Iterator) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
+	var nextBlock *kernel.Block
 	var unspentTXs []*kernel.Transaction
+
 	spentTXOs := make(map[string][]uint)
 
 	lastBlock, err := explorer.storage.GetLastBlock()
@@ -37,18 +39,18 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Ite
 
 	for it.HasNext() {
 		// get the next block using the revIterator
-		confirmedBlock, err := it.GetNextBlock()
+		nextBlock, err = it.GetNextBlock()
 		if err != nil {
 			return []*kernel.Transaction{}, err
 		}
 
 		// skip the genesis block
-		if confirmedBlock.IsGenesisBlock() {
+		if nextBlock.IsGenesisBlock() {
 			continue
 		}
 
 		// iterate through each transaction in the block
-		for _, tx := range confirmedBlock.Transactions {
+		for _, tx := range nextBlock.Transactions {
 			txID := hex.EncodeToString(tx.ID)
 
 			for outIdx, out := range tx.Vout {
@@ -90,8 +92,9 @@ func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UnspentOut
 	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseIterator(explorer.storage))
 }
 
-// findUnspentOutputs
-func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]kernel.UnspentOutput, error) {
+// findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
+func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]kernel.UnspentOutput, error) { //nolint:gocognit // ok for now
+	var nextBlock *kernel.Block
 	unspentTXOs := []kernel.UnspentOutput{}
 	spentTXOs := make(map[string][]uint)
 
@@ -105,18 +108,18 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 
 	for it.HasNext() {
 		// get the next block using the revIterator
-		confirmedBlock, err := it.GetNextBlock()
+		nextBlock, err = it.GetNextBlock()
 		if err != nil {
 			return []kernel.UnspentOutput{}, err
 		}
 
 		// skip the genesis block
-		if confirmedBlock.IsGenesisBlock() {
+		if nextBlock.IsGenesisBlock() {
 			continue
 		}
 
 		// iterate through each transaction in the block
-		for _, tx := range confirmedBlock.Transactions {
+		for _, tx := range nextBlock.Transactions {
 			for outIdx, out := range tx.Vout {
 				// in case is already spent, continue
 				if isOutputSpent(spentTXOs, string(tx.ID), uint(outIdx)) {
@@ -126,7 +129,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 				// check if the output can be unlocked with the given pubKey
 				if out.CanBeUnlockedWith(pubKey) {
 					unspentTXOs = append(unspentTXOs, kernel.UnspentOutput{
-						TxId:   tx.ID,
+						TxID:   tx.ID,
 						OutIdx: uint(outIdx),
 						Output: out,
 					})
@@ -229,11 +232,11 @@ func isOutputSpent(spentTXOs map[string][]uint, txID string, outIdx uint) bool {
 	return false
 }
 
-// retrieveBalanceFrom calculates the total amount of unspent transactions
-func retrieveBalanceFrom(UTXOs []kernel.TxOutput) uint {
+// retrieveBalanceFrom calculates the total amount of unspent transactions outputs
+func retrieveBalanceFrom(utxos []kernel.TxOutput) uint {
 	accumulated := uint(0)
 
-	for _, out := range UTXOs {
+	for _, out := range utxos {
 		accumulated += out.Amount
 	}
 

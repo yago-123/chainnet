@@ -1,7 +1,13 @@
 package main
 
-import "chainnet/cmd/cli/cmd"
+import (
+	"chainnet/cmd/cli/cmd"
+
+	"github.com/sirupsen/logrus"
+)
+
+var logger = logrus.New()
 
 func main() {
-	cmd.Execute()
+	cmd.Execute(logger)
 }

@@ -3,8 +3,9 @@ package main
 import (
 	blockchain "chainnet/pkg/chain/explorer"
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func NewHTTPRouter(explorer *blockchain.Explorer) *httprouter.Router {
@@ -23,7 +24,7 @@ func NewHTTPRouter(explorer *blockchain.Explorer) *httprouter.Router {
 	return router
 }
 
-func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
+func listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	// todo() replace this method with all transactions instead of only non-spent ones
@@ -32,13 +33,13 @@ func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
 	}
 
-	err = json.NewEncoder(w).Encode(transactions)
+	err = json.NewEncoder(w).Encode(transactions) //nolint:musttag // not sure which encoding will use in the future
 	if err != nil {
 		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
 	}
 }
 
-func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
+func listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	utxos, err := explorer.FindUnspentTransactions(address)
@@ -46,13 +47,13 @@ func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, exp
 		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
 	}
 
-	err = json.NewEncoder(w).Encode(utxos)
+	err = json.NewEncoder(w).Encode(utxos) //nolint:musttag // not sure which encoding will use in the future
 	if err != nil {
 		http.Error(w, "Failed to encode UTXOs", http.StatusInternalServerError)
 	}
 }
 
-func getAddressBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
+func getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	balanceResponse, err := explorer.CalculateAddressBalance(address)

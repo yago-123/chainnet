@@ -6,15 +6,15 @@ import (
 	"fmt"
 )
 
-// COINBASE_AMOUNT represents the reward for mining a kernel
-const COINBASE_AMOUNT = 50
+// CoinbaseReward represents the reward for mining a kernel
+const CoinbaseReward = 50
 
 // SignatureType represents the different signatures that can be performed over a transaction
 type SignatureType byte
 
 const (
 	// sign everything
-	SIGHASH_ALL SignatureType = iota
+	SighashAll SignatureType = iota
 	// SIGHASH_NONE
 	// SIGHASH_SINGLE
 	// SIGHASH_ANYONECANPAY
@@ -46,7 +46,7 @@ func NewCoinbaseTransaction(to string) *Transaction {
 }
 
 func (tx *Transaction) SetID(hash []byte) {
-	tx.ID = hash[:]
+	tx.ID = hash
 }
 
 // Assemble retrieves all the data from the transaction in order to perform operations
@@ -127,12 +127,12 @@ func NewCoinbaseInput() TxInput {
 }
 
 // NewInput represents the source of the transactions
-func NewInput(txid []byte, Vout uint, ScriptSig string, PubKey string) TxInput {
+func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
 	return TxInput{
 		Txid:      txid,
-		Vout:      Vout,
-		ScriptSig: ScriptSig,
-		PubKey:    PubKey,
+		Vout:      vout,
+		ScriptSig: scriptSig,
+		PubKey:    pubKey,
 	}
 }
 
@@ -162,8 +162,8 @@ type TxOutput struct {
 }
 
 func NewCoinbaseOutput(scriptType script.ScriptType, pubKey string) TxOutput {
-	// todo() come up with mechanism for halving COINBASE_AMOUNT
-	return NewOutput(COINBASE_AMOUNT, scriptType, pubKey)
+	// todo() come up with mechanism for halving CoinbaseReward
+	return NewOutput(CoinbaseReward, scriptType, pubKey)
 }
 
 func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
@@ -180,11 +180,11 @@ func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 
 // UnspentOutput
 type UnspentOutput struct {
-	TxId   []byte
+	TxID   []byte
 	OutIdx uint
 	Output TxOutput
 }
 
 func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
-	return bytes.Equal(utxo.TxId, input.Txid) && utxo.OutIdx == input.Vout
+	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
 }

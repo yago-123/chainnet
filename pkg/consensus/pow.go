@@ -8,6 +8,8 @@ import (
 	"math/big"
 )
 
+const HashLength = 256
+
 type ProofOfWork struct {
 	target  uint
 	hashing hash.Hashing
@@ -22,7 +24,7 @@ func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error
 	var hash []byte
 
 	hashDifficulty := big.NewInt(1)
-	hashDifficulty.Lsh(hashDifficulty, uint(256-b.Target))
+	hashDifficulty.Lsh(hashDifficulty, HashLength-b.Target)
 
 	maxNonce := ^uint(0)
 	nonce := uint(0)

@@ -2,8 +2,9 @@ package hash
 
 import (
 	"bytes"
-	"golang.org/x/crypto/ripemd160" //nolint
 	"hash"
+
+	"golang.org/x/crypto/ripemd160" //nolint:staticcheck // need this lib as part of the specification
 )
 
 type Ripemd160 struct {

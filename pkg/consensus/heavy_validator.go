@@ -178,9 +178,8 @@ func (hv *HValidator) validateNumberOfCoinbaseTxs(b *kernel.Block) error {
 // validateNoDoubleSpendingInsideBlock checks that there are no repeated inputs inside a block
 func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error {
 	// match every transaction with every other transaction
-	for i := 0; i < len(b.Transactions); i++ {
+	for i := range len(b.Transactions) {
 		for j := i + 1; j < len(b.Transactions); j++ {
-
 			// make sure that inputs do not match
 			for _, vin := range b.Transactions[i].Vin {
 				for _, vin2 := range b.Transactions[j].Vin {
@@ -189,14 +188,13 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 					}
 				}
 			}
-
 		}
 	}
 
 	return nil
 }
 
-func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
+func (hv *HValidator) validateBlockHash(_ *kernel.Block) error {
 	// todo() once we have Merkle tree
 
 	return nil

@@ -2,7 +2,7 @@ package main
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/chain"
+	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
 	iterator "chainnet/pkg/chain/iterator"
 	"chainnet/pkg/consensus"
@@ -10,16 +10,21 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
-	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
+)
+
+const (
+	DifficultyPoW = 4
+	MaxNoncePoW   = 100
 )
 
 func main() {
-	difficultyPoW := uint(4)
-	maxNoncePoW := uint(100)
 	baseURL := "localhost:8080"
+	var blk *kernel.Block
 
-	cfg := config.NewConfig(logrus.New(), difficultyPoW, maxNoncePoW, baseURL)
+	cfg := config.NewConfig(logrus.New(), DifficultyPoW, MaxNoncePoW, baseURL)
 	// Initialize your blockchain and other components
 	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(cfg.Logger), cfg.Logger)
 	if err != nil {
@@ -37,7 +42,7 @@ func main() {
 	}
 
 	// create tx1 and add kernel
-	tx1, err := bc.NewTransaction("me", "you", 10)
+	tx1, err := bc.NewTransaction("me", "you", 10) //nolint:mnd // temporary code
 	if err != nil {
 		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
 	}
@@ -47,7 +52,7 @@ func main() {
 	}
 
 	// create tx2 and add kernel
-	tx2, err := bc.NewTransaction("me", "you", 20)
+	tx2, err := bc.NewTransaction("me", "you", 20) //nolint:mnd // temporary code
 	if err != nil {
 		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
 	}
@@ -61,7 +66,7 @@ func main() {
 
 	_ = reverseIterator.Initialize(bc.GetLastBlockHash())
 	for reverseIterator.HasNext() {
-		blk, err := reverseIterator.GetNextBlock()
+		blk, err = reverseIterator.GetNextBlock()
 		if err != nil {
 			cfg.Logger.Panicf("Error getting kernel: %s", err)
 		}
@@ -76,7 +81,7 @@ func main() {
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
 
 	explorer := explorer.NewExplorer(bolt)
-	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(explorer))
+	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(explorer)) //nolint:gosec // add timeout later
 	if err != nil {
 		cfg.Logger.Fatalf("Failed to start server: %s", err)
 	}

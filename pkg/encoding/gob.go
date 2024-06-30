@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"chainnet/pkg/kernel"
 	"encoding/gob"
+
 	"github.com/sirupsen/logrus"
 )
 

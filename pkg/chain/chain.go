@@ -2,19 +2,20 @@ package blockchain
 
 import (
 	"chainnet/config"
-	. "chainnet/pkg/chain/explorer"
+	exp "chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
 	"encoding/hex"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
-// ADJUST_DIFFICULTY_HEIGHT adjusts difficulty every 2016 blocks (~2 weeks)
-const ADJUST_DIFFICULTY_HEIGHT = 2016
+// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
+const AdjustDifficultyHeight = 2016
 
 type Blockchain struct {
 	Chain         []string
@@ -42,6 +43,8 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistenc
 // AddBlock takes transactions and creates a new kernel, then it calculates the hash and nonce for the kernel
 // and persists it in the storage. It also updates the last kernel hash and the chain
 func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Block, error) {
+	var hash []byte
+	var nonce uint
 	var newBlock *kernel.Block
 
 	numBlocks, err := bc.storage.NumberOfBlocks()
@@ -66,9 +69,9 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 	for {
 		newBlock.Timestamp = time.Now().Unix()
 		// calculate until the max nonce, if does not match, try again with different timestamp
-		hash, nonce, err := bc.consensus.CalculateBlockHash(newBlock)
+		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock)
 		if err == nil {
-			newBlock.SetHashAndNonce(hash[:], nonce)
+			newBlock.SetHashAndNonce(hash, nonce)
 			break
 		}
 	}
@@ -93,7 +96,7 @@ func (bc *Blockchain) NewCoinbaseTransaction(to string) (*kernel.Transaction, er
 		return nil, err
 	}
 
-	tx.SetID(txHash[:])
+	tx.SetID(txHash)
 
 	return tx, nil
 }
@@ -103,7 +106,7 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 	var outputs []kernel.TxOutput
 
 	// todo() delete this aberration once explorer & NewTransaction is more developed (should be created from wallet, not here)
-	explorer := NewExplorer(bc.storage)
+	explorer := exp.NewExplorer(bc.storage)
 
 	acc, validOutputs, err := explorer.FindAmountSpendableOutputs(from, amount)
 	if err != nil {
@@ -116,8 +119,9 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 
 	// build a list of inputs
 	// todo() move to another function
+	var txID []byte
 	for txid, outs := range validOutputs {
-		txID, err := hex.DecodeString(txid)
+		txID, err = hex.DecodeString(txid)
 		if err != nil {
 			return &kernel.Transaction{}, err
 		}
@@ -143,7 +147,7 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 		return &kernel.Transaction{}, err
 	}
 
-	tx.SetID(txHash[:])
+	tx.SetID(txHash)
 
 	return tx, nil
 }

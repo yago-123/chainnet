@@ -5,12 +5,16 @@ import (
 	"chainnet/pkg/kernel"
 	"errors"
 	"fmt"
+	"time"
+
 	boltdb "github.com/boltdb/bolt"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
+	BoltDBCreationMode = 0600
+	BoltDBTimeout      = 5 * time.Second
+
 	LastBlockKey  = "lastblock"
 	FirstBlockKey = "firstblock"
 )
@@ -24,9 +28,9 @@ type BoltDB struct {
 }
 
 func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding, logger *logrus.Logger) (*BoltDB, error) {
-	db, err := boltdb.Open(dbFile, 0600, &boltdb.Options{Timeout: 5 * time.Second})
+	db, err := boltdb.Open(dbFile, BoltDBCreationMode, &boltdb.Options{Timeout: BoltDBTimeout})
 	if err != nil {
-		return nil, fmt.Errorf("Error opening BoltDB: %s", err)
+		return nil, fmt.Errorf("error opening bolt storage: %w", err)
 	}
 
 	return &BoltDB{db, bucket, encoding, logger}, nil
@@ -72,7 +76,7 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 		}
 
 		// add the new k/v
-		err := bucket.Put(block.Hash, dataBlock)
+		err = bucket.Put(block.Hash, dataBlock)
 		if err != nil {
 			return err
 		}

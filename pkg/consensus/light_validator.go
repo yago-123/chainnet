@@ -38,10 +38,9 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 
 // validateInputsDontMatch checks that the inputs don't match creating double spending problems
 func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) error {
-	for i := 0; i < len(tx.Vin); i++ {
+	for i := range len(tx.Vin) {
 		for j := i + 1; j < len(tx.Vin); j++ {
 			if tx.Vin[i].EqualInput(tx.Vin[j]) {
-
 				return fmt.Errorf("transaction %s has multiple inputs with the same source", string(tx.ID))
 			}
 		}

@@ -1,12 +1,13 @@
-package storage
+package storage //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
-	boltdb "github.com/boltdb/bolt"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
+
+	boltdb "github.com/boltdb/bolt"
+	"github.com/sirupsen/logrus"
 )
 
 func TestBoltDB_GetLastBlock(t *testing.T) {

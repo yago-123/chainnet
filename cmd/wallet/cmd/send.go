@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -9,8 +8,8 @@ var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
 	Long:  `Send transactions from wallets.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Sending transactions...")
+	Run: func(_ *cobra.Command, _ []string) {
+		logger.Infof("Sending transactions...")
 	},
 }
 

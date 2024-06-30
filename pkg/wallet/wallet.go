@@ -6,7 +6,8 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
-	"fmt"
+	"errors"
+
 	base58 "github.com/btcsuite/btcutil/base58"
 )
 
@@ -21,7 +22,7 @@ type Wallet struct {
 }
 
 func (w *Wallet) ID() string {
-	return string(w.hasher.Hash(w.publicKey))
+	return string(w.hasher.Hash(w.PublicKey))
 }
 
 func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
@@ -44,14 +45,14 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetAddress() []byte {
 	// hash the public key
-	pubKeyHash := w.hasher.Hash(w.publicKey)
+	pubKeyHash := w.hasher.Hash(w.PublicKey)
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append(w.version, pubKeyHash...)
+	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
 	checksum := w.hasher.Hash(versionedPayload)
 
 	// return the base58 of the versioned payload and the checksum
-	payload := append(versionedPayload, checksum...)
+	payload := append(versionedPayload, checksum...) //nolint:gocritic // we need to append the checksum to the payload
 	return []byte(base58.Encode(payload))
 }
 
@@ -64,10 +65,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	}
 
 	// create the outputs necessary for the transaction
-	outputs, err := generateOutputs(targetAmount, txFee, totalBalance, to, string(w.PublicKey))
-	if err != nil {
-		return &kernel.Transaction{}, err
-	}
+	outputs := generateOutputs(targetAmount, txFee, totalBalance, to, string(w.PublicKey))
 
 	// generate transaction
 	tx := kernel.NewTransaction(
@@ -82,7 +80,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	}
 
 	// perform simple validations (light validator) before broadcasting the transaction
-	if err := w.validator.ValidateTxLight(tx); err != nil {
+	if err = w.validator.ValidateTxLight(tx); err != nil {
 		return &kernel.Transaction{}, err
 	}
 
@@ -92,14 +90,13 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
 // be used
 func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction) (*kernel.Transaction, error) {
-
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
 	// todo() we must also have access to the previous tx output in order to verify the ScriptPubKey script
 	txData := tx.AssembleForSigning()
 
 	for _, vin := range tx.Vin {
-		if vin.CanUnlockOutputWith(string(w.publicKey)) {
-			signature, err := w.signer.Sign(txData, w.privateKey)
+		if vin.CanUnlockOutputWith(string(w.PublicKey)) {
+			signature, err := w.signer.Sign(txData, w.PrivateKey)
 			if err != nil {
 				return nil, err
 			}
@@ -119,21 +116,21 @@ func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.
 
 	for _, utxo := range utxos {
 		balance += utxo.Output.Amount
-		inputs = append(inputs, kernel.NewInput(utxo.TxId, utxo.OutIdx, "", utxo.Output.PubKey))
+		inputs = append(inputs, kernel.NewInput(utxo.TxID, utxo.OutIdx, "", utxo.Output.PubKey))
 		if balance >= targetAmount {
 			return inputs, balance, nil
 		}
 	}
 
-	return []kernel.TxInput{}, balance, fmt.Errorf("not enough funds to perform the transaction")
+	return []kernel.TxInput{}, balance, errors.New("not enough funds to perform the transaction")
 }
 
 // generateOutputs
-func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) ([]kernel.TxOutput, error) {
+func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
 	return []kernel.TxOutput{
 		kernel.NewOutput(targetAmount, script.P2PK, receiver),
 		kernel.NewOutput(totalBalance-txFee-targetAmount, script.P2PK, changeReceiver),
-	}, nil
+	}
 }
 
 // broadcastTransaction
