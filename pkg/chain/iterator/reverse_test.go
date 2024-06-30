@@ -4,6 +4,7 @@ import (
 	"chainnet/pkg/kernel"
 	mockStorage "chainnet/tests/mocks/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -55,24 +56,24 @@ func TestReverseIterator(t *testing.T) {
 
 	// initialize iterator with the last kernel hash
 	err := reverseIterator.Initialize(block2.Hash)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check if we have next element and retrieve kernel 2
 	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err := reverseIterator.GetNextBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []byte("kernel-hash-2"), b.Hash, "failure retrieving kernel 2")
 
 	// check if we have next element and retrieve kernel 1
 	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err = reverseIterator.GetNextBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []byte("kernel-hash-1"), b.Hash, "failure retrieving kernel 1")
 
 	// check if we have next element and retrieve genesis kernel
 	assert.Equal(t, true, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err = reverseIterator.GetNextBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []byte("genesis-kernel-hash"), b.Hash, "failure retrieving genesis kernel")
 
 	// verify that we don't have more elements available
@@ -97,12 +98,12 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 
 	// initialize iterator with the last kernel hash
 	err := reverseIterator.Initialize(genesisBlock.Hash)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// check if we have next element and retrieve genesis kernel
 	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err := reverseIterator.GetNextBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []byte("genesis-kernel-hash"), b.Hash, "failure retrieving genesis kernel")
 
 	// verify that we don't have more elements available

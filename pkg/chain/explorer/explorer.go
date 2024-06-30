@@ -126,7 +126,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator
 				// check if the output can be unlocked with the given pubKey
 				if out.CanBeUnlockedWith(pubKey) {
 					unspentTXOs = append(unspentTXOs, kernel.UnspentOutput{
-						TxId:   tx.ID,
+						TxID:   tx.ID,
 						OutIdx: uint(outIdx),
 						Output: out,
 					})

@@ -32,9 +32,9 @@ func TestECDSASigner_Verify(t *testing.T) {
 	assert.False(t, verified)
 
 	// modify the signature in order to fail verifying
-	signature_modified := signature
-	signature_modified[0] = byte(1)
-	verified, err = ecdsa.Verify(signature_modified, hash, pubKey)
+	signatureModified := signature
+	signatureModified[0] = byte(1)
+	verified, err = ecdsa.Verify(signatureModified, hash, pubKey)
 	assert.NoError(t, err)
 	assert.False(t, verified)
 }

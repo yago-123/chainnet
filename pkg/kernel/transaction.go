@@ -180,11 +180,11 @@ func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 
 // UnspentOutput
 type UnspentOutput struct {
-	TxId   []byte
+	TxID   []byte
 	OutIdx uint
 	Output TxOutput
 }
 
 func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
-	return bytes.Equal(utxo.TxId, input.Txid) && utxo.OutIdx == input.Vout
+	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
 }
