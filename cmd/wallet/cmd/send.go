@@ -10,7 +10,7 @@ var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
 	Long:  `Send transactions from wallets.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("Sending transactions...")
 	},
 }

@@ -72,7 +72,7 @@ func TestReverseIterator(t *testing.T) {
 	assert.Equal(t, []byte("kernel-hash-1"), b.Hash, "failure retrieving kernel 1")
 
 	// check if we have next element and retrieve genesis kernel
-	assert.Equal(t, true, reverseIterator.HasNext(), "error checking if next kernel exists")
+	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err = reverseIterator.GetNextBlock()
 	require.NoError(t, err)
 	assert.Equal(t, []byte("genesis-kernel-hash"), b.Hash, "failure retrieving genesis kernel")

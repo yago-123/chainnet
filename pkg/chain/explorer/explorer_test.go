@@ -22,7 +22,7 @@ var GenesisBlock = &Block{
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-1"),
+				NewOutput(CoinbaseReward, script.P2PK, "pubKey-1"),
 			},
 		},
 	},
@@ -41,7 +41,7 @@ var Block1 = &Block{
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-2"),
+				NewOutput(CoinbaseReward, script.P2PK, "pubKey-2"),
 			},
 		},
 	},
@@ -60,7 +60,7 @@ var Block2 = &Block{
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-3"),
+				NewOutput(CoinbaseReward, script.P2PK, "pubKey-3"),
 			},
 		},
 		{
@@ -91,7 +91,7 @@ var Block3 = &Block{
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-4"),
+				NewOutput(CoinbaseReward, script.P2PK, "pubKey-4"),
 			},
 		},
 		{
@@ -132,7 +132,7 @@ var Block4 = &Block{
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(COINBASE_AMOUNT, script.P2PK, "pubKey-7"),
+				NewOutput(CoinbaseReward, script.P2PK, "pubKey-7"),
 			},
 		},
 	},
@@ -236,11 +236,11 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxID)
 }
 
-func TestBlockchain_FindAmountSpendableOutput(t *testing.T) {
+func TestBlockchain_FindAmountSpendableOutput(_ *testing.T) {
 
 }
 
-func TestBlockchain_FindUTXO(t *testing.T) {
+func TestBlockchain_FindUTXO(_ *testing.T) {
 
 }
 

@@ -13,7 +13,7 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List information",
 	Long:  `List information`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 
 	},
 }
@@ -25,7 +25,7 @@ var listTxsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// todo() list all transfers if address == ""
 		if address == "" {
-			fmt.Println("can't retrieve transactions, use --address flag")
+			logger.Infof("can't retrieve transactions, use --address flag")
 		}
 
 		if address != "" {
@@ -38,10 +38,10 @@ var listUTXOsCmd = &cobra.Command{
 	Use:   "utxos",
 	Short: "Unspent transactions",
 	Long:  "List unspent transactions.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		// todo() list all utxos if address == ""
 		if address == "" {
-			fmt.Println("can't retrieve unspent transactions, use --address flag")
+			logger.Infof("can't retrieve unspent transactions, use --address flag")
 		}
 
 		if address != "" {
@@ -54,9 +54,9 @@ var listBalanceCmd = &cobra.Command{
 	Use:   "balance",
 	Short: "Balance",
 	Long:  "List balance.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if address == "" {
-			fmt.Println("can't list balance, specifiy with --address flag")
+			logger.Infof("can't list balance, specifiy with --address flag")
 		}
 
 		if address != "" {
@@ -84,7 +84,7 @@ func listTransactions(address string) {
 	}
 	defer response.Body.Close()
 	body, _ := io.ReadAll(response.Body)
-	fmt.Println("Transactions: ", string(body))
+	logger.Infof("Transactions: %s", string(body))
 }
 
 func listUnspentTransactions(address string) {
@@ -96,7 +96,7 @@ func listUnspentTransactions(address string) {
 	}
 	defer response.Body.Close()
 	body, _ := io.ReadAll(response.Body)
-	fmt.Println("Unspent transactions: ", string(body))
+	logger.Infof("Unspent transactions: %s", string(body))
 }
 
 func listBalance(address string) {

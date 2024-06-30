@@ -24,7 +24,7 @@ func NewHTTPRouter(explorer *blockchain.Explorer) *httprouter.Router {
 	return router
 }
 
-func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
+func listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	// todo() replace this method with all transactions instead of only non-spent ones
@@ -39,7 +39,7 @@ func listTransactions(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 }
 
-func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
+func listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	utxos, err := explorer.FindUnspentTransactions(address)
@@ -53,7 +53,7 @@ func listUTXOs(w http.ResponseWriter, r *http.Request, ps httprouter.Params, exp
 	}
 }
 
-func getAddressBalance(w http.ResponseWriter, r *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
+func getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
 	balanceResponse, err := explorer.CalculateAddressBalance(address)

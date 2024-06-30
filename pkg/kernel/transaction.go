@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-// COINBASE_AMOUNT represents the reward for mining a kernel
-const COINBASE_AMOUNT = 50
+// CoinbaseReward represents the reward for mining a kernel
+const CoinbaseReward = 50
 
 // SignatureType represents the different signatures that can be performed over a transaction
 type SignatureType byte
@@ -127,10 +127,10 @@ func NewCoinbaseInput() TxInput {
 }
 
 // NewInput represents the source of the transactions
-func NewInput(txid []byte, Vout uint, ScriptSig string, PubKey string) TxInput {
+func NewInput(txid []byte, vout uint, ScriptSig string, PubKey string) TxInput {
 	return TxInput{
 		Txid:      txid,
-		Vout:      Vout,
+		Vout:      vout,
 		ScriptSig: ScriptSig,
 		PubKey:    PubKey,
 	}
@@ -162,8 +162,8 @@ type TxOutput struct {
 }
 
 func NewCoinbaseOutput(scriptType script.ScriptType, pubKey string) TxOutput {
-	// todo() come up with mechanism for halving COINBASE_AMOUNT
-	return NewOutput(COINBASE_AMOUNT, scriptType, pubKey)
+	// todo() come up with mechanism for halving CoinbaseReward
+	return NewOutput(CoinbaseReward, scriptType, pubKey)
 }
 
 func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {

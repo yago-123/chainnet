@@ -52,7 +52,7 @@ func (w *Wallet) GetAddress() []byte {
 	checksum := w.hasher.Hash(versionedPayload)
 
 	// return the base58 of the versioned payload and the checksum
-	payload := append(versionedPayload, checksum...)
+	payload := append(versionedPayload, checksum...) //nolint:gocritic // we need to append the checksum to the payload
 	return []byte(base58.Encode(payload))
 }
 
@@ -65,10 +65,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	}
 
 	// create the outputs necessary for the transaction
-	outputs, err := generateOutputs(targetAmount, txFee, totalBalance, to, string(w.PublicKey))
-	if err != nil {
-		return &kernel.Transaction{}, err
-	}
+	outputs := generateOutputs(targetAmount, txFee, totalBalance, to, string(w.PublicKey))
 
 	// generate transaction
 	tx := kernel.NewTransaction(
@@ -93,7 +90,6 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
 // be used
 func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction) (*kernel.Transaction, error) {
-
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
 	// todo() we must also have access to the previous tx output in order to verify the ScriptPubKey script
 	txData := tx.AssembleForSigning()
@@ -130,11 +126,11 @@ func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.
 }
 
 // generateOutputs
-func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) ([]kernel.TxOutput, error) {
+func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
 	return []kernel.TxOutput{
 		kernel.NewOutput(targetAmount, script.P2PK, receiver),
 		kernel.NewOutput(totalBalance-txFee-targetAmount, script.P2PK, changeReceiver),
-	}, nil
+	}
 }
 
 // broadcastTransaction

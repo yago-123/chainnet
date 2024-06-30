@@ -144,7 +144,7 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 		return &kernel.Transaction{}, err
 	}
 
-	tx.SetID(txHash[:])
+	tx.SetID(txHash)
 
 	return tx, nil
 }

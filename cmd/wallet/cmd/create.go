@@ -16,8 +16,8 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create wallet",
 	Long:  `Create wallet`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Creating new wallet...")
+	Run: func(_ *cobra.Command, _ []string) {
+		logger.Infof("Creating new wallet...")
 
 		sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 		if err != nil {
@@ -34,10 +34,10 @@ var createCmd = &cobra.Command{
 		)
 
 		if err != nil {
-			fmt.Printf("Error creating new wallet: %s", err)
+			logger.Infof("Error creating new wallet: %s", err)
 		}
 
-		fmt.Printf("Created wallet %s", w.ID())
+		logger.Infof("Created wallet %s", w.ID())
 	},
 }
 
@@ -45,8 +45,8 @@ var createNewAddressCmd = &cobra.Command{
 	Use:   "address",
 	Short: "New address",
 	Long:  `Create new address.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Creating address...")
+	Run: func(_ *cobra.Command, _ []string) {
+		logger.Infof("Creating address...")
 	},
 }
 

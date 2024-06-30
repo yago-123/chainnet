@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"hash"
 
-	"golang.org/x/crypto/ripemd160" //nolint:gosec
+	"golang.org/x/crypto/ripemd160" //nolint:gosec // need this lib as part of the specification
 )
 
 type Ripemd160 struct {

@@ -188,14 +188,13 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 					}
 				}
 			}
-
 		}
 	}
 
 	return nil
 }
 
-func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
+func (hv *HValidator) validateBlockHash(_ *kernel.Block) error {
 	// todo() once we have Merkle tree
 
 	return nil

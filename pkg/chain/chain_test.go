@@ -5,6 +5,8 @@ import (
 	. "chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 
+	"github.com/stretchr/testify/require"
+
 	mockConsensus "chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
 	mockUtil "chainnet/tests/mocks/util"
@@ -74,7 +76,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	blockAdded, err := bc.AddBlock(coinbaseTx)
 
 	// check that the blockAdded has been added correctly
-	assert.NoError(t, err, "errors while adding genesis blockAdded")
+	require.NoError(t, err, "errors while adding genesis blockAdded")
 	assert.Equal(t, 0, len(blockAdded.PrevBlockHash), "genesis blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
@@ -97,7 +99,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	blockAdded, err = bc.AddBlock(secondTx)
 
 	// check that the blockAdded has been added correctly
-	assert.NoError(t, err, "errors while adding genesis blockAdded")
+	require.NoError(t, err, "errors while adding genesis blockAdded")
 	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
@@ -120,7 +122,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	blockAdded, err = bc.AddBlock(thirdTx)
 
 	// check that the blockAdded has been added correctly
-	assert.NoError(t, err, "errors while adding genesis blockAdded")
+	require.NoError(t, err, "errors while adding genesis blockAdded")
 	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("third-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
@@ -129,10 +131,10 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 	assert.Equal(t, "third-kernel-hash", bc.Chain[2], "blockchain chain not updated with new blockAdded hash")
 }
 
-func TestBlockchain_AddBlockWithErrors(t *testing.T) {
+func TestBlockchain_AddBlockWithErrors(_ *testing.T) {
 
 }
 
-func TestBlockchain_AddBlockWithInvalidTransaction(t *testing.T) {
+func TestBlockchain_AddBlockWithInvalidTransaction(_ *testing.T) {
 
 }
