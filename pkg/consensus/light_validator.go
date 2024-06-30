@@ -25,7 +25,7 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 	}
 
 	// validate there are not multiple Vins with same source
-	if lv.validateInputsDontMatch(tx) != nil {
+	if err := lv.validateInputsDontMatch(tx); err != nil {
 		return errors.New("transaction has multiple inputs with the same source")
 	}
 

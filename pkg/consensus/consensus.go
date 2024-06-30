@@ -23,6 +23,3 @@ type HeavyValidator interface {
 	ValidateTx(tx *kernel.Transaction) error
 	ValidateBlock(b *kernel.Block) error
 }
-
-type ValidatorTxFunc func(tx *kernel.Transaction) error
-type ValidatorBlockFunc func(b *kernel.Block) error

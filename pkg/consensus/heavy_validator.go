@@ -8,6 +8,9 @@ import (
 	"fmt"
 )
 
+type ValidatorTxFunc func(tx *kernel.Transaction) error
+type ValidatorBlockFunc func(b *kernel.Block) error
+
 type HValidator struct {
 	lv       LightValidator
 	explorer explorer.Explorer
