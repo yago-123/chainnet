@@ -13,7 +13,7 @@ func NewLightValidator() *LValidator {
 	return &LValidator{}
 }
 
-func (lv *LValidator) ValidateTx(tx *kernel.Transaction) error {
+func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 	// check that there is at least one input in non-coinbase transactions
 	if !tx.HaveInputs() && !tx.IsCoinbase() {
 		return errors.New("transaction has no inputs")

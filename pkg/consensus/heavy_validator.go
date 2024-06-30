@@ -26,7 +26,7 @@ func NewHeavyValidator(lv LightValidator, explorer explorer.Explorer, signer sig
 
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 	validations := []ValidatorTxFunc{
-		hv.lv.ValidateTx,
+		hv.lv.ValidateTxLight,
 		hv.validateInputRemainUnspent,
 		hv.validateBalance,
 		hv.validateOwnershipOfInputs,
