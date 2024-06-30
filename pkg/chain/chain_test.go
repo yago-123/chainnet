@@ -138,4 +138,3 @@ func TestBlockchain_AddBlockWithErrors(_ *testing.T) {
 func TestBlockchain_AddBlockWithInvalidTransaction(_ *testing.T) {
 
 }
-

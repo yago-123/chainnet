@@ -249,7 +249,7 @@ func TestBlockchain_isOutputSpent(t *testing.T) {
 	spentTXOs["tx-spent-1"] = []uint{0, 1}
 	spentTXOs["tx-spent-2"] = []uint{0}
 	spentTXOs["tx-spent-3"] = []uint{3}
-  
+
 	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-1", 0))
 	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-1", 1))
 	assert.True(t, isOutputSpent(spentTXOs, "tx-spent-2", 0))
