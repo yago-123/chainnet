@@ -6,8 +6,6 @@ import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/wallet"
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +19,7 @@ var createCmd = &cobra.Command{
 
 		sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 		if err != nil {
-			fmt.Printf("Error creating new wallet: %s", err)
+			logger.Infof("Error creating new wallet: %s", err)
 		}
 
 		ecdsaSha256Signer := crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256())

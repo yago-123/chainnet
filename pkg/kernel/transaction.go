@@ -46,7 +46,7 @@ func NewCoinbaseTransaction(to string) *Transaction {
 }
 
 func (tx *Transaction) SetID(hash []byte) {
-	tx.ID = hash[:]
+	tx.ID = hash
 }
 
 // Assemble retrieves all the data from the transaction in order to perform operations
@@ -127,12 +127,12 @@ func NewCoinbaseInput() TxInput {
 }
 
 // NewInput represents the source of the transactions
-func NewInput(txid []byte, vout uint, ScriptSig string, PubKey string) TxInput {
+func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
 	return TxInput{
 		Txid:      txid,
 		Vout:      vout,
-		ScriptSig: ScriptSig,
-		PubKey:    PubKey,
+		ScriptSig: scriptSig,
+		PubKey:    pubKey,
 	}
 }
 

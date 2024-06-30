@@ -77,7 +77,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 
 	// check that the blockAdded has been added correctly
 	require.NoError(t, err, "errors while adding genesis blockAdded")
-	assert.Equal(t, 0, len(blockAdded.PrevBlockHash), "genesis blockAdded contains previous blockAdded hash when it shouldn't")
+	assert.Empty(t, blockAdded.PrevBlockHash, "genesis blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
 	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("genesis-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")

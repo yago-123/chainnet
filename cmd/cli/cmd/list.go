@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/cobra"
 	"io"
 	"net/http"
-
-	"github.com/spf13/cobra"
+	"net/url"
 )
 
 // listCmd represents the list command
@@ -13,7 +13,7 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List information",
 	Long:  `List information`,
-	Run: func(_ *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 
 	},
 }
@@ -22,7 +22,7 @@ var listTxsCmd = &cobra.Command{
 	Use:   "txs",
 	Short: "Transactions",
 	Long:  `List transactions.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		// todo() list all transfers if address == ""
 		if address == "" {
 			logger.Infof("can't retrieve transactions, use --address flag")
@@ -76,10 +76,10 @@ func init() {
 }
 
 func listTransactions(address string) {
-	url := fmt.Sprintf("%s/address/%s/transactions", BaseURL, address)
-	response, err := http.Get(url)
+	ep := fmt.Sprintf("%s/address/%s/transactions", BaseURL, url.PathEscape(address))
+	response, err := http.Get(ep)
 	if err != nil {
-		fmt.Printf("Error retrieving transactions endpoint: %s", err)
+		logger.Infof("Error retrieving transactions endpoint: %s", err)
 		return
 	}
 	defer response.Body.Close()
@@ -88,10 +88,10 @@ func listTransactions(address string) {
 }
 
 func listUnspentTransactions(address string) {
-	url := fmt.Sprintf("%s/address/%s/utxos", BaseURL, address)
-	response, err := http.Get(url)
+	ep := fmt.Sprintf("%s/address/%s/utxos", BaseURL, url.PathEscape(address))
+	response, err := http.Get(ep)
 	if err != nil {
-		fmt.Printf("Error retrieving unspent transactions endpoint: %s", err)
+		logger.Infof("Error retrieving unspent transactions endpoint: %s", err)
 		return
 	}
 	defer response.Body.Close()
@@ -100,13 +100,13 @@ func listUnspentTransactions(address string) {
 }
 
 func listBalance(address string) {
-	url := fmt.Sprintf("%s/address/%s/balance", BaseURL, address)
-	response, err := http.Get(url)
+	ep := fmt.Sprintf("%s/address/%s/balance", BaseURL, url.PathEscape(address))
+	response, err := http.Get(ep)
 	if err != nil {
-		fmt.Printf("Error retrieving unspent transactions endpoint: %s", err)
+		logger.Infof("Error retrieving unspent transactions endpoint: %s", err)
 		return
 	}
 	defer response.Body.Close()
 	body, _ := io.ReadAll(response.Body)
-	fmt.Printf("Balance for %s: %s", address, string(body))
+	logger.Infof("Balance for %s: %s", address, string(body))
 }

@@ -15,12 +15,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	DifficultyPoW = 4
+	MaxNoncePoW   = 100
+)
+
 func main() {
-	difficultyPoW := uint(4)
-	maxNoncePoW := uint(100)
 	baseURL := "localhost:8080"
 
-	cfg := config.NewConfig(logrus.New(), difficultyPoW, maxNoncePoW, baseURL)
+	cfg := config.NewConfig(logrus.New(), DifficultyPoW, MaxNoncePoW, baseURL)
 	// Initialize your blockchain and other components
 	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(cfg.Logger), cfg.Logger)
 	if err != nil {

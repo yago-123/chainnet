@@ -2,20 +2,20 @@ package script
 
 import "strings"
 
-type ScriptType uint
+type ScriptType uint //nolint:revive // ScriptType is a type for script types
 
 // Script types
 const (
 	// P2PK = Pay-to-PubKey
 	P2PK ScriptType = iota
-	// P2PKH = Pay-to-PubKey-Hash
+	P2PKH
 	// P2PKH
 
 	// ...
 )
 
 type Script []ScriptElement
-type ScriptElement uint
+type ScriptElement uint //nolint:revive // ScriptElement is a type for script elements
 
 const (
 	// Special elements
@@ -64,6 +64,9 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 	switch scriptType {
 	case P2PK:
 		script = Script{PubKey, OpChecksig}
+	case P2PKH:
+	// todo() implement P2PKH
+	default:
 	}
 
 	// todo() the render will switch to a hex string eventually

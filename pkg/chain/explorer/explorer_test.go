@@ -32,7 +32,7 @@ var GenesisBlock = &Block{
 }
 
 // set up block 1 with one coinbase transaction
-var Block1 = &Block{
+var Block1 = &Block{ //nolint:gochecknoglobals
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -51,7 +51,7 @@ var Block1 = &Block{
 }
 
 // set up block 2 with one coinbase transaction and one regular transaction
-var Block2 = &Block{
+var Block2 = &Block{ //nolint:gochecknoglobals
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -82,7 +82,7 @@ var Block2 = &Block{
 }
 
 // set up block 3 with one coinbase transaction and two regular transactions
-var Block3 = &Block{
+var Block3 = &Block{ //nolint:gochecknoglobals
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -123,7 +123,7 @@ var Block3 = &Block{
 }
 
 // set up block 4 with one coinbase transaction
-var Block4 = &Block{
+var Block4 = &Block{ //nolint:gochecknoglobals
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{

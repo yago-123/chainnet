@@ -30,7 +30,7 @@ type BoltDB struct {
 func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding, logger *logrus.Logger) (*BoltDB, error) {
 	db, err := boltdb.Open(dbFile, BoltDBCreationMode, &boltdb.Options{Timeout: BoltDBTimeout})
 	if err != nil {
-		return nil, fmt.Errorf("Error opening BoltDB: %s", err)
+		return nil, fmt.Errorf("error opening bolt storage: %w", err)
 	}
 
 	return &BoltDB{db, bucket, encoding, logger}, nil
