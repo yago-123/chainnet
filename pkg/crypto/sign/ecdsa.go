@@ -5,7 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
-	"fmt"
+	"errors"
 	"math/big"
 )
 
@@ -50,7 +50,7 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 		return false, err
 	}
 
-	rLength := len(signature) / 2
+	rLength := len(signature) / 2 //nolint:mnd  // we need to divide the signature in half
 	rBytes := signature[:rLength]
 	sBytes := signature[rLength:]
 
@@ -74,7 +74,6 @@ func (ecdsaSign *ECDSASigner) convertToBytes(pubKey *ecdsa.PublicKey, privKey *e
 	}
 
 	return publicKey, privateKey, nil
-
 }
 
 func (ecdsaSign *ECDSASigner) convertBytesToPrivateKey(privKey []byte) (*ecdsa.PrivateKey, error) {
@@ -91,7 +90,7 @@ func (ecdsaSign *ECDSASigner) convertBytesToPublicKey(pubKey []byte) (*ecdsa.Pub
 
 	publicKey, ok := pub.(*ecdsa.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("not ECDSA public key")
+		return nil, errors.New("error deserializing ECDSA public key")
 	}
 
 	return publicKey, nil

@@ -58,13 +58,13 @@ func TestReverseIterator(t *testing.T) {
 	assert.NoError(t, err)
 
 	// check if we have next element and retrieve kernel 2
-	assert.Equal(t, true, reverseIterator.HasNext(), "error checking if next kernel exists")
+	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err := reverseIterator.GetNextBlock()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("kernel-hash-2"), b.Hash, "failure retrieving kernel 2")
 
 	// check if we have next element and retrieve kernel 1
-	assert.Equal(t, true, reverseIterator.HasNext(), "error checking if next kernel exists")
+	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err = reverseIterator.GetNextBlock()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("kernel-hash-1"), b.Hash, "failure retrieving kernel 1")
@@ -76,7 +76,7 @@ func TestReverseIterator(t *testing.T) {
 	assert.Equal(t, []byte("genesis-kernel-hash"), b.Hash, "failure retrieving genesis kernel")
 
 	// verify that we don't have more elements available
-	assert.Equal(t, false, reverseIterator.HasNext(), "more elements were found when the chain must have ended")
+	assert.False(t, reverseIterator.HasNext(), "more elements were found when the chain must have ended")
 }
 
 func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
@@ -100,11 +100,11 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 	assert.NoError(t, err)
 
 	// check if we have next element and retrieve genesis kernel
-	assert.Equal(t, true, reverseIterator.HasNext(), "error checking if next kernel exists")
+	assert.True(t, reverseIterator.HasNext(), "error checking if next kernel exists")
 	b, err := reverseIterator.GetNextBlock()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("genesis-kernel-hash"), b.Hash, "failure retrieving genesis kernel")
 
 	// verify that we don't have more elements available
-	assert.Equal(t, false, reverseIterator.HasNext(), "more elements were found when the chain must have ended")
+	assert.False(t, reverseIterator.HasNext(), "more elements were found when the chain must have ended")
 }

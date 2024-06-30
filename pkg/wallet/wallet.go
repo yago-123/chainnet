@@ -47,7 +47,7 @@ func (w *Wallet) GetAddress() []byte {
 	pubKeyHash := w.hasher.Hash(w.PublicKey)
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic
+	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
 	checksum := w.hasher.Hash(versionedPayload)
 
 	// return the base58 of the versioned payload and the checksum
