@@ -1,6 +1,7 @@
 package kernel
 
 import (
+	"bytes"
 	"chainnet/pkg/script"
 	"fmt"
 )
@@ -89,6 +90,18 @@ func (tx *Transaction) AssembleForSigning() []byte {
 	return data
 }
 
+func (tx *Transaction) HaveInputs() bool {
+	return len(tx.Vin) > 0
+}
+
+func (tx *Transaction) HaveOutputs() bool {
+	return len(tx.Vout) > 0
+}
+
+func (tx *Transaction) IsCoinbase() bool {
+	return len(tx.Vin) == 0
+}
+
 // TxInput represents the source of the transaction balance
 type TxInput struct {
 	// Txid is the transaction from which we are going to unlock the input balance
@@ -131,6 +144,10 @@ func (in *TxInput) UnlockWith(scriptSig string) {
 	in.ScriptSig = scriptSig
 }
 
+func (in *TxInput) EqualInput(input TxInput) bool {
+	return bytes.Equal(in.Txid, input.Txid) && in.Vout == input.Vout
+}
+
 // TxOutput represents the destination of the transaction balance
 type TxOutput struct {
 	// Amount is the amount of funds that the output holds
@@ -161,6 +178,13 @@ func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
 }
 
-func (tx *Transaction) IsCoinbase() bool {
-	return len(tx.Vin) == 0
+// UnspentOutput
+type UnspentOutput struct {
+	TxId   []byte
+	OutIdx uint
+	Output TxOutput
+}
+
+func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
+	return bytes.Equal(utxo.TxId, input.Txid) && utxo.OutIdx == input.Vout
 }

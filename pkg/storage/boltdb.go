@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-const LastBlockKey = "lastblock"
+const (
+	LastBlockKey  = "lastblock"
+	FirstBlockKey = "firstblock"
+)
 
 type BoltDB struct {
 	db     *boltdb.DB
@@ -59,6 +62,13 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 			if err != nil {
 				return err
 			}
+
+			// if the bucket did not exist, this is the genesis block
+			// todo() handle this part when p2p and state restoration is tackled
+			err = bucket.Put([]byte(FirstBlockKey), block.Hash)
+			if err != nil {
+				return err
+			}
 		}
 
 		// add the new k/v
@@ -67,7 +77,7 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 			return err
 		}
 
-		// update key pointing to last kernel
+		// update key pointing to last block
 		err = bucket.Put([]byte(LastBlockKey), block.Hash)
 		if err != nil {
 			return err
@@ -99,6 +109,27 @@ func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	}
 
 	return bolt.encoding.DeserializeBlock(lastBlock)
+}
+
+func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
+	var genesisBlock []byte
+
+	err := bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		if !exists {
+			return errors.New("bucket does not exist")
+		}
+
+		genesisBlock = bucket.Get([]byte(FirstBlockKey))
+
+		return nil
+	})
+
+	if err != nil {
+		return &kernel.Block{}, err
+	}
+
+	return bolt.encoding.DeserializeBlock(genesisBlock)
 }
 
 func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {

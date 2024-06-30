@@ -6,14 +6,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Storage interface remains the same
-type Storage interface {
-	NumberOfBlocks() (uint, error)
-	PersistBlock(block kernel.Block) error
-	GetLastBlock() (*kernel.Block, error)
-	RetrieveBlockByHash(hash []byte) (*kernel.Block, error)
-}
-
 type MockStorage struct {
 	mock.Mock
 }
@@ -29,6 +21,11 @@ func (ms *MockStorage) PersistBlock(block kernel.Block) error {
 }
 
 func (ms *MockStorage) GetLastBlock() (*kernel.Block, error) {
+	args := ms.Called()
+	return args.Get(0).(*kernel.Block), args.Error(1)
+}
+
+func (ms *MockStorage) GetGenesisBlock() (*kernel.Block, error) {
 	args := ms.Called()
 	return args.Get(0).(*kernel.Block), args.Error(1)
 }
