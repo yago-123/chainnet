@@ -82,7 +82,6 @@ func main() {
 
 	explorer := explorer.NewExplorer(bolt)
 	err = http.ListenAndServe(cfg.BaseURL, NewHTTPRouter(explorer)) //nolint:gosec // add timeout later
-
 	if err != nil {
 		cfg.Logger.Fatalf("Failed to start server: %s", err)
 	}
