@@ -41,7 +41,7 @@ func main() {
 	}
 
 	// create tx1 and add kernel
-	tx1, err := bc.NewTransaction("me", "you", 10)
+	tx1, err := bc.NewTransaction("me", "you", 10) //nolint:mnd // temporary code
 	if err != nil {
 		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
 	}
@@ -51,7 +51,7 @@ func main() {
 	}
 
 	// create tx2 and add kernel
-	tx2, err := bc.NewTransaction("me", "you", 20)
+	tx2, err := bc.NewTransaction("me", "you", 20) //nolint:mnd // temporary code
 	if err != nil {
 		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
 	}

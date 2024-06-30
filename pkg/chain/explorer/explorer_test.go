@@ -2,7 +2,7 @@ package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/chain/iterator"
-	. "chainnet/pkg/kernel"
+	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
 	mockIterator "chainnet/tests/mocks/chain/iterator"
 	mockStorage "chainnet/tests/mocks/storage"

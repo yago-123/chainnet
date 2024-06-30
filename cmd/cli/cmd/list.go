@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/spf13/cobra"
 )
+
+const RequestTimeout = 5 * time.Second
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -77,37 +81,47 @@ func init() {
 }
 
 func listTransactions(address string) {
-	ep := fmt.Sprintf("%s/address/%s/transactions", BaseURL, url.PathEscape(address))
-	response, err := http.Get(ep)
+	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, generateEndpoint(BaseURL, address, "transactions"), nil)
 	if err != nil {
 		logger.Infof("Error retrieving transactions endpoint: %s", err)
 		return
 	}
-	defer response.Body.Close()
-	body, _ := io.ReadAll(response.Body)
+	defer request.Body.Close()
+	body, _ := io.ReadAll(request.Body)
 	logger.Infof("Transactions: %s", string(body))
 }
 
 func listUnspentTransactions(address string) {
-	ep := fmt.Sprintf("%s/address/%s/utxos", BaseURL, url.PathEscape(address))
-	response, err := http.Get(ep)
+	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, generateEndpoint(BaseURL, address, "utxos"), nil)
 	if err != nil {
 		logger.Infof("Error retrieving unspent transactions endpoint: %s", err)
 		return
 	}
-	defer response.Body.Close()
-	body, _ := io.ReadAll(response.Body)
+	defer request.Body.Close()
+	body, _ := io.ReadAll(request.Body)
 	logger.Infof("Unspent transactions: %s", string(body))
 }
 
 func listBalance(address string) {
-	ep := fmt.Sprintf("%s/address/%s/balance", BaseURL, url.PathEscape(address))
-	response, err := http.Get(ep)
+	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, generateEndpoint(BaseURL, address, "balance"), nil)
 	if err != nil {
 		logger.Infof("Error retrieving unspent transactions endpoint: %s", err)
 		return
 	}
-	defer response.Body.Close()
-	body, _ := io.ReadAll(response.Body)
+	defer request.Body.Close()
+	body, _ := io.ReadAll(request.Body)
 	logger.Infof("Balance for %s: %s", address, string(body))
+}
+
+func generateEndpoint(baseURL, address, target string) string {
+	return fmt.Sprintf("%s/address/%s/%s", baseURL, url.PathEscape(address), target)
 }

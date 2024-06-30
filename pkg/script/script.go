@@ -27,7 +27,7 @@ const (
 	Undefined
 )
 
-var operatorNames = [...]string{
+var operatorNames = [...]string{ //nolint:gochecknoglobals // must be a global variable
 	"PUB_KEY",
 	"OP_CHECKSIG",
 

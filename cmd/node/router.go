@@ -33,7 +33,7 @@ func listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Para
 		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
 	}
 
-	err = json.NewEncoder(w).Encode(transactions)
+	err = json.NewEncoder(w).Encode(transactions) //nolint:musttag // not sure which encoding will use in the future
 	if err != nil {
 		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
 	}
@@ -47,7 +47,7 @@ func listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, exp
 		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
 	}
 
-	err = json.NewEncoder(w).Encode(utxos)
+	err = json.NewEncoder(w).Encode(utxos) //nolint:musttag // not sure which encoding will use in the future
 	if err != nil {
 		http.Error(w, "Failed to encode UTXOs", http.StatusInternalServerError)
 	}

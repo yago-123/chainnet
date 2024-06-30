@@ -2,7 +2,7 @@ package blockchain //nolint:testpackage // don't create separate package for tes
 
 import (
 	"chainnet/config"
-	. "chainnet/pkg/kernel"
+	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
 
 	"github.com/stretchr/testify/require"

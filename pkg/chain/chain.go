@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"chainnet/config"
-	. "chainnet/pkg/chain/explorer"
+	exp "chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
@@ -104,7 +104,7 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 	var outputs []kernel.TxOutput
 
 	// todo() delete this aberration once explorer & NewTransaction is more developed (should be created from wallet, not here)
-	explorer := NewExplorer(bc.storage)
+	explorer := exp.NewExplorer(bc.storage)
 
 	acc, validOutputs, err := explorer.FindAmountSpendableOutputs(from, amount)
 	if err != nil {
