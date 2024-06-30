@@ -2,19 +2,21 @@ package consensus
 
 import (
 	"chainnet/pkg/chain/explorer"
+	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 )
 
 type HValidator struct {
 	lv       LightValidator
 	explorer explorer.Explorer
-	// storage storage.Storage
+	signer   sign.Signature
 }
 
-func NewHeavyValidator(lv LightValidator, explorer explorer.Explorer) *HValidator {
+func NewHeavyValidator(lv LightValidator, explorer explorer.Explorer, signer sign.Signature) *HValidator {
 	return &HValidator{
 		lv:       lv,
 		explorer: explorer,
+		signer:   signer,
 	}
 }
 
@@ -31,14 +33,9 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) bool {
 		return false
 	}
 
-	// todo(): validate that the input is a valid transaction
-	// todo(): validate that the input is not already spent
-	// todo(): validate that the input is owned by the spender
-	// todo(): validate that the input is not a double spend
-
-	// todo(): validate double spending check
-
-	// todo(): validate inputs equal outputs balance
+	if !hv.validateOwnershipOfInputs(tx) {
+		return false
+	}
 
 	// todo(): validate timelock / block height constraints
 
@@ -50,14 +47,13 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) bool {
 func (hv *HValidator) ValidateBlock(b *kernel.Block) bool {
 	// todo(): validate hashes
 
-	// todo(): validate there is not multiple transactions with same inputs
-
 	// todo(): validate block size limit
 
-	// todo(): validate block reward and fees
-
-	// todo(): validate that there is only one coinbase transaction
 	if !hv.validateThereIsOnlyOneCoinbase(b) {
+		return false
+	}
+
+	if !hv.validateNoDoubleSpendingInsideBlock(b) {
 		return false
 	}
 
@@ -93,6 +89,7 @@ func (hv *HValidator) validateInputRemainUnspent(tx *kernel.Transaction) bool {
 			// if there is match, the input is valid and not spent
 			if utxo.EqualInput(vin) {
 				validInput = true
+				break
 			}
 		}
 
@@ -119,6 +116,7 @@ func (hv *HValidator) validateBalance(tx *kernel.Transaction) bool {
 			// if there is match, retrieve the amount
 			if utxo.EqualInput(vin) {
 				inputBalance += utxo.Output.Amount
+				break
 			}
 		}
 	}
@@ -130,4 +128,55 @@ func (hv *HValidator) validateBalance(tx *kernel.Transaction) bool {
 
 	// make sure that the input balance is greater than the output balance (can be equal)
 	return inputBalance < outputBalance
+}
+
+// validateOwnershipOfInputs checks that the inputs of a transaction are owned by the spender
+func (hv *HValidator) validateOwnershipOfInputs(tx *kernel.Transaction) bool {
+	// assume that we only use P2PK for now
+	var err error
+
+	for _, vin := range tx.Vin {
+		validInput := false
+		// fetch the unspent outputs for the input's public key
+		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
+		for _, utxo := range utxos {
+			// if there is match, check that the signature is valid
+			if utxo.EqualInput(vin) {
+				// assume is P2PK only for now
+				validInput, err = hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
+				if err != nil {
+					return false
+				}
+
+				break
+			}
+		}
+
+		if !validInput {
+			return false
+		}
+	}
+
+	return true
+}
+
+// validateNoDoubleSpendingInsideBlock checks that there are no repeated inputs inside a block
+func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) bool {
+	// match every transaction with every other transaction
+	for i := 0; i < len(b.Transactions); i++ {
+		for j := i + 1; j < len(b.Transactions); j++ {
+
+			// make sure that inputs do not match
+			for _, vin := range b.Transactions[i].Vin {
+				for _, vin2 := range b.Transactions[j].Vin {
+					if vin.EqualInput(vin2) {
+						return false
+					}
+				}
+			}
+
+		}
+	}
+
+	return true
 }
