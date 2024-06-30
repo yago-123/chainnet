@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/spf13/cobra"
 )
 
 // listCmd represents the list command

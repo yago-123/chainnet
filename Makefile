@@ -49,9 +49,12 @@ test:
 clean:
 	@echo "Cleaning up..."
 	@rm -rf $(OUTPUT_DIR)
-	rm -f __debug_bin*
-	rm -f _fixture/*
+	@rm -f __debug_bin*
+	@rm -f _fixture/*
 
+.PHONY: imports
+imports: 
+	@find . -name "*.go" | xargs goimports -w
 
 .PHONY: debug
 debug: chainnet-node
