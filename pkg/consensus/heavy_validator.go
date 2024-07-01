@@ -155,7 +155,9 @@ func (hv *HValidator) validateOwnershipOfInputs(tx *kernel.Transaction) error {
 	return nil
 }
 
-// validateNumberOfCoinbaseTxs checks that there is only one coinbase transaction in a block
+// validateNumberOfCoinbaseTxs checks that there is only one coinbase transaction in a block. If there is more than
+// one coinbase transaction it means that there has been an error adding multiple coinbases or that there are
+// transactions with wrong number of inputs todo(): we may want to check this second case as well in the mempool
 func (hv *HValidator) validateNumberOfCoinbaseTxs(b *kernel.Block) error {
 	numCoinbases := 0
 	for _, tx := range b.Transactions {

@@ -99,7 +99,7 @@ func (tx *Transaction) HaveOutputs() bool {
 }
 
 func (tx *Transaction) IsCoinbase() bool {
-	return len(tx.Vin) == 0
+	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0
 }
 
 // TxInput represents the source of the transaction balance
