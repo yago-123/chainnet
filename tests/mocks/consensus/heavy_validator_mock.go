@@ -14,10 +14,10 @@ func NewMockHeavyValidator() *MockHeavyValidator {
 	return &MockHeavyValidator{}
 }
 
-func (m *MockHeavyValidator) ValidateTx(tx *kernel.Transaction) error {
+func (m *MockHeavyValidator) ValidateTx(_ *kernel.Transaction) error {
 	return nil
 }
 
-func (m *MockHeavyValidator) ValidateBlock(b *kernel.Block) error {
+func (m *MockHeavyValidator) ValidateBlock(_ *kernel.Block) error {
 	return nil
 }

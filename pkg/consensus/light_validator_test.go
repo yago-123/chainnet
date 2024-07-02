@@ -2,6 +2,6 @@ package consensus //nolint:testpackage // don't create separate package for test
 
 import "testing"
 
-func TestLValidator_validateInputsDontMatch(t *testing.T) {
-
+func TestLValidator_ValidateTxLight(_ *testing.T) {
+	// todo() once we have RPN done
 }

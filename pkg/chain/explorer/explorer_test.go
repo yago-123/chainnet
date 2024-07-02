@@ -168,7 +168,7 @@ func shutdown(logger *logrus.Logger) {
 	}
 }
 
-func TestBlockchain_findUnspentTransactions(t *testing.T) {
+func TestBlockchain_FindUnspentTransactions(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 

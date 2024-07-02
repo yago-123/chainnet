@@ -31,10 +31,6 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 
 	// todo(): set limit to the number of inputs and outputs
 
-	// todo(): check ownership of inputs and validate signatures
-
-	// todo(): check that there is transaction fee
-
 	return nil
 }
 

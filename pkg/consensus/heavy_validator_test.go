@@ -1,4 +1,5 @@
 package consensus //nolint:testpackage // don't create separate package for tests
+
 import (
 	expl "chainnet/pkg/chain/explorer"
 	"chainnet/pkg/kernel"
@@ -11,16 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHValidator_validateInputRemainUnspent(t *testing.T) {
-
-}
-
-func TestHValidator_validateBalance(t *testing.T) {
-
-}
-
-func TestHValidator_validateOwnershipOfInputs(t *testing.T) {
-
+func TestHValidator_validateOwnershipAndBalanceOfInputs(_ *testing.T) {
+	// todo() once we have RPN done
 }
 
 func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
@@ -75,6 +68,6 @@ func TestHValidator_validateNoDoubleSpendingInsideBlock(t *testing.T) {
 	require.NoError(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithoutDoubleSpending))
 }
 
-func TestHValidator_validateBlockHash(t *testing.T) {
+func TestHValidator_validateBlockHash(_ *testing.T) {
 
 }

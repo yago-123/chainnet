@@ -2,7 +2,7 @@ package encoding_test
 
 import (
 	"chainnet/pkg/encoding"
-	. "chainnet/pkg/kernel"
+	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
 	"reflect"
 	"testing"
