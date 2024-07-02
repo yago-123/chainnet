@@ -5,9 +5,10 @@ import (
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
-	"fmt"
 	"os"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -148,19 +149,22 @@ var Block4 = Block{ //nolint:gochecknoglobals // data that is used across all te
 }
 
 func TestMain(m *testing.M) {
+	logger := logrus.New()
+
 	setup()
 	code := m.Run()
-	shutdown()
+	shutdown(logger)
+
 	os.Exit(code)
 }
 
 func setup() {
 }
 
-func shutdown() {
+func shutdown(logger *logrus.Logger) {
 	err := os.Remove(BoltDBStorageFile)
 	if err != nil {
-		fmt.Errorf("error removing BoltDB file %s: %v", BoltDBStorageFile, err)
+		logger.Errorf("error removing BoltDB file %s: %v", BoltDBStorageFile, err)
 	}
 }
 
@@ -296,7 +300,7 @@ func initializeStorage(t *testing.T, blocks []Block) storage.Storage {
 	}
 
 	for _, block := range blocks {
-		err := boltdb.PersistBlock(block)
+		err = boltdb.PersistBlock(block)
 		if err != nil {
 			t.Errorf("error persisting block: %v", err)
 		}

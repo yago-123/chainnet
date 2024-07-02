@@ -6,8 +6,9 @@ import (
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"
 	mockStorage "chainnet/tests/mocks/storage"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestHValidator_validateInputRemainUnspent(t *testing.T) {
