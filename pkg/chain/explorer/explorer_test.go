@@ -168,7 +168,7 @@ func shutdown(logger *logrus.Logger) {
 	}
 }
 
-func TestBlockchain_FindUnspentTransactions(t *testing.T) {
+func TestExplorer_FindUnspentTransactions(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 
@@ -213,7 +213,7 @@ func TestBlockchain_FindUnspentTransactions(t *testing.T) {
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
 }
 
-func TestBlockchain_findUnspentOutputs(t *testing.T) {
+func TestExplorer_findUnspentOutputs(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 
@@ -259,14 +259,14 @@ func TestBlockchain_findUnspentOutputs(t *testing.T) {
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxID)
 }
 
-func TestBlockchain_FindAmountSpendableOutput(_ *testing.T) {
+func TestExplorer_FindAmountSpendableOutput(_ *testing.T) {
 
 }
 
-func TestBlockchain_FindUTXO(_ *testing.T) {
+func TestExplorer_FindUTXO(_ *testing.T) {
 }
 
-func TestBlockchain_isOutputSpent(t *testing.T) {
+func TestExplorer_isOutputSpent(t *testing.T) {
 	spentTXOs := make(map[string][]uint)
 
 	spentTXOs["tx-spent-1"] = []uint{0, 1}
@@ -283,7 +283,7 @@ func TestBlockchain_isOutputSpent(t *testing.T) {
 	assert.False(t, isOutputSpent(spentTXOs, "tx-spent-3", 0))
 }
 
-func TestBlockchain_retrieveBalanceFrom(t *testing.T) {
+func TestExplorer_retrieveBalanceFrom(t *testing.T) {
 	utxos := []TxOutput{
 		NewOutput(1, script.P2PK, "random-1"),
 		NewOutput(2, script.P2PK, "random-2"),
