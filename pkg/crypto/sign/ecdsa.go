@@ -27,6 +27,7 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 }
 
 func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
+	// todo() add padding?
 	privateKey, err := ecdsaSign.convertBytesToPrivateKey(privKey)
 	if err != nil {
 		return []byte{}, err

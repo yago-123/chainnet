@@ -20,6 +20,7 @@ type ScriptElement uint //nolint:revive // ScriptElement is a type for script el
 const (
 	// Special elements
 	PubKey ScriptElement = iota
+	Signature
 
 	// Operators
 	OpChecksig
@@ -29,20 +30,44 @@ const (
 
 var operatorNames = [...]string{ //nolint:gochecknoglobals // must be a global variable
 	"PUB_KEY",
+	"SIGNATURE",
 	"OP_CHECKSIG",
 
 	"UNDEFINED",
 }
 
+// ConvertToScriptElement converts a string to a ScriptElement
+func ConvertToScriptElement(element string) ScriptElement {
+	for i, name := range operatorNames {
+		if name == element {
+			return ScriptElement(i)
+		}
+	}
+
+	return Undefined
+}
+
+// OutsideBoundaries checks if the element is outside the boundaries
 func (op ScriptElement) OutsideBoundaries() bool {
 	return op >= ScriptElement(len(operatorNames)-1)
 }
 
+// IsSpecialCase checks if the element is a special case
 func (op ScriptElement) IsSpecialCase() bool {
 	// todo() extend with more other special cases
-	return op >= PubKey && op <= PubKey
+	return op >= PubKey && op <= Signature
 }
 
+// IsOperator checks if the element is an operator
+func (op ScriptElement) IsOperator() bool {
+	return op == OpChecksig
+}
+
+func (op ScriptElement) IsUndefined() bool {
+	return op == Undefined
+}
+
+// String returns the string representation of the element
 func (op ScriptElement) String() string {
 	if op >= ScriptElement(len(operatorNames)) {
 		// return Undefined element
@@ -74,6 +99,7 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 	return script.String(pubKey)
 }
 
+// String returns the string representation of the script
 func (s Script) String(pubKey []byte) string {
 	rendered := []string{}
 
