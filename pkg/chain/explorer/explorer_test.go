@@ -1,19 +1,25 @@
 package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/chain/iterator"
+	"chainnet/pkg/encoding"
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
-	mockIterator "chainnet/tests/mocks/chain/iterator"
-	mockStorage "chainnet/tests/mocks/storage"
+	"chainnet/pkg/storage"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	BoltDBStorageFile = "bolt-db-tmp-storage"
+	BoltDBBucketName  = "chainnet"
+)
+
 // set up genesis block with coinbase transaction
-var GenesisBlock = &Block{ //nolint:gochecknoglobals // data that is used across all test funcs
+var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -32,7 +38,7 @@ var GenesisBlock = &Block{ //nolint:gochecknoglobals // data that is used across
 }
 
 // set up block 1 with one coinbase transaction
-var Block1 = &Block{ //nolint:gochecknoglobals // data that is used across all test funcs
+var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -51,7 +57,7 @@ var Block1 = &Block{ //nolint:gochecknoglobals // data that is used across all t
 }
 
 // set up block 2 with one coinbase transaction and one regular transaction
-var Block2 = &Block{ //nolint:gochecknoglobals // data that is used across all test funcs
+var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -82,7 +88,7 @@ var Block2 = &Block{ //nolint:gochecknoglobals // data that is used across all t
 }
 
 // set up block 3 with one coinbase transaction and two regular transactions
-var Block3 = &Block{ //nolint:gochecknoglobals // data that is used across all test funcs
+var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -123,7 +129,7 @@ var Block3 = &Block{ //nolint:gochecknoglobals // data that is used across all t
 }
 
 // set up block 4 with one coinbase transaction
-var Block4 = &Block{ //nolint:gochecknoglobals // data that is used across all test funcs
+var Block4 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Timestamp: 0,
 	Transactions: []*Transaction{
 		{
@@ -141,96 +147,109 @@ var Block4 = &Block{ //nolint:gochecknoglobals // data that is used across all t
 	Hash:          []byte("block-hash-4"),
 }
 
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	shutdown()
+	os.Exit(code)
+}
+
+func setup() {
+}
+
+func shutdown() {
+	err := os.Remove(BoltDBStorageFile)
+	if err != nil {
+		fmt.Errorf("error removing BoltDB file %s: %v", BoltDBStorageFile, err)
+	}
+}
+
 func TestBlockchain_findUnspentTransactions(t *testing.T) {
-	storageInstance := &mockStorage.MockStorage{}
-	storageInstance.
-		On("GetLastBlock").
-		Return(Block4, nil)
+	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
+	defer storageInstance.Close()
 
 	explorer := NewExplorer(storageInstance)
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
-	txs, err := explorer.findUnspentTransactions("pubKey-1", initializeMockedChain())
+	txs, err := explorer.FindUnspentTransactions("pubKey-1")
 	require.NoError(t, err)
 	assert.Empty(t, txs)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-2", initializeMockedChain())
+	txs, err = explorer.FindUnspentTransactions("pubKey-2")
 	require.NoError(t, err)
 	assert.Len(t, txs, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-3", initializeMockedChain())
+	txs, err = explorer.FindUnspentTransactions("pubKey-3")
 	require.NoError(t, err)
 	assert.Len(t, txs, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), txs[2].ID)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-4", initializeMockedChain())
+	txs, err = explorer.FindUnspentTransactions("pubKey-4")
 	require.NoError(t, err)
 	assert.Len(t, txs, 2)
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(txs[0].ID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(txs[1].ID))
 
-	txs, err = explorer.findUnspentTransactions("pubKey-5", initializeMockedChain())
+	txs, err = explorer.FindUnspentTransactions("pubKey-5")
 	require.NoError(t, err)
 	assert.Empty(t, txs)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-6", initializeMockedChain())
+	txs, err = explorer.FindUnspentTransactions("pubKey-6")
 	require.NoError(t, err)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
 
-	txs, err = explorer.findUnspentTransactions("pubKey-7", initializeMockedChain())
+	txs, err = explorer.FindUnspentTransactions("pubKey-7")
 	require.NoError(t, err)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
 }
 
 func TestBlockchain_findUnspentOutputs(t *testing.T) {
-	storageInstance := &mockStorage.MockStorage{}
-	storageInstance.
-		On("GetLastBlock").
-		Return(Block4, nil)
+	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
+	defer storageInstance.Close()
 
 	explorer := NewExplorer(storageInstance)
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	// todo(): add additional checks for the other fields in the TxOutput struct
-	utxo, err := explorer.findUnspentOutputs("pubKey-1", initializeMockedChain())
+	utxo, err := explorer.FindUnspentOutputs("pubKey-1")
 	require.NoError(t, err)
 	assert.Empty(t, utxo)
 
-	utxo, err = explorer.findUnspentOutputs("pubKey-2", initializeMockedChain())
+	utxo, err = explorer.FindUnspentOutputs("pubKey-2")
 	require.NoError(t, err)
 	assert.Len(t, utxo, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), utxo[1].TxID)
 
-	utxo, err = explorer.findUnspentOutputs("pubKey-3", initializeMockedChain())
+	utxo, err = explorer.FindUnspentOutputs("pubKey-3")
 	require.NoError(t, err)
 	assert.Len(t, utxo, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[1].TxID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), utxo[2].TxID)
 
-	utxo, err = explorer.findUnspentOutputs("pubKey-4", initializeMockedChain())
+	utxo, err = explorer.FindUnspentOutputs("pubKey-4")
 	require.NoError(t, err)
 	assert.Len(t, utxo, 2)
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(utxo[0].TxID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(utxo[1].TxID))
 
-	utxo, err = explorer.findUnspentOutputs("pubKey-5", initializeMockedChain())
+	utxo, err = explorer.FindUnspentOutputs("pubKey-5")
 	require.NoError(t, err)
 	assert.Empty(t, utxo)
 
-	utxo, err = explorer.findUnspentOutputs("pubKey-6", initializeMockedChain())
+	utxo, err = explorer.FindUnspentOutputs("pubKey-6")
 	require.NoError(t, err)
 	assert.Len(t, utxo, 1, utxo)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[0].TxID)
 
-	utxo, err = explorer.findUnspentOutputs("pubKey-7", initializeMockedChain())
+	utxo, err = explorer.FindUnspentOutputs("pubKey-7")
 	require.NoError(t, err)
 	assert.Len(t, utxo, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxID)
@@ -270,42 +289,18 @@ func TestBlockchain_retrieveBalanceFrom(t *testing.T) {
 	assert.Equal(t, uint(103), retrieveBalanceFrom(utxos))
 }
 
-func initializeMockedChain() iterator.Iterator {
-	reverseIterator := &mockIterator.MockIterator{}
+func initializeStorage(t *testing.T, blocks []Block) storage.Storage {
+	boltdb, err := storage.NewBoltDB(BoltDBStorageFile, BoltDBBucketName, encoding.NewGobEncoder())
+	if err != nil {
+		t.Errorf("error initializing boltdb: %v", err)
+	}
 
-	reverseIterator.
-		On("Initialize", []byte("block-hash-4")).
-		Return(nil)
+	for _, block := range blocks {
+		err := boltdb.PersistBlock(block)
+		if err != nil {
+			t.Errorf("error persisting block: %v", err)
+		}
+	}
 
-	reverseIterator.
-		On("HasNext").
-		Return(true).
-		Times(5)
-	reverseIterator.
-		On("HasNext").
-		Return(false).
-		Once()
-
-	reverseIterator.
-		On("GetNextBlock").
-		Return(Block4, nil).
-		Once()
-	reverseIterator.
-		On("GetNextBlock").
-		Return(Block3, nil).
-		Once()
-	reverseIterator.
-		On("GetNextBlock").
-		Return(Block2, nil).
-		Once()
-	reverseIterator.
-		On("GetNextBlock").
-		Return(Block1, nil).
-		Once()
-	reverseIterator.
-		On("GetNextBlock").
-		Return(GenesisBlock, nil).
-		Once()
-
-	return reverseIterator
+	return boltdb
 }
