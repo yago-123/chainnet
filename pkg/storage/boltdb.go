@@ -153,6 +153,10 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	return bolt.encoding.DeserializeBlock(blockBytes)
 }
 
+func (bolt *BoltDB) Close() error {
+	return bolt.db.Close()
+}
+
 func (bolt *BoltDB) bucketExists(bucketName string, tx *boltdb.Tx) (bool, *boltdb.Bucket) {
 	bucket := tx.Bucket([]byte(bucketName))
 	return bucket != nil, bucket
