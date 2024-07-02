@@ -29,7 +29,6 @@ func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding) (*BoltD
 	if err != nil {
 		return nil, fmt.Errorf("error opening bolt storage: %w", err)
 	}
-
 	return &BoltDB{db, bucket, encoding}, nil
 }
 
@@ -66,7 +65,7 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 
 			// if the bucket did not exist, this is the genesis block
 			// todo() handle this part when p2p and state restoration is tackled
-			err = bucket.Put([]byte(FirstBlockKey), block.Hash)
+			err = bucket.Put([]byte(FirstBlockKey), dataBlock)
 			if err != nil {
 				return fmt.Errorf("error writing first block %s: %w", string(block.Hash), err)
 			}
@@ -79,7 +78,7 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 		}
 
 		// update key pointing to last block
-		err = bucket.Put([]byte(LastBlockKey), block.Hash)
+		err = bucket.Put([]byte(LastBlockKey), dataBlock)
 		if err != nil {
 			return fmt.Errorf("error writing last block %s: %w", string(block.Hash), err)
 		}
