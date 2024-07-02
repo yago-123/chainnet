@@ -3,12 +3,10 @@ package storage
 import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
-	"errors"
 	"fmt"
 	"time"
 
 	boltdb "github.com/boltdb/bolt"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,16 +22,15 @@ type BoltDB struct {
 	bucket string
 
 	encoding encoding.Encoding
-	logger   *logrus.Logger
 }
 
-func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding, logger *logrus.Logger) (*BoltDB, error) {
+func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding) (*BoltDB, error) {
 	db, err := boltdb.Open(dbFile, BoltDBCreationMode, &boltdb.Options{Timeout: BoltDBTimeout})
 	if err != nil {
 		return nil, fmt.Errorf("error opening bolt storage: %w", err)
 	}
 
-	return &BoltDB{db, bucket, encoding, logger}, nil
+	return &BoltDB{db, bucket, encoding}, nil
 }
 
 func (bolt *BoltDB) NumberOfBlocks() (uint, error) {
@@ -55,7 +52,7 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 
 	dataBlock, err := bolt.encoding.SerializeBlock(block)
 	if err != nil {
-		return err
+		return fmt.Errorf("error serializing block %s: %w", string(block.Hash), err)
 	}
 
 	err = bolt.db.Update(func(tx *boltdb.Tx) error {
@@ -64,27 +61,27 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 		if !exists {
 			bucket, err = tx.CreateBucket([]byte(bolt.bucket))
 			if err != nil {
-				return err
+				return fmt.Errorf("error creating bucket: %w", err)
 			}
 
 			// if the bucket did not exist, this is the genesis block
 			// todo() handle this part when p2p and state restoration is tackled
 			err = bucket.Put([]byte(FirstBlockKey), block.Hash)
 			if err != nil {
-				return err
+				return fmt.Errorf("error writing first block %s: %w", string(block.Hash), err)
 			}
 		}
 
 		// add the new k/v
 		err = bucket.Put(block.Hash, dataBlock)
 		if err != nil {
-			return err
+			return fmt.Errorf("error writing block %s: %w", string(block.Hash), err)
 		}
 
 		// update key pointing to last block
 		err = bucket.Put([]byte(LastBlockKey), block.Hash)
 		if err != nil {
-			return err
+			return fmt.Errorf("error writing last block %s: %w", string(block.Hash), err)
 		}
 
 		return nil
@@ -100,7 +97,7 @@ func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		if !exists {
-			return errors.New("bucket does not exist")
+			return fmt.Errorf("error getting last block: bucket %s does not exist", bolt.bucket)
 		}
 
 		lastBlock = bucket.Get([]byte(LastBlockKey))
@@ -121,7 +118,7 @@ func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
 	err := bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		if !exists {
-			return errors.New("bucket does not exist")
+			return fmt.Errorf("error getting genesis block: bucket %s does not exist", bolt.bucket)
 		}
 
 		genesisBlock = bucket.Get([]byte(FirstBlockKey))
@@ -142,7 +139,7 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
 		if !exists {
-			return errors.New("bucket does not exist")
+			return fmt.Errorf("error retrieving block %s: bucket %s does not exist", string(hash), bolt.bucket)
 		}
 
 		blockBytes = bucket.Get(hash)
