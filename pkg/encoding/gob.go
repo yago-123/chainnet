@@ -4,16 +4,14 @@ import (
 	"bytes"
 	"chainnet/pkg/kernel"
 	"encoding/gob"
-
-	"github.com/sirupsen/logrus"
+	"fmt"
 )
 
 type GobEncoder struct {
-	logger *logrus.Logger
 }
 
-func NewGobEncoder(logger *logrus.Logger) *GobEncoder {
-	return &GobEncoder{logger}
+func NewGobEncoder() *GobEncoder {
+	return &GobEncoder{}
 }
 
 func (gobenc *GobEncoder) SerializeBlock(b kernel.Block) ([]byte, error) {
@@ -22,7 +20,7 @@ func (gobenc *GobEncoder) SerializeBlock(b kernel.Block) ([]byte, error) {
 	encoder := gob.NewEncoder(&result)
 	err := encoder.Encode(b)
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("error serializing block %s: %w", string(b.Hash), err)
 	}
 
 	return result.Bytes(), nil
@@ -34,7 +32,7 @@ func (gobenc *GobEncoder) DeserializeBlock(data []byte) (*kernel.Block, error) {
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&b)
 	if err != nil {
-		return &kernel.Block{}, err
+		return &kernel.Block{}, fmt.Errorf("error deserializing block: %w", err)
 	}
 
 	return &b, nil
@@ -46,7 +44,7 @@ func (gobenc *GobEncoder) SerializeTransaction(tx kernel.Transaction) ([]byte, e
 	enc := gob.NewEncoder(&result)
 	err := enc.Encode(tx)
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("error serializing transaction %s: %w", string(tx.ID), err)
 	}
 
 	return result.Bytes(), nil
@@ -58,7 +56,7 @@ func (gobenc *GobEncoder) DeserializeTransaction(data []byte) (*kernel.Transacti
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&tx)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &kernel.Transaction{}, fmt.Errorf("error deserializing transaction: %w", err)
 	}
 
 	return tx, nil
