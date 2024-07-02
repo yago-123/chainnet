@@ -8,4 +8,5 @@ type Storage interface {
 	GetLastBlock() (*kernel.Block, error)
 	GetGenesisBlock() (*kernel.Block, error)
 	RetrieveBlockByHash(hash []byte) (*kernel.Block, error)
+	Close() error
 }

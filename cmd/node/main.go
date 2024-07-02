@@ -10,6 +10,7 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
+	mockConsensus "chainnet/tests/mocks/consensus"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -26,13 +27,13 @@ func main() {
 
 	cfg := config.NewConfig(logrus.New(), DifficultyPoW, MaxNoncePoW, baseURL)
 	// Initialize your blockchain and other components
-	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder(cfg.Logger), cfg.Logger)
+	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Errorf("Failed to initialize BoltDB: %s", err)
 	}
 
 	// create blockchain
-	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt)
+	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt, &mockConsensus.MockHeavyValidator{})
 
 	// create tx0 and add kernel
 	tx0, _ := bc.NewCoinbaseTransaction("me")

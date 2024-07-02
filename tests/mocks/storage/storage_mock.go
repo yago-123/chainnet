@@ -35,3 +35,8 @@ func (ms *MockStorage) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	args := ms.Called(hash)
 	return args.Get(0).(*kernel.Block), args.Error(1)
 }
+
+func (ms *MockStorage) Close() error {
+	args := ms.Called()
+	return args.Error(0)
+}

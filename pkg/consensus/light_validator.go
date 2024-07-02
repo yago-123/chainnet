@@ -14,8 +14,8 @@ func NewLightValidator() *LValidator {
 }
 
 func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
-	// check that there is at least one input in non-coinbase transactions
-	if !tx.HaveInputs() && !tx.IsCoinbase() {
+	// check that there is at least one input
+	if !tx.HaveInputs() {
 		return errors.New("transaction has no inputs")
 	}
 
@@ -29,9 +29,7 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 		return errors.New("transaction has multiple inputs with the same source")
 	}
 
-	// todo(): check ownership of inputs and validate signatures
-
-	// todo(): check that there is transaction fee
+	// todo(): set limit to the number of inputs and outputs
 
 	return nil
 }

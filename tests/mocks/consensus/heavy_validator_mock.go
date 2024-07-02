@@ -10,12 +10,14 @@ type MockHeavyValidator struct {
 	mock.Mock
 }
 
-func (m *MockHeavyValidator) ValidateTx(tx *kernel.Transaction) error {
-	args := m.Called(tx)
-	return args.Error(0)
+func NewMockHeavyValidator() *MockHeavyValidator {
+	return &MockHeavyValidator{}
 }
 
-func (m *MockHeavyValidator) ValidateBlock(b *kernel.Block) error {
-	args := m.Called(b)
-	return args.Error(0)
+func (m *MockHeavyValidator) ValidateTx(_ *kernel.Transaction) error {
+	return nil
+}
+
+func (m *MockHeavyValidator) ValidateBlock(_ *kernel.Block) error {
+	return nil
 }

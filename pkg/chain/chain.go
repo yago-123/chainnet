@@ -23,16 +23,18 @@ type Blockchain struct {
 
 	consensus consensus.Consensus
 	storage   storage.Storage
+	validator consensus.HeavyValidator
 
 	logger *logrus.Logger
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, persistence storage.Storage) *Blockchain {
+func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator) *Blockchain {
 	bc := &Blockchain{
 		Chain:     []string{},
 		consensus: consensus,
-		storage:   persistence,
+		storage:   storage,
+		validator: validator,
 		logger:    cfg.Logger,
 		cfg:       cfg,
 	}
@@ -60,6 +62,12 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 	// if blocks exist, create new kernel tied to the previous
 	if numBlocks > 0 {
 		newBlock = kernel.NewBlock(transactions, bc.lastBlockHash)
+	}
+
+	// todo() this will probably be validated in the miner/node level
+	err = bc.validator.ValidateBlock(newBlock)
+	if err != nil {
+		return &kernel.Block{}, fmt.Errorf("error validating block %s: %w", newBlock.Hash, err)
 	}
 
 	newBlock.Target = bc.cfg.DifficultyPoW
@@ -148,6 +156,12 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 	}
 
 	tx.SetID(txHash)
+
+	// todo() this will probably be validated in the miner/node level
+	err = bc.validator.ValidateTx(tx)
+	if err != nil {
+		return &kernel.Transaction{}, fmt.Errorf("error validating transaction %s: %w", tx.ID, err)
+	}
 
 	return tx, nil
 }

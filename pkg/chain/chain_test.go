@@ -21,6 +21,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 		config.NewConfig(logrus.New(), 1, 1, ""),
 		&mockConsensus.MockConsensus{},
 		&mockStorage.MockStorage{},
+		&mockConsensus.MockHeavyValidator{},
 	)
 
 	coinbaseTx := []*Transaction{

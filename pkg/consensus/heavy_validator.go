@@ -30,9 +30,7 @@ func NewHeavyValidator(lv LightValidator, explorer explorer.Explorer, signer sig
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 	validations := []ValidatorTxFunc{
 		hv.lv.ValidateTxLight,
-		hv.validateInputRemainUnspent,
-		hv.validateBalance,
-		hv.validateOwnershipOfInputs,
+		hv.validateOwnershipAndBalanceOfInputs,
 		// todo(): validate timelock / block height constraints
 		// todo(): maturity checks?
 	}
@@ -63,49 +61,32 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 	return nil
 }
 
-// validateInputRemainUnspent checks that the inputs of a transaction are not already spent by another transaction
-func (hv *HValidator) validateInputRemainUnspent(tx *kernel.Transaction) error {
-	// skip the coinbase because does not have valid inputs
-	if tx.IsCoinbase() {
-		return nil
-	}
-
-	// range over each input of the transaction
-	for _, vin := range tx.Vin {
-		validInput := false
-
-		// fetch the unspent outputs for the input's public key
-		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
-		for _, utxo := range utxos {
-			// if there is match, the input is valid and not spent
-			if utxo.EqualInput(vin) {
-				validInput = true
-				break
-			}
-		}
-
-		// if there is not any utxo that match, the input is invalid
-		if !validInput {
-			return fmt.Errorf("input with id %s and index %d is already spent", vin.Txid, vin.Vout)
-		}
-	}
-
-	return nil
-}
-
-// validateBalance checks that the input balance is equal or lower than the output balance of a transaction
-// todo() very similar to validateInputRemainUnspent, refactor eventually to avoid code duplication
-func (hv *HValidator) validateBalance(tx *kernel.Transaction) error {
+// validateOwnershipAndBalanceOfInputs checks that the inputs of a transaction are owned by the spender and that the
+// balance of the inputs is greater or equal than the balance of the outputs
+func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction) error {
+	// assume that we only use P2PK for now
 	inputBalance := uint(0)
 	outputBalance := uint(0)
 
-	// retrieve the input balance
 	for _, vin := range tx.Vin {
 		// fetch the unspent outputs for the input's public key
 		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
 		for _, utxo := range utxos {
-			// if there is match, retrieve the amount
+			// if there is match, check that the signature is valid
 			if utxo.EqualInput(vin) {
+				// assume is P2PK only for now
+
+				// check that the signature is valid for unlocking the UTXO
+				sigCheck, err := hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
+				if err != nil {
+					return fmt.Errorf("error verifying signature: %s", err.Error())
+				}
+
+				if !sigCheck {
+					return fmt.Errorf("input with id %s and index %d has invalid signature", vin.Txid, vin.Vout)
+				}
+
+				// append the balance
 				inputBalance += utxo.Output.Amount
 				break
 			}
@@ -125,37 +106,9 @@ func (hv *HValidator) validateBalance(tx *kernel.Transaction) error {
 	return nil
 }
 
-// validateOwnershipOfInputs checks that the inputs of a transaction are owned by the spender
-func (hv *HValidator) validateOwnershipOfInputs(tx *kernel.Transaction) error {
-	// assume that we only use P2PK for now
-	var err error
-
-	for _, vin := range tx.Vin {
-		validInput := false
-		// fetch the unspent outputs for the input's public key
-		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
-		for _, utxo := range utxos {
-			// if there is match, check that the signature is valid
-			if utxo.EqualInput(vin) {
-				// assume is P2PK only for now
-				validInput, err = hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
-				if err != nil {
-					return fmt.Errorf("input with id %s and index %d has invalid signature", vin.Txid, vin.Vout)
-				}
-
-				break
-			}
-		}
-
-		if !validInput {
-			return fmt.Errorf("input with id %s and index %d have been already spent", vin.Txid, vin.Vout)
-		}
-	}
-
-	return nil
-}
-
-// validateNumberOfCoinbaseTxs checks that there is only one coinbase transaction in a block
+// validateNumberOfCoinbaseTxs checks that there is only one coinbase transaction in a block. If there is more than
+// one coinbase transaction it means that there has been an error adding multiple coinbases or that there are
+// transactions with wrong number of inputs todo(): we may want to check this second case as well in the mempool
 func (hv *HValidator) validateNumberOfCoinbaseTxs(b *kernel.Block) error {
 	numCoinbases := 0
 	for _, tx := range b.Transactions {
