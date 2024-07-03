@@ -99,9 +99,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 	// start evaluation of scriptPubKey
 	for index, token := range scriptTokens {
 		if token.IsUndefined() {
-			if token.IsUndefined() {
-				return false, fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
-			}
+			return false, fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
 		}
 
 		if token.IsOperator() {
