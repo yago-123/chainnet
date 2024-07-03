@@ -15,6 +15,7 @@ const (
 	opCheckSigVerifyStackLength = 2
 )
 
+// RPNInterpreter represents the interpreter for the Reverse Polish Notation (RPN) script
 type RPNInterpreter struct {
 	signer sign.Signature
 }
@@ -25,7 +26,8 @@ func NewScriptInterpreter(signer sign.Signature) *RPNInterpreter {
 	}
 }
 
-func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte, tx kernel.Transaction) (string, error) {
+// GenerateScriptSig evaluates the scriptPubKey requirement and generates the scriptSig that will unlock the scriptPubKey
+func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte, tx *kernel.Transaction) (string, error) {
 	// represents the script script pub key as a list of tokens in string format
 	scriptString := strings.Split(scriptPubKey, scriptSeparator)
 
@@ -47,7 +49,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte
 			switch token {
 			case script.OpChecksig:
 				// generate the signature
-				sig, err := rpn.generateOpCheckSig(stack, &tx, privKey)
+				sig, err := rpn.generateOpCheckSig(stack, tx, privKey)
 				if err != nil {
 					return "", err
 				}
@@ -68,6 +70,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte
 	return stack.Pop(), nil
 }
 
+// generateOpCheckSig creates the scriptSig that will unlock the scriptPubKey
 func (rpn *RPNInterpreter) generateOpCheckSig(stack *script.Stack, tx *kernel.Transaction, privKey []byte) (string, error) {
 	if stack.Len() < 1 {
 		return "", fmt.Errorf("invalid stack length while generating signature in OP_CHECKSIG")
@@ -81,7 +84,8 @@ func (rpn *RPNInterpreter) generateOpCheckSig(stack *script.Stack, tx *kernel.Tr
 	return string(signature), err
 }
 
-func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature string, tx *kernel.Transaction) (string, error) {
+// VerifyScriptPubKey verifies the scriptPubKey by reconstructing the script and evaluating it
+func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature string, tx *kernel.Transaction) (bool, error) {
 	// represents the script script pub key as a list of tokens in string format
 	scriptString := strings.Split(scriptPubKey, scriptSeparator)
 
@@ -96,7 +100,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 	for index, token := range scriptTokens {
 		if token.IsUndefined() {
 			if token.IsUndefined() {
-				return "", fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
+				return false, fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
 			}
 		}
 
@@ -106,7 +110,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 			case script.OpChecksig:
 				ret, err := rpn.verifyOpCheckSig(stack, tx)
 				if err != nil {
-					return "", err
+					return false, err
 				}
 				stack.Push(strconv.FormatBool(ret))
 			default:
@@ -119,12 +123,13 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 	}
 
 	if stack.Len() != 1 {
-		return "", fmt.Errorf("invalid stack length after script execution")
+		return false, fmt.Errorf("invalid stack length after script execution")
 	}
 
-	return stack.Pop(), nil
+	return stack.Pop() == "true", nil
 }
 
+// verifyOpCheckSig verifies the signature of the transaction
 func (rpn *RPNInterpreter) verifyOpCheckSig(stack *script.Stack, tx *kernel.Transaction) (bool, error) {
 	if stack.Len() < opCheckSigVerifyStackLength {
 		return false, fmt.Errorf("invalid stack length for OP_CHECKSIG")
@@ -141,7 +146,16 @@ func (rpn *RPNInterpreter) verifyOpCheckSig(stack *script.Stack, tx *kernel.Tran
 func getTokenListFromScript(scriptPubKey string) []script.ScriptElement {
 	scriptTokens := []script.ScriptElement{}
 	for _, element := range strings.Split(scriptPubKey, scriptSeparator) {
-		token := script.ConvertToScriptElement(element)
+		var token script.ScriptElement
+
+		// todo() to be developed in case of addition of more script types
+		if len(element) == sign.PubKeyLengthECDSAP256 {
+			token = script.PubKey
+			scriptTokens = append(scriptTokens, token)
+			continue
+		}
+
+		token = script.ConvertToScriptElement(element)
 		scriptTokens = append(scriptTokens, token)
 	}
 
