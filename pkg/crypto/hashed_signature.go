@@ -26,5 +26,5 @@ func (hs *HashedSignature) Sign(payload []byte, privKey []byte) ([]byte, error) 
 }
 
 func (hs *HashedSignature) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
-	return hs.signature.Verify(hs.hasher.Hash(payload), signature, pubKey)
+	return hs.signature.Verify(signature, hs.hasher.Hash(payload), pubKey)
 }

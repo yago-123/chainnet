@@ -26,12 +26,12 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 		return []byte{}, []byte{}, err
 	}
 
-	return ecdsaSign.convertToBytes(&private.PublicKey, private)
+	return convertToBytes(&private.PublicKey, private)
 }
 
 func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
 	// todo() add padding?
-	privateKey, err := ecdsaSign.convertBytesToPrivateKey(privKey)
+	privateKey, err := convertBytesToPrivateKey(privKey)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -49,7 +49,7 @@ func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, erro
 }
 
 func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
-	publicKey, err := ecdsaSign.convertBytesToPublicKey(pubKey)
+	publicKey, err := convertBytesToPublicKey(pubKey)
 	if err != nil {
 		return false, err
 	}
@@ -64,7 +64,7 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 	return ecdsa.Verify(publicKey, payload, r, s), nil
 }
 
-func (ecdsaSign *ECDSASigner) convertToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
+func convertToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	// convert the public key to ASN.1/DER encoded form
 	publicKey, err := x509.MarshalPKIXPublicKey(pubKey)
 	if err != nil {
@@ -80,12 +80,12 @@ func (ecdsaSign *ECDSASigner) convertToBytes(pubKey *ecdsa.PublicKey, privKey *e
 	return publicKey, privateKey, nil
 }
 
-func (ecdsaSign *ECDSASigner) convertBytesToPrivateKey(privKey []byte) (*ecdsa.PrivateKey, error) {
+func convertBytesToPrivateKey(privKey []byte) (*ecdsa.PrivateKey, error) {
 	// parse the DER encoded private key to get ecdsa.PrivateKey
 	return x509.ParseECPrivateKey(privKey)
 }
 
-func (ecdsaSign *ECDSASigner) convertBytesToPublicKey(pubKey []byte) (*ecdsa.PublicKey, error) {
+func convertBytesToPublicKey(pubKey []byte) (*ecdsa.PublicKey, error) {
 	// parse the DER encoded public key to get ecdsa.PublicKey
 	pub, err := x509.ParsePKIXPublicKey(pubKey)
 	if err != nil {
