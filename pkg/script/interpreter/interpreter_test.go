@@ -1,15 +1,17 @@
 package interpreter //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/pkg/crypto"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // tx1 contains a single input and a single output
@@ -45,11 +47,126 @@ var tx3 = kernel.NewTransaction(
 )
 
 func TestRPNInterpreter_GenerateScriptSigWithErrors(t *testing.T) {
+	signer := sign.NewECDSASignature()
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
 
+	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
+	require.NoError(t, err)
+	require.Len(t, pubKey, sign.PubKeyLengthECDSAP256)
+
+	// generate the scriptSig with an invalid scriptPubKey
+	_, err = interpreter.GenerateScriptSig(
+		"invalid script",
+		privKey,
+		tx1,
+	)
+	require.Error(t, err)
+
+	// generate the scriptSig with an empty private key
+	_, err = interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PK, pubKey),
+		[]byte{},
+		tx1,
+	)
+	require.Error(t, err)
+
+	// generate the scriptSig with an empty transaction
+	_, err = interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PK, pubKey),
+		privKey,
+		&kernel.Transaction{},
+	)
+	require.Error(t, err)
 }
 
 func TestRPNInterpreter_VerifyScriptPubKeyWithErrors(t *testing.T) {
+	signer := sign.NewECDSASignature()
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
 
+	pubKey, privKey, err := signer.NewKeyPair()
+	require.NoError(t, err)
+	require.Len(t, pubKey, sign.PubKeyLengthECDSAP256)
+
+	// generate real signature for testing purposes
+	realSignature, err := interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PK, pubKey),
+		privKey,
+		tx1,
+	)
+	require.NoError(t, err)
+
+	// check that invalid scripts are not accepted
+	valid, err := interpreter.VerifyScriptPubKey(
+		"invalid script",
+		realSignature,
+		tx1,
+	)
+	require.Error(t, err)
+	require.False(t, valid)
+
+	// check that wrong signatures are accepted but not valid
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PK, pubKey),
+		"random-signature",
+		tx1,
+	)
+	require.NoError(t, err)
+	require.False(t, valid)
+
+	// check that empty signatures are not accepted
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PK, pubKey),
+		"",
+		tx1,
+	)
+	require.Error(t, err)
+	require.False(t, valid)
+
+	// check that empty transactions are not accepted
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PK, pubKey),
+		realSignature,
+		&kernel.Transaction{},
+	)
+	require.Error(t, err)
+	require.False(t, valid)
+}
+
+func TestRPNInterpreter_GenerationAndVerificationRealKeys(t *testing.T) {
+	signer := sign.NewECDSASignature()
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
+
+	pubKey, privKey, err := signer.NewKeyPair()
+	require.NoError(t, err)
+	require.Len(t, pubKey, sign.PubKeyLengthECDSAP256)
+
+	// generate the scriptSig to unlock the input
+	signature, err := interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PK, pubKey),
+		privKey,
+		tx1,
+	)
+	require.NoError(t, err)
+
+	// check that the scriptSig generated is correct
+	valid, err := interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PK, pubKey),
+		signature,
+		tx1,
+	)
+	require.NoError(t, err)
+	assert.True(t, valid)
+
+	// modify the scriptSig and check that is not correct anymore
+	modifiedScriptSig := []rune(signature)
+	modifiedScriptSig[0] = 'a'
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PK, pubKey),
+		string(modifiedScriptSig),
+		tx1,
+	)
+	require.NoError(t, err)
+	assert.False(t, valid)
 }
 
 func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
@@ -57,7 +174,9 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 
 	// we use a real key pair to generate the signature so the public key can be detected by the interpreter
 	// notice that we use the signature mocker, so the signature is predictable and does not depend on key
-	pubKey, privKey, _ := sign.NewECDSASignature().NewKeyPair()
+	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
+	require.NoError(t, err)
+	require.Len(t, pubKey, sign.PubKeyLengthECDSAP256)
 
 	signature, err := interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
@@ -89,7 +208,9 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 
 	// we use a real key pair to generate the signature so the public key can be detected by the interpreter
 	// notice that we use the signature mocker, so the signature is predictable and does not depend on key
-	pubKey, _, _ := sign.NewECDSASignature().NewKeyPair()
+	pubKey, _, err := sign.NewECDSASignature().NewKeyPair()
+	require.NoError(t, err)
+	require.Len(t, pubKey, sign.PubKeyLengthECDSAP256)
 
 	valid, err := interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PK, pubKey),
@@ -114,5 +235,4 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 	)
 	require.NoError(t, err)
 	assert.True(t, valid)
-
 }

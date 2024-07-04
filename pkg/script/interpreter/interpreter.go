@@ -40,9 +40,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte
 	// start generation of scriptSig unlocker
 	for index, token := range scriptTokens {
 		if token.IsUndefined() {
-			if token.IsUndefined() {
-				return "", fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
-			}
+			return "", fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
 		}
 
 		if token.IsOperator() {
