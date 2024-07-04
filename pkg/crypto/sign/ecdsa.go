@@ -30,7 +30,10 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 }
 
 func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
-	// todo() add padding?
+	if err := signInputValidator(payload, privKey); err != nil {
+		return []byte{}, err
+	}
+
 	privateKey, err := convertBytesToPrivateKey(privKey)
 	if err != nil {
 		return []byte{}, err
@@ -49,6 +52,10 @@ func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, erro
 }
 
 func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
+	if err := verifyInputValidator(signature, payload, pubKey); err != nil {
+		return false, err
+	}
+
 	publicKey, err := convertBytesToPublicKey(pubKey)
 	if err != nil {
 		return false, err

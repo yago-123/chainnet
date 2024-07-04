@@ -15,10 +15,23 @@ func NewRipemd160() *Ripemd160 {
 	return &Ripemd160{ripe: ripemd160.New()}
 }
 
-func (r *Ripemd160) Hash(payload []byte) []byte {
-	return r.ripe.Sum(payload)
+func (r *Ripemd160) Hash(payload []byte) ([]byte, error) {
+	if err := hashInputValidator(payload); err != nil {
+		return []byte{}, err
+	}
+
+	return r.ripe.Sum(payload), nil
 }
 
-func (r *Ripemd160) Verify(hash []byte, payload []byte) bool {
-	return bytes.Equal(hash, r.Hash(payload))
+func (r *Ripemd160) Verify(hash []byte, payload []byte) (bool, error) {
+	if err := verifyInputValidator(hash, payload); err != nil {
+		return false, err
+	}
+
+	h, err := r.Hash(payload)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(hash, h), nil
 }

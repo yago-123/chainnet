@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"errors"
+	"fmt"
 
 	base58 "github.com/btcsuite/btcutil/base58"
 )
@@ -16,13 +17,15 @@ type Wallet struct {
 	PrivateKey []byte
 	PublicKey  []byte
 
+	id []byte
+
 	validator consensus.LightValidator
 	signer    sign.Signature
 	hasher    hash.Hashing
 }
 
 func (w *Wallet) ID() string {
-	return string(w.hasher.Hash(w.PublicKey))
+	return string(w.id)
 }
 
 func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
@@ -31,10 +34,16 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 		return nil, err
 	}
 
+	id, err := hasher.Hash(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not hash the public key: %v", err)
+	}
+
 	return &Wallet{
 		PrivateKey: privateKey,
 		PublicKey:  publicKey,
 		validator:  validator,
+		id:         id,
 		signer:     signer,
 		hasher:     hasher,
 		version:    version,
@@ -43,17 +52,23 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 
 // GetAddress returns one wallet address
 // todo() implement hierarchically deterministic HD wallet
-func (w *Wallet) GetAddress() []byte {
+func (w *Wallet) GetAddress() ([]byte, error) {
 	// hash the public key
-	pubKeyHash := w.hasher.Hash(w.PublicKey)
+	pubKeyHash, err := w.hasher.Hash(w.PublicKey)
+	if err != nil {
+		return []byte{}, fmt.Errorf("could not hash the public key: %v", err)
+	}
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
 	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
-	checksum := w.hasher.Hash(versionedPayload)
+	checksum, err := w.hasher.Hash(versionedPayload)
+	if err != nil {
+		return []byte{}, fmt.Errorf("could not hash the versioned payload: %v", err)
+	}
 
 	// return the base58 of the versioned payload and the checksum
 	payload := append(versionedPayload, checksum...) //nolint:gocritic // we need to append the checksum to the payload
-	return []byte(base58.Encode(payload))
+	return []byte(base58.Encode(payload)), nil
 }
 
 // SendTransaction creates a transaction and broadcasts it to the network

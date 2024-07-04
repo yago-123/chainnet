@@ -20,14 +20,23 @@ func NewMultiHash(hashers []hash.Hashing) (*MultiHash, error) {
 	}, nil
 }
 
-func (m *MultiHash) Hash(payload []byte) []byte {
+func (m *MultiHash) Hash(payload []byte) ([]byte, error) {
+	var err error
 	for _, hasher := range m.hashers {
-		payload = hasher.Hash(payload)
+		payload, err = hasher.Hash(payload)
+		if err != nil {
+			return []byte{}, err
+		}
 	}
 
-	return payload
+	return payload, nil
 }
 
-func (m *MultiHash) Verify(hash []byte, payload []byte) bool {
-	return bytes.Equal(hash, m.Hash(payload))
+func (m *MultiHash) Verify(hash []byte, payload []byte) (bool, error) {
+	h, err := m.Hash(payload)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(hash, h), nil
 }
