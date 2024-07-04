@@ -76,11 +76,13 @@ func (tx *Transaction) Assemble() []byte {
 func (tx *Transaction) AssembleForSigning() []byte {
 	var data []byte
 
+	data = append(data, []byte("Inputs:")...)
 	for _, input := range tx.Vin {
 		data = append(data, input.Txid...)
 		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
 	}
 
+	data = append(data, []byte("Outputs:")...)
 	for _, output := range tx.Vout {
 		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
 		data = append(data, []byte(output.ScriptPubKey)...)
