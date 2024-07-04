@@ -5,6 +5,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"strconv"
 	"strings"
 )
@@ -135,7 +136,7 @@ func (rpn *RPNInterpreter) verifyOpCheckSig(stack *script.Stack, tx *kernel.Tran
 	signature := stack.Pop()
 
 	// verify the signature
-	return rpn.signer.Verify([]byte(signature), tx.AssembleForSigning(), []byte(pubKey))
+	return rpn.signer.Verify([]byte(signature), tx.AssembleForSigning(), base58.Decode(pubKey))
 }
 
 // getTokenListFromScript converts a string script to a list of script elements
@@ -145,7 +146,9 @@ func getTokenListFromScript(scriptPubKey string) []script.ScriptElement {
 		var token script.ScriptElement
 
 		// todo() to be developed in case of addition of more script types
-		if len(element) == sign.PubKeyLengthECDSAP256 {
+
+		// todo() improve pubKey detection...
+		if len(element) >= sign.PubKeyLengthECDSAP256Min {
 			token = script.PubKey
 			scriptTokens = append(scriptTokens, token)
 			continue

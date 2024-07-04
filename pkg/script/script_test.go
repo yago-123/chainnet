@@ -12,7 +12,7 @@ func TestNewScript(t *testing.T) {
 		args args
 		want string
 	}{
-		{"check regular script generation for P2PK", args{scriptType: P2PK, pubKey: []byte("public-key")}, "public-key OP_CHECKSIG"},
+		{"check regular script generation for P2PK", args{scriptType: P2PK, pubKey: []byte("public-key")}, "7KTAvebKjNUpoi OP_CHECKSIG"},
 		{"generation with empty public key", args{scriptType: P2PK, pubKey: []byte{}}, Undefined.String()},
 	}
 	for _, tt := range tests {

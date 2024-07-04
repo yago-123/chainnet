@@ -1,6 +1,9 @@
 package script
 
-import "strings"
+import (
+	"github.com/btcsuite/btcutil/base58"
+	"strings"
+)
 
 type ScriptType uint //nolint:revive // ScriptType is a type for script types
 
@@ -114,7 +117,7 @@ func (s Script) String(pubKey []byte) string {
 		if element.IsSpecialCase() {
 			switch element { //nolint:gocritic,exhaustive // number of elements will be increased in the future
 			case PubKey:
-				toRender = string(pubKey)
+				toRender = base58.Encode(pubKey)
 			}
 		}
 

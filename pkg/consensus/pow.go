@@ -32,14 +32,14 @@ func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error
 
 	txsID, err := pow.hashTransactionIDs(b.Transactions)
 	if err != nil {
-		return []byte{}, 0, fmt.Errorf("could not hash transactions: %v", err)
+		return []byte{}, 0, fmt.Errorf("could not hash transactions: %w", err)
 	}
 
 	for nonce < maxNonce {
 		data := b.Assemble(nonce, txsID)
 		hash, err = pow.hashing.Hash(data)
 		if err != nil {
-			return []byte{}, 0, fmt.Errorf("could not hash block: %v", err)
+			return []byte{}, 0, fmt.Errorf("could not hash block: %w", err)
 		}
 
 		// todo() recheck this part

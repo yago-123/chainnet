@@ -36,7 +36,7 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 
 	id, err := hasher.Hash(publicKey)
 	if err != nil {
-		return nil, fmt.Errorf("could not hash the public key: %v", err)
+		return nil, fmt.Errorf("could not hash the public key: %w", err)
 	}
 
 	return &Wallet{
@@ -56,14 +56,14 @@ func (w *Wallet) GetAddress() ([]byte, error) {
 	// hash the public key
 	pubKeyHash, err := w.hasher.Hash(w.PublicKey)
 	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the public key: %v", err)
+		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
 	}
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
 	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
 	checksum, err := w.hasher.Hash(versionedPayload)
 	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the versioned payload: %v", err)
+		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
 	}
 
 	// return the base58 of the versioned payload and the checksum
