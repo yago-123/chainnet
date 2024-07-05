@@ -6,6 +6,7 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
+	rpnInter "chainnet/pkg/script/interpreter"
 	"errors"
 	"fmt"
 
@@ -19,9 +20,10 @@ type Wallet struct {
 
 	id []byte
 
-	validator consensus.LightValidator
-	signer    sign.Signature
-	hasher    hash.Hashing
+	validator   consensus.LightValidator
+	signer      sign.Signature
+	hasher      hash.Hashing
+	interpreter *rpnInter.RPNInterpreter
 }
 
 func (w *Wallet) ID() string {
@@ -40,13 +42,14 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 	}
 
 	return &Wallet{
-		PrivateKey: privateKey,
-		PublicKey:  publicKey,
-		validator:  validator,
-		id:         id,
-		signer:     signer,
-		hasher:     hasher,
-		version:    version,
+		version:     version,
+		PrivateKey:  privateKey,
+		PublicKey:   publicKey,
+		validator:   validator,
+		id:          id,
+		signer:      signer,
+		hasher:      hasher,
+		interpreter: rpnInter.NewScriptInterpreter(signer),
 	}, nil
 }
 
@@ -89,7 +92,8 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	)
 
 	// unlock the funds from the UTXOs
-	tx, err = w.UnlockTxFunds(tx)
+	tx, err = w.UnlockTxFunds(tx, utxos)
+
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
@@ -104,26 +108,37 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
 // be used
-func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction) (*kernel.Transaction, error) {
+func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOutput) (*kernel.Transaction, error) {
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
-	// todo() we must also have access to the previous tx output in order to verify the ScriptPubKey script
-	txData := tx.AssembleForSigning()
-
 	for _, vin := range tx.Vin {
-		if vin.CanUnlockOutputWith(string(w.PublicKey)) {
-			signature, err := w.signer.Sign(txData, w.PrivateKey)
-			if err != nil {
-				return nil, err
-			}
+		unlocked := false
 
-			vin.ScriptSig = string(signature)
+		for _, utxo := range utxos {
+			if utxo.EqualInput(vin) {
+				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
+				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.PrivateKey, tx)
+				if err != nil {
+					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %s and index %d: %w", vin.Txid, vin.Vout, err)
+				}
+
+				vin.ScriptSig = scriptSig
+
+				unlocked = true
+				continue
+			}
+		}
+
+		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
+		if !unlocked {
+			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
 		}
 	}
 
 	return tx, nil
 }
 
-// generateInputs
+// generateInputs set up the inputs for the transaction and returns the total balance of the UTXOs that are going to be
+// spent in the transaction
 func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.TxInput, uint, error) {
 	// for now simple FIFO method, first outputs are the first to be spent
 	balance := uint(0)
@@ -140,7 +155,7 @@ func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.
 	return []kernel.TxInput{}, balance, errors.New("not enough funds to perform the transaction")
 }
 
-// generateOutputs
+// generateOutputs set up the outputs for the transaction
 func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
 	return []kernel.TxOutput{
 		kernel.NewOutput(targetAmount, script.P2PK, receiver),
@@ -148,7 +163,7 @@ func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeRec
 	}
 }
 
-// broadcastTransaction
+// broadcastTransaction sends the transaction to the network
 func broadcastTransaction(tx *kernel.Transaction) (*kernel.Transaction, error) {
 	// todo() implement the logic to broadcast the transaction to the network
 	return tx, nil
