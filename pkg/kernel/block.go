@@ -7,7 +7,7 @@ import (
 
 type Block struct {
 	// todo(): use timestamp to determine the difficulty, in a 2 weeks period, if the number of blocks was
-	// todo() created too quick, it means that the difficult must be increased
+	// todo(): created too quick, it means that the difficult must be increased
 	Timestamp     int64
 	Transactions  []*Transaction
 	PrevBlockHash []byte
