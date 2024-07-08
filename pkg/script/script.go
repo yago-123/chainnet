@@ -20,9 +20,15 @@ const (
 type Script []ScriptElement
 type ScriptElement uint //nolint:revive // ScriptElement is a type for script elements
 
+type Literal struct {
+	typ  ScriptElement
+	data string
+}
+
 const (
 	// Special elements
 	PubKey ScriptElement = iota
+	PubKeyHash
 	Signature
 
 	// Operators
@@ -33,6 +39,7 @@ const (
 
 var operatorNames = [...]string{ //nolint:gochecknoglobals // must be a global variable
 	"PUB_KEY",
+	"PUB_KEY_HASH",
 	"SIGNATURE",
 	"OP_CHECKSIG",
 
@@ -45,6 +52,14 @@ func ConvertToScriptElement(element string) ScriptElement {
 		if name == element {
 			return ScriptElement(i)
 		}
+	}
+
+	return Undefined
+}
+
+func ConvertRuneLiteralToScriptElement(element rune) ScriptElement {
+	if uint(element) >= PubKey.ToUint() && uint(element) <= PubKeyHash.ToUint() {
+		return ScriptElement(element)
 	}
 
 	return Undefined
@@ -78,6 +93,10 @@ func (op ScriptElement) String() string {
 	}
 
 	return operatorNames[op]
+}
+
+func (op ScriptElement) ToUint() uint {
+	return uint(op)
 }
 
 func NewScript(scriptType ScriptType, pubKey []byte) string {
