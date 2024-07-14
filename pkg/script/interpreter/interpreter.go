@@ -5,7 +5,6 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"strconv"
 )
 
@@ -133,5 +132,5 @@ func (rpn *RPNInterpreter) verifyOpCheckSig(stack *script.Stack, tx *kernel.Tran
 	signature := stack.Pop()
 
 	// verify the signature
-	return rpn.signer.Verify([]byte(signature), tx.AssembleForSigning(), base58.Decode(pubKey))
+	return rpn.signer.Verify([]byte(signature), tx.AssembleForSigning(), []byte(pubKey))
 }
