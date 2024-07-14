@@ -128,7 +128,7 @@ func (s Script) String(pubKey []byte) string {
 		// render special cases adding the preffix so we can later know which type of literal was written. This
 		// includes pubKey, pubHashKey, signature...
 		if element.IsLiteral() {
-			toRender = fmt.Sprintf("%d%s", element.ToUint(), base58.Encode(pubKey))
+			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(pubKey))
 		}
 
 		// render operators
@@ -178,11 +178,11 @@ func tryExtractTokenLiteral(data string) (ScriptElement, string) {
 		return Undefined, ""
 	}
 
-	runedData := []rune(data)
-	token := ScriptElement(uint(runedData[0]))
+	opcodeByte := data[0]
+	token := ScriptElement(uint(opcodeByte))
 
 	if !token.OutsideBoundaries() && token.IsLiteral() {
-		return token, string(runedData[1:])
+		return token, data[1:]
 	}
 
 	return Undefined, ""

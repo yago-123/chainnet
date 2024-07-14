@@ -16,9 +16,9 @@ func TestNewScript(t *testing.T) {
 		args args
 		want string
 	}{
-		{"regular script generation for P2PK", args{scriptType: P2PK, pubKey: []byte("public-key")}, "07KTAvebKjNUpoi OP_CHECKSIG"},
+		{"regular script generation for P2PK", args{scriptType: P2PK, pubKey: []byte("public-key")}, fmt.Sprintf("%c7KTAvebKjNUpoi OP_CHECKSIG", PubKey)},
 		{"generation with empty public key", args{scriptType: P2PK, pubKey: []byte{}}, Undefined.String()},
-		{"P2PK with pubkey equal to pubkey token identifier", args{scriptType: P2PK, pubKey: []byte(fmt.Sprintf("%d", 0))}, "0q OP_CHECKSIG"},
+		{"P2PK with pubkey equal to pubkey token identifier", args{scriptType: P2PK, pubKey: []byte(fmt.Sprintf("%d", 0))}, fmt.Sprintf("%cq OP_CHECKSIG", PubKey)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -69,7 +69,7 @@ func Test_tryExtractTokenLiteral(t *testing.T) {
 		want  ScriptElement
 		want1 string
 	}{
-		{"extract regular literal", args{data: fmt.Sprintf("%d%s", PubKey, "pubkey1")}, PubKey, "pubkey1"},
+		{"extract regular literal", args{data: fmt.Sprintf("%c%s", PubKey, "pubkey1")}, PubKey, "pubkey1"},
 		{"extract literal with less than 2 elements", args{data: fmt.Sprintf("%d", PubKey)}, Undefined, ""},
 	}
 	for _, tt := range tests {
