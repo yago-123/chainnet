@@ -21,6 +21,7 @@ type Wallet struct {
 	id []byte
 
 	validator   consensus.LightValidator
+	consensus   consensus.Consensus
 	signer      sign.Signature
 	hasher      hash.Hashing
 	interpreter *rpnInter.RPNInterpreter
@@ -30,8 +31,8 @@ func (w *Wallet) ID() string {
 	return string(w.id)
 }
 
-func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
-	privateKey, publicKey, err := signer.NewKeyPair()
+func NewWallet(version []byte, consensus consensus.Consensus, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
+	publicKey, privateKey, err := signer.NewKeyPair()
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +46,7 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 		version:     version,
 		PrivateKey:  privateKey,
 		PublicKey:   publicKey,
+		consensus:   consensus,
 		validator:   validator,
 		id:          id,
 		signer:      signer,
@@ -91,6 +93,13 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 		outputs,
 	)
 
+	txHash, err := w.consensus.CalculateTxHash(tx)
+	if err != nil {
+		return &kernel.Transaction{}, err
+	}
+
+	tx.SetID(txHash)
+
 	// unlock the funds from the UTXOs
 	tx, err = w.UnlockTxFunds(tx, utxos)
 
@@ -110,6 +119,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 // be used
 func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOutput) (*kernel.Transaction, error) {
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
+	scripSigs := []string{}
 	for _, vin := range tx.Vin {
 		unlocked := false
 
@@ -121,7 +131,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOu
 					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %s and index %d: %w", vin.Txid, vin.Vout, err)
 				}
 
-				vin.ScriptSig = scriptSig
+				scripSigs = append(scripSigs, scriptSig)
 
 				unlocked = true
 				continue
@@ -132,6 +142,10 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOu
 		if !unlocked {
 			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
 		}
+	}
+
+	for i, _ := range tx.Vin {
+		tx.Vin[i].ScriptSig = scripSigs[i]
 	}
 
 	return tx, nil

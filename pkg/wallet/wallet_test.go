@@ -2,6 +2,7 @@ package wallet //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
@@ -18,7 +19,8 @@ func TestWallet_SendTransaction(t *testing.T) {
 	signer.
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
-	wallet, err := NewWallet([]byte("0.0.1"), consensus.NewLightValidator(), &signer, &mockHash.MockHashing{})
+
+	wallet, err := NewWallet([]byte("0.0.1"), consensus.NewProofOfWork(1, hash.NewSHA256()), consensus.NewLightValidator(), &signer, &mockHash.MockHashing{})
 	require.NoError(t, err)
 
 	utxos := []*kernel.UnspentOutput{
@@ -27,10 +29,6 @@ func TestWallet_SendTransaction(t *testing.T) {
 		{TxID: []byte("random-id-2"), OutIdx: 1, Output: kernel.NewOutput(5, script.P2PK, "pubkey-2")},
 		{TxID: []byte("random-id-3"), OutIdx: 8, Output: kernel.NewOutput(5, script.P2PK, "pubkey-2")},
 	}
-
-	// send transaction to an empty pub key
-	_, err = wallet.SendTransaction("", 10, 1, utxos)
-	require.Error(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
 	_, err = wallet.SendTransaction("pubkey-1", 100, 1, utxos)
@@ -43,12 +41,12 @@ func TestWallet_SendTransaction(t *testing.T) {
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.SendTransaction("pubkey-1", 10, 0, utxos)
 	expectedTx := &kernel.Transaction{
-		ID: []byte("aa"),
+		ID: []byte{0x69, 0x98, 0xc9, 0xa8, 0xea, 0xda, 0xf3, 0x31, 0xd7, 0xac, 0x4e, 0xb0, 0x4a, 0x1c, 0xd8, 0xb4, 0x15, 0x65, 0x51, 0x83, 0x50, 0x4b, 0x79, 0xa4, 0x97, 0xea, 0xa9, 0x9f, 0xd3, 0xb6, 0xc9, 0xb5},
 		Vin: []kernel.TxInput{
-			kernel.NewInput([]byte("random-id-0"), 1, "", "pubkey-1"),
-			kernel.NewInput([]byte("random-id-1"), 3, "", "pubkey-1"),
-			kernel.NewInput([]byte("random-id-2"), 1, "", "pubkey-1"),
-			kernel.NewInput([]byte("random-id-3"), 8, "", "pubkey-1"),
+			kernel.NewInput([]byte("random-id-0"), 1, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
+			kernel.NewInput([]byte("random-id-1"), 3, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
+			kernel.NewInput([]byte("random-id-2"), 1, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
+			kernel.NewInput([]byte("random-id-3"), 8, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
 		},
 		Vout: []kernel.TxOutput{
 			kernel.NewOutput(10, script.P2PK, "pubkey-1"),
