@@ -2,8 +2,9 @@ package script
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"strings"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 type ScriptType uint //nolint:revive // ScriptType is a type for script types

@@ -7,9 +7,10 @@ import (
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestWallet_SendTransaction(t *testing.T) {
