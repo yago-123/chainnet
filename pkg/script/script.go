@@ -9,6 +9,10 @@ import (
 
 type ScriptType uint //nolint:revive // ScriptType is a type for script types
 
+const (
+	LengthOfLiteral = 2
+)
+
 // Script types
 const (
 	// P2PK = Pay-to-PubKey
@@ -175,7 +179,7 @@ func StringToScript(script string) (Script, []string, error) {
 func tryExtractTokenLiteral(data string) (ScriptElement, string) {
 	// if data have less than 2 elements, it means that there is no possible literal
 	// must be at least 1 byte for declaring the type + 1 type for the unit of information
-	if len(data) < 2 {
+	if len(data) != LengthOfLiteral {
 		return Undefined, ""
 	}
 
