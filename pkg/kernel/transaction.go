@@ -38,11 +38,20 @@ func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
 }
 
-func NewCoinbaseTransaction(to string) *Transaction {
-	txin := NewCoinbaseInput()
-	txout := NewCoinbaseOutput(script.P2PK, to)
+func NewCoinbaseTransaction(to string, txFee uint) *Transaction {
+	input := NewCoinbaseInput()
+	// todo() come up with mechanism for halving CoinbaseReward
+	output := NewCoinbaseOutput(CoinbaseReward, script.P2PK, to)
 
-	return NewTransaction([]TxInput{txin}, []TxOutput{txout})
+	// if there is tx fee, make sure to add it to the output
+	if txFee > 0 {
+		return NewTransaction([]TxInput{input}, []TxOutput{
+			output,
+			NewCoinbaseOutput(txFee, script.P2PK, to),
+		})
+	}
+
+	return NewTransaction([]TxInput{input}, []TxOutput{output})
 }
 
 func (tx *Transaction) SetID(hash []byte) {
@@ -182,9 +191,8 @@ type TxOutput struct {
 	PubKey string
 }
 
-func NewCoinbaseOutput(scriptType script.ScriptType, pubKey string) TxOutput {
-	// todo() come up with mechanism for halving CoinbaseReward
-	return NewOutput(CoinbaseReward, scriptType, pubKey)
+func NewCoinbaseOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
+	return NewOutput(amount, scriptType, pubKey)
 }
 
 func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {

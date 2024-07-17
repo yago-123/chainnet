@@ -11,19 +11,19 @@ import (
 
 func TestReverseIterator(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
-	coinbaseTx := kernel.NewCoinbaseTransaction("address-1")
+	coinbaseTx := kernel.NewCoinbaseTransaction("address-1", 0)
 	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
 	genesisBlock := kernel.NewGenesisBlock([]*kernel.Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
 
 	// set up kernel 1 with one coinbase transaction
-	coinbaseTx2 := kernel.NewCoinbaseTransaction("address-2")
+	coinbaseTx2 := kernel.NewCoinbaseTransaction("address-2", 0)
 	coinbaseTx2.SetID([]byte("coinbase-transaction-kernel-1-id"))
 	block1 := kernel.NewBlock([]*kernel.Transaction{coinbaseTx2}, genesisBlock.Hash)
 	block1.SetHashAndNonce([]byte("kernel-hash-1"), 1)
 
 	// set up kernel 2 with one coinbase transaction and one regular transaction
-	coinbaseTx3 := kernel.NewCoinbaseTransaction("address-3")
+	coinbaseTx3 := kernel.NewCoinbaseTransaction("address-3", 0)
 	coinbaseTx3.SetID([]byte("coinbase-transaction-kernel-2-id"))
 	regularTx := kernel.NewTransaction(
 		[]kernel.TxInput{
@@ -83,7 +83,7 @@ func TestReverseIterator(t *testing.T) {
 
 func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
-	coinbaseTx := kernel.NewCoinbaseTransaction("address-1")
+	coinbaseTx := kernel.NewCoinbaseTransaction("address-1", 0)
 	coinbaseTx.SetID([]byte("coinbase-genesis-kernel-id"))
 	genesisBlock := kernel.NewGenesisBlock([]*kernel.Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
