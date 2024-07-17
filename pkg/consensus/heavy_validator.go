@@ -50,6 +50,7 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
 		// todo(): validate block size limit
+		// todo(): validate coinbase transaction
 	}
 
 	for _, validate := range validations {
