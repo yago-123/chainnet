@@ -1,4 +1,4 @@
-package consensus
+package validator
 
 import (
 	"chainnet/pkg/kernel"

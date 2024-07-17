@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/miner"
+	"chainnet/pkg/consensus/validator"
 	"chainnet/pkg/crypto"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
@@ -27,8 +28,8 @@ var createCmd = &cobra.Command{
 
 		w, err := wallet.NewWallet(
 			[]byte("0.0.1"),
-			consensus.NewProofOfWork(1, hash.NewSHA256()),
-			consensus.NewLightValidator(),
+			miner.NewProofOfWork(1, hash.NewSHA256()),
+			validator.NewLightValidator(),
 			ecdsaSha256Signer,
 			sha256Ripemd160Hasher,
 		)

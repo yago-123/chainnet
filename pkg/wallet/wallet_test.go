@@ -1,7 +1,8 @@
 package wallet //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/miner"
+	"chainnet/pkg/consensus/validator"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
@@ -28,7 +29,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), consensus.NewProofOfWork(1, hash.NewSHA256()), consensus.NewLightValidator(), &signer, &mockHash.MockHashing{})
+	wallet, err := NewWallet([]byte("0.0.1"), miner.NewProofOfWork(1, hash.NewSHA256()), validator.NewLightValidator(), &signer, &mockHash.MockHashing{})
 	require.NoError(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
@@ -48,7 +49,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 	signer2.
 		On("NewKeyPair").
 		Return([]byte("pubkey-5"), []byte("privkey-5"), nil)
-	wallet2, err := NewWallet([]byte("0.0.1"), consensus.NewProofOfWork(1, hash.NewSHA256()), consensus.NewLightValidator(), &signer2, &mockHash.MockHashing{})
+	wallet2, err := NewWallet([]byte("0.0.1"), miner.NewProofOfWork(1, hash.NewSHA256()), validator.NewLightValidator(), &signer2, &mockHash.MockHashing{})
 	require.NoError(t, err)
 
 	// todo(): add script signature validator
@@ -64,7 +65,7 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), consensus.NewProofOfWork(1, hash.NewSHA256()), consensus.NewLightValidator(), &signer, &mockHash.MockHashing{})
+	wallet, err := NewWallet([]byte("0.0.1"), miner.NewProofOfWork(1, hash.NewSHA256()), validator.NewLightValidator(), &signer, &mockHash.MockHashing{})
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.SendTransaction("pubkey-1", 10, 0, utxos)

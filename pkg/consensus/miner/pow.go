@@ -1,4 +1,4 @@
-package consensus
+package miner
 
 import (
 	"bytes"
