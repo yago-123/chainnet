@@ -1,6 +1,7 @@
 package script
 
 import (
+	"chainnet/pkg/crypto/hash"
 	"fmt"
 	"strings"
 
@@ -34,6 +35,9 @@ const (
 
 	// Operators
 	OpChecksig
+	OpDup
+	OpHash160
+	OpEqualVerify
 
 	Undefined
 )
@@ -43,11 +47,18 @@ const (
 )
 
 var operatorNames = [...]string{ //nolint:gochecknoglobals // must be a global variable
+	// literals
 	"PUB_KEY",
 	"PUB_KEY_HASH",
 	"SIGNATURE",
-	"OP_CHECKSIG",
 
+	// operations
+	"OP_CHECKSIG",
+	"OP_DUP",
+	"OP_HASH160",
+	"OP_EQUALVERIFY",
+
+	// undefined
 	"UNDEFINED",
 }
 
@@ -109,8 +120,7 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 	case P2PK:
 		script = Script{PubKey, OpChecksig}
 	case P2PKH:
-		script = Script{}
-	// todo() implement P2PKH
+		script = Script{OpDup, OpHash160, PubKeyHash, OpEqualVerify, OpChecksig}
 	default:
 	}
 
@@ -121,7 +131,8 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 
 // String returns the string representation of the script
 func (s Script) String(pubKey []byte) string {
-	rendered := []string{}
+	var err error
+	var rendered []string
 
 	for _, element := range s {
 		toRender := ""
@@ -133,7 +144,21 @@ func (s Script) String(pubKey []byte) string {
 		// render special cases adding the preffix so we can later know which type of literal was written. This
 		// includes pubKey, pubHashKey, signature...
 		if element.IsLiteral() {
-			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(pubKey))
+			literalRendered := []byte{}
+
+			if element == PubKey {
+				literalRendered = []byte(base58.Encode(pubKey))
+			}
+
+			if element == PubKeyHash {
+				ripemd160 := hash.NewRipemd160()
+				literalRendered, err = ripemd160.Hash([]byte(base58.Encode(pubKey)))
+				if err != nil {
+					return Undefined.String()
+				}
+			}
+
+			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), literalRendered)
 		}
 
 		// render operators
