@@ -9,8 +9,8 @@ import (
 	"fmt"
 )
 
-type ValidatorTxFunc func(tx *kernel.Transaction) error
-type ValidatorBlockFunc func(b *kernel.Block) error
+type TxFunc func(tx *kernel.Transaction) error
+type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
 	lv       consensus.LightValidator
@@ -29,7 +29,7 @@ func NewHeavyValidator(lv consensus.LightValidator, explorer explorer.Explorer, 
 }
 
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
-	validations := []ValidatorTxFunc{
+	validations := []TxFunc{
 		hv.lv.ValidateTxLight,
 		hv.validateOwnershipAndBalanceOfInputs,
 		// todo(): validate timelock / block height constraints
@@ -46,7 +46,7 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 }
 
 func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
-	validations := []ValidatorBlockFunc{
+	validations := []BlockFunc{
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,

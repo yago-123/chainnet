@@ -43,8 +43,9 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte
 		if token.IsOperator() {
 			switch token { //nolint:exhaustive // only check operators
 			case script.OpChecksig:
+				var sig string
 				// generate the signature
-				sig, err := rpn.generateOpCheckSig(stack, tx, privKey)
+				sig, err = rpn.generateOpCheckSig(stack, tx, privKey)
 				if err != nil {
 					return "", err
 				}
@@ -101,7 +102,8 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 			// perform operation based on operator with a and b
 			switch token { //nolint:exhaustive // only check operators
 			case script.OpChecksig:
-				ret, err := rpn.verifyOpCheckSig(stack, tx)
+				var ret bool
+				ret, err = rpn.verifyOpCheckSig(stack, tx)
 				if err != nil {
 					return false, err
 				}
