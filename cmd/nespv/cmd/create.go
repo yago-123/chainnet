@@ -14,14 +14,14 @@ import (
 // createCmd represents the creation of wallets, addresses...
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create wallet",
-	Long:  `Create wallet`,
+	Short: "Create nespv",
+	Long:  `Create nespv`,
 	Run: func(_ *cobra.Command, _ []string) {
-		logger.Infof("Creating new wallet...")
+		logger.Infof("Creating new nespv...")
 
 		sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 		if err != nil {
-			logger.Infof("Error creating new wallet: %s", err)
+			logger.Infof("Error creating new nespv: %s", err)
 		}
 
 		ecdsaSha256Signer := crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256())
@@ -35,10 +35,10 @@ var createCmd = &cobra.Command{
 		)
 
 		if err != nil {
-			logger.Infof("Error creating new wallet: %s", err)
+			logger.Infof("Error creating new nespv: %s", err)
 		}
 
-		logger.Infof("Created wallet %s", w.ID())
+		logger.Infof("Created nespv %s", w.ID())
 	},
 }
 

@@ -13,9 +13,9 @@ const BaseURL = "http://localhost:8080"
 var logger *logrus.Logger
 
 var rootCmd = &cobra.Command{
-	Use:   "chainnet-wallet",
+	Use:   "chainnet-nespv",
 	Short: "Chainnet Wallet",
-	Long:  `A wallet for interacting with chainnet.`,
+	Long:  `A nespv for interacting with chainnet.`,
 }
 
 func Execute(loggerHandler *logrus.Logger) {
