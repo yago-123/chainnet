@@ -171,10 +171,17 @@ func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.
 
 // generateOutputs set up the outputs for the transaction
 func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
-	return []kernel.TxOutput{
-		kernel.NewOutput(targetAmount, script.P2PK, receiver),
-		kernel.NewOutput(totalBalance-txFee-targetAmount, script.P2PK, changeReceiver),
+	change := totalBalance - txFee - targetAmount
+
+	txOutput := []kernel.TxOutput{}
+	txOutput = append(txOutput, kernel.NewOutput(targetAmount, script.P2PK, receiver))
+
+	// add output corresponding to the spare change
+	if change > 0 {
+		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, script.P2PK, changeReceiver))
 	}
+
+	return txOutput
 }
 
 // broadcastTransaction sends the transaction to the network
