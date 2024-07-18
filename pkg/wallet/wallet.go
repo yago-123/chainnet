@@ -144,7 +144,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOu
 		}
 	}
 
-	for i, _ := range tx.Vin {
+	for i := range len(tx.Vin) {
 		tx.Vin[i].ScriptSig = scripSigs[i]
 	}
 

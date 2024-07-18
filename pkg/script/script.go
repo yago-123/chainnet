@@ -159,10 +159,11 @@ func StringToScript(script string) (Script, []string, error) {
 
 	for _, element := range strings.Split(script, scriptSeparator) {
 		var token ScriptElement
+		var literal string
 
-		if token, str := tryExtractTokenLiteral(element); token != Undefined {
+		if token, literal = tryExtractTokenLiteral(element); token != Undefined {
 			scriptTokens = append(scriptTokens, token)
-			scriptString = append(scriptString, string(base58.Decode(str)))
+			scriptString = append(scriptString, string(base58.Decode(literal)))
 			continue
 		}
 

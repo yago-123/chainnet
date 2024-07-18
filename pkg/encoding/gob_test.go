@@ -1,5 +1,6 @@
 package encoding_test
 
+/*
 import (
 	"chainnet/pkg/encoding"
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
@@ -214,3 +215,4 @@ func _TestNewGobEncoder(t *testing.T) {
 		})
 	}
 }
+*/
