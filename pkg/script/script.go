@@ -147,18 +147,20 @@ func (s Script) String(pubKey []byte) string {
 			literalRendered := []byte{}
 
 			if element == PubKey {
-				literalRendered = []byte(base58.Encode(pubKey))
+				literalRendered = pubKey
 			}
 
 			if element == PubKeyHash {
 				ripemd160 := hash.NewRipemd160()
-				literalRendered, err = ripemd160.Hash([]byte(base58.Encode(pubKey)))
+				literalRendered, err = ripemd160.Hash(pubKey)
 				if err != nil {
+					// highly unlikely that hash initialization will fail, but if it does, abort the operation by
+					// returning undefined, no point in making the code more unintelligible by returning an error
 					return Undefined.String()
 				}
 			}
 
-			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), literalRendered)
+			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(literalRendered))
 		}
 
 		// render operators
