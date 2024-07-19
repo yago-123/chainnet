@@ -9,6 +9,7 @@ import (
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,7 +107,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyWithErrors(t *testing.T) {
 	// check that wrong signatures are accepted but not valid
 	valid, err = interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PK, pubKey),
-		"random-signature",
+		"randomsignature",
 		tx1,
 	)
 	require.NoError(t, err)
@@ -181,7 +182,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 		tx1,
 	)
 	require.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s-hashed-signed", string(tx1.AssembleForSigning())), signature)
+	assert.Equal(t, base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx1.AssembleForSigning()))), signature)
 
 	signature, err = interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
@@ -189,7 +190,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 		tx2,
 	)
 	require.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s-hashed-signed", string(tx2.AssembleForSigning())), signature)
+	assert.Equal(t, base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx2.AssembleForSigning()))), signature)
 
 	signature, err = interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
@@ -197,7 +198,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 		tx3,
 	)
 	require.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s-hashed-signed", string(tx3.AssembleForSigning())), signature)
+	assert.Equal(t, base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3.AssembleForSigning()))), signature)
 }
 
 func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
@@ -208,7 +209,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 
 	valid, err := interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PK, pubKey),
-		fmt.Sprintf("%s-hashed-signed", string(tx1.AssembleForSigning())),
+		base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx1.AssembleForSigning()))),
 		tx1,
 	)
 	require.NoError(t, err)
@@ -216,7 +217,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 
 	valid, err = interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PK, pubKey),
-		fmt.Sprintf("%s-hashed-signed", string(tx2.AssembleForSigning())),
+		base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx2.AssembleForSigning()))),
 		tx2,
 	)
 	require.NoError(t, err)
@@ -224,7 +225,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 
 	valid, err = interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PK, pubKey),
-		fmt.Sprintf("%s-hashed-signed", string(tx3.AssembleForSigning())),
+		base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3.AssembleForSigning()))),
 		tx3,
 	)
 	require.NoError(t, err)

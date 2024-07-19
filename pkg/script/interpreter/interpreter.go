@@ -6,7 +6,9 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -47,13 +49,21 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte
 		if token.IsOperator() {
 			switch token { //nolint:exhaustive // only check operators
 			case script.OpChecksig:
-				var sig string
+				var sig []byte
 				// generate the signature
-				sig, err = rpn.generateOpCheckSig(stack, tx, privKey)
-				if err != nil {
-					return "", err
+				if stack.Len() < 1 {
+					return "", fmt.Errorf("invalid stack length while generating signature in OP_CHECKSIG")
 				}
-				stack.Push(sig)
+
+				// we pop the public key from the stack but we don't need it
+				// todo() or maybe we really need it? Verify the output maybe?
+				_ = stack.Pop()
+
+				sig, err = rpn.signer.Sign(tx.AssembleForSigning(), privKey)
+				if err != nil {
+					return "", fmt.Errorf("couldn't sign transaction: %w", err)
+				}
+				stack.Push(string(sig))
 			default:
 			}
 		}
@@ -63,38 +73,28 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte
 		}
 	}
 
-	if stack.Len() != 1 {
-		return "", fmt.Errorf("invalid stack length after script execution")
+	ret := []string{}
+	for _ = range stack.Len() {
+		ret = append(ret, base58.Encode([]byte(stack.Pop())))
 	}
 
-	return stack.Pop(), nil
-}
-
-// generateOpCheckSig creates the scriptSig that will unlock the scriptPubKey
-func (rpn *RPNInterpreter) generateOpCheckSig(stack *script.Stack, tx *kernel.Transaction, privKey []byte) (string, error) {
-	if stack.Len() < 1 {
-		return "", fmt.Errorf("invalid stack length while generating signature in OP_CHECKSIG")
-	}
-
-	// we pop the public key from the stack but we don't need it
-	// todo() or maybe we really need it? Verify the output maybe?
-	_ = stack.Pop()
-
-	signature, err := rpn.signer.Sign(tx.AssembleForSigning(), privKey)
-	return string(signature), err
+	return strings.Join(ret, " "), nil
 }
 
 // VerifyScriptPubKey verifies the scriptPubKey by reconstructing the script and evaluating it
-func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature string, tx *kernel.Transaction) (bool, error) {
+func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig string, tx *kernel.Transaction) (bool, error) {
+	stack := script.NewStack()
+
 	// converts script pub key into list of tokens and list of strings
 	scriptTokens, scriptString, err := script.StringToScript(scriptPubKey)
 	if err != nil {
 		return false, err
 	}
 
-	// push the signature to the stack
-	stack := script.NewStack()
-	stack.Push(signature)
+	// iterate over the scriptSig and push values to the stack
+	for _, element := range strings.Split(scriptSig, " ") {
+		stack.Push(string(base58.Decode(element)))
+	}
 
 	// start evaluation of scriptPubKey
 	for index, token := range scriptTokens {
@@ -162,17 +162,4 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 	}
 
 	return stack.Pop() == "true", nil
-}
-
-// verifyOpCheckSig verifies the signature of the transaction
-func (rpn *RPNInterpreter) verifyOpCheckSig(stack *script.Stack, tx *kernel.Transaction) (bool, error) {
-	if stack.Len() < opCheckSigVerifyMinStackLength {
-		return false, fmt.Errorf("invalid stack length for OP_CHECKSIG")
-	}
-
-	pubKey := stack.Pop()
-	signature := stack.Pop()
-
-	// verify the signature
-	return rpn.signer.Verify([]byte(signature), tx.AssembleForSigning(), []byte(pubKey))
 }
