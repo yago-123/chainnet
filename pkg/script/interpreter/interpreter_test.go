@@ -230,3 +230,34 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, valid)
 }
+
+func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
+
+	pubKey, _, err := sign.NewECDSASignature().NewKeyPair()
+	require.NoError(t, err)
+
+	valid, err := interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PKH, pubKey),
+		fmt.Sprintf("%s-hashed-signed", string(tx1.AssembleForSigning())),
+		tx1,
+	)
+	require.NoError(t, err)
+	assert.True(t, valid)
+
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PKH, pubKey),
+		fmt.Sprintf("%s-hashed-signed", string(tx2.AssembleForSigning())),
+		tx2,
+	)
+	require.NoError(t, err)
+	assert.True(t, valid)
+
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PKH, pubKey),
+		fmt.Sprintf("%s-hashed-signed", string(tx3.AssembleForSigning())),
+		tx3,
+	)
+	require.NoError(t, err)
+	assert.True(t, valid)
+}
