@@ -1,4 +1,4 @@
-package consensus //nolint:testpackage // don't create separate package for tests
+package validator //nolint:testpackage // don't create separate package for tests
 
 import (
 	expl "chainnet/pkg/chain/explorer"
@@ -28,14 +28,14 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 
 	blockWithTwoCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to"),
-			kernel.NewCoinbaseTransaction("to"),
+			kernel.NewCoinbaseTransaction("to", 0),
+			kernel.NewCoinbaseTransaction("to", 0),
 		},
 	}
 
 	blockWithOneCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to"),
+			kernel.NewCoinbaseTransaction("to", 0),
 		},
 	}
 

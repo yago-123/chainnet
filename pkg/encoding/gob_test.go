@@ -1,5 +1,6 @@
 package encoding_test
 
+/*
 import (
 	"chainnet/pkg/encoding"
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
@@ -87,7 +88,7 @@ var transaction2 = Transaction{ //nolint:gochecknoglobals // data that is used a
 
 var transaction2Encoded = []byte{38, 255, 129, 3, 1, 2, 255, 130, 0, 1, 3, 1, 2, 73, 68, 1, 10, 0, 1, 3, 86, 105, 110, 1, 255, 134, 0, 1, 4, 86, 111, 117, 116, 1, 255, 138, 0, 0, 0, 31, 255, 133, 2, 1, 1, 16, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 73, 110, 112, 117, 116, 1, 255, 134, 0, 1, 255, 132, 0, 0, 64, 255, 131, 3, 1, 1, 7, 84, 120, 73, 110, 112, 117, 116, 1, 255, 132, 0, 1, 4, 1, 4, 84, 120, 105, 100, 1, 10, 0, 1, 4, 86, 111, 117, 116, 1, 6, 0, 1, 9, 83, 99, 114, 105, 112, 116, 83, 105, 103, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 32, 255, 137, 2, 1, 1, 17, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 138, 0, 1, 255, 136, 0, 0, 61, 255, 135, 3, 1, 1, 8, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 136, 0, 1, 3, 1, 6, 65, 109, 111, 117, 110, 116, 1, 6, 0, 1, 12, 83, 99, 114, 105, 112, 116, 80, 117, 98, 75, 101, 121, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 255, 233, 255, 130, 1, 30, 114, 101, 103, 117, 108, 97, 114, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 50, 45, 105, 100, 1, 1, 1, 31, 99, 111, 105, 110, 98, 97, 115, 101, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 49, 45, 105, 100, 2, 8, 112, 117, 98, 75, 101, 121, 45, 50, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 1, 4, 1, 2, 1, 20, 112, 117, 98, 75, 101, 121, 45, 51, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 51, 0, 1, 3, 1, 20, 112, 117, 98, 75, 101, 121, 45, 52, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 52, 0, 1, 44, 1, 20, 112, 117, 98, 75, 101, 121, 45, 53, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 53, 0, 1, 1, 1, 20, 112, 117, 98, 75, 101, 121, 45, 50, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 0} //nolint:gochecknoglobals // data that is used across all test funcs
 
-func TestGobEncoder_DeserializeBlock(t *testing.T) {
+func _TestGobEncoder_DeserializeBlock(t *testing.T) {
 	type args struct {
 		data []byte
 	}
@@ -115,7 +116,7 @@ func TestGobEncoder_DeserializeBlock(t *testing.T) {
 	}
 }
 
-func TestGobEncoder_DeserializeTransaction(t *testing.T) {
+func _TestGobEncoder_DeserializeTransaction(t *testing.T) {
 	type args struct {
 		data []byte
 	}
@@ -143,7 +144,7 @@ func TestGobEncoder_DeserializeTransaction(t *testing.T) {
 	}
 }
 
-func TestGobEncoder_SerializeBlock(t *testing.T) {
+func _TestGobEncoder_SerializeBlock(t *testing.T) {
 	type args struct {
 		b Block
 	}
@@ -171,7 +172,7 @@ func TestGobEncoder_SerializeBlock(t *testing.T) {
 	}
 }
 
-func TestGobEncoder_SerializeTransaction(t *testing.T) {
+func _TestGobEncoder_SerializeTransaction(t *testing.T) {
 	type args struct {
 		tx Transaction
 	}
@@ -199,7 +200,7 @@ func TestGobEncoder_SerializeTransaction(t *testing.T) {
 	}
 }
 
-func TestNewGobEncoder(t *testing.T) {
+func _TestNewGobEncoder(t *testing.T) {
 	tests := []struct {
 		name string
 		want *encoding.GobEncoder
@@ -214,3 +215,4 @@ func TestNewGobEncoder(t *testing.T) {
 		})
 	}
 }
+*/

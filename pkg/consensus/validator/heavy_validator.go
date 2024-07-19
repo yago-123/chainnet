@@ -1,24 +1,25 @@
-package consensus
+package validator
 
 import (
 	"chainnet/pkg/chain/explorer"
+	"chainnet/pkg/consensus"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"fmt"
 )
 
-type ValidatorTxFunc func(tx *kernel.Transaction) error
-type ValidatorBlockFunc func(b *kernel.Block) error
+type TxFunc func(tx *kernel.Transaction) error
+type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
-	lv       LightValidator
+	lv       consensus.LightValidator
 	explorer explorer.Explorer
 	signer   sign.Signature
 	hasher   hash.Hashing
 }
 
-func NewHeavyValidator(lv LightValidator, explorer explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
+func NewHeavyValidator(lv consensus.LightValidator, explorer explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
 	return &HValidator{
 		lv:       lv,
 		explorer: explorer,
@@ -28,7 +29,7 @@ func NewHeavyValidator(lv LightValidator, explorer explorer.Explorer, signer sig
 }
 
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
-	validations := []ValidatorTxFunc{
+	validations := []TxFunc{
 		hv.lv.ValidateTxLight,
 		hv.validateOwnershipAndBalanceOfInputs,
 		// todo(): validate timelock / block height constraints
@@ -45,11 +46,12 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 }
 
 func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
-	validations := []ValidatorBlockFunc{
+	validations := []BlockFunc{
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
 		// todo(): validate block size limit
+		// todo(): validate coinbase transaction
 	}
 
 	for _, validate := range validations {

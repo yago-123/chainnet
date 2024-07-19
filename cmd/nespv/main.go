@@ -1,7 +1,7 @@
 package main
 
 import (
-	"chainnet/cmd/wallet/cmd"
+	"chainnet/cmd/nespv/cmd"
 
 	"github.com/sirupsen/logrus"
 )

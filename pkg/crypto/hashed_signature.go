@@ -22,9 +22,18 @@ func (hs *HashedSignature) NewKeyPair() ([]byte, []byte, error) {
 }
 
 func (hs *HashedSignature) Sign(payload []byte, privKey []byte) ([]byte, error) {
-	return hs.signature.Sign(hs.hasher.Hash(payload), privKey)
+	h, err := hs.hasher.Hash(payload)
+	if err != nil {
+		return []byte{}, err
+	}
+	return hs.signature.Sign(h, privKey)
 }
 
 func (hs *HashedSignature) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
-	return hs.signature.Verify(hs.hasher.Hash(payload), signature, pubKey)
+	h, err := hs.hasher.Hash(payload)
+	if err != nil {
+		return false, err
+	}
+
+	return hs.signature.Verify(signature, h, pubKey)
 }

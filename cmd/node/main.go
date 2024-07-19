@@ -5,7 +5,7 @@ import (
 	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
 	iterator "chainnet/pkg/chain/iterator"
-	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// create blockchain
-	bc := blockchain.NewBlockchain(cfg, consensus.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt, &mockConsensus.MockHeavyValidator{})
+	bc := blockchain.NewBlockchain(cfg, miner.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt, &mockConsensus.MockHeavyValidator{})
 
 	// create tx0 and add kernel
 	tx0, _ := bc.NewCoinbaseTransaction("me")

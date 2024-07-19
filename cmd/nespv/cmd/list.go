@@ -16,7 +16,7 @@ var listCmd = &cobra.Command{
 var listAddressesCmd = &cobra.Command{
 	Use:   "address",
 	Short: "List addresses",
-	Long:  `Lising addresses of wallet.`,
+	Long:  `Lising addresses of nespv.`,
 	Run: func(_ *cobra.Command, _ []string) {
 		logger.Infof("Listing addresses...")
 	},
@@ -25,7 +25,7 @@ var listAddressesCmd = &cobra.Command{
 var listBalanceCmd = &cobra.Command{
 	Use:   "balance",
 	Short: "List balance",
-	Long:  `List balance of wallet.`,
+	Long:  `List balance of nespv.`,
 	Run: func(_ *cobra.Command, _ []string) {
 		logger.Infof("Listing balance...")
 	},

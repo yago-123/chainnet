@@ -12,11 +12,24 @@ func NewSHA256() *Sha256 {
 	return &Sha256{}
 }
 
-func (h *Sha256) Hash(payload []byte) []byte {
+func (s *Sha256) Hash(payload []byte) ([]byte, error) {
+	if err := hashInputValidator(payload); err != nil {
+		return []byte{}, err
+	}
+
 	ret := sha256.Sum256(payload)
-	return ret[:]
+	return ret[:], nil
 }
 
-func (h *Sha256) Verify(hash []byte, payload []byte) bool {
-	return bytes.Equal(hash, h.Hash(payload))
+func (s *Sha256) Verify(hash []byte, payload []byte) (bool, error) {
+	if err := verifyInputValidator(hash, payload); err != nil {
+		return false, err
+	}
+
+	h, err := s.Hash(payload)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(hash, h), nil
 }

@@ -38,11 +38,20 @@ func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
 }
 
-func NewCoinbaseTransaction(to string) *Transaction {
-	txin := NewCoinbaseInput()
-	txout := NewCoinbaseOutput(script.P2PK, to)
+func NewCoinbaseTransaction(to string, txFee uint) *Transaction {
+	input := NewCoinbaseInput()
+	// todo() come up with mechanism for halving CoinbaseReward
+	output := NewCoinbaseOutput(CoinbaseReward, script.P2PK, to)
 
-	return NewTransaction([]TxInput{txin}, []TxOutput{txout})
+	// if there is tx fee, make sure to add it to the output
+	if txFee > 0 {
+		return NewTransaction([]TxInput{input}, []TxOutput{
+			output,
+			NewCoinbaseOutput(txFee, script.P2PK, to),
+		})
+	}
+
+	return NewTransaction([]TxInput{input}, []TxOutput{output})
 }
 
 func (tx *Transaction) SetID(hash []byte) {
@@ -54,11 +63,21 @@ func (tx *Transaction) SetID(hash []byte) {
 func (tx *Transaction) Assemble() []byte {
 	var data []byte
 
+	if len(tx.Vin) > 0 {
+		// add some static data to prevent hash collisions
+		data = append(data, []byte("Inputs:")...)
+	}
+
 	for _, input := range tx.Vin {
 		data = append(data, input.Txid...)
 		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
 		data = append(data, []byte(input.ScriptSig)...)
 		data = append(data, []byte(input.PubKey)...)
+	}
+
+	if len(tx.Vout) > 0 {
+		// add some static data to prevent hash collisions
+		data = append(data, []byte("Outputs:")...)
 	}
 
 	for _, output := range tx.Vout {
@@ -76,9 +95,19 @@ func (tx *Transaction) Assemble() []byte {
 func (tx *Transaction) AssembleForSigning() []byte {
 	var data []byte
 
+	if len(tx.Vin) > 0 {
+		// add some static data to prevent hash collisions
+		data = append(data, []byte("Inputs:")...)
+	}
+
 	for _, input := range tx.Vin {
 		data = append(data, input.Txid...)
 		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
+	}
+
+	if len(tx.Vout) > 0 {
+		// add some static data to prevent hash collisions
+		data = append(data, []byte("Outputs:")...)
 	}
 
 	for _, output := range tx.Vout {
@@ -98,6 +127,7 @@ func (tx *Transaction) HaveOutputs() bool {
 	return len(tx.Vout) > 0
 }
 
+// todo() in theory, coinbase tx should also be at index 0
 func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0
 }
@@ -161,9 +191,8 @@ type TxOutput struct {
 	PubKey string
 }
 
-func NewCoinbaseOutput(scriptType script.ScriptType, pubKey string) TxOutput {
-	// todo() come up with mechanism for halving CoinbaseReward
-	return NewOutput(CoinbaseReward, scriptType, pubKey)
+func NewCoinbaseOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
+	return NewOutput(amount, scriptType, pubKey)
 }
 
 func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {

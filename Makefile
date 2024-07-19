@@ -4,18 +4,18 @@ OUTPUT_DIR := bin
 # Define the name of the CLI binary file
 CLI_BINARY_NAME := chainnet-cli
 NODE_BINARY_NAME := chainnet
-WALLET_BINARY_NAME := wallet
+NESPV_BINARY_NAME := nespv
 
 # Define the source file for the CLI application
 CLI_SOURCE := $(wildcard cmd/cli/*.go)
 NODE_SOURCE := $(wildcard cmd/node/*.go)
-WALLET_SOURCE := $(wildcard cmd/wallet/*go)
+NESPV_SOURCE := $(wildcard cmd/nespv/*go)
 
 # Define build flags
 GCFLAGS := -gcflags "all=-N -l"
 
 .PHONY: all
-all: test lint chainnet-cli chainnet-node chainnet-wallet
+all: test lint chainnet-cli chainnet-node nespv
 
 .PHONY: chainnet-cli
 chainnet-cli: output-dir
@@ -27,10 +27,10 @@ chainnet-node: output-dir
 	@echo "Building chainnet node..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
 
-.PHONY: chainnet-wallet
-chainnet-wallet: output-dir
-	@echo "Building chainnet wallet..."
-	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(WALLET_BINARY_NAME) $(WALLET_SOURCE)
+.PHONY: nespv
+nespv: output-dir
+	@echo "Building chainnet nespv..."
+	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NESPV_BINARY_NAME) $(NESPV_SOURCE)
 
 .PHONY: output-dir
 output-dir:
