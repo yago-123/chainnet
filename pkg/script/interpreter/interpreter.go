@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
@@ -9,7 +10,10 @@ import (
 )
 
 const (
-	opCheckSigVerifyStackLength = 2
+	opCheckSigVerifyMinStackLength = 2
+	opDupMinStackLength            = 1
+	opHash160MinStackLength        = 1
+	opEqualVerifyMinStackLength    = 2
 )
 
 // RPNInterpreter represents the interpreter for the Reverse Polish Notation (RPN) script
@@ -102,12 +106,48 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 			// perform operation based on operator with a and b
 			switch token { //nolint:exhaustive // only check operators
 			case script.OpChecksig:
-				var ret bool
-				ret, err = rpn.verifyOpCheckSig(stack, tx)
+				if stack.Len() < opCheckSigVerifyMinStackLength {
+					return false, fmt.Errorf("invalid stack length for OP_CHECKSIG")
+				}
+
+				pubKey := stack.Pop()
+				sig := stack.Pop()
+
+				// verify the signature
+				ret, err := rpn.signer.Verify([]byte(sig), tx.AssembleForSigning(), []byte(pubKey))
 				if err != nil {
-					return false, err
+					return false, fmt.Errorf("couldn't verify signature: %w", err)
 				}
 				stack.Push(strconv.FormatBool(ret))
+			case script.OpDup:
+				if stack.Len() < opDupMinStackLength {
+					return false, fmt.Errorf("invalid stack length for OP_DUP")
+				}
+
+				val := stack.Pop()
+				stack.Push(val)
+				stack.Push(val)
+			case script.OpHash160:
+				if stack.Len() < opHash160MinStackLength {
+					return false, fmt.Errorf("invalid stack length for OP_HASH160")
+				}
+
+				val := stack.Pop()
+				hashedVal, err := hash.NewRipemd160().Hash([]byte(val))
+				if err != nil {
+					return false, fmt.Errorf("couldn't hash value: %w", err)
+				}
+
+				stack.Push(string(hashedVal))
+			case script.OpEqualVerify:
+				if stack.Len() < opEqualVerifyMinStackLength {
+					return false, fmt.Errorf("invalid stack length for OP_EQUALVERIFY")
+				}
+
+				val1 := stack.Pop()
+				val2 := stack.Pop()
+
+				stack.Push(strconv.FormatBool(val1 == val2))
 			default:
 			}
 		}
@@ -126,7 +166,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, signature str
 
 // verifyOpCheckSig verifies the signature of the transaction
 func (rpn *RPNInterpreter) verifyOpCheckSig(stack *script.Stack, tx *kernel.Transaction) (bool, error) {
-	if stack.Len() < opCheckSigVerifyStackLength {
+	if stack.Len() < opCheckSigVerifyMinStackLength {
 		return false, fmt.Errorf("invalid stack length for OP_CHECKSIG")
 	}
 
