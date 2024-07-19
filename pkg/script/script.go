@@ -14,18 +14,23 @@ const (
 	MinLengthOfLiteral = 2
 )
 
+type Script []ScriptElement
+type ScriptElement uint //nolint:revive // ScriptElement is a type for script elements
+
 // Script types
 const (
-	// P2PK = Pay-to-PubKey
 	P2PK ScriptType = iota
 	P2PKH
-	// P2PKH
 
+	UndefinedScriptType
 	// ...
 )
 
-type Script []ScriptElement
-type ScriptElement uint //nolint:revive // ScriptElement is a type for script elements
+var scriptStructure = map[ScriptType]Script{
+	P2PK:                {PubKey, OpChecksig},
+	P2PKH:               {OpDup, OpHash160, PubKeyHash, OpEqualVerify, OpChecksig},
+	UndefinedScriptType: {Undefined},
+}
 
 const (
 	// Special elements
@@ -107,6 +112,7 @@ func (op ScriptElement) ToUint() uint {
 	return uint(op)
 }
 
+// NewScript generates a new script based on the type and public key
 func NewScript(scriptType ScriptType, pubKey []byte) string {
 	script := Script{Undefined}
 
@@ -116,13 +122,7 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 	}
 
 	// generate script based on type
-	switch scriptType {
-	case P2PK:
-		script = Script{PubKey, OpChecksig}
-	case P2PKH:
-		script = Script{OpDup, OpHash160, PubKeyHash, OpEqualVerify, OpChecksig}
-	default:
-	}
+	script = scriptStructure[scriptType]
 
 	// todo() the render will switch to a hex string eventually
 	// render script to string
@@ -201,6 +201,32 @@ func StringToScript(script string) (Script, []string, error) {
 	}
 
 	return scriptTokens, scriptString, nil
+}
+
+// ScriptToScriptType tries to derive the script type based on a set of elements that form a script
+func ScriptToScriptType(script Script) ScriptType {
+	for k, v := range scriptStructure {
+		if scriptsMatch(v, script) {
+			return k
+		}
+	}
+
+	return UndefinedScriptType
+}
+
+// scriptsMatch checks if two scripts contain the same script elements in the same order
+func scriptsMatch(script1, script2 Script) bool {
+	if len(script1) != len(script2) {
+		return false
+	}
+
+	for i, element := range script1 {
+		if element != script2[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // tryExtractTokenLiteral tries to converts keys, hash keys etc to script.Literal type

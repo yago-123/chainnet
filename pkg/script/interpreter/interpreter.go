@@ -30,52 +30,34 @@ func NewScriptInterpreter(signer sign.Signature) *RPNInterpreter {
 }
 
 // GenerateScriptSig evaluates the scriptPubKey requirement and generates the scriptSig that will unlock the scriptPubKey
-func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, privKey []byte, tx *kernel.Transaction) (string, error) {
+func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, pubKey, privKey []byte, tx *kernel.Transaction) (string, error) {
+	var scriptSig [][]byte
+
 	// converts script pub key into list of tokens and list of strings
-	scriptTokens, scriptString, err := script.StringToScript(scriptPubKey)
+	scriptTokens, _, err := script.StringToScript(scriptPubKey)
 	if err != nil {
 		return "", err
 	}
 
-	// push the signature to the stack
-	stack := script.NewStack()
+	signature, err := rpn.signer.Sign(tx.AssembleForSigning(), privKey)
+	if err != nil {
+		return "", fmt.Errorf("couldn't sign transaction: %w", err)
+	}
 
-	// start generation of scriptSig unlocker
-	for index, token := range scriptTokens {
-		if token.IsUndefined() {
-			return "", fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
-		}
+	scriptType := script.ScriptToScriptType(scriptTokens)
 
-		if token.IsOperator() {
-			switch token { //nolint:exhaustive // only check operators
-			case script.OpChecksig:
-				var sig []byte
-				// generate the signature
-				if stack.Len() < 1 {
-					return "", fmt.Errorf("invalid stack length while generating signature in OP_CHECKSIG")
-				}
-
-				// we pop the public key from the stack but we don't need it
-				// todo() or maybe we really need it? Verify the output maybe?
-				_ = stack.Pop()
-
-				sig, err = rpn.signer.Sign(tx.AssembleForSigning(), privKey)
-				if err != nil {
-					return "", fmt.Errorf("couldn't sign transaction: %w", err)
-				}
-				stack.Push(string(sig))
-			default:
-			}
-		}
-
-		if !token.IsOperator() {
-			stack.Push(scriptString[index])
-		}
+	switch scriptType {
+	case script.P2PK:
+		scriptSig = append(scriptSig, signature)
+	case script.P2PKH:
+		scriptSig = append(scriptSig, signature, pubKey)
+	default:
+		return "", fmt.Errorf("unsupported script type %d", scriptType)
 	}
 
 	ret := []string{}
-	for _ = range stack.Len() {
-		ret = append(ret, base58.Encode([]byte(stack.Pop())))
+	for _, val := range scriptSig {
+		ret = append(ret, base58.Encode(val))
 	}
 
 	return strings.Join(ret, " "), nil
@@ -92,7 +74,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 	}
 
 	// iterate over the scriptSig and push values to the stack
-	for _, element := range strings.Split(scriptSig, " ") {
+	for _, element := range strings.Fields(scriptSig) {
 		stack.Push(string(base58.Decode(element)))
 	}
 

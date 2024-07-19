@@ -8,6 +8,7 @@ import (
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"
+	"github.com/btcsuite/btcutil/base58"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,10 +73,10 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	expectedTx := &kernel.Transaction{
 		ID: []byte{0x69, 0x98, 0xc9, 0xa8, 0xea, 0xda, 0xf3, 0x31, 0xd7, 0xac, 0x4e, 0xb0, 0x4a, 0x1c, 0xd8, 0xb4, 0x15, 0x65, 0x51, 0x83, 0x50, 0x4b, 0x79, 0xa4, 0x97, 0xea, 0xa9, 0x9f, 0xd3, 0xb6, 0xc9, 0xb5},
 		Vin: []kernel.TxInput{
-			kernel.NewInput([]byte("random-id-0"), 1, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
-			kernel.NewInput([]byte("random-id-1"), 3, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
-			kernel.NewInput([]byte("random-id-2"), 1, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
-			kernel.NewInput([]byte("random-id-3"), 8, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
+			kernel.NewInput([]byte("random-id-0"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+			kernel.NewInput([]byte("random-id-1"), 3, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+			kernel.NewInput([]byte("random-id-2"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+			kernel.NewInput([]byte("random-id-3"), 8, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
 		},
 		Vout: []kernel.TxOutput{
 			kernel.NewOutput(10, script.P2PK, "pubkey-1"),
@@ -90,10 +91,10 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	expectedTx2 := &kernel.Transaction{
 		ID: []byte{0xdf, 0xba, 0xa2, 0x2, 0x58, 0xb5, 0x9, 0x28, 0x34, 0x1b, 0x6d, 0x31, 0x91, 0xca, 0xfc, 0x86, 0x23, 0x9e, 0xea, 0x97, 0xb9, 0xc8, 0xa7, 0xb9, 0x20, 0xd7, 0xf3, 0x86, 0x91, 0x1, 0x89, 0xc},
 		Vin: []kernel.TxInput{
-			kernel.NewInput([]byte("random-id-0"), 1, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
-			kernel.NewInput([]byte("random-id-1"), 3, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
-			kernel.NewInput([]byte("random-id-2"), 1, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
-			kernel.NewInput([]byte("random-id-3"), 8, "Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed", "pubkey-2"),
+			kernel.NewInput([]byte("random-id-0"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+			kernel.NewInput([]byte("random-id-1"), 3, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+			kernel.NewInput([]byte("random-id-2"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+			kernel.NewInput([]byte("random-id-3"), 8, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
 		},
 		Vout: []kernel.TxOutput{
 			kernel.NewOutput(10, script.P2PK, "pubkey-3"),

@@ -58,6 +58,7 @@ func TestRPNInterpreter_GenerateScriptSigWithErrors(t *testing.T) {
 	// generate the scriptSig with an invalid scriptPubKey
 	_, err = interpreter.GenerateScriptSig(
 		"invalid script",
+		pubKey,
 		privKey,
 		tx1,
 	)
@@ -67,6 +68,7 @@ func TestRPNInterpreter_GenerateScriptSigWithErrors(t *testing.T) {
 	_, err = interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
 		[]byte{},
+		[]byte{},
 		tx1,
 	)
 	require.Error(t, err)
@@ -74,6 +76,7 @@ func TestRPNInterpreter_GenerateScriptSigWithErrors(t *testing.T) {
 	// generate the scriptSig with an empty transaction
 	_, err = interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
+		pubKey,
 		privKey,
 		&kernel.Transaction{},
 	)
@@ -90,6 +93,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyWithErrors(t *testing.T) {
 	// generate real signature for testing purposes
 	realSignature, err := interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
+		pubKey,
 		privKey,
 		tx1,
 	)
@@ -142,6 +146,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeys(t *testing.T) {
 	// generate the scriptSig to unlock the input
 	signature, err := interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
+		pubKey,
 		privKey,
 		tx1,
 	)
@@ -178,6 +183,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 
 	signature, err := interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
+		pubKey,
 		privKey,
 		tx1,
 	)
@@ -186,6 +192,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 
 	signature, err = interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
+		pubKey,
 		privKey,
 		tx2,
 	)
@@ -194,6 +201,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 
 	signature, err = interpreter.GenerateScriptSig(
 		script.NewScript(script.P2PK, pubKey),
+		pubKey,
 		privKey,
 		tx3,
 	)
