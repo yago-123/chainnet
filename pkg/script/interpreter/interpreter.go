@@ -129,7 +129,9 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 				val1 := stack.Pop()
 				val2 := stack.Pop()
 
-				stack.Push(strconv.FormatBool(val1 == val2))
+				if val1 != val2 {
+					return false, fmt.Errorf("OP_EQUAL_VERIFY failed, values are not equal: %s != %s", val1, val2)
+				}
 			default:
 			}
 		}

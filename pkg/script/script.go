@@ -91,7 +91,7 @@ func (op ScriptElement) IsLiteral() bool {
 
 // IsOperator checks if the element is an operator
 func (op ScriptElement) IsOperator() bool {
-	return op == OpChecksig
+	return op >= OpChecksig && op <= OpEqualVerify
 }
 
 func (op ScriptElement) IsUndefined() bool {
