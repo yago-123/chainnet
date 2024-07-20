@@ -6,9 +6,10 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"strconv"
 	"strings"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 const (

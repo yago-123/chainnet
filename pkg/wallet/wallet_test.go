@@ -8,8 +8,9 @@ import (
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"
-	"github.com/btcsuite/btcutil/base58"
 	"testing"
+
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

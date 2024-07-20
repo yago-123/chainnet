@@ -3,10 +3,11 @@ package script //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/pkg/crypto/hash"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
+
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewScript_P2PK(t *testing.T) {
