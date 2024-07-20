@@ -5,15 +5,21 @@ import (
 	"fmt"
 )
 
-type Block struct {
+type BlockHeader struct {
+	Version       []byte
+	PrevBlockHash []byte
+	MerkleRoot    []byte
 	// todo(): use timestamp to determine the difficulty, in a 2 weeks period, if the number of blocks was
 	// todo(): created too quick, it means that the difficult must be increased
-	Timestamp     int64
-	Transactions  []*Transaction
-	PrevBlockHash []byte
-	Target        uint
-	Nonce         uint
-	Hash          []byte
+	Timestamp int64
+	Target    uint
+	Nonce     uint
+}
+
+type Block struct {
+	Header       BlockHeader
+	Transactions []*Transaction
+	Hash         []byte
 }
 
 func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
