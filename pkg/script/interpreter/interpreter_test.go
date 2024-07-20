@@ -55,7 +55,7 @@ var tx1P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter
 		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
 	},
 	[]kernel.TxOutput{
-		kernel.NewOutput(50, script.P2PK, "pubKey-1"),
+		kernel.NewOutput(50, script.P2PKH, "pubKey-1"),
 	},
 )
 
@@ -66,7 +66,7 @@ var tx2P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter
 		kernel.NewInput([]byte("transaction-2"), 1, "", "pubKey-1"),
 	},
 	[]kernel.TxOutput{
-		kernel.NewOutput(50, script.P2PK, "pubKey-1"),
+		kernel.NewOutput(50, script.P2PKH, "pubKey-1"),
 	},
 )
 
@@ -78,7 +78,7 @@ var tx3P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter
 		kernel.NewInput([]byte("transaction-2"), 1, "", "pubKey-2"),
 	},
 	[]kernel.TxOutput{
-		kernel.NewOutput(50, script.P2PK, "pubKey-1"),
+		kernel.NewOutput(50, script.P2PKH, "pubKey-1"),
 	},
 )
 
@@ -170,7 +170,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyWithErrors(t *testing.T) {
 	require.False(t, valid)
 }
 
-func TestRPNInterpreter_GenerationAndVerificationRealKeys(t *testing.T) {
+func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PK(t *testing.T) {
 	signer := sign.NewECDSASignature()
 	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
 
@@ -202,6 +202,43 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeys(t *testing.T) {
 		script.NewScript(script.P2PK, pubKey),
 		string(modifiedScriptSig),
 		tx1P2PK,
+	)
+	require.NoError(t, err)
+	assert.False(t, valid)
+}
+
+func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
+	signer := sign.NewECDSASignature()
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
+
+	pubKey, privKey, err := signer.NewKeyPair()
+	require.NoError(t, err)
+
+	// generate the scriptSig to unlock the input
+	signature, err := interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PKH, pubKey),
+		pubKey,
+		privKey,
+		tx1P2PKH,
+	)
+	require.NoError(t, err)
+
+	// check that the scriptSig generated is correct
+	valid, err := interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PKH, pubKey),
+		signature,
+		tx1P2PKH,
+	)
+	require.NoError(t, err)
+	assert.True(t, valid)
+
+	// modify the scriptSig and check that is not correct anymore
+	modifiedScriptSig := []rune(signature)
+	modifiedScriptSig[0] = 'a'
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PKH, pubKey),
+		string(modifiedScriptSig),
+		tx1P2PKH,
 	)
 	require.NoError(t, err)
 	assert.False(t, valid)
@@ -241,6 +278,42 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 	)
 	require.NoError(t, err)
 	assert.Equal(t, base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3P2PK.AssembleForSigning()))), signature)
+}
+
+func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
+
+	// we use a real key pair to generate the signature so the public key can be detected by the interpreter
+	// notice that we use the signature mocker, so the signature is predictable and does not depend on key
+	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
+	require.NoError(t, err)
+
+	signature, err := interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PKH, pubKey),
+		pubKey,
+		privKey,
+		tx1P2PK,
+	)
+	require.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx1P2PK.AssembleForSigning()))), base58.Encode(pubKey)), signature)
+
+	signature, err = interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PKH, pubKey),
+		pubKey,
+		privKey,
+		tx2P2PK,
+	)
+	require.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx2P2PK.AssembleForSigning()))), base58.Encode(pubKey)), signature)
+
+	signature, err = interpreter.GenerateScriptSig(
+		script.NewScript(script.P2PKH, pubKey),
+		pubKey,
+		privKey,
+		tx3P2PK,
+	)
+	require.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3P2PK.AssembleForSigning()))), base58.Encode(pubKey)), signature)
 }
 
 func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
@@ -283,7 +356,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 	valid, err := interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PKH, pubKey),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx1P2PKH.AssembleForSigning()))), base58.Encode(pubKey)),
-		tx1P2PK,
+		tx1P2PKH,
 	)
 	require.NoError(t, err)
 	assert.True(t, valid)
@@ -291,7 +364,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 	valid, err = interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PKH, pubKey),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx2P2PKH.AssembleForSigning()))), base58.Encode(pubKey)),
-		tx2P2PK,
+		tx2P2PKH,
 	)
 	require.NoError(t, err)
 	assert.True(t, valid)
@@ -299,8 +372,17 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 	valid, err = interpreter.VerifyScriptPubKey(
 		script.NewScript(script.P2PKH, pubKey),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3P2PKH.AssembleForSigning()))), base58.Encode(pubKey)),
-		tx3P2PK,
+		tx3P2PKH,
 	)
 	require.NoError(t, err)
 	assert.True(t, valid)
+
+	// verify scriptSig with different pubKey than expected
+	valid, err = interpreter.VerifyScriptPubKey(
+		script.NewScript(script.P2PKH, pubKey),
+		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3P2PKH.AssembleForSigning()))), base58.Encode([]byte("differentpubkey"))),
+		tx1P2PKH,
+	)
+	require.Error(t, err)
+	assert.False(t, valid)
 }
