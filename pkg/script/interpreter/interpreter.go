@@ -45,13 +45,15 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, pubKey, privKe
 		return "", fmt.Errorf("couldn't sign transaction: %w", err)
 	}
 
-	scriptType := script.ScriptToScriptType(scriptTokens)
+	scriptType := script.DetermineScriptType(scriptTokens)
 
 	switch scriptType {
 	case script.P2PK:
 		scriptSig = append(scriptSig, signature)
 	case script.P2PKH:
 		scriptSig = append(scriptSig, signature, pubKey)
+	case script.UndefinedScriptType:
+		return "", fmt.Errorf("undefined script type %d", scriptType)
 	default:
 		return "", fmt.Errorf("unsupported script type %d", scriptType)
 	}
@@ -65,7 +67,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, pubKey, privKe
 }
 
 // VerifyScriptPubKey verifies the scriptPubKey by reconstructing the script and evaluating it
-func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig string, tx *kernel.Transaction) (bool, error) {
+func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig string, tx *kernel.Transaction) (bool, error) { //nolint:gocognit // allow this function to be complex
 	stack := script.NewStack()
 
 	// converts script pub key into list of tokens and list of strings
@@ -85,7 +87,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 			return false, fmt.Errorf("undefined token %s in position %d", scriptString[index], index)
 		}
 
-		if token.IsOperator() {
+		if token.IsOperator() { //nolint:nestif // allow this nesting to be "complex"
 			// perform operation based on operator with a and b
 			switch token { //nolint:exhaustive // only check operators
 			case script.OpChecksig:
@@ -93,11 +95,12 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 					return false, fmt.Errorf("invalid stack length for OP_CHECKSIG")
 				}
 
+				var ret bool
 				pubKey := stack.Pop()
 				sig := stack.Pop()
 
 				// verify the signature
-				ret, err := rpn.signer.Verify([]byte(sig), tx.AssembleForSigning(), []byte(pubKey))
+				ret, err = rpn.signer.Verify([]byte(sig), tx.AssembleForSigning(), []byte(pubKey))
 				if err != nil {
 					return false, fmt.Errorf("couldn't verify signature: %w", err)
 				}
@@ -115,8 +118,9 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 					return false, fmt.Errorf("invalid stack length for OP_HASH160")
 				}
 
+				var hashedVal []byte
 				val := stack.Pop()
-				hashedVal, err := hash.NewRipemd160().Hash([]byte(val))
+				hashedVal, err = hash.NewRipemd160().Hash([]byte(val))
 				if err != nil {
 					return false, fmt.Errorf("couldn't hash value: %w", err)
 				}

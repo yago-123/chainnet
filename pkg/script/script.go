@@ -26,7 +26,7 @@ const (
 	// ...
 )
 
-var scriptStructure = map[ScriptType]Script{
+var scriptStructure = map[ScriptType]Script{ //nolint:gochecknoglobals // must be a global variable
 	P2PK:                {PubKey, OpChecksig},
 	P2PKH:               {OpDup, OpHash160, PubKeyHash, OpEqualVerify, OpChecksig},
 	UndefinedScriptType: {Undefined},
@@ -114,15 +114,13 @@ func (op ScriptElement) ToUint() uint {
 
 // NewScript generates a new script based on the type and public key
 func NewScript(scriptType ScriptType, pubKey []byte) string {
-	script := Script{Undefined}
-
 	// if there is no public key, return undefined directly
 	if len(pubKey) == 0 {
-		return Undefined.String()
+		return scriptStructure[UndefinedScriptType].String(pubKey)
 	}
 
 	// generate script based on type
-	script = scriptStructure[scriptType]
+	script := scriptStructure[scriptType]
 
 	// todo() the render will switch to a hex string eventually
 	// render script to string
@@ -203,8 +201,8 @@ func StringToScript(script string) (Script, []string, error) {
 	return scriptTokens, scriptString, nil
 }
 
-// ScriptToScriptType tries to derive the script type based on a set of elements that form a script
-func ScriptToScriptType(script Script) ScriptType {
+// DetermineScriptType tries to derive the script type based on a set of elements that form a script
+func DetermineScriptType(script Script) ScriptType {
 	for k, v := range scriptStructure {
 		if scriptsMatch(v, script) {
 			return k
