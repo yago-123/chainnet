@@ -16,22 +16,26 @@ type BlockHeader struct {
 	Nonce     uint
 }
 
+func NewBlockHeader(version []byte, timestamp uint, merkleRoot []byte, prevBlockHash []byte, target, nonce uint) *BlockHeader {
+	return &BlockHeader{
+		Version:       []byte("1"),
+		Timestamp:     0,
+		MerkleRoot:    []byte{},
+		PrevBlockHash: prevBlockHash,
+		Target:        0,
+		Nonce:         0,
+	}
+}
+
 type Block struct {
-	Header       BlockHeader
+	Header       *BlockHeader
 	Transactions []*Transaction
 	Hash         []byte
 }
 
-func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
+func NewBlock(blockHeader *BlockHeader, transactions []*Transaction) *Block {
 	block := &Block{
-		Header: BlockHeader{
-			Version:       []byte("1"),
-			Timestamp:     0,
-			MerkleRoot:    []byte{},
-			PrevBlockHash: prevBlockHash,
-			Target:        0,
-			Nonce:         0,
-		},
+		Header:       blockHeader,
 		Transactions: transactions,
 		Hash:         []byte{},
 	}
@@ -39,8 +43,8 @@ func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
 	return block
 }
 
-func NewGenesisBlock(transactions []*Transaction) *Block {
-	return NewBlock(transactions, []byte{})
+func NewGenesisBlock(blockHeader *BlockHeader, transactions []*Transaction) *Block {
+	return NewBlock(blockHeader, transactions)
 }
 
 func (block *Block) SetHashAndNonce(hash []byte, nonce uint) {

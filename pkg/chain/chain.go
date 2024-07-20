@@ -56,12 +56,14 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 
 	// if no blocks exist, create genesis kernel
 	if numBlocks == 0 {
-		newBlock = kernel.NewGenesisBlock(transactions)
+		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, []byte{}, 0, 0)
+		newBlock = kernel.NewGenesisBlock(blockHeader, transactions)
 	}
 
 	// if blocks exist, create new kernel tied to the previous
 	if numBlocks > 0 {
-		newBlock = kernel.NewBlock(transactions, bc.lastBlockHash)
+		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, bc.lastBlockHash, 0, 0)
+		newBlock = kernel.NewBlock(blockHeader, transactions)
 	}
 
 	// todo() this will probably be validated in the miner/node level
@@ -165,12 +167,6 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 	}
 
 	return tx, nil
-}
-
-func (bc *Blockchain) MineBlock(transactions []*kernel.Transaction) *kernel.Block {
-	newBlock := kernel.NewBlock(transactions, bc.lastBlockHash)
-
-	return newBlock
 }
 
 func (bc *Blockchain) GetBlock(hash string) (*kernel.Block, error) {

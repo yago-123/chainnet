@@ -14,13 +14,13 @@ func TestReverseIterator(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
 	coinbaseTx := kernel.NewCoinbaseTransaction("address-1", miner.CoinbaseReward, 0)
 	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
-	genesisBlock := kernel.NewGenesisBlock([]*kernel.Transaction{coinbaseTx})
+	genesisBlock := kernel.NewGenesisBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, []byte{}, 0, 0), []*kernel.Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
 
 	// set up kernel 1 with one coinbase transaction
 	coinbaseTx2 := kernel.NewCoinbaseTransaction("address-2", miner.CoinbaseReward, 0)
 	coinbaseTx2.SetID([]byte("coinbase-transaction-kernel-1-id"))
-	block1 := kernel.NewBlock([]*kernel.Transaction{coinbaseTx2}, genesisBlock.Hash)
+	block1 := kernel.NewBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, genesisBlock.Hash, 0, 0), []*kernel.Transaction{coinbaseTx2})
 	block1.SetHashAndNonce([]byte("kernel-hash-1"), 1)
 
 	// set up kernel 2 with one coinbase transaction and one regular transaction
@@ -38,7 +38,7 @@ func TestReverseIterator(t *testing.T) {
 			{Amount: 1, ScriptPubKey: "ScriptPubKey"},
 		})
 	regularTx.SetID([]byte("regular-tx-2-id"))
-	block2 := kernel.NewBlock([]*kernel.Transaction{coinbaseTx3, regularTx}, block1.Hash)
+	block2 := kernel.NewBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, block1.Hash, 0, 0), []*kernel.Transaction{coinbaseTx3, regularTx})
 	block2.SetHashAndNonce([]byte("kernel-hash-2"), 1)
 
 	// set up the storage mock with the corresponding returns
@@ -86,7 +86,7 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
 	coinbaseTx := kernel.NewCoinbaseTransaction("address-1", miner.CoinbaseReward, 0)
 	coinbaseTx.SetID([]byte("coinbase-genesis-kernel-id"))
-	genesisBlock := kernel.NewGenesisBlock([]*kernel.Transaction{coinbaseTx})
+	genesisBlock := kernel.NewGenesisBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, []byte{}, 0, 0), []*kernel.Transaction{coinbaseTx})
 	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
 
 	// set up the storage mock with the corresponding returns

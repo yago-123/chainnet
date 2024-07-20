@@ -22,7 +22,7 @@ const (
 
 // set up genesis block with coinbase transaction
 var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: []byte{},
 		Nonce:         1,
@@ -43,7 +43,7 @@ var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across 
 
 // set up block 1 with one coinbase transaction
 var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: GenesisBlock.Hash,
 		Nonce:         1,
@@ -64,7 +64,7 @@ var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all te
 
 // set up block 2 with one coinbase transaction and one regular transaction
 var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: Block1.Hash,
 		Nonce:         1,
@@ -97,7 +97,7 @@ var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all te
 
 // set up block 3 with one coinbase transaction and two regular transactions
 var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: Block2.Hash,
 		Nonce:         1,
@@ -140,7 +140,7 @@ var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all te
 
 // set up block 4 with one coinbase transaction
 var Block4 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: Block3.Hash,
 		Nonce:         1,

@@ -82,16 +82,12 @@ func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
 }
 
 func (m *Miner) createCoinbaseTransaction(collectedFee uint) *kernel.Transaction {
-	// todo(): make coinbase reward variable
+	// todo(): make coinbase reward variable based on height of the blockchain (halving)
 	return kernel.NewCoinbaseTransaction("miner", CoinbaseReward, collectedFee)
 }
 
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, coinbaseTx *kernel.Transaction) *kernel.BlockHeader {
 	return &kernel.BlockHeader{}
-}
-
-func (m *Miner) createBlock() {
-
 }
 
 func (m *Miner) calculateHash() {
