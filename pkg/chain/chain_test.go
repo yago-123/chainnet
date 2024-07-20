@@ -78,9 +78,9 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 
 	// check that the blockAdded has been added correctly
 	require.NoError(t, err, "errors while adding genesis blockAdded")
-	assert.Empty(t, blockAdded.PrevBlockHash, "genesis blockAdded contains previous blockAdded hash when it shouldn't")
+	assert.Empty(t, blockAdded.Header.PrevBlockHash, "genesis blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
-	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
+	assert.Equal(t, uint(1), blockAdded.Header.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("genesis-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
 	assert.Len(t, bc.Chain, 1, "blockchain chain length not updated")
 	assert.Equal(t, "genesis-kernel-hash", bc.Chain[0], "blockchain chain not updated with new blockAdded hash")
@@ -101,9 +101,9 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 
 	// check that the blockAdded has been added correctly
 	require.NoError(t, err, "errors while adding genesis blockAdded")
-	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
+	assert.Equal(t, []byte("genesis-kernel-hash"), blockAdded.Header.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
-	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
+	assert.Equal(t, uint(1), blockAdded.Header.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("second-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
 	assert.Len(t, bc.Chain, 2, "blockchain chain length not updated")
 	assert.Equal(t, "second-kernel-hash", bc.Chain[1], "blockchain chain not updated with new blockAdded hash")
@@ -124,9 +124,9 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 
 	// check that the blockAdded has been added correctly
 	require.NoError(t, err, "errors while adding genesis blockAdded")
-	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
+	assert.Equal(t, []byte("second-kernel-hash"), blockAdded.Header.PrevBlockHash, "blockAdded contains previous blockAdded hash when it shouldn't")
 	assert.Equal(t, []byte("third-kernel-hash"), blockAdded.Hash, "blockAdded hash incorrect")
-	assert.Equal(t, uint(1), blockAdded.Nonce, "blockAdded nonce incorrect")
+	assert.Equal(t, uint(1), blockAdded.Header.Nonce, "blockAdded nonce incorrect")
 	assert.Equal(t, []byte("third-kernel-hash"), bc.lastBlockHash, "last blockAdded hash in blockchain not updated")
 	assert.Len(t, bc.Chain, 3, "blockchain chain length not updated")
 	assert.Equal(t, "third-kernel-hash", bc.Chain[2], "blockchain chain not updated with new blockAdded hash")

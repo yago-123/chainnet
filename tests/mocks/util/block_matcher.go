@@ -11,7 +11,7 @@ import (
 // based on the PrevBlockHash field of a kernel.Block instance.
 func MatchByPreviousBlockPointer(prevBlockHash []byte) interface{} {
 	return mock.MatchedBy(func(innerBlock *kernel.Block) bool {
-		return reflect.DeepEqual(innerBlock.PrevBlockHash, prevBlockHash)
+		return reflect.DeepEqual(innerBlock.Header.PrevBlockHash, prevBlockHash)
 	})
 }
 
@@ -19,6 +19,6 @@ func MatchByPreviousBlockPointer(prevBlockHash []byte) interface{} {
 // based on the PrevBlockHash field of a kernel.Block instance.
 func MatchByPreviousBlock(prevBlockHash []byte) interface{} {
 	return mock.MatchedBy(func(innerBlock kernel.Block) bool {
-		return reflect.DeepEqual(innerBlock.PrevBlockHash, prevBlockHash)
+		return reflect.DeepEqual(innerBlock.Header.PrevBlockHash, prevBlockHash)
 	})
 }

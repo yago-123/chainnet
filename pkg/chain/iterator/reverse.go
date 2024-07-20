@@ -28,7 +28,7 @@ func (it *ReverseIterator) GetNextBlock() (*kernel.Block, error) {
 		return nil, err
 	}
 
-	it.prevBlockHash = block.PrevBlockHash
+	it.prevBlockHash = block.Header.PrevBlockHash
 
 	return block, err
 }

@@ -70,12 +70,12 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 		return &kernel.Block{}, fmt.Errorf("error validating block %s: %w", newBlock.Hash, err)
 	}
 
-	newBlock.Target = bc.cfg.DifficultyPoW
+	newBlock.Header.Target = bc.cfg.DifficultyPoW
 
 	// calculate hash and nonce for the kernel
 	// todo() not really a very good approach, clear it or split in more funcs: Mine for example
 	for {
-		newBlock.Timestamp = time.Now().Unix()
+		newBlock.Header.Timestamp = time.Now().Unix()
 		// calculate until the max nonce, if does not match, try again with different timestamp
 		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock)
 		if err == nil {
