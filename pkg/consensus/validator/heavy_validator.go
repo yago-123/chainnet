@@ -34,6 +34,7 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 		hv.validateOwnershipAndBalanceOfInputs,
 		// todo(): validate timelock / block height constraints
 		// todo(): maturity checks?
+		// todo(): validate scriptSig
 	}
 
 	for _, validate := range validations {
@@ -52,6 +53,7 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateNoDoubleSpendingInsideBlock,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
+
 	}
 
 	for _, validate := range validations {
