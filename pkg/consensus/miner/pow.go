@@ -25,7 +25,7 @@ func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error
 	var hash []byte
 
 	hashDifficulty := big.NewInt(1)
-	hashDifficulty.Lsh(hashDifficulty, HashLength-b.Target)
+	hashDifficulty.Lsh(hashDifficulty, HashLength-b.Header.Target)
 
 	maxNonce := ^uint(0)
 	nonce := uint(0)
