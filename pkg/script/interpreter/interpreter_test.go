@@ -252,8 +252,6 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
 
-	// we use a real key pair to generate the signature so the public key can be detected by the interpreter
-	// notice that we use the signature mocker, so the signature is predictable and does not depend on key
 	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
 
@@ -288,8 +286,6 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
 	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
 
-	// we use a real key pair to generate the signature so the public key can be detected by the interpreter
-	// notice that we use the signature mocker, so the signature is predictable and does not depend on key
 	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
 

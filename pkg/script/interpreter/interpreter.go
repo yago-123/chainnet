@@ -58,12 +58,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, pubKey, privKe
 		return "", fmt.Errorf("unsupported script type %d", scriptType)
 	}
 
-	ret := []string{}
-	for _, val := range scriptSig {
-		ret = append(ret, base58.Encode(val))
-	}
-
-	return strings.Join(ret, " "), nil
+	return encodeScriptSig(scriptSig), nil
 }
 
 // VerifyScriptPubKey verifies the scriptPubKey by reconstructing the script and evaluating it
@@ -77,8 +72,8 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 	}
 
 	// iterate over the scriptSig and push values to the stack
-	for _, element := range strings.Fields(scriptSig) {
-		stack.Push(string(base58.Decode(element)))
+	for _, element := range decodeScriptSig(scriptSig) {
+		stack.Push(string(element))
 	}
 
 	// start evaluation of scriptPubKey
@@ -151,4 +146,22 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 	}
 
 	return stack.Pop() == "true", nil
+}
+
+func encodeScriptSig(scriptSig [][]byte) string {
+	ret := []string{}
+	for _, val := range scriptSig {
+		ret = append(ret, base58.Encode(val))
+	}
+
+	return strings.Join(ret, " ")
+}
+
+func decodeScriptSig(scriptSig string) [][]byte {
+	ret := [][]byte{}
+	for _, val := range strings.Fields(scriptSig) {
+		ret = append(ret, base58.Decode(val))
+	}
+
+	return ret
 }
