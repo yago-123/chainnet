@@ -2,6 +2,7 @@ package validator //nolint:testpackage // don't create separate package for test
 
 import (
 	expl "chainnet/pkg/chain/explorer"
+	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
@@ -28,14 +29,14 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 
 	blockWithTwoCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to", 0),
-			kernel.NewCoinbaseTransaction("to", 0),
+			kernel.NewCoinbaseTransaction("to", miner.CoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", miner.CoinbaseReward, 0),
 		},
 	}
 
 	blockWithOneCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to", 0),
+			kernel.NewCoinbaseTransaction("to", miner.CoinbaseReward, 0),
 		},
 	}
 

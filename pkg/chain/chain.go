@@ -97,7 +97,8 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 }
 
 func (bc *Blockchain) NewCoinbaseTransaction(to string) (*kernel.Transaction, error) {
-	tx := kernel.NewCoinbaseTransaction(to, 0)
+	// todo(): this is wrong, modify or delete from this file in general
+	tx := kernel.NewCoinbaseTransaction(to, 50, 0)
 
 	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
