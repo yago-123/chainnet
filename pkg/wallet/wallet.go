@@ -126,7 +126,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOu
 		for _, utxo := range utxos {
 			if utxo.EqualInput(vin) {
 				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
-				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.PrivateKey, tx)
+				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.PrivateKey, w.PublicKey, tx)
 				if err != nil {
 					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %s and index %d: %w", vin.Txid, vin.Vout, err)
 				}

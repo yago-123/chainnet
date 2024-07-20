@@ -1,6 +1,7 @@
 package script
 
 import (
+	"chainnet/pkg/crypto/hash"
 	"fmt"
 	"strings"
 
@@ -13,18 +14,23 @@ const (
 	MinLengthOfLiteral = 2
 )
 
+type Script []ScriptElement
+type ScriptElement uint //nolint:revive // ScriptElement is a type for script elements
+
 // Script types
 const (
-	// P2PK = Pay-to-PubKey
 	P2PK ScriptType = iota
 	P2PKH
-	// P2PKH
 
+	UndefinedScriptType
 	// ...
 )
 
-type Script []ScriptElement
-type ScriptElement uint //nolint:revive // ScriptElement is a type for script elements
+var scriptStructure = map[ScriptType]Script{ //nolint:gochecknoglobals // must be a global variable
+	P2PK:                {PubKey, OpChecksig},
+	P2PKH:               {OpDup, OpHash160, PubKeyHash, OpEqualVerify, OpChecksig},
+	UndefinedScriptType: {Undefined},
+}
 
 const (
 	// Special elements
@@ -34,6 +40,9 @@ const (
 
 	// Operators
 	OpChecksig
+	OpDup
+	OpHash160
+	OpEqualVerify
 
 	Undefined
 )
@@ -43,11 +52,18 @@ const (
 )
 
 var operatorNames = [...]string{ //nolint:gochecknoglobals // must be a global variable
+	// literals
 	"PUB_KEY",
 	"PUB_KEY_HASH",
 	"SIGNATURE",
-	"OP_CHECKSIG",
 
+	// operations
+	"OP_CHECKSIG",
+	"OP_DUP",
+	"OP_HASH160",
+	"OP_EQUALVERIFY",
+
+	// undefined
 	"UNDEFINED",
 }
 
@@ -75,7 +91,7 @@ func (op ScriptElement) IsLiteral() bool {
 
 // IsOperator checks if the element is an operator
 func (op ScriptElement) IsOperator() bool {
-	return op == OpChecksig
+	return op >= OpChecksig && op <= OpEqualVerify
 }
 
 func (op ScriptElement) IsUndefined() bool {
@@ -96,23 +112,15 @@ func (op ScriptElement) ToUint() uint {
 	return uint(op)
 }
 
+// NewScript generates a new script based on the type and public key
 func NewScript(scriptType ScriptType, pubKey []byte) string {
-	script := Script{Undefined}
-
 	// if there is no public key, return undefined directly
 	if len(pubKey) == 0 {
-		return Undefined.String()
+		return scriptStructure[UndefinedScriptType].String(pubKey)
 	}
 
 	// generate script based on type
-	switch scriptType {
-	case P2PK:
-		script = Script{PubKey, OpChecksig}
-	case P2PKH:
-		script = Script{}
-	// todo() implement P2PKH
-	default:
-	}
+	script := scriptStructure[scriptType]
 
 	// todo() the render will switch to a hex string eventually
 	// render script to string
@@ -121,7 +129,8 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 
 // String returns the string representation of the script
 func (s Script) String(pubKey []byte) string {
-	rendered := []string{}
+	var err error
+	var rendered []string
 
 	for _, element := range s {
 		toRender := ""
@@ -133,7 +142,23 @@ func (s Script) String(pubKey []byte) string {
 		// render special cases adding the preffix so we can later know which type of literal was written. This
 		// includes pubKey, pubHashKey, signature...
 		if element.IsLiteral() {
-			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(pubKey))
+			literalRendered := []byte{}
+
+			if element == PubKey {
+				literalRendered = pubKey
+			}
+
+			if element == PubKeyHash {
+				ripemd160 := hash.NewRipemd160()
+				literalRendered, err = ripemd160.Hash(pubKey)
+				if err != nil {
+					// highly unlikely that hash initialization will fail, but if it does, abort the operation by
+					// returning undefined, no point in making the code more unintelligible by returning an error
+					return Undefined.String()
+				}
+			}
+
+			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(literalRendered))
 		}
 
 		// render operators
@@ -174,6 +199,32 @@ func StringToScript(script string) (Script, []string, error) {
 	}
 
 	return scriptTokens, scriptString, nil
+}
+
+// DetermineScriptType tries to derive the script type based on a set of elements that form a script
+func DetermineScriptType(script Script) ScriptType {
+	for k, v := range scriptStructure {
+		if scriptsMatch(v, script) {
+			return k
+		}
+	}
+
+	return UndefinedScriptType
+}
+
+// scriptsMatch checks if two scripts contain the same script elements in the same order
+func scriptsMatch(script1, script2 Script) bool {
+	if len(script1) != len(script2) {
+		return false
+	}
+
+	for i, element := range script1 {
+		if element != script2[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // tryExtractTokenLiteral tries to converts keys, hash keys etc to script.Literal type
