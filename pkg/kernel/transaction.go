@@ -6,9 +6,6 @@ import (
 	"fmt"
 )
 
-// CoinbaseReward represents the reward for mining a kernel
-const CoinbaseReward = 50
-
 // SignatureType represents the different signatures that can be performed over a transaction
 type SignatureType byte
 
@@ -38,20 +35,20 @@ func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
 }
 
-func NewCoinbaseTransaction(to string, txFee uint) *Transaction {
+func NewCoinbaseTransaction(to string, reward, txFee uint) *Transaction {
 	input := NewCoinbaseInput()
 	// todo() come up with mechanism for halving CoinbaseReward
-	output := NewCoinbaseOutput(CoinbaseReward, script.P2PK, to)
+	rewardOutput := NewCoinbaseOutput(reward, script.P2PK, to)
 
-	// if there is tx fee, make sure to add it to the output
+	// if there is tx fee, make sure to add it to the rewardOutput
 	if txFee > 0 {
 		return NewTransaction([]TxInput{input}, []TxOutput{
-			output,
+			rewardOutput,
 			NewCoinbaseOutput(txFee, script.P2PK, to),
 		})
 	}
 
-	return NewTransaction([]TxInput{input}, []TxOutput{output})
+	return NewTransaction([]TxInput{input}, []TxOutput{rewardOutput})
 }
 
 func (tx *Transaction) SetID(hash []byte) {
