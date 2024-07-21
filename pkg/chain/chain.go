@@ -56,13 +56,13 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 
 	// if no blocks exist, create genesis kernel
 	if numBlocks == 0 {
-		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, []byte{}, 0, 0)
+		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0)
 		newBlock = kernel.NewGenesisBlock(blockHeader, transactions)
 	}
 
 	// if blocks exist, create new kernel tied to the previous
 	if numBlocks > 0 {
-		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, bc.lastBlockHash, 0, 0)
+		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, bc.lastBlockHash, 0, 0)
 		newBlock = kernel.NewBlock(blockHeader, transactions)
 	}
 

@@ -1,6 +1,8 @@
 package miner
 
 import (
+	"chainnet/pkg/consensus"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"fmt"
 	"time"
@@ -13,27 +15,33 @@ const (
 
 type Miner struct {
 	mempool MemPool
+	hasher  hash.Hashing
 }
 
 func NewMiner() *Miner {
 	return &Miner{
 		mempool: NewMemPool(),
+		hasher:  hash.NewSHA256(),
 	}
 }
 
-// MineBlock assemble and generates a new block
+// MineBlock assemble, generates and mines a new block
 func (m *Miner) MineBlock() (*kernel.Block, error) {
-
-	txs, collectedFee, err := m.collectTransactions()
+	collectedTxs, collectedFee, err := m.collectTransactions()
 	if err != nil {
 		return nil, fmt.Errorf("unable to collect transactions from mempool: %v", err)
 	}
 
 	coinbaseTx := m.createCoinbaseTransaction(collectedFee)
 
-	_ = m.createBlockHeader(txs, coinbaseTx)
+	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
-	// m.createBlock()
+	blockHeader, err := m.createBlockHeader(txs, 0, []byte("prevBlockHash"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create block header: %v", err)
+	}
+
+	_ = kernel.NewBlock(blockHeader, txs)
 
 	m.calculateHash()
 
@@ -87,10 +95,21 @@ func (m *Miner) createCoinbaseTransaction(collectedFee uint) *kernel.Transaction
 	return kernel.NewCoinbaseTransaction("miner", CoinbaseReward, collectedFee)
 }
 
-func (m *Miner) createBlockHeader(txs []*kernel.Transaction, coinbaseTx *kernel.Transaction) *kernel.BlockHeader {
-	// calculate merkle root
+func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte) (*kernel.BlockHeader, error) {
+	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, m.hasher)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %v", err)
+	}
 
-	return kernel.NewBlockHeader([]byte{}, time.Now().Unix(), []byte{}, []byte{}, 0, 0)
+	return kernel.NewBlockHeader(
+		[]byte("0.0.1"),
+		time.Now().Unix(),
+		merkleTree.RootHash(),
+		height,
+		prevBlockHash,
+		0,
+		0,
+	), nil
 }
 
 func (m *Miner) calculateHash() {

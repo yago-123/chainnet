@@ -13,8 +13,8 @@ type MerkleNode struct {
 	Hash  []byte
 }
 
-// NewMerkleNode creates a new Merkle node
-func NewMerkleNode(left, right *MerkleNode, data []byte, hasher hash.Hashing) (*MerkleNode, error) {
+// newMerkleNode creates a new Merkle node
+func newMerkleNode(left, right *MerkleNode, data []byte, hasher hash.Hashing) (*MerkleNode, error) {
 	node := MerkleNode{}
 
 	// in case is leaf node, assign hash directly
@@ -49,7 +49,7 @@ func NewMerkleNode(left, right *MerkleNode, data []byte, hasher hash.Hashing) (*
 
 // MerkleTree represents a Merkle tree
 type MerkleTree struct {
-	Root *MerkleNode
+	root *MerkleNode
 }
 
 // newMerkleTreeFromNodes creates a new Merkle tree from a list of Merkle nodes
@@ -70,7 +70,7 @@ func newMerkleTreeFromNodes(nodes []MerkleNode, hasher hash.Hashing) (*MerkleTre
 				right = nodes[i] // in case of odd number of nodes, duplicate the last node
 			}
 
-			parent, err := NewMerkleNode(&left, &right, nil, hasher)
+			parent, err := newMerkleNode(&left, &right, nil, hasher)
 			if err != nil {
 				return nil, fmt.Errorf("error creating Merkle parent node for left (%s) and right (%s) nodes: %v", left.Hash, right.Hash, err)
 			}
@@ -93,7 +93,7 @@ func NewMerkleTreeFromHashes(proofs [][]byte, hasher hash.Hashing) (*MerkleTree,
 	}
 
 	for _, proof := range proofs {
-		node, err := NewMerkleNode(nil, nil, proof, hasher)
+		node, err := newMerkleNode(nil, nil, proof, hasher)
 		if err != nil {
 			return nil, fmt.Errorf("error creating Merkle node for hash %s: %v", proof, err)
 		}
@@ -110,7 +110,7 @@ func NewMerkleTreeFromTxs(txs []*kernel.Transaction, hasher hash.Hashing) (*Merk
 
 	// create leaf nodes using the Assemble method
 	for _, txn := range txs {
-		node, err := NewMerkleNode(nil, nil, txn.ID, hasher)
+		node, err := newMerkleNode(nil, nil, txn.ID, hasher)
 		if err != nil {
 			return nil, fmt.Errorf("error creating Merkle node for transaction %s: %v", txn.ID, err)
 		}
@@ -122,5 +122,5 @@ func NewMerkleTreeFromTxs(txs []*kernel.Transaction, hasher hash.Hashing) (*Merk
 
 // RootHash returns the root hash of the Merkle tree
 func (mt *MerkleTree) RootHash() []byte {
-	return mt.Root.Hash
+	return mt.root.Hash
 }

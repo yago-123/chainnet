@@ -54,6 +54,7 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
 		// todo(): validate merkle tree
+		// todo(): validate block header in general (version, previous block...)
 	}
 
 	for _, validate := range validations {

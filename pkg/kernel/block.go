@@ -9,6 +9,7 @@ type BlockHeader struct {
 	Version       []byte
 	PrevBlockHash []byte
 	MerkleRoot    []byte
+	Height        uint
 	// todo(): use timestamp to determine the difficulty, in a 2 weeks period, if the number of blocks was
 	// todo(): created too quick, it means that the difficult must be increased
 	Timestamp int64
@@ -16,11 +17,12 @@ type BlockHeader struct {
 	Nonce     uint
 }
 
-func NewBlockHeader(version []byte, timestamp int64, merkleRoot []byte, prevBlockHash []byte, target, nonce uint) *BlockHeader {
+func NewBlockHeader(version []byte, timestamp int64, merkleRoot []byte, height uint, prevBlockHash []byte, target, nonce uint) *BlockHeader {
 	return &BlockHeader{
 		Version:       version,
 		Timestamp:     timestamp,
 		MerkleRoot:    merkleRoot,
+		Height:        height,
 		PrevBlockHash: prevBlockHash,
 		Target:        target,
 		Nonce:         nonce,
