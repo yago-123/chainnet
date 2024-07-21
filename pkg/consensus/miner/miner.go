@@ -16,34 +16,46 @@ const (
 type Miner struct {
 	mempool MemPool
 	hasher  hash.Hashing
+	pow     *ProofOfWork
 }
 
 func NewMiner() *Miner {
 	return &Miner{
 		mempool: NewMemPool(),
 		hasher:  hash.NewSHA256(),
+		pow:     NewProofOfWork(256, hash.NewSHA256()),
 	}
 }
 
 // MineBlock assemble, generates and mines a new block
 func (m *Miner) MineBlock() (*kernel.Block, error) {
+	// retrieve transactions that are going to be placed inside the block
 	collectedTxs, collectedFee, err := m.collectTransactions()
 	if err != nil {
 		return nil, fmt.Errorf("unable to collect transactions from mempool: %v", err)
 	}
 
+	// generate the coinbase transaction with the reward and tx fees
 	coinbaseTx := m.createCoinbaseTransaction(collectedFee)
 
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
+	// create the block header
 	blockHeader, err := m.createBlockHeader(txs, 0, []byte("prevBlockHash"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %v", err)
 	}
 
-	_ = kernel.NewBlock(blockHeader, txs)
+	// assemble the whole block
+	block := kernel.NewBlock(blockHeader, txs)
 
-	m.calculateHash()
+	// start mining the block (proof of work)
+	blockHash, nonce, err := m.pow.CalculateBlockHash(block)
+	if err != nil {
+		return nil, fmt.Errorf("unable to mine block: %v", err)
+	}
+
+	block.SetHashAndNonce(blockHash, nonce)
 
 	// todo(): add as different method?
 	m.broadcastBlock()
@@ -69,6 +81,7 @@ func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
 
 	// retrieve transactions from MemPool
 	// todo(): adjust so is not fixed size and other variables are taken into account (size, fee, etc)
+	// todo(): move this so is done from the MemPool side directly?
 	totalFee := uint(0)
 	for _ = range numTxsRetrieve {
 		tx, fee := m.mempool.Pop()
