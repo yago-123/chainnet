@@ -29,6 +29,20 @@ func NewBlockHeader(version []byte, timestamp int64, merkleRoot []byte, height u
 	}
 }
 
+func (bh *BlockHeader) Assemble() []byte {
+	data := [][]byte{
+		[]byte(fmt.Sprintf("version %s", bh.Version)),
+		[]byte(fmt.Sprintf("prev block hash %s", bh.PrevBlockHash)),
+		[]byte(fmt.Sprintf("merkle root %s", bh.MerkleRoot)),
+		[]byte(fmt.Sprintf("height %d", bh.Height)),
+		[]byte(fmt.Sprintf("timestamp %d", bh.Timestamp)),
+		[]byte(fmt.Sprintf("target %d", bh.Target)),
+		[]byte(fmt.Sprintf("nonce %d", bh.Nonce)),
+	}
+
+	return bytes.Join(data, []byte{})
+}
+
 type Block struct {
 	Header       *BlockHeader
 	Transactions []*Transaction
@@ -56,16 +70,4 @@ func (block *Block) SetHashAndNonce(hash []byte, nonce uint) {
 
 func (block *Block) IsGenesisBlock() bool {
 	return len(block.Header.PrevBlockHash) == 0
-}
-
-func (block *Block) Assemble(nonce uint, txsID []byte) []byte {
-	data := [][]byte{
-		block.Header.PrevBlockHash,
-		txsID,
-		[]byte(fmt.Sprintf("%d", block.Header.Target)),
-		[]byte(fmt.Sprintf("%d", block.Header.Timestamp)),
-		[]byte(fmt.Sprintf("%d", nonce)),
-	}
-
-	return bytes.Join(data, []byte{})
 }
