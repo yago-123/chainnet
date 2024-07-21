@@ -1,7 +1,6 @@
 package miner
 
 import (
-	"bytes"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"context"
@@ -53,19 +52,4 @@ func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block, ctx context.Context)
 func (pow *ProofOfWork) CalculateTxHash(tx *kernel.Transaction) ([]byte, error) {
 	data := tx.Assemble()
 	return pow.hashing.Hash(data)
-}
-
-func (pow *ProofOfWork) hashTransactionIDs(transactions []*kernel.Transaction) ([]byte, error) {
-	var txHashes [][]byte
-
-	for _, tx := range transactions {
-		txHashes = append(txHashes, tx.ID)
-	}
-
-	h, err := pow.hashing.Hash(bytes.Join(txHashes, []byte{}))
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return h, nil
 }
