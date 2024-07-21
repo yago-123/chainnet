@@ -58,48 +58,13 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 
 	block.SetHashAndNonce(blockHash, nonce)
 
-	// todo(): add as different method?
-	m.broadcastBlock()
-
-	return nil, fmt.Errorf("unable to mine block")
+	return block, fmt.Errorf("unable to mine block")
 }
 
 func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
 	txs := []*kernel.Transaction{}
 
-	memPoolSize := m.mempool.Len()
-
-	// return error if MemPool is empty
-	if memPoolSize == 0 {
-		return []*kernel.Transaction{}, 0, fmt.Errorf("no transactions in mempool to mine block")
-	}
-
-	// specify the number of transactions to retrieve from MemPool
-	numTxsRetrieve := NumberOfTransactionsInBlock
-	if numTxsRetrieve > memPoolSize {
-		numTxsRetrieve = m.mempool.Len()
-	}
-
-	// retrieve transactions from MemPool
-	// todo(): adjust so is not fixed size and other variables are taken into account (size, fee, etc)
-	// todo(): move this so is done from the MemPool side directly?
-	totalFee := uint(0)
-	for _ = range numTxsRetrieve {
-		tx, fee := m.mempool.Pop()
-		if tx == nil {
-			continue
-		}
-
-		// sum fee and collect txs
-		totalFee += fee
-		txs = append(txs, tx)
-	}
-
-	// if no transactions were retrieved (txs are validated when entering MemPool)
-	// in theory this scenario should be impossible, txs must be already validated before added to MemPool
-	if len(txs) == 0 {
-		return []*kernel.Transaction{}, 0, fmt.Errorf("no valid transactions were available")
-	}
+	txs, totalFee := m.mempool.RetrieveTransactions(NumberOfTransactionsInBlock)
 
 	return txs, totalFee, nil
 }
@@ -124,12 +89,4 @@ func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBl
 		0,
 		0,
 	), nil
-}
-
-func (m *Miner) calculateHash() {
-
-}
-
-func (m *Miner) broadcastBlock() {
-
 }

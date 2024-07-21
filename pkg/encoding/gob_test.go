@@ -205,7 +205,7 @@ func _TestNewGobEncoder(t *testing.T) {
 		name string
 		want *encoding.GobEncoder
 	}{
-		// TODO: Add test cases.
+		// TODO: AppendTransaction test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
