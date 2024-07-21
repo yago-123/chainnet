@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -20,7 +21,7 @@ func NewProofOfWork(target uint, hashing hash.Hashing) *ProofOfWork {
 	return &ProofOfWork{target: target, hashing: hashing}
 }
 
-func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block) ([]byte, uint, error) {
+func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block, ctx context.Context) ([]byte, uint, error) {
 	var hashInt big.Int
 	var hash []byte
 

@@ -4,6 +4,7 @@ import (
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
+	"context"
 	"fmt"
 	"time"
 )
@@ -28,7 +29,7 @@ func NewMiner() *Miner {
 }
 
 // MineBlock assemble, generates and mines a new block
-func (m *Miner) MineBlock() (*kernel.Block, error) {
+func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	// retrieve transactions that are going to be placed inside the block
 	collectedTxs, collectedFee, err := m.collectTransactions()
 	if err != nil {
@@ -50,7 +51,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	block := kernel.NewBlock(blockHeader, txs)
 
 	// start mining the block (proof of work)
-	blockHash, nonce, err := m.pow.CalculateBlockHash(block)
+	blockHash, nonce, err := m.pow.CalculateBlockHash(block, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to mine block: %v", err)
 	}

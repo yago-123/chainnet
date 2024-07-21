@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -79,7 +80,7 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 	for {
 		newBlock.Header.Timestamp = time.Now().Unix()
 		// calculate until the max nonce, if does not match, try again with different timestamp
-		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock)
+		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock, context.Background())
 		if err == nil {
 			newBlock.SetHashAndNonce(hash, nonce)
 			break
