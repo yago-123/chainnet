@@ -75,6 +75,8 @@ func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
 
 	txs, totalFee := m.mempool.RetrieveTransactions(NumberOfTransactionsInBlock)
 
+	// todo(): check that there are no conflictive transactions retrieved
+
 	return txs, totalFee, nil
 }
 
