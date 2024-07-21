@@ -29,6 +29,15 @@ func NewBlockHeader(version []byte, timestamp int64, merkleRoot []byte, height u
 	}
 }
 
+func (bh *BlockHeader) SetNonce(nonce uint) {
+	bh.Nonce = nonce
+}
+
+func (bh *BlockHeader) SetTimestamp(timestamp int64) {
+	bh.Timestamp = timestamp
+
+}
+
 func (bh *BlockHeader) Assemble() []byte {
 	data := [][]byte{
 		[]byte(fmt.Sprintf("version %s", bh.Version)),
@@ -49,23 +58,18 @@ type Block struct {
 	Hash         []byte
 }
 
-func NewBlock(blockHeader *BlockHeader, transactions []*Transaction) *Block {
+func NewBlock(blockHeader *BlockHeader, transactions []*Transaction, blockHash []byte) *Block {
 	block := &Block{
 		Header:       blockHeader,
 		Transactions: transactions,
-		Hash:         []byte{},
+		Hash:         blockHash,
 	}
 
 	return block
 }
 
-func NewGenesisBlock(blockHeader *BlockHeader, transactions []*Transaction) *Block {
-	return NewBlock(blockHeader, transactions)
-}
-
-func (block *Block) SetHashAndNonce(hash []byte, nonce uint) {
-	block.Hash = hash
-	block.Header.Nonce = nonce
+func NewGenesisBlock(blockHeader *BlockHeader, transactions []*Transaction, blockHash []byte) *Block {
+	return NewBlock(blockHeader, transactions, blockHash)
 }
 
 func (block *Block) IsGenesisBlock() bool {

@@ -55,6 +55,8 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 		return &kernel.Block{}, err
 	}
 
+	// todo() this is fucked, wipe most of this stuff
+
 	// if no blocks exist, create genesis kernel
 	if numBlocks == 0 {
 		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0)

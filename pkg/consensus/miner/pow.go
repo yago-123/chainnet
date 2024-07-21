@@ -20,19 +20,19 @@ func NewProofOfWork(target uint, hashing hash.Hashing) *ProofOfWork {
 	return &ProofOfWork{target: target, hashing: hashing}
 }
 
-func (pow *ProofOfWork) CalculateBlockHash(b *kernel.Block, ctx context.Context) ([]byte, uint, error) {
+func (pow *ProofOfWork) CalculateBlockHash(bh *kernel.BlockHeader, ctx context.Context) ([]byte, uint, error) {
 	var err error
 	var hash []byte
 	var hashInt big.Int
 
 	hashDifficulty := big.NewInt(1)
-	hashDifficulty.Lsh(hashDifficulty, HashLength-b.Header.Target)
+	hashDifficulty.Lsh(hashDifficulty, HashLength-bh.Target)
 
 	maxNonce := ^uint(0)
 	nonce := uint(0)
 
 	for nonce < maxNonce {
-		data := b.Header.Assemble()
+		data := bh.Assemble()
 		hash, err = pow.hashing.Hash(data)
 		if err != nil {
 			return []byte{}, 0, fmt.Errorf("could not hash block: %w", err)

@@ -14,14 +14,16 @@ func TestReverseIterator(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
 	coinbaseTx := kernel.NewCoinbaseTransaction("address-1", miner.CoinbaseReward, 0)
 	coinbaseTx.SetID([]byte("coinbase-transaction-genesis-id"))
-	genesisBlock := kernel.NewGenesisBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0), []*kernel.Transaction{coinbaseTx})
-	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
+	blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0)
+	blockHeader.SetNonce(1)
+	genesisBlock := kernel.NewGenesisBlock(blockHeader, []*kernel.Transaction{coinbaseTx}, []byte("genesis-kernel-hash"))
 
 	// set up kernel 1 with one coinbase transaction
 	coinbaseTx2 := kernel.NewCoinbaseTransaction("address-2", miner.CoinbaseReward, 0)
 	coinbaseTx2.SetID([]byte("coinbase-transaction-kernel-1-id"))
-	block1 := kernel.NewBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, genesisBlock.Hash, 0, 0), []*kernel.Transaction{coinbaseTx2})
-	block1.SetHashAndNonce([]byte("kernel-hash-1"), 1)
+	blockHeader = kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, genesisBlock.Hash, 0, 0)
+	blockHeader.SetNonce(1)
+	block1 := kernel.NewBlock(blockHeader, []*kernel.Transaction{coinbaseTx2}, []byte("kernel-hash-1"))
 
 	// set up kernel 2 with one coinbase transaction and one regular transaction
 	coinbaseTx3 := kernel.NewCoinbaseTransaction("address-3", miner.CoinbaseReward, 0)
@@ -38,8 +40,9 @@ func TestReverseIterator(t *testing.T) {
 			{Amount: 1, ScriptPubKey: "ScriptPubKey"},
 		})
 	regularTx.SetID([]byte("regular-tx-2-id"))
-	block2 := kernel.NewBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, block1.Hash, 0, 0), []*kernel.Transaction{coinbaseTx3, regularTx})
-	block2.SetHashAndNonce([]byte("kernel-hash-2"), 1)
+	blockHeader = kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, block1.Hash, 0, 0)
+	blockHeader.SetNonce(1)
+	block2 := kernel.NewBlock(blockHeader, []*kernel.Transaction{coinbaseTx3, regularTx}, []byte("kernel-hash-2"))
 
 	// set up the storage mock with the corresponding returns
 	storage := &mockStorage.MockStorage{}
@@ -86,8 +89,9 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 	// set up genesis kernel with coinbase transaction
 	coinbaseTx := kernel.NewCoinbaseTransaction("address-1", miner.CoinbaseReward, 0)
 	coinbaseTx.SetID([]byte("coinbase-genesis-kernel-id"))
-	genesisBlock := kernel.NewGenesisBlock(kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0), []*kernel.Transaction{coinbaseTx})
-	genesisBlock.SetHashAndNonce([]byte("genesis-kernel-hash"), 1)
+	blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0)
+	blockHeader.SetNonce(1)
+	genesisBlock := kernel.NewGenesisBlock(blockHeader, []*kernel.Transaction{coinbaseTx}, []byte("genesis-kernel-hash")
 
 	// set up the storage mock with the corresponding returns
 	storage := &mockStorage.MockStorage{}

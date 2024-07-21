@@ -36,22 +36,38 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 		return nil, fmt.Errorf("unable to collect transactions from mempool: %v", err)
 	}
 
-	// generate the coinbase transaction with the reward and tx fees
+	// generate the coinbase transaction and add to the list of transactions
 	coinbaseTx := m.createCoinbaseTransaction(collectedFee)
-
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
-	// create the block header
-	blockHeader, err := m.createBlockHeader(txs, 0, []byte("prevBlockHash"))
+	// create block header
+	blockHeader, err := m.createBlockHeader(txs, 0, []byte("prevBlockHash"), 1)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %v", err)
 	}
 
-	// assemble the whole block
-	block := kernel.NewBlock(blockHeader, txs)
+	// start mining process
+	for {
+		select {
+		case <-ctx.Done():
+			// abort mining if the context is cancelled
+			return nil, fmt.Errorf("mining cancelled by context")
+		default:
+			// start mining the block (proof of work)
+			blockHash, nonce, err := m.pow.CalculateBlockHash(blockHeader, ctx)
+			if err != nil {
+				// if no nonce was found, readjust the timestamp and try again
+				blockHeader.SetTimestamp(time.Now().Unix())
+				continue
+			}
 
-	// start mining the block (proof of work)
-	return m.mineBlockHash(block, ctx)
+			// assemble the whole block and return it
+			blockHeader.SetNonce(nonce)
+			block := kernel.NewBlock(blockHeader, txs, blockHash)
+
+			return block, nil
+		}
+	}
 }
 
 func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
@@ -67,7 +83,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee uint) *kernel.Transaction
 	return kernel.NewCoinbaseTransaction("miner", CoinbaseReward, collectedFee)
 }
 
-func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte) (*kernel.BlockHeader, error) {
+func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {
 	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, m.hasher)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %v", err)
@@ -79,26 +95,7 @@ func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBl
 		merkleTree.RootHash(),
 		height,
 		prevBlockHash,
-		0,
+		target,
 		0,
 	), nil
-}
-
-func (m *Miner) mineBlockHash(block *kernel.Block, ctx context.Context) (*kernel.Block, error) {
-	for {
-		select {
-		// if the block is mined already, stop mining
-		case <-ctx.Done():
-			return nil, fmt.Errorf("minning cancelled by context")
-		default:
-			blockHash, nonce, err := m.pow.CalculateBlockHash(block, ctx)
-			if err != nil {
-				// todo(): readjust block timestamp and try again
-				continue
-			}
-
-			block.SetHashAndNonce(blockHash, nonce)
-			return block, nil
-		}
-	}
 }
