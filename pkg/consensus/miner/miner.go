@@ -3,6 +3,7 @@ package miner
 import (
 	"chainnet/pkg/kernel"
 	"fmt"
+	"time"
 )
 
 const (
@@ -87,7 +88,9 @@ func (m *Miner) createCoinbaseTransaction(collectedFee uint) *kernel.Transaction
 }
 
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, coinbaseTx *kernel.Transaction) *kernel.BlockHeader {
-	return &kernel.BlockHeader{}
+	// calculate merkle root
+
+	return kernel.NewBlockHeader([]byte{}, time.Now().Unix(), []byte{}, []byte{}, 0, 0)
 }
 
 func (m *Miner) calculateHash() {

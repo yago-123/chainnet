@@ -16,14 +16,14 @@ type BlockHeader struct {
 	Nonce     uint
 }
 
-func NewBlockHeader(version []byte, timestamp uint, merkleRoot []byte, prevBlockHash []byte, target, nonce uint) *BlockHeader {
+func NewBlockHeader(version []byte, timestamp int64, merkleRoot []byte, prevBlockHash []byte, target, nonce uint) *BlockHeader {
 	return &BlockHeader{
-		Version:       []byte("1"),
-		Timestamp:     0,
-		MerkleRoot:    []byte{},
+		Version:       version,
+		Timestamp:     timestamp,
+		MerkleRoot:    merkleRoot,
 		PrevBlockHash: prevBlockHash,
-		Target:        0,
-		Nonce:         0,
+		Target:        target,
+		Nonce:         nonce,
 	}
 }
 
