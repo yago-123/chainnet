@@ -14,9 +14,8 @@ type MerkleNode struct {
 }
 
 // NewMerkleNode creates a new Merkle node
-func NewMerkleNode(left, right *MerkleNode, data []byte) (*MerkleNode, error) {
+func NewMerkleNode(left, right *MerkleNode, data []byte, hasher hash.Hashing) (*MerkleNode, error) {
 	node := MerkleNode{}
-	hasher := hash.NewSHA256()
 
 	// in case is leaf node, assign hash directly
 	if left == nil && right == nil {
@@ -54,7 +53,7 @@ type MerkleTree struct {
 }
 
 // newMerkleTreeFromNodes creates a new Merkle tree from a list of Merkle nodes
-func newMerkleTreeFromNodes(nodes []MerkleNode) (*MerkleTree, error) {
+func newMerkleTreeFromNodes(nodes []MerkleNode, hasher hash.Hashing) (*MerkleTree, error) {
 	// create the Merkle tree
 	for len(nodes) > 1 {
 		var newLevel []MerkleNode
@@ -71,7 +70,7 @@ func newMerkleTreeFromNodes(nodes []MerkleNode) (*MerkleTree, error) {
 				right = nodes[i] // in case of odd number of nodes, duplicate the last node
 			}
 
-			parent, err := NewMerkleNode(&left, &right, nil)
+			parent, err := NewMerkleNode(&left, &right, nil, hasher)
 			if err != nil {
 				return nil, fmt.Errorf("error creating Merkle parent node for left (%s) and right (%s) nodes: %v", left.Hash, right.Hash, err)
 			}
@@ -86,37 +85,37 @@ func newMerkleTreeFromNodes(nodes []MerkleNode) (*MerkleTree, error) {
 	return &tree, nil
 }
 
-func NewMerkleTreeFromHashes(proof [][]byte) (*MerkleTree, error) {
+func NewMerkleTreeFromHashes(proofs [][]byte, hasher hash.Hashing) (*MerkleTree, error) {
 	var nodes []MerkleNode
 
-	if len(proof) == 0 {
-		return nil, fmt.Errorf("no proof were provided")
+	if len(proofs) == 0 {
+		return nil, fmt.Errorf("no proofs were provided")
 	}
 
-	for _, hash := range proof {
-		node, err := NewMerkleNode(nil, nil, hash)
+	for _, proof := range proofs {
+		node, err := NewMerkleNode(nil, nil, proof, hasher)
 		if err != nil {
-			return nil, fmt.Errorf("error creating Merkle node for hash %s: %v", hash, err)
+			return nil, fmt.Errorf("error creating Merkle node for hash %s: %v", proof, err)
 		}
 
 		nodes = append(nodes, *node)
 	}
 
-	return newMerkleTreeFromNodes(nodes)
+	return newMerkleTreeFromNodes(nodes, hasher)
 }
 
 // NewMerkleTreeFromTxs creates a new Merkle tree from a list of transactions
-func NewMerkleTreeFromTxs(txs []*kernel.Transaction) (*MerkleTree, error) {
+func NewMerkleTreeFromTxs(txs []*kernel.Transaction, hasher hash.Hashing) (*MerkleTree, error) {
 	var nodes []MerkleNode
 
 	// create leaf nodes using the Assemble method
 	for _, txn := range txs {
-		node, err := NewMerkleNode(nil, nil, txn.ID)
+		node, err := NewMerkleNode(nil, nil, txn.ID, hasher)
 		if err != nil {
 			return nil, fmt.Errorf("error creating Merkle node for transaction %s: %v", txn.ID, err)
 		}
 		nodes = append(nodes, *node)
 	}
 
-	return newMerkleTreeFromNodes(nodes)
+	return newMerkleTreeFromNodes(nodes, hasher)
 }
