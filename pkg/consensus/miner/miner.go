@@ -51,14 +51,7 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	block := kernel.NewBlock(blockHeader, txs)
 
 	// start mining the block (proof of work)
-	blockHash, nonce, err := m.pow.CalculateBlockHash(block, ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to mine block: %v", err)
-	}
-
-	block.SetHashAndNonce(blockHash, nonce)
-
-	return block, fmt.Errorf("unable to mine block")
+	return m.mineBlockHash(block, ctx)
 }
 
 func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
@@ -89,4 +82,23 @@ func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBl
 		0,
 		0,
 	), nil
+}
+
+func (m *Miner) mineBlockHash(block *kernel.Block, ctx context.Context) (*kernel.Block, error) {
+	for {
+		select {
+		// if the block is mined already, stop mining
+		case <-ctx.Done():
+			return nil, fmt.Errorf("minning cancelled by context")
+		default:
+			blockHash, nonce, err := m.pow.CalculateBlockHash(block, ctx)
+			if err != nil {
+				// todo(): readjust block timestamp and try again
+				continue
+			}
+
+			block.SetHashAndNonce(blockHash, nonce)
+			return block, nil
+		}
+	}
 }
