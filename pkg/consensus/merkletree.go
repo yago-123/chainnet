@@ -119,3 +119,8 @@ func NewMerkleTreeFromTxs(txs []*kernel.Transaction, hasher hash.Hashing) (*Merk
 
 	return newMerkleTreeFromNodes(nodes, hasher)
 }
+
+// RootHash returns the root hash of the Merkle tree
+func (mt *MerkleTree) RootHash() []byte {
+	return mt.Root.Hash
+}
