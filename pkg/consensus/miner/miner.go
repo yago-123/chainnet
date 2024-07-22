@@ -17,14 +17,12 @@ const (
 type Miner struct {
 	mempool MemPool
 	hasher  hash.Hashing
-	pow     *ProofOfWork
 }
 
 func NewMiner() *Miner {
 	return &Miner{
 		mempool: NewMemPool(),
 		hasher:  hash.NewSHA256(),
-		pow:     NewProofOfWork(256, hash.NewSHA256()),
 	}
 }
 
@@ -54,7 +52,7 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			return nil, fmt.Errorf("mining cancelled by context")
 		default:
 			// start mining the block (proof of work)
-			blockHash, nonce, err := m.pow.CalculateBlockHash(blockHeader, ctx)
+			blockHash, nonce, err := CalculateBlockHash(blockHeader, ctx)
 			if err != nil {
 				// if no nonce was found, readjust the timestamp and try again
 				blockHeader.SetTimestamp(time.Now().Unix())

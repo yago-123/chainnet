@@ -52,6 +52,20 @@ func (bh *BlockHeader) Assemble() []byte {
 	return bytes.Join(data, []byte{})
 }
 
+func (bh *BlockHeader) AssembleWithNonce(nonce uint) []byte {
+	data := [][]byte{
+		[]byte(fmt.Sprintf("version %s", bh.Version)),
+		[]byte(fmt.Sprintf("prev block hash %s", bh.PrevBlockHash)),
+		[]byte(fmt.Sprintf("merkle root %s", bh.MerkleRoot)),
+		[]byte(fmt.Sprintf("height %d", bh.Height)),
+		[]byte(fmt.Sprintf("timestamp %d", bh.Timestamp)),
+		[]byte(fmt.Sprintf("target %d", bh.Target)),
+		[]byte(fmt.Sprintf("nonce %d", nonce)),
+	}
+
+	return bytes.Join(data, []byte{})
+}
+
 type Block struct {
 	Header       *BlockHeader
 	Transactions []*Transaction
