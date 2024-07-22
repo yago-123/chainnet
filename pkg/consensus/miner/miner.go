@@ -16,18 +16,20 @@ const (
 )
 
 type Miner struct {
-	mempool     MemPool
-	hasher      hash.Hashing
-	blockHeight uint
-	target      uint
+	mempool      MemPool
+	hasher       hash.Hashing
+	minerAddress string
+	blockHeight  uint
+	target       uint
 }
 
-func NewMiner() *Miner {
+func NewMiner(minerAddress string) *Miner {
 	return &Miner{
-		mempool:     NewMemPool(),
-		hasher:      hash.NewSHA256(),
-		blockHeight: 0,
-		target:      1,
+		mempool:      NewMemPool(),
+		hasher:       hash.NewSHA256(),
+		minerAddress: minerAddress,
+		blockHeight:  0,
+		target:       1,
 	}
 }
 
@@ -82,7 +84,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) *kernel.Tra
 	halvings := height / HalvingInterval
 	reward := uint(InitialCoinbaseReward >> halvings)
 
-	return kernel.NewCoinbaseTransaction("miner", reward, collectedFee)
+	return kernel.NewCoinbaseTransaction(m.minerAddress, reward, collectedFee)
 }
 
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {
