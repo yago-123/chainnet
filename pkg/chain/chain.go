@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -54,14 +55,18 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 		return &kernel.Block{}, err
 	}
 
+	// todo() this is fucked, wipe most of this stuff
+
 	// if no blocks exist, create genesis kernel
 	if numBlocks == 0 {
-		newBlock = kernel.NewGenesisBlock(transactions)
+		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0)
+		newBlock = kernel.NewGenesisBlock(blockHeader, transactions)
 	}
 
 	// if blocks exist, create new kernel tied to the previous
 	if numBlocks > 0 {
-		newBlock = kernel.NewBlock(transactions, bc.lastBlockHash)
+		blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, bc.lastBlockHash, 0, 0)
+		newBlock = kernel.NewBlock(blockHeader, transactions)
 	}
 
 	// todo() this will probably be validated in the miner/node level
@@ -77,7 +82,7 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 	for {
 		newBlock.Header.Timestamp = time.Now().Unix()
 		// calculate until the max nonce, if does not match, try again with different timestamp
-		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock)
+		hash, nonce, err = bc.consensus.CalculateBlockHash(newBlock, context.Background())
 		if err == nil {
 			newBlock.SetHashAndNonce(hash, nonce)
 			break
@@ -97,7 +102,8 @@ func (bc *Blockchain) AddBlock(transactions []*kernel.Transaction) (*kernel.Bloc
 }
 
 func (bc *Blockchain) NewCoinbaseTransaction(to string) (*kernel.Transaction, error) {
-	tx := kernel.NewCoinbaseTransaction(to, 0)
+	// todo(): this is wrong, modify or delete from this file in general
+	tx := kernel.NewCoinbaseTransaction(to, 50, 0)
 
 	txHash, err := bc.consensus.CalculateTxHash(tx)
 	if err != nil {
@@ -164,12 +170,6 @@ func (bc *Blockchain) NewTransaction(from, to string, amount uint) (*kernel.Tran
 	}
 
 	return tx, nil
-}
-
-func (bc *Blockchain) MineBlock(transactions []*kernel.Transaction) *kernel.Block {
-	newBlock := kernel.NewBlock(transactions, bc.lastBlockHash)
-
-	return newBlock
 }
 
 func (bc *Blockchain) GetBlock(hash string) (*kernel.Block, error) {

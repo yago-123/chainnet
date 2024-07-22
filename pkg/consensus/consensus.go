@@ -2,12 +2,13 @@ package consensus
 
 import (
 	"chainnet/pkg/kernel"
+	"context"
 )
 
 // Consensus is designed to allow more than one consensus algorithm to be implemented
 type Consensus interface {
 	CalculateTxHash(tx *kernel.Transaction) ([]byte, error)
-	CalculateBlockHash(b *kernel.Block) ([]byte, uint, error)
+	CalculateBlockHash(b *kernel.Block, ctx context.Context) ([]byte, uint, error)
 }
 
 // LightValidator represents a validator that does not require having the whole chain downloaded locally

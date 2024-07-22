@@ -6,9 +6,6 @@ import (
 	"fmt"
 )
 
-// CoinbaseReward represents the reward for mining a kernel
-const CoinbaseReward = 50
-
 // SignatureType represents the different signatures that can be performed over a transaction
 type SignatureType byte
 
@@ -20,7 +17,7 @@ const (
 	// SIGHASH_ANYONECANPAY
 )
 
-// Transaction
+// Transaction represents the atomic unit of the blockchain
 type Transaction struct {
 	// ID is the hash of the transaction
 	ID []byte
@@ -34,24 +31,26 @@ type Transaction struct {
 	// Version, lock time...
 }
 
+// NewTransaction creates a new transaction with the given inputs and outputs
 func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 	return &Transaction{ID: nil, Vin: inputs, Vout: outputs}
 }
 
-func NewCoinbaseTransaction(to string, txFee uint) *Transaction {
+// NewCoinbaseTransaction creates a new transaction that pays the miners for their work
+func NewCoinbaseTransaction(to string, reward, txFee uint) *Transaction {
 	input := NewCoinbaseInput()
 	// todo() come up with mechanism for halving CoinbaseReward
-	output := NewCoinbaseOutput(CoinbaseReward, script.P2PK, to)
+	rewardOutput := NewCoinbaseOutput(reward, script.P2PK, to)
 
-	// if there is tx fee, make sure to add it to the output
+	// if there is tx fee, make sure to add it to the rewardOutput
 	if txFee > 0 {
 		return NewTransaction([]TxInput{input}, []TxOutput{
-			output,
+			rewardOutput,
 			NewCoinbaseOutput(txFee, script.P2PK, to),
 		})
 	}
 
-	return NewTransaction([]TxInput{input}, []TxOutput{output})
+	return NewTransaction([]TxInput{input}, []TxOutput{rewardOutput})
 }
 
 func (tx *Transaction) SetID(hash []byte) {
@@ -119,15 +118,18 @@ func (tx *Transaction) AssembleForSigning() []byte {
 	return data
 }
 
+// HaveInputs checks if the transaction has any inputs
 func (tx *Transaction) HaveInputs() bool {
 	return len(tx.Vin) > 0
 }
 
+// HaveOutputs checks if the transaction has any outputs
 func (tx *Transaction) HaveOutputs() bool {
 	return len(tx.Vout) > 0
 }
 
 // todo() in theory, coinbase tx should also be at index 0
+// IsCoinbase checks if the transaction is a coinbase transaction
 func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0
 }
@@ -166,14 +168,17 @@ func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
 	}
 }
 
+// CanUnlockOutputWith checks if the input can unlock the output
 func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
 	return in.PubKey == pubKey
 }
 
+// UnlockWith solves the challenge presented by the output in order to unlock the funds
 func (in *TxInput) UnlockWith(scriptSig string) {
 	in.ScriptSig = scriptSig
 }
 
+// EqualInput checks if the input is the same as the given input
 func (in *TxInput) EqualInput(input TxInput) bool {
 	return bytes.Equal(in.Txid, input.Txid) && in.Vout == input.Vout
 }
@@ -191,10 +196,12 @@ type TxOutput struct {
 	PubKey string
 }
 
+// NewCoinbaseOutput creates a new output for the coinbase transaction
 func NewCoinbaseOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
 	return NewOutput(amount, scriptType, pubKey)
 }
 
+// NewOutput creates a new output for the transaction
 func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
 	return TxOutput{
 		Amount:       amount,
@@ -203,17 +210,19 @@ func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutpu
 	}
 }
 
+// canBeUnlockedWith checks if the output can be unlocked with the given public key
 func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
 }
 
-// UnspentOutput
+// UnspentOutput represents the unspent transaction output
 type UnspentOutput struct {
 	TxID   []byte
 	OutIdx uint
 	Output TxOutput
 }
 
+// EqualInput checks if the input is the same as the given input
 func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
 	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
 }

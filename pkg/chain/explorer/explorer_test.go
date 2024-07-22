@@ -1,6 +1,7 @@
 package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
+	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/encoding"
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
@@ -21,7 +22,7 @@ const (
 
 // set up genesis block with coinbase transaction
 var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: []byte{},
 		Nonce:         1,
@@ -33,7 +34,7 @@ var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across 
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(CoinbaseReward, script.P2PK, "pubKey-1"),
+				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-1"),
 			},
 		},
 	},
@@ -42,7 +43,7 @@ var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across 
 
 // set up block 1 with one coinbase transaction
 var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: GenesisBlock.Hash,
 		Nonce:         1,
@@ -54,7 +55,7 @@ var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(CoinbaseReward, script.P2PK, "pubKey-2"),
+				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-2"),
 			},
 		},
 	},
@@ -63,7 +64,7 @@ var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all te
 
 // set up block 2 with one coinbase transaction and one regular transaction
 var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: Block1.Hash,
 		Nonce:         1,
@@ -75,7 +76,7 @@ var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(CoinbaseReward, script.P2PK, "pubKey-3"),
+				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-3"),
 			},
 		},
 		{
@@ -96,7 +97,7 @@ var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all te
 
 // set up block 3 with one coinbase transaction and two regular transactions
 var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: Block2.Hash,
 		Nonce:         1,
@@ -108,7 +109,7 @@ var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(CoinbaseReward, script.P2PK, "pubKey-4"),
+				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-4"),
 			},
 		},
 		{
@@ -139,7 +140,7 @@ var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all te
 
 // set up block 4 with one coinbase transaction
 var Block4 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-	Header: BlockHeader{
+	Header: &BlockHeader{
 		Timestamp:     0,
 		PrevBlockHash: Block3.Hash,
 		Nonce:         1,
@@ -151,7 +152,7 @@ var Block4 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(CoinbaseReward, script.P2PK, "pubKey-7"),
+				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-7"),
 			},
 		},
 	},

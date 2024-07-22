@@ -31,7 +31,7 @@ func TestBlockchain_AddBlockWithoutErrors(t *testing.T) {
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewCoinbaseOutput(CoinbaseReward, script.P2PK, "pubKey"),
+				NewCoinbaseOutput(50, script.P2PK, "pubKey"),
 			},
 		},
 	}
