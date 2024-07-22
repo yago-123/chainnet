@@ -33,11 +33,10 @@ func NewMiner() *Miner {
 
 // MineBlock assemble, generates and mines a new block
 func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
+	var err error
+
 	// retrieve transactions that are going to be placed inside the block
-	collectedTxs, collectedFee, err := m.collectTransactions()
-	if err != nil {
-		return nil, fmt.Errorf("unable to collect transactions from mempool: %v", err)
-	}
+	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(NumberOfTransactionsInBlock)
 
 	// generate the coinbase transaction and add to the list of transactions
 	coinbaseTx := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
@@ -57,7 +56,10 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			return nil, fmt.Errorf("mining cancelled by context")
 		default:
 			// start mining the block (proof of work)
-			pow := NewProofOfWork(ctx, blockHeader)
+			pow, err := NewProofOfWork(ctx, blockHeader)
+			if err != nil {
+				return nil, fmt.Errorf("unable to create proof of work: %v", err)
+			}
 			blockHash, nonce, err := pow.CalculateBlockHash()
 			if err != nil {
 				// if no nonce was found, readjust the timestamp and try again
@@ -72,16 +74,6 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			return block, nil
 		}
 	}
-}
-
-func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
-	txs := []*kernel.Transaction{}
-
-	txs, totalFee := m.mempool.RetrieveTransactions(NumberOfTransactionsInBlock)
-
-	// todo(): check that there are no conflictive transactions retrieved
-
-	return txs, totalFee, nil
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees

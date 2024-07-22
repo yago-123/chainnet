@@ -26,14 +26,18 @@ type miningResult struct {
 type ProofOfWork struct {
 	ctx            context.Context
 	results        chan miningResult
-	hashDifficulty *big.Int
 	wg             sync.WaitGroup
+	hashDifficulty *big.Int
 
 	bh *kernel.BlockHeader
 }
 
 // NewProofOfWork creates a new ProofOfWork instance
-func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader) *ProofOfWork {
+func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader) (*ProofOfWork, error) {
+	if bh.Target >= HashLength {
+		return nil, errors.New("target is bigger than the hash length")
+	}
+
 	hashDifficulty := big.NewInt(1)
 	hashDifficulty.Lsh(hashDifficulty, HashLength-uint(bh.Target))
 
@@ -42,11 +46,15 @@ func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader) *ProofOfWork {
 		results:        make(chan miningResult),
 		hashDifficulty: hashDifficulty,
 		bh:             bh,
-	}
+	}, nil
 }
 
 // CalculateBlockHash calculates the hash of a block in parallel
 func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
+	if pow.bh.Target >= HashLength {
+		return nil, 0, errors.New("target is bigger than the hash length")
+	}
+
 	numGoroutines := runtime.NumCPU()
 	nonceRange := MaxNonce / uint(numGoroutines)
 
