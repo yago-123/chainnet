@@ -90,9 +90,13 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
 func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) *kernel.Transaction {
-	// calculate the current reward based on block height
+	reward := uint(0)
+	// calculate reward based on block height and halving interval. If height greater than 64 halvings, reward is 0
+	// to avoid dealing with negative numbers
 	halvings := height / HalvingInterval
-	reward := uint(InitialCoinbaseReward >> halvings)
+	if halvings < 64 {
+		reward = uint(InitialCoinbaseReward >> halvings)
+	}
 
 	return kernel.NewCoinbaseTransaction(m.minerAddress, reward, collectedFee)
 }

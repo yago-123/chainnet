@@ -90,4 +90,8 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	coinbase = miner.createCoinbaseTransaction(0, HalvingInterval*2)
 	assert.Len(t, coinbase.Vout, 1)
 	assert.Equal(t, uint(InitialCoinbaseReward/4), coinbase.Vout[0].Amount)
+
+	coinbase = miner.createCoinbaseTransaction(0, HalvingInterval*64)
+	assert.Len(t, coinbase.Vout, 1)
+	assert.Equal(t, uint(0), coinbase.Vout[0].Amount)
 }
