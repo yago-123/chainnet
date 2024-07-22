@@ -1,3 +1,2 @@
 package util
 
-// hash transaction

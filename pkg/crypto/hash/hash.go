@@ -24,8 +24,7 @@ func GetHasher(i HasherType) Hashing {
 	case RipeMD160:
 		return NewRipemd160()
 	default:
-		// by default we use SHA256
-		return NewSHA256()
+		return NewVoidHasher()
 	}
 }
 

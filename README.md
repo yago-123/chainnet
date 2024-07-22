@@ -8,3 +8,12 @@ Running the cli:
 ```bash
 $ ./chainnet-cli balance --address <address> 
 ```
+
+## Architecture
+```ascii
+┌──────────────────┐                 ┌──────────────────┐
+│                  │                 │                  │
+│  ChainNet Node   ├────────────────►│  ChainNet Miner  │
+│                  │                 │                  │
+└──────────────────┘                 └──────────────────┘
+```

@@ -28,6 +28,10 @@ func (m *MemPool) AppendTransaction(tx *kernel.Transaction, fee uint) {
 		return
 	}
 
+	// todo(): handle somehow the case in which multiple transactions contain multiple inputs from the same address
+	// todo(): generating double spending transactions when mining a block wasting the miner resources after the block
+	// todo(): is mined (block will be discarded by validators)
+
 	m.pairs = append(m.pairs, txFeePair{Transaction: tx, Fee: fee})
 	// ensure MemPool is sorted after adding (better ways of doing this really)
 	sort.Sort(m)

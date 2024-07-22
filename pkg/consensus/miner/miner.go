@@ -36,6 +36,10 @@ func NewMiner(minerAddress string, hasherType hash.HasherType) *Miner {
 	}
 }
 
+func (m *Miner) AdjustMiningDifficulty() {
+	// todo(): implement mining difficulty adjustment
+}
+
 // MineBlock assemble, generates and mines a new block
 func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	var err error
@@ -47,6 +51,7 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	coinbaseTx := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
+	// todo(): handle prevBlockHash and block height
 	// create block header
 	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, []byte("prevBlockHash"), m.target)
 	if err != nil {
