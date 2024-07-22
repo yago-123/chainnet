@@ -16,14 +16,18 @@ const (
 )
 
 type Miner struct {
-	mempool MemPool
-	hasher  hash.Hashing
+	mempool     MemPool
+	hasher      hash.Hashing
+	blockHeight uint
+	target      uint
 }
 
 func NewMiner() *Miner {
 	return &Miner{
-		mempool: NewMemPool(),
-		hasher:  hash.NewSHA256(),
+		mempool:     NewMemPool(),
+		hasher:      hash.NewSHA256(),
+		blockHeight: 0,
+		target:      1,
 	}
 }
 
@@ -36,11 +40,11 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	}
 
 	// generate the coinbase transaction and add to the list of transactions
-	coinbaseTx := m.createCoinbaseTransaction(collectedFee)
+	coinbaseTx := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, 0, []byte("prevBlockHash"), 1)
+	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, []byte("prevBlockHash"), m.target)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %v", err)
 	}
