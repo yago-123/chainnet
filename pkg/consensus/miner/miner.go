@@ -13,20 +13,23 @@ const (
 	InitialCoinbaseReward       = 50
 	HalvingInterval             = 210000
 	NumberOfTransactionsInBlock = 10
+
+	BlockVersion = "0.0.1"
 )
 
 type Miner struct {
-	mempool      MemPool
-	hasher       hash.Hashing
+	mempool MemPool
+	// import hasher type instead of directly hasher because will be used in multi-threaded scenario
+	hasherType   hash.HasherType
 	minerAddress string
 	blockHeight  uint
 	target       uint
 }
 
-func NewMiner(minerAddress string) *Miner {
+func NewMiner(minerAddress string, hasherType hash.HasherType) *Miner {
 	return &Miner{
 		mempool:      NewMemPool(),
-		hasher:       hash.NewSHA256(),
+		hasherType:   hasherType,
 		minerAddress: minerAddress,
 		blockHeight:  0,
 		target:       1,
@@ -58,7 +61,7 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			return nil, fmt.Errorf("mining cancelled by context")
 		default:
 			// start mining the block (proof of work)
-			pow, err := NewProofOfWork(ctx, blockHeader)
+			pow, err := NewProofOfWork(ctx, blockHeader, m.hasherType)
 			if err != nil {
 				return nil, fmt.Errorf("unable to create proof of work: %v", err)
 			}
@@ -72,6 +75,8 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			// assemble the whole block and return it
 			blockHeader.SetNonce(nonce)
 			block := kernel.NewBlock(blockHeader, txs, blockHash)
+
+			// todo(): validate block before returning it?
 
 			return block, nil
 		}
@@ -88,13 +93,13 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) *kernel.Tra
 }
 
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {
-	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, m.hasher)
+	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, hash.GetHasher(m.hasherType))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %v", err)
 	}
 
 	return kernel.NewBlockHeader(
-		[]byte("0.0.1"),
+		[]byte(BlockVersion),
 		time.Now().Unix(),
 		merkleTree.RootHash(),
 		height,

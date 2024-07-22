@@ -29,11 +29,13 @@ type ProofOfWork struct {
 	wg             sync.WaitGroup
 	hashDifficulty *big.Int
 
+	hasherType hash.HasherType
+
 	bh *kernel.BlockHeader
 }
 
 // NewProofOfWork creates a new ProofOfWork instance
-func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader) (*ProofOfWork, error) {
+func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader, hasherType hash.HasherType) (*ProofOfWork, error) {
 	if bh.Target >= HashLength {
 		return nil, errors.New("target is bigger than the hash length")
 	}
@@ -45,6 +47,7 @@ func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader) (*ProofOfWork, 
 		ctx:            ctx,
 		results:        make(chan miningResult),
 		hashDifficulty: hashDifficulty,
+		hasherType:     hasherType,
 		bh:             bh,
 	}, nil
 }
@@ -85,7 +88,8 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 // startMining starts a mining process in a goroutine
 func (pow *ProofOfWork) startMining(bh *kernel.BlockHeader, nonceRange uint, startNonce uint) {
 	defer pow.wg.Done()
-	hasher := hash.NewSHA256()
+	// initialize hash function in each goroutine because is not thread safe by default
+	hasher := hash.GetHasher(pow.hasherType)
 	var localHashInt big.Int
 
 	// iterate over the nonce range and calculate the hash
