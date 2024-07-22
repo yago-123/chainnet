@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	CoinbaseReward              = 50
+	InitialCoinbaseReward       = 50
+	HalvingInterval             = 210000
 	NumberOfTransactionsInBlock = 10
 )
 
@@ -79,9 +80,13 @@ func (m *Miner) collectTransactions() ([]*kernel.Transaction, uint, error) {
 	return txs, totalFee, nil
 }
 
-func (m *Miner) createCoinbaseTransaction(collectedFee uint) *kernel.Transaction {
-	// todo(): make coinbase reward variable based on height of the blockchain (halving)
-	return kernel.NewCoinbaseTransaction("miner", CoinbaseReward, collectedFee)
+// createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
+func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) *kernel.Transaction {
+	// calculate the current reward based on block height
+	halvings := height / HalvingInterval
+	reward := uint(InitialCoinbaseReward >> halvings)
+
+	return kernel.NewCoinbaseTransaction("miner", reward, collectedFee)
 }
 
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {

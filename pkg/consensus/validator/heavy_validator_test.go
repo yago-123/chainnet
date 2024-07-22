@@ -29,14 +29,14 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 
 	blockWithTwoCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to", miner.CoinbaseReward, 0),
-			kernel.NewCoinbaseTransaction("to", miner.CoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0),
 		},
 	}
 
 	blockWithOneCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to", miner.CoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0),
 		},
 	}
 
