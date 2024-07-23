@@ -91,7 +91,7 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 	coinbaseTx.SetID([]byte("coinbase-genesis-kernel-id"))
 	blockHeader := kernel.NewBlockHeader([]byte{}, 0, []byte{}, 0, []byte{}, 0, 0)
 	blockHeader.SetNonce(1)
-	genesisBlock := kernel.NewGenesisBlock(blockHeader, []*kernel.Transaction{coinbaseTx}, []byte("genesis-kernel-hash")
+	genesisBlock := kernel.NewGenesisBlock(blockHeader, []*kernel.Transaction{coinbaseTx}, []byte("genesis-kernel-hash"))
 
 	// set up the storage mock with the corresponding returns
 	storage := &mockStorage.MockStorage{}

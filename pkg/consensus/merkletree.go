@@ -36,7 +36,7 @@ func newMerkleNode(left, right *MerkleNode, data []byte, hasher hash.Hashing) (*
 
 		nodeHash, err := hasher.Hash(append(leftHash, rightHash...))
 		if err != nil {
-			return nil, fmt.Errorf("error hashing left (%s) and right (%s) nodes: %v", leftHash, rightHash, err)
+			return nil, fmt.Errorf("error hashing left (%s) and right (%s) nodes: %w", leftHash, rightHash, err)
 		}
 		node.Hash = nodeHash
 	}
@@ -72,7 +72,7 @@ func newMerkleTreeFromNodes(nodes []MerkleNode, hasher hash.Hashing) (*MerkleTre
 
 			parent, err := newMerkleNode(&left, &right, nil, hasher)
 			if err != nil {
-				return nil, fmt.Errorf("error creating Merkle parent node for left (%s) and right (%s) nodes: %v", left.Hash, right.Hash, err)
+				return nil, fmt.Errorf("error creating Merkle parent node for left (%s) and right (%s) nodes: %w", left.Hash, right.Hash, err)
 			}
 			newLevel = append(newLevel, *parent)
 		}
@@ -95,7 +95,7 @@ func NewMerkleTreeFromHashes(proofs [][]byte, hasher hash.Hashing) (*MerkleTree,
 	for _, proof := range proofs {
 		node, err := newMerkleNode(nil, nil, proof, hasher)
 		if err != nil {
-			return nil, fmt.Errorf("error creating Merkle node for hash %s: %v", proof, err)
+			return nil, fmt.Errorf("error creating Merkle node for hash %s: %w", proof, err)
 		}
 
 		nodes = append(nodes, *node)
@@ -112,7 +112,7 @@ func NewMerkleTreeFromTxs(txs []*kernel.Transaction, hasher hash.Hashing) (*Merk
 	for _, txn := range txs {
 		node, err := newMerkleNode(nil, nil, txn.ID, hasher)
 		if err != nil {
-			return nil, fmt.Errorf("error creating Merkle node for transaction %s: %v", txn.ID, err)
+			return nil, fmt.Errorf("error creating Merkle node for transaction %s: %w", txn.ID, err)
 		}
 		nodes = append(nodes, *node)
 	}

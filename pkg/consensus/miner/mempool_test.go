@@ -1,13 +1,14 @@
-package miner
+package miner //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-var tx1 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global variable
+var tx1 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("id1"), 1, "", "")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "")},
@@ -15,7 +16,7 @@ var tx1 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global 
 	Fee: 10,
 }
 
-var tx2 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global variable
+var tx2 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("id2"), 1, "", "")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "")},
@@ -23,7 +24,7 @@ var tx2 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global 
 	Fee: 2,
 }
 
-var tx3 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global variable
+var tx3 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("id3"), 1, "", "")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "")},
@@ -31,7 +32,7 @@ var tx3 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global 
 	Fee: 3,
 }
 
-var tx4 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global variable
+var tx4 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("id4"), 1, "", "")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "")},
@@ -39,7 +40,7 @@ var tx4 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global 
 	Fee: 1,
 }
 
-var tx5 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global variable
+var tx5 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("id5"), 1, "", "")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "")},
@@ -47,7 +48,7 @@ var tx5 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global 
 	Fee: 9,
 }
 
-var tx6 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global variable
+var tx6 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("id6"), 1, "", "")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "")},
@@ -55,7 +56,7 @@ var tx6 = txFeePair{ // nolint: gochecknoglobals // no need to lint this global 
 	Fee: 6,
 }
 
-var txFeePairs = []txFeePair{tx1, tx2, tx3, tx4, tx5, tx6}
+var txFeePairs = []txFeePair{tx1, tx2, tx3, tx4, tx5, tx6} //nolint: gochecknoglobals // no need to lint this global variable
 
 func TestMemPool(t *testing.T) {
 	mempool := NewMemPool()
@@ -87,6 +88,7 @@ func TestMemPool(t *testing.T) {
 	assert.Equal(t, []byte("id4"), txs[2].Vin[0].Txid)
 
 	txs, fee = mempool.RetrieveTransactions(1)
-	assert.Len(t, txs, 0)
+	assert.Empty(t, txs)
 	assert.Equal(t, 0, mempool.Len())
+	assert.Equal(t, uint(0), fee)
 }

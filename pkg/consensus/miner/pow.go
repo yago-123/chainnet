@@ -41,7 +41,7 @@ func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader, hasherType hash
 	}
 
 	hashDifficulty := big.NewInt(1)
-	hashDifficulty.Lsh(hashDifficulty, HashLength-uint(bh.Target))
+	hashDifficulty.Lsh(hashDifficulty, HashLength-bh.Target)
 
 	return &ProofOfWork{
 		ctx:            ctx,
@@ -62,7 +62,7 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	nonceRange := MaxNonce / uint(numGoroutines)
 
 	// split work and ranges among go routines
-	for i := 0; i < numGoroutines; i++ {
+	for i := range make([]int, numGoroutines) {
 		pow.wg.Add(1)
 		go pow.startMining(pow.bh, nonceRange, uint(i)*nonceRange)
 	}

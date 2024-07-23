@@ -1,12 +1,13 @@
-package miner
+package miner //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestProofOfWork_CalculateBlockHash(t *testing.T) {
@@ -14,16 +15,16 @@ func TestProofOfWork_CalculateBlockHash(t *testing.T) {
 
 	// check that returns error if the target is bigger than the hash itself
 	bh := kernel.NewBlockHeader([]byte("1"), 1, []byte("merkle-root"), 1, []byte("prev-block-hash"), 300, 0)
-	pow, err := NewProofOfWork(ctx, bh, hash.SHA256)
+	_, err := NewProofOfWork(ctx, bh, hash.SHA256)
 	require.Error(t, err)
 
 	// calculate simple hash with 1 zero
 	bh = kernel.NewBlockHeader([]byte("1"), 1, []byte("merkle-root"), 1, []byte("prev-block-hash"), 8, 0)
-	pow, err = NewProofOfWork(ctx, bh, hash.SHA256)
+	pow, err := NewProofOfWork(ctx, bh, hash.SHA256)
 	require.NoError(t, err)
 	blockHash, nonce, err := pow.CalculateBlockHash()
-	assert.NoError(t, err)
-	assert.True(t, nonce > 0)
+	require.NoError(t, err)
+	assert.Greater(t, nonce, uint(0))
 	assert.Equal(t, []byte{0x0}, blockHash[:1])
 	assert.NotEqual(t, []byte{0x0}, blockHash[1:2])
 
@@ -32,8 +33,8 @@ func TestProofOfWork_CalculateBlockHash(t *testing.T) {
 	pow, err = NewProofOfWork(ctx, bh, hash.SHA256)
 	require.NoError(t, err)
 	blockHash, nonce, err = pow.CalculateBlockHash()
-	assert.NoError(t, err)
-	assert.True(t, nonce > 0)
+	require.NoError(t, err)
+	assert.Greater(t, nonce, uint(0))
 	assert.Equal(t, []byte{0x0, 0x0}, blockHash[:2])
 	assert.NotEqual(t, []byte{0x0}, blockHash[2:3])
 

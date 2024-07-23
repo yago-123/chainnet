@@ -31,6 +31,10 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 
 	// todo(): set limit to the number of inputs and outputs
 
+	// todo(): make sure that transaction size is within limits
+
+	// todo(): make sure number of sigops is within limits
+
 	return nil
 }
 

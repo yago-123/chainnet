@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const MaxNumberTxsPerBlock = 16000
+
 type BlockHeader struct {
 	Version       []byte
 	PrevBlockHash []byte
@@ -35,7 +37,6 @@ func (bh *BlockHeader) SetNonce(nonce uint) {
 
 func (bh *BlockHeader) SetTimestamp(timestamp int64) {
 	bh.Timestamp = timestamp
-
 }
 
 func (bh *BlockHeader) Assemble() []byte {

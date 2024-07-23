@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
@@ -21,7 +22,6 @@ type Wallet struct {
 	id []byte
 
 	validator   consensus.LightValidator
-	consensus   consensus.Consensus
 	signer      sign.Signature
 	hasher      hash.Hashing
 	interpreter *rpnInter.RPNInterpreter
@@ -31,7 +31,7 @@ func (w *Wallet) ID() string {
 	return string(w.id)
 }
 
-func NewWallet(version []byte, consensus consensus.Consensus, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
+func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
 	publicKey, privateKey, err := signer.NewKeyPair()
 	if err != nil {
 		return nil, err
@@ -46,7 +46,6 @@ func NewWallet(version []byte, consensus consensus.Consensus, validator consensu
 		version:     version,
 		PrivateKey:  privateKey,
 		PublicKey:   publicKey,
-		consensus:   consensus,
 		validator:   validator,
 		id:          id,
 		signer:      signer,
@@ -93,7 +92,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 		outputs,
 	)
 
-	txHash, err := w.consensus.CalculateTxHash(tx)
+	txHash, err := util.CalculateTxHash(tx, w.hasher)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
