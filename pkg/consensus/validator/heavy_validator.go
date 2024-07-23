@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"bytes"
 	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/crypto/hash"
@@ -52,6 +53,8 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
+		hv.validatePreviousBlockMatchCurrentLatest,
+		hv.validateBlockHeight,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
 		// todo(): validate merkle tree matches the transactions in the block
@@ -156,6 +159,34 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 
 func (hv *HValidator) validateBlockHash(_ *kernel.Block) error {
 	// todo() once we have Merkle tree
+
+	return nil
+}
+
+// validatePreviousBlockMatchCurrentLatest checks that the previous block hash of the block matches the latest block
+func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) error {
+	lastChainBlock, err := hv.explorer.GetLastBlock()
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(b.Header.PrevBlockHash, lastChainBlock.Hash) {
+		return fmt.Errorf("previous hash %s points to block different than latest in the chain %s", string(b.Header.PrevBlockHash), string(lastChainBlock.Hash))
+	}
+
+	return nil
+}
+
+// validateBlockHeight checks that the block height matches the current chain height
+func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
+	lastChainBlock, err := hv.explorer.GetLastBlock()
+	if err != nil {
+		return err
+	}
+
+	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
+		return fmt.Errorf("new block %s with height %d does not match current chain height %d", string(b.Hash), b.Header.Height, lastChainBlock.Header.Height)
+	}
 
 	return nil
 }

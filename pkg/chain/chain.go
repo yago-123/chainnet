@@ -23,13 +23,13 @@ type Blockchain struct {
 	consensus consensus.Consensus
 	storage   storage.Storage
 	validator consensus.HeavyValidator
-	subject   observer.SubjectObserver
+	subject   *observer.SubjectObserver
 
 	logger *logrus.Logger
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator, subject observer.SubjectObserver) *Blockchain {
+func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) *Blockchain {
 	bc := &Blockchain{
 		Chain:     []string{},
 		consensus: consensus,
@@ -47,10 +47,6 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	if err := bc.validator.ValidateBlock(block); err != nil {
 		return fmt.Errorf("block validation failed: %w", err)
 	}
-
-	// check if previous block hash is current latest block
-
-	// check height of block
 
 	// ... perform more checks ...
 

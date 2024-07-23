@@ -7,7 +7,7 @@ import (
 
 // Observer interface that defines the methods that an observer should implement
 type Observer interface {
-	Id() string
+	ID() string
 	OnBlockAddition(block *kernel.Block)
 }
 
@@ -33,14 +33,14 @@ func NewSubjectObserver() *SubjectObserver {
 func (so *SubjectObserver) Register(observer Observer) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
-	so.observers[observer.Id()] = observer
+	so.observers[observer.ID()] = observer
 }
 
 // Unregister removes an observer from the list of observers
 func (so *SubjectObserver) Unregister(observer Observer) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
-	delete(so.observers, observer.Id())
+	delete(so.observers, observer.ID())
 }
 
 // NotifyBlockAdded notifies all observers that a new block has been added

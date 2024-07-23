@@ -2,7 +2,7 @@ package blockchain
 
 import "chainnet/pkg/kernel"
 
-const UTXOSObserverId = "utxos"
+const UTXOSObserverID = "utxos"
 
 type UTXOS struct {
 }
@@ -12,11 +12,11 @@ func NewUTXOS() *UTXOS {
 }
 
 // Id returns the observer id
-func (u *UTXOS) Id() string {
-	return UTXOSObserverId
+func (u *UTXOS) ID() string {
+	return UTXOSObserverID
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (u *UTXOS) OnBlockAddition(block *kernel.Block) {
+func (u *UTXOS) OnBlockAddition(_ *kernel.Block) {
 
 }

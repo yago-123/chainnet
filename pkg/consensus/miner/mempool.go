@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-const MemPoolObserverId = "mempool"
+const MemPoolObserverID = "mempool"
 
 type txFeePair struct {
 	Transaction *kernel.Transaction
@@ -61,11 +61,11 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 }
 
 // Id returns the observer id
-func (m *MemPool) Id() string {
-	return MemPoolObserverId
+func (m *MemPool) ID() string {
+	return MemPoolObserverID
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *MemPool) OnBlockAddition(block *kernel.Block) {
+func (m *MemPool) OnBlockAddition(_ *kernel.Block) {
 
 }

@@ -17,7 +17,7 @@ const (
 
 	BlockVersion = "0.0.1"
 
-	MinerObserverId = "miner"
+	MinerObserverID = "miner"
 )
 
 type Miner struct {
@@ -95,12 +95,12 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 }
 
 // Id returns the observer id
-func (m *Miner) Id() string {
-	return MinerObserverId
+func (m *Miner) ID() string {
+	return MinerObserverID
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *Miner) OnBlockAddition(block *kernel.Block) {
+func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 
 }
 
