@@ -5,6 +5,7 @@ import (
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 )
@@ -37,6 +38,24 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage st
 	}
 
 	return bc
+}
+
+func (bc *Blockchain) AddBlock(block *kernel.Block) error {
+	if err := bc.validator.ValidateBlock(block); err != nil {
+		return fmt.Errorf("block validation failed: %w", err)
+	}
+
+	// propagate to utxo?
+
+	// propagate to mempool?
+
+	// propagate to miner?
+
+	// propagate to network?
+
+	// notify peers about new block?
+
+	return nil
 }
 
 func (bc *Blockchain) GetBlock(hash string) (*kernel.Block, error) {
