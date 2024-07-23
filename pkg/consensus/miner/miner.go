@@ -2,6 +2,7 @@ package miner
 
 import (
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"context"
@@ -10,9 +11,8 @@ import (
 )
 
 const (
-	InitialCoinbaseReward       = 50
-	HalvingInterval             = 210000
-	NumberOfTransactionsInBlock = 10
+	InitialCoinbaseReward = 50
+	HalvingInterval       = 210000
 
 	BlockVersion = "0.0.1"
 )
@@ -45,10 +45,13 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	var err error
 
 	// retrieve transactions that are going to be placed inside the block
-	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(NumberOfTransactionsInBlock)
+	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(kernel.MaxNumberTxsPerBlock)
 
 	// generate the coinbase transaction and add to the list of transactions
-	coinbaseTx := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
+	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create coinbase transaction: %v", err)
+	}
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
 	// todo(): handle prevBlockHash and block height
@@ -89,16 +92,24 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
-func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) *kernel.Transaction {
+func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Transaction, error) {
 	reward := uint(0)
 	// calculate reward based on block height and halving interval. If height greater than 64 halvings, reward is 0
-	// to avoid dealing with negative numbers
+	// to avoid dealing with bugs
 	halvings := height / HalvingInterval
 	if halvings < 64 {
 		reward = uint(InitialCoinbaseReward >> halvings)
 	}
 
-	return kernel.NewCoinbaseTransaction(m.minerAddress, reward, collectedFee)
+	// creates transaction and calculate hash
+	tx := kernel.NewCoinbaseTransaction(m.minerAddress, reward, collectedFee)
+	txHash, err := util.CalculateTxHash(tx, hash.GetHasher(m.hasherType))
+	if err != nil {
+		return nil, fmt.Errorf("unable to calculate transaction hash: %v", err)
+	}
+	tx.SetID(txHash)
+
+	return tx, nil
 }
 
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {

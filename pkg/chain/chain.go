@@ -18,6 +18,8 @@ import (
 // AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
 const AdjustDifficultyHeight = 2016
 
+// headers,
+
 type Blockchain struct {
 	Chain         []string
 	lastBlockHash []byte

@@ -56,6 +56,7 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		// todo(): validate coinbase transaction
 		// todo(): validate merkle tree matches the transactions in the block
 		// todo(): validate block header in general (version, previous block, mining difficulty...)
+		// todo(): validate block hash corresponds to the target
 	}
 
 	for _, validate := range validations {

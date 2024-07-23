@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const MaxNumberTxsPerBlock = 16000
+
 type BlockHeader struct {
 	Version       []byte
 	PrevBlockHash []byte

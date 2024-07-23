@@ -74,24 +74,34 @@ func TestMiner_MineBlock(t *testing.T) {
 func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	miner := NewMiner("minerAddress", hash.SHA256)
 
-	coinbase := miner.createCoinbaseTransaction(0, 0)
+	coinbase, err := miner.createCoinbaseTransaction(0, 0)
+	assert.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
+	assert.True(t, len(coinbase.ID) > 0)
 	assert.Equal(t, uint(InitialCoinbaseReward), coinbase.Vout[0].Amount)
 
-	coinbase = miner.createCoinbaseTransaction(1, 1)
+	coinbase, err = miner.createCoinbaseTransaction(1, 1)
+	assert.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 2)
+	assert.True(t, len(coinbase.ID) > 0)
 	assert.Equal(t, uint(InitialCoinbaseReward), coinbase.Vout[0].Amount)
 	assert.Equal(t, uint(1), coinbase.Vout[1].Amount)
 
-	coinbase = miner.createCoinbaseTransaction(0, HalvingInterval)
+	coinbase, err = miner.createCoinbaseTransaction(0, HalvingInterval)
+	assert.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
+	assert.True(t, len(coinbase.ID) > 0)
 	assert.Equal(t, uint(InitialCoinbaseReward/2), coinbase.Vout[0].Amount)
 
-	coinbase = miner.createCoinbaseTransaction(0, HalvingInterval*2)
+	coinbase, err = miner.createCoinbaseTransaction(0, HalvingInterval*2)
+	assert.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
+	assert.True(t, len(coinbase.ID) > 0)
 	assert.Equal(t, uint(InitialCoinbaseReward/4), coinbase.Vout[0].Amount)
 
-	coinbase = miner.createCoinbaseTransaction(0, HalvingInterval*64)
+	coinbase, err = miner.createCoinbaseTransaction(0, HalvingInterval*64)
+	assert.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
+	assert.True(t, len(coinbase.ID) > 0)
 	assert.Equal(t, uint(0), coinbase.Vout[0].Amount)
 }
