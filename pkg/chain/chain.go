@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"chainnet/config"
+	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
@@ -22,17 +23,19 @@ type Blockchain struct {
 	consensus consensus.Consensus
 	storage   storage.Storage
 	validator consensus.HeavyValidator
+	subject   observer.SubjectObserver
 
 	logger *logrus.Logger
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator) *Blockchain {
+func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator, subject observer.SubjectObserver) *Blockchain {
 	bc := &Blockchain{
 		Chain:     []string{},
 		consensus: consensus,
 		storage:   storage,
 		validator: validator,
+		subject:   subject,
 		logger:    cfg.Logger,
 		cfg:       cfg,
 	}
@@ -45,15 +48,16 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 		return fmt.Errorf("block validation failed: %w", err)
 	}
 
-	// propagate to utxo?
+	// check if previous block hash is current latest block
 
-	// propagate to mempool?
+	// check height of block
 
-	// propagate to miner?
+	// ... perform more checks ...
 
-	// propagate to network?
+	// store block header in storage
 
-	// notify peers about new block?
+	// notify observers of new block
+	bc.subject.NotifyBlockAdded(block)
 
 	return nil
 }

@@ -16,6 +16,8 @@ const (
 	MaxNumberHalvings     = 64
 
 	BlockVersion = "0.0.1"
+
+	MinerObserverId = "miner"
 )
 
 type Miner struct {
@@ -90,6 +92,16 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			return block, nil
 		}
 	}
+}
+
+// Id returns the observer id
+func (m *Miner) Id() string {
+	return MinerObserverId
+}
+
+// OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
+func (m *Miner) OnBlockAddition(block *kernel.Block) {
+
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
