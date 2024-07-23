@@ -37,7 +37,6 @@ func (bh *BlockHeader) SetNonce(nonce uint) {
 
 func (bh *BlockHeader) SetTimestamp(timestamp int64) {
 	bh.Timestamp = timestamp
-
 }
 
 func (bh *BlockHeader) Assemble() []byte {

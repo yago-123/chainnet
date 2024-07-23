@@ -2,15 +2,9 @@ package main
 
 import (
 	"chainnet/config"
-	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
-	iterator "chainnet/pkg/chain/iterator"
-	"chainnet/pkg/consensus/miner"
-	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
-	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
-	mockConsensus "chainnet/tests/mocks/consensus"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -23,7 +17,6 @@ const (
 
 func main() {
 	baseURL := "localhost:8080"
-	var blk *kernel.Block
 
 	cfg := config.NewConfig(logrus.New(), DifficultyPoW, MaxNoncePoW, baseURL)
 	// Initialize your blockchain and other components
@@ -33,51 +26,7 @@ func main() {
 	}
 
 	// create blockchain
-	bc := blockchain.NewBlockchain(cfg, miner.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt, &mockConsensus.MockHeavyValidator{})
-
-	// create tx0 and add kernel
-	tx0, _ := bc.NewCoinbaseTransaction("me")
-	_, err = bc.AddBlock([]*kernel.Transaction{tx0})
-	if err != nil {
-		cfg.Logger.Errorf("Failed to add kernel: %s", err)
-	}
-
-	// create tx1 and add kernel
-	tx1, err := bc.NewTransaction("me", "you", 10) //nolint:mnd // temporary code
-	if err != nil {
-		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
-	}
-	_, err = bc.AddBlock([]*kernel.Transaction{tx1})
-	if err != nil {
-		cfg.Logger.Errorf("Failed to add kernel: %s", err)
-	}
-
-	// create tx2 and add kernel
-	tx2, err := bc.NewTransaction("me", "you", 20) //nolint:mnd // temporary code
-	if err != nil {
-		cfg.Logger.Errorf("Failed to create UTXO transaction: %s", err)
-	}
-	_, err = bc.AddBlock([]*kernel.Transaction{tx2})
-	if err != nil {
-		cfg.Logger.Errorf("Failed to add kernel: %s", err)
-	}
-
-	// Iterate through blocks
-	reverseIterator := iterator.NewReverseIterator(bolt)
-
-	_ = reverseIterator.Initialize(bc.GetLastBlockHash())
-	for reverseIterator.HasNext() {
-		blk, err = reverseIterator.GetNextBlock()
-		if err != nil {
-			cfg.Logger.Panicf("Error getting kernel: %s", err)
-		}
-
-		cfg.Logger.Infof("----------------------")
-		cfg.Logger.Infof("Prev. hash: %x", blk.Header.PrevBlockHash)
-		cfg.Logger.Infof("Num transactions: %d", len(blk.Transactions))
-		cfg.Logger.Infof("Hash: %x", blk.Hash)
-		// cfg.Logger.Infof("PoW: %t", consensus.NewProofOfWork(1, hash.NewSHA256()).ValidateBlock(blk))
-	}
+	// bc := blockchain.NewBlockchain(cfg, miner.NewProofOfWork(cfg.DifficultyPoW, hash.NewSHA256()), bolt, &mockConsensus.MockHeavyValidator{})
 
 	cfg.Logger.Infof("Server listening on %s", cfg.BaseURL)
 

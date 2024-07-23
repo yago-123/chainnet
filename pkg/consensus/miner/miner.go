@@ -13,6 +13,7 @@ import (
 const (
 	InitialCoinbaseReward = 50
 	HalvingInterval       = 210000
+	MaxNumberHalvings     = 64
 
 	BlockVersion = "0.0.1"
 )
@@ -50,7 +51,7 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	// generate the coinbase transaction and add to the list of transactions
 	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create coinbase transaction: %v", err)
+		return nil, fmt.Errorf("unable to create coinbase transaction: %w", err)
 	}
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
@@ -58,7 +59,7 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	// create block header
 	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, []byte("prevBlockHash"), m.target)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create block header: %v", err)
+		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
 
 	// start mining process
@@ -69,12 +70,12 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 			return nil, fmt.Errorf("mining cancelled by context")
 		default:
 			// start mining the block (proof of work)
-			pow, err := NewProofOfWork(ctx, blockHeader, m.hasherType)
-			if err != nil {
-				return nil, fmt.Errorf("unable to create proof of work: %v", err)
+			pow, errPow := NewProofOfWork(ctx, blockHeader, m.hasherType)
+			if errPow != nil {
+				return nil, fmt.Errorf("unable to create proof of work: %w", errPow)
 			}
-			blockHash, nonce, err := pow.CalculateBlockHash()
-			if err != nil {
+			blockHash, nonce, errPow := pow.CalculateBlockHash()
+			if errPow != nil {
 				// if no nonce was found, readjust the timestamp and try again
 				blockHeader.SetTimestamp(time.Now().Unix())
 				continue
@@ -97,7 +98,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	// calculate reward based on block height and halving interval. If height greater than 64 halvings, reward is 0
 	// to avoid dealing with bugs
 	halvings := height / HalvingInterval
-	if halvings < 64 {
+	if halvings < MaxNumberHalvings {
 		reward = uint(InitialCoinbaseReward >> halvings)
 	}
 
@@ -105,7 +106,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	tx := kernel.NewCoinbaseTransaction(m.minerAddress, reward, collectedFee)
 	txHash, err := util.CalculateTxHash(tx, hash.GetHasher(m.hasherType))
 	if err != nil {
-		return nil, fmt.Errorf("unable to calculate transaction hash: %v", err)
+		return nil, fmt.Errorf("unable to calculate transaction hash: %w", err)
 	}
 	tx.SetID(txHash)
 
@@ -115,7 +116,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {
 	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, hash.GetHasher(m.hasherType))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %v", err)
+		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %w", err)
 	}
 
 	return kernel.NewBlockHeader(
