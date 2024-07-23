@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"context"
@@ -101,8 +102,8 @@ func (pow *ProofOfWork) startMining(bh *kernel.BlockHeader, nonceRange uint, sta
 			return
 		default:
 			// calculate the hash of the block
-			data := bh.AssembleWithNonce(nonce)
-			blockHash, err := hasher.Hash(data)
+			bh.SetNonce(nonce)
+			blockHash, err := util.CalculateBlockHash(bh, hasher)
 			if err != nil {
 				pow.results <- miningResult{nil, 0, fmt.Errorf("could not hash block: %w", err)}
 				return

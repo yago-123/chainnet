@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
@@ -53,8 +54,10 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
+		// block header validations
 		hv.validatePreviousBlockMatchCurrentLatest,
 		hv.validateBlockHeight,
+		hv.validateMerkleTree,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
 		// todo(): validate merkle tree matches the transactions in the block
@@ -157,8 +160,18 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 	return nil
 }
 
-func (hv *HValidator) validateBlockHash(_ *kernel.Block) error {
-	// todo() once we have Merkle tree
+// validateBlockHash checks that the hash of the block is correct
+func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
+	blockHash, err := util.CalculateBlockHash(b.Header, hv.hasher)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(blockHash, b.Hash) {
+		return fmt.Errorf("block %s has invalid hash, expected: %s", string(b.Hash), blockHash)
+	}
+
+	// merkle tree hash is checked in validateMerkleTree func
 
 	return nil
 }
@@ -186,6 +199,20 @@ func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
 
 	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
 		return fmt.Errorf("new block %s with height %d does not match current chain height %d", string(b.Hash), b.Header.Height, lastChainBlock.Header.Height)
+	}
+
+	return nil
+}
+
+// validateMerkleTree checks that the Merkle tree root hash of the block matches the Merkle root hash in the block header
+func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
+	merkletree, err := consensus.NewMerkleTreeFromTxs(b.Transactions, hv.hasher)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {
+		return fmt.Errorf("block %s has invalid Merkle root", string(b.Hash))
 	}
 
 	return nil

@@ -93,7 +93,7 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 		On("GetLastBlock").
 		Return(&kernel.Block{Header: &kernel.BlockHeader{Height: 10}}, nil)
 
-	hvalidator := NewHeavyValidator(NewLightValidator(), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(), *expl.NewExplorer(mockStore), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	// check that the block height matches the current chain height
 	require.NoError(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 11}}))
@@ -101,5 +101,8 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 	// check that the block height does not match the current chain height
 	require.Error(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 10}}))
 	require.Error(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 12}}))
+}
 
+func TestHValidator_validateMerkleTree(_ *testing.T) {
+	// todo(): add tests regarding Merkle tree
 }
