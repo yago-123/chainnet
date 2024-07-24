@@ -58,10 +58,10 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validatePreviousBlockMatchCurrentLatest,
 		hv.validateBlockHeight,
 		hv.validateMerkleTree,
+		hv.validateBlockTarget,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
-		// todo(): validate block header in general (version, previous block, mining difficulty...)
-		// todo(): validate block hash corresponds to the target
+		// todo(): validate block timestamp
 	}
 
 	for _, validate := range validations {
@@ -210,6 +210,23 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 
 	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {
 		return fmt.Errorf("block %s has invalid Merkle root", string(b.Hash))
+	}
+
+	return nil
+}
+
+// validateBlockTarget checks that the block hash corresponds to the target
+func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
+	err := fmt.Errorf("block %s has hash %s that is smaller than the target %d", string(b.Hash), string(b.Hash), b.Header.Target)
+
+	if len(b.Hash) < int(b.Header.Target) {
+		return err
+	}
+
+	for i := 0; i < int(b.Header.Target); i++ {
+		if b.Hash[i] != 0 {
+			return err
+		}
 	}
 
 	return nil

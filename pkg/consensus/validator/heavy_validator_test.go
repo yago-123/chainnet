@@ -2,6 +2,7 @@ package validator //nolint:testpackage // don't create separate package for test
 
 import (
 	expl "chainnet/pkg/chain/explorer"
+	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/kernel"
@@ -129,6 +130,52 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 	require.Error(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 12}}))
 }
 
-func TestHValidator_validateMerkleTree(_ *testing.T) {
-	// todo(): add tests regarding Merkle tree
+func TestHValidator_validateMerkleTree(t *testing.T) {
+	txs := []*kernel.Transaction{
+		kernel.NewTransaction(
+			[]kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")},
+			[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "scriptPubKey")},
+		),
+		kernel.NewTransaction(
+			[]kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, "scriptSig2", "pubKey2")},
+			[]kernel.TxOutput{
+				kernel.NewOutput(2, script.P2PK, "scriptPubKey2"),
+				kernel.NewOutput(2, script.P2PK, "scriptPubKey3"),
+			},
+		),
+		kernel.NewTransaction(
+			[]kernel.TxInput{
+				kernel.NewInput([]byte("txid3"), 2, "scriptSig3", "pubKey3"),
+				kernel.NewInput([]byte("txid4"), 3, "scriptSig4", "pubKey4"),
+			},
+			[]kernel.TxOutput{
+				kernel.NewOutput(3, script.P2PK, "scriptPubKey3"),
+			},
+		),
+	}
+
+	for _, tx := range txs {
+		txHash, err := util.CalculateTxHash(tx, &mockHash.MockHashing{})
+		require.NoError(t, err)
+		tx.SetID(txHash)
+	}
+
+	mt, err := consensus.NewMerkleTreeFromTxs(txs, &mockHash.MockHashing{})
+	require.NoError(t, err)
+
+	block := &kernel.Block{
+		Header: &kernel.BlockHeader{
+			MerkleRoot: mt.RootHash(),
+		},
+		Transactions: txs,
+	}
+
+	hvalidator := NewHeavyValidator(NewLightValidator(), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+
+	// verify correct merkle root does not generate error
+	require.NoError(t, hvalidator.validateMerkleTree(block))
+
+	// verify incorrect merkle root generates error
+	block.Transactions[0].Vin[0].Txid = []byte("invalid")
+	require.Error(t, hvalidator.validateMerkleTree(block))
 }
