@@ -3,6 +3,7 @@ package validator //nolint:testpackage // don't create separate package for test
 import (
 	expl "chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus/miner"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
@@ -69,8 +70,33 @@ func TestHValidator_validateNoDoubleSpendingInsideBlock(t *testing.T) {
 	require.NoError(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithoutDoubleSpending))
 }
 
-func TestHValidator_validateBlockHash(_ *testing.T) {
-	// todo(): add tests regarding block hashing
+func TestHValidator_validateBlockHash(t *testing.T) {
+	blockHeader := &kernel.BlockHeader{
+		Version:       []byte("version"),
+		PrevBlockHash: []byte("prevBlockHash"),
+		MerkleRoot:    []byte("merkleRoot"),
+		Height:        1,
+		Timestamp:     2,
+		Target:        3,
+		Nonce:         4,
+	}
+
+	blockHash, err := util.CalculateBlockHash(blockHeader, &mockHash.MockHashing{})
+	require.NoError(t, err)
+	block := &kernel.Block{
+		Header:       blockHeader,
+		Transactions: []*kernel.Transaction{},
+		Hash:         blockHash,
+	}
+
+	hvalidator := NewHeavyValidator(NewLightValidator(), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+
+	// check that the block hash corresponds to the target
+	require.NoError(t, hvalidator.validateBlockHash(block))
+
+	// check that the block hash does not correspond to the target
+	block.Header.SetNonce(2)
+	require.Error(t, hvalidator.validateBlockHash(block))
 }
 
 func TestHValidator_validatePreviousBlockMatchCurrentLatest(t *testing.T) {

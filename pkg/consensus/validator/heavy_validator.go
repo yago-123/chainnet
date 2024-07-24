@@ -60,7 +60,6 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateMerkleTree,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
-		// todo(): validate merkle tree matches the transactions in the block
 		// todo(): validate block header in general (version, previous block, mining difficulty...)
 		// todo(): validate block hash corresponds to the target
 	}
@@ -160,7 +159,7 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 	return nil
 }
 
-// validateBlockHash checks that the hash of the block is correct
+// validateBlockHash checks that the hash of the block is correct. Merkle tree hash is checked in validateMerkleTree func
 func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
 	blockHash, err := util.CalculateBlockHash(b.Header, hv.hasher)
 	if err != nil {
@@ -170,8 +169,6 @@ func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
 	if !bytes.Equal(blockHash, b.Hash) {
 		return fmt.Errorf("block %s has invalid hash, expected: %s", string(b.Hash), blockHash)
 	}
-
-	// merkle tree hash is checked in validateMerkleTree func
 
 	return nil
 }
