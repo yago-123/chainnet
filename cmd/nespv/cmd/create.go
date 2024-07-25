@@ -27,7 +27,7 @@ var createCmd = &cobra.Command{
 
 		w, err := wallet.NewWallet(
 			[]byte("0.0.1"),
-			validator.NewLightValidator(),
+			validator.NewLightValidator(hash.NewSHA256()),
 			ecdsaSha256Signer,
 			sha256Ripemd160Hasher,
 		)
