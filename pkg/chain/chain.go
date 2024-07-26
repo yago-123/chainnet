@@ -12,9 +12,9 @@ import (
 )
 
 type Blockchain struct {
-	Chain         []string
-	lastBlockHash []byte
-	headers       map[string]kernel.BlockHeader
+	lastBlockHash       []byte
+	headers             map[string]kernel.BlockHeader
+	blockTxsBloomFilter map[string]string
 
 	consensus consensus.Consensus
 	storage   storage.Storage
@@ -32,7 +32,6 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage st
 	}
 
 	return &Blockchain{
-		Chain:         []string{},
 		lastBlockHash: lastBlock.Hash,
 		headers:       map[string]kernel.BlockHeader{},
 		consensus:     consensus,
@@ -62,15 +61,16 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 		return fmt.Errorf("block validation failed: %w", err)
 	}
 
-	// ... perform more checks ...
+	// persist block header, once the header has been persisted the block has been commited to the chain
+	if err := bc.storage.PersistHeader(block.Hash, *block.Header); err != nil {
+		return fmt.Errorf("block header persistence failed: %w", err)
+	}
 
-	// store block header in storage
+	// update the last block and save the block header
+	bc.lastBlockHash = block.Hash
 	bc.headers[string(block.Hash)] = *block.Header
 
-	// set last block
-	bc.lastBlockHash = block.Hash
-
-	// notify observers of new block
+	// notify observers of a new block added
 	bc.subject.NotifyBlockAdded(block)
 
 	return nil
