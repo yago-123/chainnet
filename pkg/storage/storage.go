@@ -9,6 +9,8 @@ const (
 	LastHeaderKey  = "lastheader"
 	// LastBlockHashKey is updated when persisting a new block header
 	LastBlockHashKey = "lastblockhash"
+
+	StorageObserverID = "storage"
 )
 
 type Storage interface {
@@ -39,6 +41,10 @@ type Storage interface {
 	RetrieveBlockByHash(hash []byte) (*kernel.Block, error)
 	// RetrieveHeaderByHash retrieves the block header that corresponds to the block hash
 	RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error)
+	// ID returns the key StorageObserverID used for running Observer code
+	ID() string
+	// OnBlockAddition called when a new block is added to the chain, in the case of storage must be async
+	OnBlockAddition(block *kernel.Block)
 	// Close finishes the connection with the DB
 	Close() error
 }

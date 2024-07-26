@@ -275,6 +275,19 @@ func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, erro
 	return bolt.encoding.DeserializeHeader(headerBytes)
 }
 
+func (bolt *BoltDB) ID() string {
+	return StorageObserverID
+}
+
+func (bolt *BoltDB) OnBlockAddition(block *kernel.Block) {
+	go func() {
+		err := bolt.PersistBlock(*block)
+		if err != nil {
+			// todo(): add logging about the issue, if this fails, will eventually be pulled and stored again by P2P
+		}
+	}()
+}
+
 func (bolt *BoltDB) Close() error {
 	return bolt.db.Close()
 }

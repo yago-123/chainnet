@@ -66,6 +66,9 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 		return fmt.Errorf("block header persistence failed: %w", err)
 	}
 
+	// STARTING FROM HERE: the code can fail without becoming an issue, the header has been already commited
+	// no need to store the block itself, will be commited to storage as part of the observer call
+
 	// update the last block and save the block header
 	bc.lastBlockHash = block.Hash
 	bc.headers[string(block.Hash)] = *block.Header
