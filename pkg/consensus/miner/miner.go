@@ -139,7 +139,6 @@ func (m *Miner) OnBlockAddition(block *kernel.Block) {
 	// is queried directly in order to ensure that we get the latest value (as opposed to retrieving from storage,
 	// given that it may have not been written yet)
 	m.blockHeight = m.chain.GetLastHeight() + 1
-	m.MineBlock()
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees

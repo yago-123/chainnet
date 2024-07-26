@@ -48,6 +48,6 @@ func (so *SubjectObserver) NotifyBlockAdded(block *kernel.Block) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
 	for _, observer := range so.observers {
-		go observer.OnBlockAddition(block)
+		observer.OnBlockAddition(block)
 	}
 }
