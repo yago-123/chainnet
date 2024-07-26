@@ -6,7 +6,10 @@ import (
 	"fmt"
 )
 
-const BloomFilterSize = 32
+const (
+	BloomObserverID = "bloomfilter"
+	BloomFilterSize = 32
+)
 
 type BlockBloomFilter struct {
 	bloom map[string][]bool
@@ -34,4 +37,12 @@ func (bf *BlockBloomFilter) PresentInBlock(txID, blockID []byte) (bool, error) {
 	}
 
 	return false, fmt.Errorf("block %s not found in bloom filter", string(blockID))
+}
+
+func (bf *BlockBloomFilter) ID() string {
+	return BloomObserverID
+}
+
+func (bf *BlockBloomFilter) OnBlockAddition(_ *kernel.Block) {
+
 }
