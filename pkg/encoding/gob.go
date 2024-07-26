@@ -38,6 +38,30 @@ func (gobenc *GobEncoder) DeserializeBlock(data []byte) (*kernel.Block, error) {
 	return &b, nil
 }
 
+func (gobenc *GobEncoder) SerializeHeader(bh kernel.BlockHeader) ([]byte, error) {
+	var result bytes.Buffer
+
+	encoder := gob.NewEncoder(&result)
+	err := encoder.Encode(bh)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error serializing block header: %w", err)
+	}
+
+	return result.Bytes(), nil
+}
+
+func (gobenc *GobEncoder) DeserializeHeader(data []byte) (*kernel.BlockHeader, error) {
+	var bh kernel.BlockHeader
+
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&bh)
+	if err != nil {
+		return &kernel.BlockHeader{}, fmt.Errorf("error deserializing block header: %w", err)
+	}
+
+	return &bh, nil
+}
+
 func (gobenc *GobEncoder) SerializeTransaction(tx kernel.Transaction) ([]byte, error) {
 	var result bytes.Buffer
 

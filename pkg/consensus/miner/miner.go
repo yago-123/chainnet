@@ -14,6 +14,8 @@ const (
 	InitialCoinbaseReward = 50
 	HalvingInterval       = 210000
 	MaxNumberHalvings     = 64
+	// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
+	AdjustDifficultyHeight = 2016
 
 	BlockVersion = "0.0.1"
 

@@ -20,7 +20,7 @@ func main() {
 
 	cfg := config.NewConfig(logrus.New(), DifficultyPoW, MaxNoncePoW, baseURL)
 	// Initialize your blockchain and other components
-	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-bucket", encoding.NewGobEncoder())
+	bolt, err := storage.NewBoltDB("_fixture/chainnet-store", "chainnet-block-bucket", "chainnet-header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Errorf("Failed to initialize BoltDB: %s", err)
 	}

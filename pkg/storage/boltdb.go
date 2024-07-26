@@ -13,30 +13,37 @@ const (
 	BoltDBCreationMode = 0600
 	BoltDBTimeout      = 5 * time.Second
 
-	LastBlockKey  = "lastblock"
-	FirstBlockKey = "firstblock"
+	LastBlockKey   = "lastblock"
+	FirstBlockKey  = "firstblock"
+	LastHeaderKey  = "lastheader"
+	FirstHeaderKey = "firstheader"
 )
 
 type BoltDB struct {
-	db     *boltdb.DB
-	bucket string
+	db           *boltdb.DB
+	blockBucket  string
+	headerBucket string
 
 	encoding encoding.Encoding
 }
 
-func NewBoltDB(dbFile string, bucket string, encoding encoding.Encoding) (*BoltDB, error) {
+func NewBoltDB(dbFile, blockBucket, headerBucket string, encoding encoding.Encoding) (*BoltDB, error) {
 	db, err := boltdb.Open(dbFile, BoltDBCreationMode, &boltdb.Options{Timeout: BoltDBTimeout})
 	if err != nil {
 		return nil, fmt.Errorf("error opening bolt storage: %w", err)
 	}
-	return &BoltDB{db, bucket, encoding}, nil
+	return &BoltDB{
+		db:           db,
+		blockBucket:  blockBucket,
+		headerBucket: headerBucket,
+		encoding:     encoding}, nil
 }
 
 func (bolt *BoltDB) NumberOfBlocks() (uint, error) {
 	var numKeys uint
 
 	err := bolt.db.View(func(tx *boltdb.Tx) error {
-		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
 		if exists {
 			numKeys = uint(bucket.Stats().KeyN)
 		}
@@ -55,15 +62,15 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 	}
 
 	err = bolt.db.Update(func(tx *boltdb.Tx) error {
-		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
-		// create bucket if does not exist yet
+		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
+		// create blockBucket if does not exist yet
 		if !exists {
-			bucket, err = tx.CreateBucket([]byte(bolt.bucket))
+			bucket, err = tx.CreateBucket([]byte(bolt.blockBucket))
 			if err != nil {
-				return fmt.Errorf("error creating bucket: %w", err)
+				return fmt.Errorf("error creating blockBucket: %w", err)
 			}
 
-			// if the bucket did not exist, this is the genesis block
+			// if the blockBucket did not exist, this is the genesis block
 			// todo() handle this part when p2p and state restoration is tackled
 			err = bucket.Put([]byte(FirstBlockKey), dataBlock)
 			if err != nil {
@@ -89,14 +96,55 @@ func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
 	return err
 }
 
+func (bolt *BoltDB) PersistHeader(blockHash []byte, blockHeader kernel.BlockHeader) error {
+	var err error
+
+	dataHeader, err := bolt.encoding.SerializeHeader(blockHeader)
+	if err != nil {
+		return fmt.Errorf("error serializing block header: %w", err)
+	}
+
+	err = bolt.db.Update(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		// create headerBucket if does not exist yet
+		if !exists {
+			bucket, err = tx.CreateBucket([]byte(bolt.headerBucket))
+			if err != nil {
+				return fmt.Errorf("error creating header bucket: %w", err)
+			}
+
+			// if the headerBucket does not exist, this is the genesis block header
+			err = bucket.Put([]byte(FirstHeaderKey), dataHeader)
+			if err != nil {
+				return fmt.Errorf("error writing first header %s: %w", string(blockHash), err)
+			}
+		}
+
+		// add the new k/v
+		err = bucket.Put(blockHash, dataHeader)
+		if err != nil {
+			return fmt.Errorf("error writing block %s: %w", string(blockHash), err)
+		}
+
+		// update key pointing to last header
+		err = bucket.Put([]byte(LastHeaderKey), dataHeader)
+		if err != nil {
+			return fmt.Errorf("error writing last header %s: %w", string(blockHash), err)
+		}
+
+		return nil
+	})
+	return err
+}
+
 func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	var err error
 	var lastBlock []byte
 
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
-		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return fmt.Errorf("error getting last block: bucket %s does not exist", bolt.bucket)
+			return fmt.Errorf("error getting last block: blockBucket %s does not exist", bolt.blockBucket)
 		}
 
 		lastBlock = bucket.Get([]byte(LastBlockKey))
@@ -115,9 +163,9 @@ func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
 	var genesisBlock []byte
 
 	err := bolt.db.View(func(tx *boltdb.Tx) error {
-		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return fmt.Errorf("error getting genesis block: bucket %s does not exist", bolt.bucket)
+			return fmt.Errorf("error getting genesis block: blockBucket %s does not exist", bolt.blockBucket)
 		}
 
 		genesisBlock = bucket.Get([]byte(FirstBlockKey))
@@ -136,9 +184,9 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	var err error
 	var blockBytes []byte
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
-		exists, bucket := bolt.bucketExists(bolt.bucket, tx)
+		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return fmt.Errorf("error retrieving block %s: bucket %s does not exist", string(hash), bolt.bucket)
+			return fmt.Errorf("error retrieving block %s: block bucket %s does not exist", string(hash), bolt.blockBucket)
 		}
 
 		blockBytes = bucket.Get(hash)
@@ -151,6 +199,27 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	}
 
 	return bolt.encoding.DeserializeBlock(blockBytes)
+}
+
+func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error) {
+	var err error
+	var headerBytes []byte
+	err = bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		if !exists {
+			return fmt.Errorf("error retrieving block %s: header bucket %s does not exist", string(hash), bolt.headerBucket)
+		}
+
+		headerBytes = bucket.Get(hash)
+
+		return nil
+	})
+
+	if err != nil {
+		return &kernel.BlockHeader{}, err
+	}
+
+	return bolt.encoding.DeserializeHeader(headerBytes)
 }
 
 func (bolt *BoltDB) Close() error {

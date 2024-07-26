@@ -86,7 +86,7 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 		for _, utxo := range utxos {
 			// if there is match, check that the signature is valid
 			if utxo.EqualInput(vin) {
-				// assume is P2PK only for now
+				// todo(): assume is P2PK only for now
 
 				// check that the signature is valid for unlocking the UTXO
 				sigCheck, err := hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
