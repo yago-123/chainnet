@@ -11,11 +11,6 @@ type MockStorage struct {
 	mock.Mock
 }
 
-func (ms *MockStorage) NumberOfBlocks() (uint, error) {
-	args := ms.Called()
-	return args.Get(0).(uint), args.Error(1)
-}
-
 func (ms *MockStorage) PersistBlock(block kernel.Block) error {
 	args := ms.Called(block)
 	return args.Error(0)
@@ -34,6 +29,11 @@ func (ms *MockStorage) GetLastBlock() (*kernel.Block, error) {
 func (ms *MockStorage) GetLastHeader() (*kernel.BlockHeader, error) {
 	args := ms.Called()
 	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
+}
+
+func (ms *MockStorage) GetLastBlockHash() ([]byte, error) {
+	args := ms.Called()
+	return args.Get(0).([]byte), args.Error(1)
 }
 
 func (ms *MockStorage) GetGenesisBlock() (*kernel.Block, error) {

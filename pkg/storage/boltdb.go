@@ -12,11 +12,6 @@ import (
 const (
 	BoltDBCreationMode = 0600
 	BoltDBTimeout      = 5 * time.Second
-
-	LastBlockKey   = "lastblock"
-	FirstBlockKey  = "firstblock"
-	LastHeaderKey  = "lastheader"
-	FirstHeaderKey = "firstheader"
 )
 
 type BoltDB struct {
@@ -37,20 +32,6 @@ func NewBoltDB(dbFile, blockBucket, headerBucket string, encoding encoding.Encod
 		blockBucket:  blockBucket,
 		headerBucket: headerBucket,
 		encoding:     encoding}, nil
-}
-
-func (bolt *BoltDB) NumberOfBlocks() (uint, error) {
-	var numKeys uint
-
-	err := bolt.db.View(func(tx *boltdb.Tx) error {
-		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
-		if exists {
-			numKeys = uint(bucket.Stats().KeyN)
-		}
-		return nil
-	})
-
-	return numKeys, err
 }
 
 func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
@@ -132,6 +113,13 @@ func (bolt *BoltDB) PersistHeader(blockHash []byte, blockHeader kernel.BlockHead
 			return fmt.Errorf("error writing last header %s: %w", string(blockHash), err)
 		}
 
+		// update key pointing to last block hash, this value is updated when persisting headers only given that
+		// the first persisted field when adding a block to the chain is the header
+		err = bucket.Put([]byte(LastBlockHashKey), blockHash)
+		if err != nil {
+			return fmt.Errorf("error writing last block hash %s: %w", string(blockHash), err)
+		}
+
 		return nil
 	})
 	return err
@@ -179,6 +167,28 @@ func (bolt *BoltDB) GetLastHeader() (*kernel.BlockHeader, error) {
 	}
 
 	return bolt.encoding.DeserializeHeader(lastHeader)
+}
+
+func (bolt *BoltDB) GetLastBlockHash() ([]byte, error) {
+	var err error
+	var lastBlockHash []byte
+
+	err = bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		if !exists {
+			return fmt.Errorf("error getting last block hash: header bucket %s does not exist", bolt.headerBucket)
+		}
+
+		lastBlockHash = bucket.Get([]byte(LastBlockHashKey))
+
+		return nil
+	})
+
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return lastBlockHash, nil
 }
 
 func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
