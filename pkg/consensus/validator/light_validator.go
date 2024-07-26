@@ -48,6 +48,11 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 	return nil
 }
 
+func (lv *LValidator) ValidateHeader(bh *kernel.BlockHeader) error {
+	// todo(): implement
+	return nil
+}
+
 // validateInputsDontMatch checks that the inputs don't match creating double spending problems
 func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) error {
 	for i := range len(tx.Vin) {
