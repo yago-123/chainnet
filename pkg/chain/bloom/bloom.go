@@ -43,6 +43,7 @@ func (bf *BlockBloomFilter) ID() string {
 	return BloomObserverID
 }
 
-func (bf *BlockBloomFilter) OnBlockAddition(_ *kernel.Block) {
-
+func (bf *BlockBloomFilter) OnBlockAddition(block *kernel.Block) {
+	// calculate the bloom filter of the new block
+	bf.AddBlock(block)
 }

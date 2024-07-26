@@ -25,10 +25,15 @@ const (
 type Miner struct {
 	mempool MemPool
 	// import hasher type instead of directly hasher because will be used in multi-threaded scenario
-	hasherType   hash.HasherType
+	hasherType hash.HasherType
+
 	minerAddress string
 	blockHeight  uint
 	target       uint
+
+	isMining bool
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 func NewMiner(minerAddress string, hasherType hash.HasherType) *Miner {
@@ -41,13 +46,31 @@ func NewMiner(minerAddress string, hasherType hash.HasherType) *Miner {
 	}
 }
 
-func (m *Miner) AdjustMiningDifficulty() {
+func (m *Miner) AdjustMiningDifficulty() uint {
 	// todo(): implement mining difficulty adjustment
+	return AdjustDifficultyHeight
+}
+
+func (m *Miner) CancelMining() {
+	// todo(): take into account the block height before canceling
+	if m.isMining {
+		m.cancel()
+		m.isMining = false
+	}
 }
 
 // MineBlock assemble, generates and mines a new block
-func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
+func (m *Miner) MineBlock() (*kernel.Block, error) {
 	var err error
+
+	if m.isMining {
+		// impossible case in theory
+		return nil, fmt.Errorf("miner is already mining ")
+	}
+
+	// create context for canceling mining if needed (check OnBlockAddition observer func)
+	m.isMining = true
+	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	// retrieve transactions that are going to be placed inside the block
 	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(kernel.MaxNumberTxsPerBlock)
@@ -69,12 +92,12 @@ func (m *Miner) MineBlock(ctx context.Context) (*kernel.Block, error) {
 	// start mining process
 	for {
 		select {
-		case <-ctx.Done():
+		case <-m.ctx.Done():
 			// abort mining if the context is cancelled
 			return nil, fmt.Errorf("mining cancelled by context")
 		default:
 			// start mining the block (proof of work)
-			pow, errPow := NewProofOfWork(ctx, blockHeader, m.hasherType)
+			pow, errPow := NewProofOfWork(m.ctx, blockHeader, m.hasherType)
 			if errPow != nil {
 				return nil, fmt.Errorf("unable to create proof of work: %w", errPow)
 			}
@@ -102,8 +125,13 @@ func (m *Miner) ID() string {
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *Miner) OnBlockAddition(_ *kernel.Block) {
+func (m *Miner) OnBlockAddition(block *kernel.Block) {
+	// cancel previous mining
+	m.CancelMining()
 
+	// start new mining process
+	m.blockHeight = block.Header.Height + 1
+	m.MineBlock()
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
