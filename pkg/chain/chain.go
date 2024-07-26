@@ -76,10 +76,12 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-func (bc *Blockchain) GetBlock(hash string) (*kernel.Block, error) {
-	return bc.storage.RetrieveBlockByHash([]byte(hash))
-}
-
+// GetLastBlockHash returns the latest block hash
 func (bc *Blockchain) GetLastBlockHash() []byte {
 	return bc.lastBlockHash
+}
+
+// GetLastHeight returns the latest block height
+func (bc *Blockchain) GetLastHeight() uint {
+	return bc.headers[string(bc.lastBlockHash)].Height
 }

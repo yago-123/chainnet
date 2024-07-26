@@ -1,6 +1,7 @@
 package miner
 
 import (
+	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
@@ -26,6 +27,7 @@ type Miner struct {
 	mempool MemPool
 	// import hasher type instead of directly hasher because will be used in multi-threaded scenario
 	hasherType hash.HasherType
+	chain      *blockchain.Blockchain
 
 	minerAddress string
 	blockHeight  uint
@@ -36,10 +38,11 @@ type Miner struct {
 	cancel   context.CancelFunc
 }
 
-func NewMiner(minerAddress string, hasherType hash.HasherType) *Miner {
+func NewMiner(minerAddress string, hasherType hash.HasherType, chain *blockchain.Blockchain) *Miner {
 	return &Miner{
 		mempool:      NewMemPool(),
 		hasherType:   hasherType,
+		chain:        chain,
 		minerAddress: minerAddress,
 		blockHeight:  0,
 		target:       1,
@@ -112,14 +115,17 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 			blockHeader.SetNonce(nonce)
 			block := kernel.NewBlock(blockHeader, txs, blockHash)
 
-			// todo(): validate block before returning it?
+			// add the block to the chain
+			if err := m.chain.AddBlock(block); err != nil {
+				return nil, fmt.Errorf("unable to add block to the chain: %w", err)
+			}
 
 			return block, nil
 		}
 	}
 }
 
-// Id returns the observer id
+// ID returns the observer id
 func (m *Miner) ID() string {
 	return MinerObserverID
 }
@@ -129,8 +135,10 @@ func (m *Miner) OnBlockAddition(block *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
 
-	// start new mining process
-	m.blockHeight = block.Header.Height + 1
+	// start new mining process retrieving the last height specifically from the blockchain itself, the value
+	// is queried directly in order to ensure that we get the latest value (as opposed to retrieving from storage,
+	// given that it may have not been written yet)
+	m.blockHeight = m.chain.GetLastHeight() + 1
 	m.MineBlock()
 }
 
