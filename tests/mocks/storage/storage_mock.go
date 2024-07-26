@@ -31,9 +31,19 @@ func (ms *MockStorage) GetLastBlock() (*kernel.Block, error) {
 	return args.Get(0).(*kernel.Block), args.Error(1)
 }
 
+func (ms *MockStorage) GetLastHeader() (*kernel.BlockHeader, error) {
+	args := ms.Called()
+	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
+}
+
 func (ms *MockStorage) GetGenesisBlock() (*kernel.Block, error) {
 	args := ms.Called()
 	return args.Get(0).(*kernel.Block), args.Error(1)
+}
+
+func (ms *MockStorage) GetGenesisHeader() (*kernel.BlockHeader, error) {
+	args := ms.Called()
+	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
 }
 
 func (ms *MockStorage) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {

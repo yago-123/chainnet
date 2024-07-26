@@ -9,8 +9,13 @@ type Storage interface {
 	PersistHeader(blockHash []byte, blockHeader kernel.BlockHeader) error
 
 	GetLastBlock() (*kernel.Block, error)
+	GetLastHeader() (*kernel.BlockHeader, error)
+
 	GetGenesisBlock() (*kernel.Block, error)
+	GetGenesisHeader() (*kernel.BlockHeader, error)
+
 	RetrieveBlockByHash(hash []byte) (*kernel.Block, error)
 	RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error)
+
 	Close() error
 }

@@ -144,7 +144,7 @@ func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return fmt.Errorf("error getting last block: blockBucket %s does not exist", bolt.blockBucket)
+			return fmt.Errorf("error getting last block: block bucket %s does not exist", bolt.blockBucket)
 		}
 
 		lastBlock = bucket.Get([]byte(LastBlockKey))
@@ -157,6 +157,28 @@ func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	}
 
 	return bolt.encoding.DeserializeBlock(lastBlock)
+}
+
+func (bolt *BoltDB) GetLastHeader() (*kernel.BlockHeader, error) {
+	var err error
+	var lastHeader []byte
+
+	err = bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		if !exists {
+			return fmt.Errorf("error getting last header: header bucket %s does not exist", bolt.headerBucket)
+		}
+
+		lastHeader = bucket.Get([]byte(LastHeaderKey))
+
+		return nil
+	})
+
+	if err != nil {
+		return &kernel.BlockHeader{}, err
+	}
+
+	return bolt.encoding.DeserializeHeader(lastHeader)
 }
 
 func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
@@ -178,6 +200,27 @@ func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
 	}
 
 	return bolt.encoding.DeserializeBlock(genesisBlock)
+}
+
+func (bolt *BoltDB) GetGenesisHeader() (*kernel.BlockHeader, error) {
+	var genesisHeader []byte
+
+	err := bolt.db.View(func(tx *boltdb.Tx) error {
+		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		if !exists {
+			return fmt.Errorf("error getting genesis header: header bucket %s does not exist", bolt.headerBucket)
+		}
+
+		genesisHeader = bucket.Get([]byte(FirstHeaderKey))
+
+		return nil
+	})
+
+	if err != nil {
+		return &kernel.BlockHeader{}, err
+	}
+
+	return bolt.encoding.DeserializeHeader(genesisHeader)
 }
 
 func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
