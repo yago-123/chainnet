@@ -92,15 +92,16 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 		outputs,
 	)
 
+	// unlock the funds from the UTXOs
+	tx, err = w.UnlockTxFunds(tx, utxos)
+
+	// generate tx hash
 	txHash, err := util.CalculateTxHash(tx, w.hasher)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
 
 	tx.SetID(txHash)
-
-	// unlock the funds from the UTXOs
-	tx, err = w.UnlockTxFunds(tx, utxos)
 
 	if err != nil {
 		return &kernel.Transaction{}, err
