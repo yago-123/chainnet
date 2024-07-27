@@ -14,16 +14,24 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"chainnet/pkg/wallet"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
+
+// temporary constant while the mining difficulty is adjusted
+const MiningInterval = 2 * time.Minute
 
 func main() {
 	var block *kernel.Block
 	logger := logrus.New()
 
+	// general consensus hasher (tx, block hashes...)
+	consensusHasherType := hash.SHA256
+	// todo(): add consensusSignatureType
+
 	// create wallet address hasher
-	sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+	walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
 		logger.Fatalf("Error creating multi-hash configuration: %s", err)
 	}
@@ -31,9 +39,10 @@ func main() {
 	// create new wallet for storing mining rewards
 	w, err := wallet.NewWallet(
 		[]byte("1"),
-		validator.NewLightValidator(hash.NewSHA256()),
+		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 		crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()),
-		sha256Ripemd160Hasher,
+		walletSha256Ripemd160Hasher,
+		hash.GetHasher(consensusHasherType),
 	)
 	if err != nil {
 		logger.Fatalf("Error creating new wallet: %s", err)
@@ -55,7 +64,14 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		&config.Config{},
 		boltdb,
-		validator.NewHeavyValidator(validator.NewLightValidator(sha256Ripemd160Hasher), explorer.NewExplorer(boltdb), crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()), sha256Ripemd160Hasher),
+		validator.NewHeavyValidator(
+			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+			explorer.NewExplorer(boltdb),
+			crypto.NewHashedSignature(
+				sign.NewECDSASignature(), hash.NewSHA256(),
+			),
+			hash.GetHasher(consensusHasherType),
+		),
 		subjectObserver,
 	)
 	if err != nil {
@@ -75,9 +91,12 @@ func main() {
 		block, err = mine.MineBlock()
 		if err != nil {
 			logger.Errorf("Error mining block: %s", err)
+			time.Sleep(MiningInterval)
+
 			continue
 		}
 
 		logger.Infof("Mined block: %s", block.Hash)
+		time.Sleep(MiningInterval)
 	}
 }
