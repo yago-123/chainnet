@@ -31,8 +31,14 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, validator consen
 		return nil, fmt.Errorf("error retrieving last header: %w", err)
 	}
 
+	// todo(): get the hash from the upper last header directly
+	lastBlockHash, err := storage.GetLastBlockHash()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving last block hash: %w", err)
+	}
+
 	return &Blockchain{
-		lastBlockHash: lastHeader.PrevBlockHash,
+		lastBlockHash: lastBlockHash,
 		lastHeight:    lastHeader.Height,
 		headers:       map[string]kernel.BlockHeader{},
 		storage:       storage,
