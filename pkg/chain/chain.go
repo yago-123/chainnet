@@ -13,6 +13,7 @@ import (
 
 type Blockchain struct {
 	lastBlockHash []byte
+	lastHeight    uint
 	headers       map[string]kernel.BlockHeader
 	// blockTxsBloomFilter map[string]string
 
@@ -25,13 +26,14 @@ type Blockchain struct {
 }
 
 func NewBlockchain(cfg *config.Config, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
-	lastBlockHash, err := storage.GetLastBlockHash()
+	lastHeader, err := storage.GetLastHeader()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving last header: %w", err)
 	}
 
 	return &Blockchain{
-		lastBlockHash: lastBlockHash,
+		lastBlockHash: lastHeader.PrevBlockHash,
+		lastHeight:    lastHeader.Height,
 		headers:       map[string]kernel.BlockHeader{},
 		storage:       storage,
 		validator:     validator,

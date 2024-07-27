@@ -20,7 +20,7 @@ import (
 )
 
 // temporary constant while the mining difficulty is adjusted
-const MiningInterval = 2 * time.Minute
+const MiningInterval = 30 * time.Second
 
 func main() {
 	var block *kernel.Block
@@ -87,16 +87,25 @@ func main() {
 	subjectObserver.Register(mempool)
 
 	for {
+		time.Sleep(MiningInterval)
+
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
 			logger.Errorf("Error mining block: %s", err)
-			time.Sleep(MiningInterval)
-
 			continue
 		}
 
-		logger.Infof("Mined block: %x", block.Hash)
-		time.Sleep(MiningInterval)
+		if block.IsGenesisBlock() {
+			logger.Infof(
+				"Genesis block mined successfully: hash %x, height %d, target %d, nonce %d",
+				block.Hash, block.Header.Height, block.Header.Target, block.Header.Nonce,
+			)
+		}
+
+		logger.Infof(
+			"Block mined successfully: hash %x, previous hash %x, height %d, target %d, nonce %d",
+			block.Hash, block.Header.PrevBlockHash, block.Header.Height, block.Header.Target, block.Header.Nonce,
+		)
 	}
 }
