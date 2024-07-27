@@ -82,7 +82,12 @@ func TestMiner_MineBlock(t *testing.T) {
 		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
 
-	chain, err := blockchain.NewBlockchain(&config.Config{}, &mockStorage.MockStorage{}, consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
+	storage := &mockStorage.MockStorage{}
+	storage.
+		On("GetLastBlockHash").
+		Return([]byte{}, nil)
+
+	chain, err := blockchain.NewBlockchain(&config.Config{}, storage, consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -112,7 +117,11 @@ func TestMiner_MineBlock(t *testing.T) {
 }
 
 func TestMiner_createCoinbaseTransaction(t *testing.T) {
-	chain, err := blockchain.NewBlockchain(&config.Config{}, &mockStorage.MockStorage{}, consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
+	storage := &mockStorage.MockStorage{}
+	storage.
+		On("GetLastBlockHash").
+		Return([]byte{}, nil)
+	chain, err := blockchain.NewBlockchain(&config.Config{}, storage, consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
 	require.NoError(t, err)
 	miner := NewMiner([]byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 

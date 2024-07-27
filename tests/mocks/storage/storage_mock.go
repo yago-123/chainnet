@@ -17,8 +17,7 @@ func (ms *MockStorage) PersistBlock(block kernel.Block) error {
 }
 
 func (ms *MockStorage) PersistHeader(blockHash []byte, blockHeader kernel.BlockHeader) error {
-	args := ms.Called(blockHash, blockHeader)
-	return args.Error(0)
+	return nil
 }
 
 func (ms *MockStorage) GetLastBlock() (*kernel.Block, error) {
