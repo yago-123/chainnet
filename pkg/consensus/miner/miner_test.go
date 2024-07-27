@@ -79,7 +79,7 @@ func TestMiner_MineBlock(t *testing.T) {
 	miner := Miner{
 		mempool:      mempool,
 		hasherType:   hash.SHA256,
-		minerAddress: "minerAddress",
+		minerAddress: []byte("minerAddress"),
 		blockHeight:  0,
 		target:       16,
 	}

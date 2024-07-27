@@ -29,7 +29,7 @@ type Miner struct {
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
 
-	minerAddress string
+	minerAddress []byte
 	blockHeight  uint
 	target       uint
 
@@ -38,12 +38,12 @@ type Miner struct {
 	cancel   context.CancelFunc
 }
 
-func NewMiner(minerAddress string, hasherType hash.HasherType, chain *blockchain.Blockchain) *Miner {
+func NewMiner(publicKey []byte, hasherType hash.HasherType, chain *blockchain.Blockchain) *Miner {
 	return &Miner{
 		mempool:      NewMemPool(),
 		hasherType:   hasherType,
 		chain:        chain,
-		minerAddress: minerAddress,
+		minerAddress: publicKey,
 		blockHeight:  0,
 		target:       1,
 	}
@@ -131,7 +131,7 @@ func (m *Miner) ID() string {
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *Miner) OnBlockAddition(block *kernel.Block) {
+func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
 
@@ -152,7 +152,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	}
 
 	// creates transaction and calculate hash
-	tx := kernel.NewCoinbaseTransaction(m.minerAddress, reward, collectedFee)
+	tx := kernel.NewCoinbaseTransaction(string(m.minerAddress), reward, collectedFee)
 	txHash, err := util.CalculateTxHash(tx, hash.GetHasher(m.hasherType))
 	if err != nil {
 		return nil, fmt.Errorf("unable to calculate transaction hash: %w", err)
