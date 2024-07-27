@@ -89,7 +89,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 
 	// todo(): handle prevBlockHash and block height
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, []byte("prevBlockHash"), m.target)
+	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, m.chain.GetLastBlockHash(), m.target)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
