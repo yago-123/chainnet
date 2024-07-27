@@ -4,6 +4,8 @@ import (
 	"chainnet/config"
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/util"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"fmt"
@@ -12,11 +14,11 @@ import (
 )
 
 type Blockchain struct {
-	lastBlockHash       []byte
-	headers             map[string]kernel.BlockHeader
-	blockTxsBloomFilter map[string]string
+	lastBlockHash []byte
+	lastHeight    uint
+	headers       map[string]kernel.BlockHeader
+	// blockTxsBloomFilter map[string]string
 
-	consensus consensus.Consensus
 	storage   storage.Storage
 	validator consensus.HeavyValidator
 	subject   *observer.SubjectObserver
@@ -25,16 +27,41 @@ type Blockchain struct {
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
-	lastBlock, err := storage.GetLastBlock()
+func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
+	var err error
+	var lastHeight uint
+	var lastBlockHash []byte
+
+	headers := make(map[string]kernel.BlockHeader)
+
+	// retrieve the last header stored
+	lastHeader, err := storage.GetLastHeader()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving last header: %w", err)
+	}
+
+	// if exists a last header, sync the actual status of the chain
+	if !lastHeader.IsEmpty() {
+		// specify the current height
+		lastHeight = lastHeader.Height + 1
+
+		// get the last block hash by hashing the latest block header
+		lastBlockHash, err = util.CalculateBlockHash(lastHeader, hasher)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving last block hash: %w", err)
+		}
+
+		// reload the headers into memory
+		headers, err = reconstructHeaders(lastBlockHash)
+		if err != nil {
+			return nil, fmt.Errorf("error reconstructing headers: %w", err)
+		}
 	}
 
 	return &Blockchain{
-		lastBlockHash: lastBlock.Hash,
-		headers:       map[string]kernel.BlockHeader{},
-		consensus:     consensus,
+		lastBlockHash: lastBlockHash,
+		lastHeight:    lastHeight,
+		headers:       headers,
 		storage:       storage,
 		validator:     validator,
 		subject:       subject,
@@ -70,6 +97,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	// no need to store the block itself, will be commited to storage as part of the observer call
 
 	// update the last block and save the block header
+	bc.lastHeight++
 	bc.lastBlockHash = block.Hash
 	bc.headers[string(block.Hash)] = *block.Header
 
@@ -86,5 +114,9 @@ func (bc *Blockchain) GetLastBlockHash() []byte {
 
 // GetLastHeight returns the latest block height
 func (bc *Blockchain) GetLastHeight() uint {
-	return bc.headers[string(bc.lastBlockHash)].Height
+	return bc.lastHeight
+}
+
+func reconstructHeaders(_ []byte) (map[string]kernel.BlockHeader, error) {
+	return map[string]kernel.BlockHeader{}, nil
 }

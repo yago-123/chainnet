@@ -42,7 +42,7 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 		},
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithoutCoinbase))
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithTwoCoinbase))
@@ -66,7 +66,7 @@ func TestHValidator_validateNoDoubleSpendingInsideBlock(t *testing.T) {
 		},
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
 	require.Error(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithDoubleSpending))
 	require.NoError(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithoutDoubleSpending))
 }
@@ -90,7 +90,7 @@ func TestHValidator_validateBlockHash(t *testing.T) {
 		Hash:         blockHash,
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	// check that the block hash corresponds to the target
 	require.NoError(t, hvalidator.validateBlockHash(block))
@@ -105,13 +105,19 @@ func TestHValidator_validatePreviousBlockMatchCurrentLatest(t *testing.T) {
 	mockStore.
 		On("GetLastBlock").
 		Return(&kernel.Block{Hash: []byte("block-1")}, nil)
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(mockStore), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(mockStore), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	// check that the previous block hash of the block matches the latest block
-	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1")}}))
+	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 1}}))
 
 	// check that the previous block hash of the block does not match the latest block
-	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-2")}}))
+	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-2"), Height: 1}}))
+
+	// check that genesis block does not validate the previous block hash
+	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte{}, Height: 0}}))
+
+	// check that genesis block requires empty previous block hash
+	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 0}}))
 }
 
 func TestHValidator_validateBlockHeight(t *testing.T) {
@@ -120,7 +126,7 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 		On("GetLastBlock").
 		Return(&kernel.Block{Header: &kernel.BlockHeader{Height: 10}}, nil)
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(mockStore), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(mockStore), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	// check that the block height matches the current chain height
 	require.NoError(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 11}}))
@@ -170,7 +176,7 @@ func TestHValidator_validateMerkleTree(t *testing.T) {
 		Transactions: txs,
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	// verify correct merkle root does not generate error
 	require.NoError(t, hvalidator.validateMerkleTree(block))

@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
@@ -18,34 +19,36 @@ const (
 	// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
 	AdjustDifficultyHeight = 2016
 
-	BlockVersion = "0.0.1"
+	BlockVersion = "1"
 
 	MinerObserverID = "miner"
 )
 
 type Miner struct {
-	mempool MemPool
-	// import hasher type instead of directly hasher because will be used in multi-threaded scenario
+	mempool *MemPool
+	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
 
 	minerAddress []byte
-	blockHeight  uint
 	target       uint
 
 	isMining bool
 	ctx      context.Context
 	cancel   context.CancelFunc
+
+	cfg *config.Config
 }
 
-func NewMiner(publicKey []byte, hasherType hash.HasherType, chain *blockchain.Blockchain) *Miner {
+func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, hasherType hash.HasherType) *Miner {
 	return &Miner{
-		mempool:      NewMemPool(),
+		mempool:      mempool,
 		hasherType:   hasherType,
 		chain:        chain,
 		minerAddress: publicKey,
-		blockHeight:  0,
+		isMining:     false,
 		target:       1,
+		cfg:          cfg,
 	}
 }
 
@@ -66,6 +69,7 @@ func (m *Miner) CancelMining() {
 func (m *Miner) MineBlock() (*kernel.Block, error) {
 	var err error
 
+	defer m.CancelMining()
 	if m.isMining {
 		// impossible case in theory
 		return nil, fmt.Errorf("miner is already mining ")
@@ -79,7 +83,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(kernel.MaxNumberTxsPerBlock)
 
 	// generate the coinbase transaction and add to the list of transactions
-	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
+	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.chain.GetLastHeight())
 	if err != nil {
 		return nil, fmt.Errorf("unable to create coinbase transaction: %w", err)
 	}
@@ -87,7 +91,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 
 	// todo(): handle prevBlockHash and block height
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, []byte("prevBlockHash"), m.target)
+	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash(), m.target)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
@@ -116,7 +120,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 			block := kernel.NewBlock(blockHeader, txs, blockHash)
 
 			// add the block to the chain
-			if err := m.chain.AddBlock(block); err != nil {
+			if err = m.chain.AddBlock(block); err != nil {
 				return nil, fmt.Errorf("unable to add block to the chain: %w", err)
 			}
 
@@ -134,11 +138,6 @@ func (m *Miner) ID() string {
 func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
-
-	// start new mining process retrieving the last height specifically from the blockchain itself, the value
-	// is queried directly in order to ensure that we get the latest value (as opposed to retrieving from storage,
-	// given that it may have not been written yet)
-	m.blockHeight = m.chain.GetLastHeight() + 1
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees

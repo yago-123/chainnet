@@ -31,7 +31,8 @@ func NewBoltDB(dbFile, blockBucket, headerBucket string, encoding encoding.Encod
 		db:           db,
 		blockBucket:  blockBucket,
 		headerBucket: headerBucket,
-		encoding:     encoding}, nil
+		encoding:     encoding,
+	}, nil
 }
 
 func (bolt *BoltDB) PersistBlock(block kernel.Block) error {
@@ -153,11 +154,12 @@ func (bolt *BoltDB) GetLastHeader() (*kernel.BlockHeader, error) {
 
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
-		if !exists {
-			return fmt.Errorf("error getting last header: header bucket %s does not exist", bolt.headerBucket)
+		// if the bucket exists, at least one header has been written
+		if exists {
+			lastHeader = bucket.Get([]byte(LastHeaderKey))
 		}
 
-		lastHeader = bucket.Get([]byte(LastHeaderKey))
+		// if does not exist, genesis block have not been created yet
 
 		return nil
 	})
@@ -166,7 +168,13 @@ func (bolt *BoltDB) GetLastHeader() (*kernel.BlockHeader, error) {
 		return &kernel.BlockHeader{}, err
 	}
 
-	return bolt.encoding.DeserializeHeader(lastHeader)
+	// deserialize the header found
+	if len(lastHeader) > 0 {
+		return bolt.encoding.DeserializeHeader(lastHeader)
+	}
+
+	// return empty block if no header have been written yet
+	return &kernel.BlockHeader{}, nil
 }
 
 func (bolt *BoltDB) GetLastBlockHash() ([]byte, error) {
@@ -175,11 +183,14 @@ func (bolt *BoltDB) GetLastBlockHash() ([]byte, error) {
 
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		// if the last block hash does not exists yet, the genesis block has not been created yet
 		if !exists {
-			return fmt.Errorf("error getting last block hash: header bucket %s does not exist", bolt.headerBucket)
+			lastBlockHash = []byte{}
 		}
 
-		lastBlockHash = bucket.Get([]byte(LastBlockHashKey))
+		if exists {
+			lastBlockHash = bucket.Get([]byte(LastBlockHashKey))
+		}
 
 		return nil
 	})
@@ -285,6 +296,7 @@ func (bolt *BoltDB) OnBlockAddition(block *kernel.Block) {
 		err := bolt.PersistBlock(*block)
 		if err != nil {
 			// todo(): add logging about the issue, if this fails, will eventually be pulled and stored again by P2P
+			return
 		}
 	}()
 }

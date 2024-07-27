@@ -16,8 +16,8 @@ type MemPool struct {
 	pairs []txFeePair
 }
 
-func NewMemPool() MemPool {
-	return MemPool{}
+func NewMemPool() *MemPool {
+	return &MemPool{}
 }
 
 func (m MemPool) Len() int           { return len(m.pairs) }

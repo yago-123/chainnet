@@ -16,12 +16,12 @@ type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
 	lv       consensus.LightValidator
-	explorer explorer.Explorer
+	explorer *explorer.Explorer
 	signer   sign.Signature
 	hasher   hash.Hashing
 }
 
-func NewHeavyValidator(lv consensus.LightValidator, explorer explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
+func NewHeavyValidator(lv consensus.LightValidator, explorer *explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
 	return &HValidator{
 		lv:       lv,
 		explorer: explorer,
@@ -130,11 +130,11 @@ func (hv *HValidator) validateNumberOfCoinbaseTxs(b *kernel.Block) error {
 	}
 
 	if numCoinbases == 0 {
-		return fmt.Errorf("block %s has no coinbase transaction", string(b.Hash))
+		return fmt.Errorf("block %x has no coinbase transaction", b.Hash)
 	}
 
 	if numCoinbases > 1 {
-		return fmt.Errorf("block %s has more than one coinbase transaction", string(b.Hash))
+		return fmt.Errorf("block %x has more than one coinbase transaction", b.Hash)
 	}
 
 	return nil
@@ -161,27 +161,29 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 
 // validateBlockHash checks that the hash of the block is correct. Merkle tree hash is checked in validateMerkleTree func
 func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
-	blockHash, err := util.CalculateBlockHash(b.Header, hv.hasher)
-	if err != nil {
-		return err
-	}
-
-	if !bytes.Equal(blockHash, b.Hash) {
-		return fmt.Errorf("block %s has invalid hash, expected: %s", string(b.Hash), blockHash)
-	}
-
-	return nil
+	return util.VerifyBlockHash(b.Header, b.Hash, hv.hasher)
 }
 
 // validatePreviousBlockMatchCurrentLatest checks that the previous block hash of the block matches the latest block
 func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) error {
+	// if is genesis block and does not contain previous block hash, don't check previous block (does not exist)
+	if b.IsGenesisBlock() {
+		return nil
+	}
+
+	// if is height 0 but contains previous block hash, return error
+	if b.Header.Height == 0 && len(b.Header.PrevBlockHash) != 0 {
+		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %x", b.Header.PrevBlockHash)
+	}
+
+	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
 		return err
 	}
 
 	if !bytes.Equal(b.Header.PrevBlockHash, lastChainBlock.Hash) {
-		return fmt.Errorf("previous hash %s points to block different than latest in the chain %s", string(b.Header.PrevBlockHash), string(lastChainBlock.Hash))
+		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", b.Header.PrevBlockHash, lastChainBlock.Hash)
 	}
 
 	return nil
@@ -189,13 +191,18 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 
 // validateBlockHeight checks that the block height matches the current chain height
 func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
+	// if genesis block, don't validate block height
+	if b.IsGenesisBlock() {
+		return nil
+	}
+
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
 		return err
 	}
 
 	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
-		return fmt.Errorf("new block %s with height %d does not match current chain height %d", string(b.Hash), b.Header.Height, lastChainBlock.Header.Height)
+		return fmt.Errorf("new block %x with height %d does not match current chain height %d", b.Hash, b.Header.Height, lastChainBlock.Header.Height)
 	}
 
 	return nil
@@ -209,7 +216,7 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 	}
 
 	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {
-		return fmt.Errorf("block %s has invalid Merkle root", string(b.Hash))
+		return fmt.Errorf("block %x has invalid Merkle root", b.Hash)
 	}
 
 	return nil
@@ -217,16 +224,8 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 
 // validateBlockTarget checks that the block hash corresponds to the target
 func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
-	err := fmt.Errorf("block %s has hash %s that is smaller than the target %d", string(b.Hash), string(b.Hash), b.Header.Target)
-
-	if len(b.Hash) < int(b.Header.Target) {
-		return err
-	}
-
-	for i := 0; i < int(b.Header.Target); i++ {
-		if b.Hash[i] != 0 {
-			return err
-		}
+	if !util.IsFirstNBitsZero(b.Hash, b.Header.Target) {
+		return fmt.Errorf("block %x has invalid target %d", b.Hash, b.Header.Target)
 	}
 
 	return nil
