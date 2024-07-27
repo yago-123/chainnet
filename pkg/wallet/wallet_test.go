@@ -29,7 +29,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(&mockHash.MockHashing{}), &signer, &mockHash.MockHashing{}, &mockHash.MockHashing{})
+	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(&mockHash.FakeHashing{}), &signer, &mockHash.FakeHashing{}, &mockHash.FakeHashing{})
 	require.NoError(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
@@ -49,7 +49,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 	signer2.
 		On("NewKeyPair").
 		Return([]byte("pubkey-5"), []byte("privkey-5"), nil)
-	// wallet2, err := NewWallet([]byte("0.0.1"), miner.NewProofOfWork(1, hash.NewSHA256()), validator.NewLightValidator(), &signer2, &mockHash.MockHashing{})
+	// wallet2, err := NewWallet([]byte("0.0.1"), miner.NewProofOfWork(1, hash.NewSHA256()), validator.NewLightValidator(), &signer2, &mockHash.FakeHashing{})
 	// require.NoError(t, err)
 
 	// todo(): add script signature validator? probably depends on type of wallet: nespv, spv, full node wallet...
@@ -60,7 +60,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	var err error
 
-	hasher := &mockHash.MockHashing{}
+	hasher := &mockHash.FakeHashing{}
 	signer := mockSign.MockSign{}
 	signer.
 		On("NewKeyPair").

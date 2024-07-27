@@ -52,7 +52,7 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		}
 
 		// reload the headers into memory
-		headers, err = reconstructHeaders(lastBlockHash)
+		headers, err = reconstructHeaders(lastBlockHash, storage)
 		if err != nil {
 			return nil, fmt.Errorf("error reconstructing headers: %w", err)
 		}
@@ -117,6 +117,20 @@ func (bc *Blockchain) GetLastHeight() uint {
 	return bc.lastHeight
 }
 
-func reconstructHeaders(_ []byte) (map[string]kernel.BlockHeader, error) {
-	return map[string]kernel.BlockHeader{}, nil
+// reconstructHeaders
+func reconstructHeaders(lastBlockHash []byte, storage storage.Storage) (map[string]kernel.BlockHeader, error) {
+	headers := make(map[string]kernel.BlockHeader)
+
+	// todo(): move to explorer instead?
+	for len(lastBlockHash) != 0 {
+		blockHeader, err := storage.RetrieveHeaderByHash(lastBlockHash)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving block header %x: %w", lastBlockHash, err)
+		}
+
+		headers[string(lastBlockHash)] = *blockHeader
+		lastBlockHash = blockHeader.PrevBlockHash
+	}
+
+	return headers, nil
 }
