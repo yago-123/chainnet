@@ -94,6 +94,9 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 
 	// unlock the funds from the UTXOs
 	tx, err = w.UnlockTxFunds(tx, utxos)
+	if err != nil {
+		return &kernel.Transaction{}, err
+	}
 
 	// generate tx hash
 	txHash, err := util.CalculateTxHash(tx, w.hasher)
@@ -102,14 +105,9 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	}
 
 	tx.SetID(txHash)
-
-	if err != nil {
-		return &kernel.Transaction{}, err
-	}
-
 	// perform simple validations (light validator) before broadcasting the transaction
 	if err = w.validator.ValidateTxLight(tx); err != nil {
-		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %v", err)
+		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
 	}
 
 	return broadcastTransaction(tx)

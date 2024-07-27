@@ -11,18 +11,21 @@ import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"chainnet/pkg/wallet"
+
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	var block *kernel.Block
 	logger := logrus.New()
 
 	// create wallet address hasher
 	sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
-		logger.Errorf("Error creating multi-hash configuration: %s", err)
+		logger.Fatalf("Error creating multi-hash configuration: %s", err)
 	}
 
 	// create new wallet for storing mining rewards
@@ -33,11 +36,14 @@ func main() {
 		sha256Ripemd160Hasher,
 	)
 	if err != nil {
-		logger.Errorf("Error creating new wallet: %s", err)
+		logger.Fatalf("Error creating new wallet: %s", err)
 	}
 
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("boltdb-file", "block-bucket", "header-bucket", encoding.NewGobEncoder())
+	if err != nil {
+		logger.Fatalf("Error creating bolt db: %s", err)
+	}
 
 	// create new mempool
 	mempool := miner.NewMemPool()
@@ -53,7 +59,7 @@ func main() {
 		subjectObserver,
 	)
 	if err != nil {
-		logger.Errorf("Error creating blockchain: %s", err)
+		logger.Fatalf("Error creating blockchain: %s", err)
 	}
 
 	// create new miner
@@ -66,7 +72,7 @@ func main() {
 
 	for {
 		// start mining block
-		block, err := mine.MineBlock()
+		block, err = mine.MineBlock()
 		if err != nil {
 			logger.Errorf("Error mining block: %s", err)
 			continue

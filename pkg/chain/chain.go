@@ -12,9 +12,9 @@ import (
 )
 
 type Blockchain struct {
-	lastBlockHash       []byte
-	headers             map[string]kernel.BlockHeader
-	blockTxsBloomFilter map[string]string
+	lastBlockHash []byte
+	headers       map[string]kernel.BlockHeader
+	// blockTxsBloomFilter map[string]string
 
 	storage   storage.Storage
 	validator consensus.HeavyValidator

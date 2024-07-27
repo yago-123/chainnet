@@ -16,7 +16,7 @@ func CalculateTxHash(tx *kernel.Transaction, hasher hash.Hashing) ([]byte, error
 func VerifyTxHash(tx *kernel.Transaction, hash []byte, hasher hash.Hashing) error {
 	ret, err := hasher.Verify(hash, tx.Assemble())
 	if err != nil {
-		return fmt.Errorf("verify tx hash failed: %v", err)
+		return fmt.Errorf("verify tx hash failed: %w", err)
 	}
 
 	if !ret {
@@ -33,7 +33,7 @@ func CalculateBlockHash(bh *kernel.BlockHeader, hasher hash.Hashing) ([]byte, er
 func VerifyBlockHash(bh *kernel.BlockHeader, hash []byte, hasher hash.Hashing) error {
 	ret, err := hasher.Verify(hash, bh.Assemble())
 	if err != nil {
-		return fmt.Errorf("block hashing failed: %v", err)
+		return fmt.Errorf("block hashing failed: %w", err)
 	}
 
 	if !ret {

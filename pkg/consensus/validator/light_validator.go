@@ -47,7 +47,7 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 	return nil
 }
 
-func (lv *LValidator) ValidateHeader(bh *kernel.BlockHeader) error {
+func (lv *LValidator) ValidateHeader(_ *kernel.BlockHeader) error {
 	// todo(): implement
 	return nil
 }

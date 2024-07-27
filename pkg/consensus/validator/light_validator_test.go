@@ -4,8 +4,9 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"chainnet/tests/mocks/crypto/hash"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestLValidator_ValidateTxLight(_ *testing.T) {
