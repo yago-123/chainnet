@@ -24,7 +24,7 @@ const (
 )
 
 type Miner struct {
-	mempool MemPool
+	mempool *MemPool
 	// import hasher type instead of directly hasher because will be used in multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
@@ -38,9 +38,9 @@ type Miner struct {
 	cancel   context.CancelFunc
 }
 
-func NewMiner(publicKey []byte, hasherType hash.HasherType, chain *blockchain.Blockchain) *Miner {
+func NewMiner(publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, hasherType hash.HasherType) *Miner {
 	return &Miner{
-		mempool:      NewMemPool(),
+		mempool:      mempool,
 		hasherType:   hasherType,
 		chain:        chain,
 		minerAddress: publicKey,

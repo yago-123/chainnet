@@ -16,7 +16,6 @@ type Blockchain struct {
 	headers             map[string]kernel.BlockHeader
 	blockTxsBloomFilter map[string]string
 
-	consensus consensus.Consensus
 	storage   storage.Storage
 	validator consensus.HeavyValidator
 	subject   *observer.SubjectObserver
@@ -25,7 +24,7 @@ type Blockchain struct {
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
+func NewBlockchain(cfg *config.Config, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
 	lastBlock, err := storage.GetLastBlock()
 	if err != nil {
 		return nil, err
@@ -34,7 +33,6 @@ func NewBlockchain(cfg *config.Config, consensus consensus.Consensus, storage st
 	return &Blockchain{
 		lastBlockHash: lastBlock.Hash,
 		headers:       map[string]kernel.BlockHeader{},
-		consensus:     consensus,
 		storage:       storage,
 		validator:     validator,
 		subject:       subject,

@@ -19,13 +19,15 @@ import (
 func main() {
 	logger := logrus.New()
 
+	// create wallet address hasher
 	sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
 		logger.Errorf("Error creating multi-hash configuration: %s", err)
 	}
 
+	// create new wallet for storing mining rewards
 	w, err := wallet.NewWallet(
-		[]byte("0.0.1"),
+		[]byte("1"),
 		validator.NewLightValidator(hash.NewSHA256()),
 		crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()),
 		sha256Ripemd160Hasher,
@@ -34,17 +36,42 @@ func main() {
 		logger.Errorf("Error creating new wallet: %s", err)
 	}
 
+	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("boltdb-file", "block-bucket", "header-bucket", encoding.NewGobEncoder())
+
+	// create new mempool
+	mempool := miner.NewMemPool()
+
+	// create new observer
+	subjectObserver := observer.NewSubjectObserver()
+
+	// create new chain
 	chain, err := blockchain.NewBlockchain(
 		&config.Config{},
 		boltdb,
-		validator.NewHeavyValidator(validator.NewLightValidator(hash.NewSHA256()), *explorer.NewExplorer(boltdb), crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()), sha256Ripemd160Hasher),
-		observer.NewSubjectObserver(),
+		validator.NewHeavyValidator(validator.NewLightValidator(hash.NewSHA256()), explorer.NewExplorer(boltdb), crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()), sha256Ripemd160Hasher),
+		subjectObserver,
 	)
 	if err != nil {
 		logger.Errorf("Error creating blockchain: %s", err)
 	}
 
-	mine := miner.NewMiner(w.PublicKey, hash.SHA256, chain)
+	// create new miner
+	mine := miner.NewMiner(w.PublicKey, chain, mempool, hash.SHA256)
 
+	// register chain observers
+	subjectObserver.Register(mine)
+	subjectObserver.Register(boltdb)
+	subjectObserver.Register(mempool)
+
+	for {
+		// start mining block
+		block, err := mine.MineBlock()
+		if err != nil {
+			logger.Errorf("Error mining block: %s", err)
+			continue
+		}
+
+		logger.Infof("Mined block: %s", block.Hash)
+	}
 }

@@ -16,12 +16,12 @@ type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
 	lv       consensus.LightValidator
-	explorer explorer.Explorer
+	explorer *explorer.Explorer
 	signer   sign.Signature
 	hasher   hash.Hashing
 }
 
-func NewHeavyValidator(lv consensus.LightValidator, explorer explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
+func NewHeavyValidator(lv consensus.LightValidator, explorer *explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
 	return &HValidator{
 		lv:       lv,
 		explorer: explorer,
