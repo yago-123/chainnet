@@ -116,7 +116,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 			block := kernel.NewBlock(blockHeader, txs, blockHash)
 
 			// add the block to the chain
-			if err := m.chain.AddBlock(block); err != nil {
+			if err = m.chain.AddBlock(block); err != nil {
 				return nil, fmt.Errorf("unable to add block to the chain: %w", err)
 			}
 

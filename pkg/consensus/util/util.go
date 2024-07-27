@@ -42,3 +42,18 @@ func VerifyBlockHash(bh *kernel.BlockHeader, hash []byte, hasher hash.Hashing) e
 
 	return nil
 }
+
+// IsFirstNBytesZero checks if the first n bytes of the array are zero
+func IsFirstNBytesZero(arr []byte, n uint) bool {
+	if len(arr) < int(n) {
+		return false
+	}
+
+	for _, b := range arr[:n] {
+		if b != 0 {
+			return false
+		}
+	}
+
+	return true
+}

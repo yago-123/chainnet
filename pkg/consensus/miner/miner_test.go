@@ -75,10 +75,10 @@ var txs = []txFeePair{txFeePair1, txFeePair2, txFeePair3, txFeePair4, txFeePair5
 func TestMiner_MineBlock(t *testing.T) {
 	mempool := NewMemPool()
 	for _, v := range txs {
-		txId, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
+		txID, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
 		require.NoError(t, err)
 
-		v.Transaction.SetID(txId)
+		v.Transaction.SetID(txID)
 		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
 

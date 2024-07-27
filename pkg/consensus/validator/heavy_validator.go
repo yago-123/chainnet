@@ -208,16 +208,8 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 
 // validateBlockTarget checks that the block hash corresponds to the target
 func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
-	err := fmt.Errorf("block %s has hash %s that is smaller than the target %d", string(b.Hash), string(b.Hash), b.Header.Target)
-
-	if len(b.Hash) < int(b.Header.Target) {
-		return err
-	}
-
-	for i := 0; i < int(b.Header.Target); i++ {
-		if b.Hash[i] != 0 {
-			return err
-		}
+	if !util.IsFirstNBytesZero(b.Hash, b.Header.Target) {
+		return fmt.Errorf("block %s has invalid target %d", string(b.Hash), b.Header.Target)
 	}
 
 	return nil

@@ -16,7 +16,7 @@ func (ms *MockStorage) PersistBlock(block kernel.Block) error {
 	return args.Error(0)
 }
 
-func (ms *MockStorage) PersistHeader(blockHash []byte, blockHeader kernel.BlockHeader) error {
+func (ms *MockStorage) PersistHeader(_ []byte, _ kernel.BlockHeader) error {
 	return nil
 }
 
