@@ -60,17 +60,19 @@ func TestWallet_SendTransaction(t *testing.T) {
 func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	var err error
 
+	hasher := &mockHash.MockHashing{}
 	signer := mockSign.MockSign{}
 	signer.
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(&mockHash.MockHashing{}), &signer, &mockHash.MockHashing{})
+	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(hasher), &signer, hasher)
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.SendTransaction("pubkey-1", 10, 0, utxos)
+
 	expectedTx := &kernel.Transaction{
-		ID: []byte{},
+		ID: tx.ID,
 		Vin: []kernel.TxInput{
 			kernel.NewInput([]byte("random-id-0"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
 			kernel.NewInput([]byte("random-id-1"), 3, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),

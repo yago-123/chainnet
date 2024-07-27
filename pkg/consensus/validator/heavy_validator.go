@@ -161,16 +161,7 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 
 // validateBlockHash checks that the hash of the block is correct. Merkle tree hash is checked in validateMerkleTree func
 func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
-	blockHash, err := util.CalculateBlockHash(b.Header, hv.hasher)
-	if err != nil {
-		return err
-	}
-
-	if !bytes.Equal(blockHash, b.Hash) {
-		return fmt.Errorf("block %s has invalid hash, expected: %s", string(b.Hash), blockHash)
-	}
-
-	return nil
+	return util.VerifyBlockHash(b.Header, b.Hash, hv.hasher)
 }
 
 // validatePreviousBlockMatchCurrentLatest checks that the previous block hash of the block matches the latest block

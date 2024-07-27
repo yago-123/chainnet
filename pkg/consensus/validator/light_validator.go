@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"bytes"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
@@ -68,14 +67,5 @@ func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) error {
 
 // validateTxID checks that the hash of the transaction matches the ID field
 func (lv *LValidator) validateTxID(tx *kernel.Transaction) error {
-	txHash, err := util.CalculateTxHash(tx, lv.hasher)
-	if err != nil {
-		return fmt.Errorf("error calculating hash for transaction %s: %w", tx.ID, err)
-	}
-
-	if !bytes.Equal(txHash, tx.ID) {
-		return fmt.Errorf("transaction %s has invalid hash, expected: %s", string(tx.ID), txHash)
-	}
-
-	return nil
+	return util.VerifyTxHash(tx, tx.ID, lv.hasher)
 }

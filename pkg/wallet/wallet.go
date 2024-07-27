@@ -108,7 +108,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 
 	// perform simple validations (light validator) before broadcasting the transaction
 	if err = w.validator.ValidateTxLight(tx); err != nil {
-		return &kernel.Transaction{}, err
+		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %v", err)
 	}
 
 	return broadcastTransaction(tx)
