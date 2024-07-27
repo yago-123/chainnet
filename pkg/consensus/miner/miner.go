@@ -44,6 +44,7 @@ func NewMiner(publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, 
 		hasherType:   hasherType,
 		chain:        chain,
 		minerAddress: publicKey,
+		isMining:     false,
 		blockHeight:  0,
 		target:       1,
 	}

@@ -175,11 +175,14 @@ func (bolt *BoltDB) GetLastBlockHash() ([]byte, error) {
 
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
+		// if the last block hash does not exists yet, the genesis block has not been created yet
 		if !exists {
-			return fmt.Errorf("error getting last block hash: header bucket %s does not exist", bolt.headerBucket)
+			lastBlockHash = []byte{}
 		}
 
-		lastBlockHash = bucket.Get([]byte(LastBlockHashKey))
+		if exists {
+			lastBlockHash = bucket.Get([]byte(LastBlockHashKey))
+		}
 
 		return nil
 	})
