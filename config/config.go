@@ -1,21 +1,19 @@
 package config
 
-import "github.com/sirupsen/logrus"
+import (
+	"time"
+
+	"github.com/sirupsen/logrus"
+)
 
 type Config struct {
-	Logger *logrus.Logger
-
-	// node-only configurations
-	DifficultyPoW uint
-	MaxNoncePoW   uint
-	BaseURL       string
+	Logger         *logrus.Logger
+	MiningInterval time.Duration
 }
 
-func NewConfig(logger *logrus.Logger, difficultyPoW uint, maxNoncePoW uint, baseURL string) *Config {
+func NewConfig(logger *logrus.Logger, miningInterval time.Duration) *Config {
 	return &Config{
-		Logger:        logger,
-		DifficultyPoW: difficultyPoW,
-		MaxNoncePoW:   maxNoncePoW,
-		BaseURL:       baseURL,
+		Logger:         logger,
+		MiningInterval: miningInterval,
 	}
 }

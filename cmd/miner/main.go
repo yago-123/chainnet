@@ -26,6 +26,8 @@ func main() {
 	var block *kernel.Block
 	logger := logrus.New()
 
+	cfg := config.NewConfig(logger, MiningInterval)
+
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
 	// todo(): add consensusSignatureType
@@ -62,7 +64,7 @@ func main() {
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
-		&config.Config{},
+		cfg,
 		boltdb,
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
@@ -80,7 +82,7 @@ func main() {
 	}
 
 	// create new miner
-	mine := miner.NewMiner(w.PublicKey, chain, mempool, hash.SHA256)
+	mine := miner.NewMiner(cfg, w.PublicKey, chain, mempool, hash.SHA256)
 
 	// register chain observers
 	subjectObserver.Register(mine)

@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
@@ -35,9 +36,11 @@ type Miner struct {
 	isMining bool
 	ctx      context.Context
 	cancel   context.CancelFunc
+
+	cfg *config.Config
 }
 
-func NewMiner(publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, hasherType hash.HasherType) *Miner {
+func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, hasherType hash.HasherType) *Miner {
 	return &Miner{
 		mempool:      mempool,
 		hasherType:   hasherType,
@@ -45,6 +48,7 @@ func NewMiner(publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, 
 		minerAddress: publicKey,
 		isMining:     false,
 		target:       1,
+		cfg:          cfg,
 	}
 }
 
