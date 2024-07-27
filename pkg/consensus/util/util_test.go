@@ -1,8 +1,9 @@
 package util //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsFirstNBytesZero(t *testing.T) {
