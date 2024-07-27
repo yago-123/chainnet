@@ -4,6 +4,8 @@ import (
 	"chainnet/config"
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/util"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"fmt"
@@ -25,22 +27,41 @@ type Blockchain struct {
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
+func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
+	var err error
+	var lastHeight uint
+	var lastBlockHash []byte
+
+	headers := make(map[string]kernel.BlockHeader)
+
+	// retrieve the last header stored
 	lastHeader, err := storage.GetLastHeader()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving last header: %w", err)
 	}
 
-	// todo(): get the hash from the upper last header directly
-	lastBlockHash, err := storage.GetLastBlockHash()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving last block hash: %w", err)
+	// if exists a last header, sync the actual status of the chain
+	if !lastHeader.IsEmpty() {
+		// specify the current height
+		lastHeight = lastHeader.Height + 1
+
+		// get the last block hash by hashing the latest block header
+		lastBlockHash, err = util.CalculateBlockHash(lastHeader, hasher)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving last block hash: %w", err)
+		}
+
+		// reload the headers into memory
+		headers, err = reconstructHeaders(lastBlockHash)
+		if err != nil {
+			return nil, fmt.Errorf("error reconstructing headers: %w", err)
+		}
 	}
 
 	return &Blockchain{
 		lastBlockHash: lastBlockHash,
-		lastHeight:    lastHeader.Height,
-		headers:       map[string]kernel.BlockHeader{},
+		lastHeight:    lastHeight,
+		headers:       headers,
 		storage:       storage,
 		validator:     validator,
 		subject:       subject,
@@ -92,5 +113,9 @@ func (bc *Blockchain) GetLastBlockHash() []byte {
 
 // GetLastHeight returns the latest block height
 func (bc *Blockchain) GetLastHeight() uint {
-	return bc.headers[string(bc.lastBlockHash)].Height
+	return bc.lastHeight
+}
+
+func reconstructHeaders(latestBlockHash []byte) (map[string]kernel.BlockHeader, error) {
+	return map[string]kernel.BlockHeader{}, nil
 }

@@ -20,7 +20,7 @@ import (
 )
 
 // temporary constant while the mining difficulty is adjusted
-const MiningInterval = 30 * time.Second
+const MiningInterval = 10 * time.Second
 
 func main() {
 	var block *kernel.Block
@@ -64,6 +64,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		&config.Config{},
 		boltdb,
+		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			explorer.NewExplorer(boltdb),
@@ -98,14 +99,15 @@ func main() {
 
 		if block.IsGenesisBlock() {
 			logger.Infof(
-				"Genesis block mined successfully: hash %x, height %d, target %d, nonce %d",
-				block.Hash, block.Header.Height, block.Header.Target, block.Header.Nonce,
+				"Genesis block mined successfully: hash %x, number txs: %d, height %d, target %d, nonce %d",
+				block.Hash, len(block.Transactions), block.Header.Height, block.Header.Target, block.Header.Nonce,
 			)
+			continue
 		}
 
 		logger.Infof(
-			"Block mined successfully: hash %x, previous hash %x, height %d, target %d, nonce %d",
-			block.Hash, block.Header.PrevBlockHash, block.Header.Height, block.Header.Target, block.Header.Nonce,
+			"Block mined successfully: hash %x, previous hash %x, number txs %d, height %d, target %d, nonce %d",
+			block.Hash, block.Header.PrevBlockHash, len(block.Transactions), block.Header.Height, block.Header.Target, block.Header.Nonce,
 		)
 	}
 }

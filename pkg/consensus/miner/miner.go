@@ -30,7 +30,6 @@ type Miner struct {
 	chain      *blockchain.Blockchain
 
 	minerAddress []byte
-	blockHeight  uint
 	target       uint
 
 	isMining bool
@@ -45,7 +44,6 @@ func NewMiner(publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, 
 		chain:        chain,
 		minerAddress: publicKey,
 		isMining:     false,
-		blockHeight:  0,
 		target:       1,
 	}
 }
@@ -81,7 +79,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(kernel.MaxNumberTxsPerBlock)
 
 	// generate the coinbase transaction and add to the list of transactions
-	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.blockHeight)
+	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.chain.GetLastHeight())
 	if err != nil {
 		return nil, fmt.Errorf("unable to create coinbase transaction: %w", err)
 	}
@@ -89,7 +87,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 
 	// todo(): handle prevBlockHash and block height
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, m.blockHeight, m.chain.GetLastBlockHash(), m.target)
+	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash(), m.target)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
@@ -136,11 +134,6 @@ func (m *Miner) ID() string {
 func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
-
-	// start new mining process retrieving the last height specifically from the blockchain itself, the value
-	// is queried directly in order to ensure that we get the latest value (as opposed to retrieving from storage,
-	// given that it may have not been written yet)
-	m.blockHeight = m.chain.GetLastHeight() + 1
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
