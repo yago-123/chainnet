@@ -20,7 +20,7 @@ func (gobenc *GobEncoder) SerializeBlock(b kernel.Block) ([]byte, error) {
 	encoder := gob.NewEncoder(&result)
 	err := encoder.Encode(b)
 	if err != nil {
-		return []byte{}, fmt.Errorf("error serializing block %s: %w", string(b.Hash), err)
+		return []byte{}, fmt.Errorf("error serializing block %x: %w", b.Hash, err)
 	}
 
 	return result.Bytes(), nil

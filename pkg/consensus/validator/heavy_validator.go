@@ -130,11 +130,11 @@ func (hv *HValidator) validateNumberOfCoinbaseTxs(b *kernel.Block) error {
 	}
 
 	if numCoinbases == 0 {
-		return fmt.Errorf("block %s has no coinbase transaction", string(b.Hash))
+		return fmt.Errorf("block %x has no coinbase transaction", b.Hash)
 	}
 
 	if numCoinbases > 1 {
-		return fmt.Errorf("block %s has more than one coinbase transaction", string(b.Hash))
+		return fmt.Errorf("block %x has more than one coinbase transaction", b.Hash)
 	}
 
 	return nil
@@ -191,13 +191,18 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 
 // validateBlockHeight checks that the block height matches the current chain height
 func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
+	// if genesis block, don't validate block height
+	if b.IsGenesisBlock() {
+		return nil
+	}
+
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
 		return err
 	}
 
 	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
-		return fmt.Errorf("new block %s with height %d does not match current chain height %d", string(b.Hash), b.Header.Height, lastChainBlock.Header.Height)
+		return fmt.Errorf("new block %x with height %d does not match current chain height %d", b.Hash, b.Header.Height, lastChainBlock.Header.Height)
 	}
 
 	return nil
@@ -211,7 +216,7 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 	}
 
 	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {
-		return fmt.Errorf("block %s has invalid Merkle root", string(b.Hash))
+		return fmt.Errorf("block %x has invalid Merkle root", b.Hash)
 	}
 
 	return nil
@@ -220,7 +225,7 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 // validateBlockTarget checks that the block hash corresponds to the target
 func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
 	if !util.IsFirstNBytesZero(b.Hash, b.Header.Target) {
-		return fmt.Errorf("block %s has invalid target %d", string(b.Hash), b.Header.Target)
+		return fmt.Errorf("block %x has invalid target %d", b.Hash, b.Header.Target)
 	}
 
 	return nil
