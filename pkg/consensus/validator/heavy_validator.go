@@ -173,7 +173,7 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 
 	// if is height 0 but contains previous block hash, return error
 	if b.Header.Height == 0 && len(b.Header.PrevBlockHash) != 0 {
-		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %s", b.Header.PrevBlockHash)
+		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %x", b.Header.PrevBlockHash)
 	}
 
 	// if not genesis block, check previous block hash
@@ -183,7 +183,7 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 	}
 
 	if !bytes.Equal(b.Header.PrevBlockHash, lastChainBlock.Hash) {
-		return fmt.Errorf("previous hash %s points to block different than latest in the chain %s", string(b.Header.PrevBlockHash), string(lastChainBlock.Hash))
+		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", b.Header.PrevBlockHash, lastChainBlock.Hash)
 	}
 
 	return nil
@@ -224,7 +224,7 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 
 // validateBlockTarget checks that the block hash corresponds to the target
 func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
-	if !util.IsFirstNBytesZero(b.Hash, b.Header.Target) {
+	if !util.IsFirstNBitsZero(b.Hash, b.Header.Target) {
 		return fmt.Errorf("block %x has invalid target %d", b.Hash, b.Header.Target)
 	}
 

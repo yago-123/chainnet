@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// create instance for persisting data
-	boltdb, err := storage.NewBoltDB("boltdb-file", "block-bucket", "header-bucket", encoding.NewGobEncoder())
+	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		logger.Fatalf("Error creating bolt db: %s", err)
 	}
@@ -96,7 +96,7 @@ func main() {
 			continue
 		}
 
-		logger.Infof("Mined block: %s", block.Hash)
+		logger.Infof("Mined block: %x", block.Hash)
 		time.Sleep(MiningInterval)
 	}
 }
