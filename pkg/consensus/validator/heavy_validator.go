@@ -1,8 +1,10 @@
 package validator
 
 import (
+	"bytes"
 	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
@@ -52,11 +54,14 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
+		// block header validations
+		hv.validatePreviousBlockMatchCurrentLatest,
+		hv.validateBlockHeight,
+		hv.validateMerkleTree,
+		hv.validateBlockTarget,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
-		// todo(): validate merkle tree matches the transactions in the block
-		// todo(): validate block header in general (version, previous block, mining difficulty...)
-		// todo(): validate block hash corresponds to the target
+		// todo(): validate block timestamp
 	}
 
 	for _, validate := range validations {
@@ -81,7 +86,7 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 		for _, utxo := range utxos {
 			// if there is match, check that the signature is valid
 			if utxo.EqualInput(vin) {
-				// assume is P2PK only for now
+				// todo(): assume is P2PK only for now
 
 				// check that the signature is valid for unlocking the UTXO
 				sigCheck, err := hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
@@ -154,8 +159,75 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 	return nil
 }
 
-func (hv *HValidator) validateBlockHash(_ *kernel.Block) error {
-	// todo() once we have Merkle tree
+// validateBlockHash checks that the hash of the block is correct. Merkle tree hash is checked in validateMerkleTree func
+func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
+	blockHash, err := util.CalculateBlockHash(b.Header, hv.hasher)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(blockHash, b.Hash) {
+		return fmt.Errorf("block %s has invalid hash, expected: %s", string(b.Hash), blockHash)
+	}
+
+	return nil
+}
+
+// validatePreviousBlockMatchCurrentLatest checks that the previous block hash of the block matches the latest block
+func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) error {
+	lastChainBlock, err := hv.explorer.GetLastBlock()
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(b.Header.PrevBlockHash, lastChainBlock.Hash) {
+		return fmt.Errorf("previous hash %s points to block different than latest in the chain %s", string(b.Header.PrevBlockHash), string(lastChainBlock.Hash))
+	}
+
+	return nil
+}
+
+// validateBlockHeight checks that the block height matches the current chain height
+func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
+	lastChainBlock, err := hv.explorer.GetLastBlock()
+	if err != nil {
+		return err
+	}
+
+	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
+		return fmt.Errorf("new block %s with height %d does not match current chain height %d", string(b.Hash), b.Header.Height, lastChainBlock.Header.Height)
+	}
+
+	return nil
+}
+
+// validateMerkleTree checks that the Merkle tree root hash of the block matches the Merkle root hash in the block header
+func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
+	merkletree, err := consensus.NewMerkleTreeFromTxs(b.Transactions, hv.hasher)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {
+		return fmt.Errorf("block %s has invalid Merkle root", string(b.Hash))
+	}
+
+	return nil
+}
+
+// validateBlockTarget checks that the block hash corresponds to the target
+func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
+	err := fmt.Errorf("block %s has hash %s that is smaller than the target %d", string(b.Hash), string(b.Hash), b.Header.Target)
+
+	if len(b.Hash) < int(b.Header.Target) {
+		return err
+	}
+
+	for i := 0; i < int(b.Header.Target); i++ {
+		if b.Hash[i] != 0 {
+			return err
+		}
+	}
 
 	return nil
 }

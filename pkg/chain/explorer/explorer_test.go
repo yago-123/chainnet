@@ -17,7 +17,8 @@ import (
 
 const (
 	BoltDBStorageFile = "bolt-db-tmp-storage"
-	BoltDBBucketName  = "chainnet"
+	BoltBlockBucket   = "chainnet-block"
+	BoltHeaderBucket  = "chainnet-header"
 )
 
 // set up genesis block with coinbase transaction
@@ -305,7 +306,7 @@ func TestExplorer_retrieveBalanceFrom(t *testing.T) {
 }
 
 func initializeStorage(t *testing.T, blocks []Block) storage.Storage {
-	boltdb, err := storage.NewBoltDB(BoltDBStorageFile, BoltDBBucketName, encoding.NewGobEncoder())
+	boltdb, err := storage.NewBoltDB(BoltDBStorageFile, BoltBlockBucket, BoltHeaderBucket, encoding.NewGobEncoder())
 	if err != nil {
 		t.Errorf("error initializing boltdb: %v", err)
 	}

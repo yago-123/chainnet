@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"fmt"
@@ -109,10 +110,17 @@ func NewMerkleTreeFromTxs(txs []*kernel.Transaction, hasher hash.Hashing) (*Merk
 	var nodes []MerkleNode
 
 	// create leaf nodes using the Assemble method
-	for _, txn := range txs {
-		node, err := newMerkleNode(nil, nil, txn.ID, hasher)
+	for _, tx := range txs {
+		// make sure that the hash of the transaction is correct
+		txHash, err := util.CalculateTxHash(tx, hasher)
 		if err != nil {
-			return nil, fmt.Errorf("error creating Merkle node for transaction %s: %w", txn.ID, err)
+			return nil, fmt.Errorf("error calculating hash for transaction %s: %w", tx.ID, err)
+		}
+
+		// generate new node
+		node, err := newMerkleNode(nil, nil, txHash, hasher)
+		if err != nil {
+			return nil, fmt.Errorf("error creating Merkle node for transaction %s: %w", tx.ID, err)
 		}
 		nodes = append(nodes, *node)
 	}

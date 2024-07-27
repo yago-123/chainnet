@@ -1,6 +1,7 @@
 package miner //nolint:testpackage // don't create separate package for tests
 
 import (
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
@@ -12,32 +13,56 @@ import (
 )
 
 var txFeePair1 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: &kernel.Transaction{ID: []byte("id1")},
-	Fee:         10,
+	Transaction: &kernel.Transaction{
+		ID:   []byte("id1"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "scriptPubKey")},
+	},
+	Fee: 10,
 }
 
 var txFeePair2 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: &kernel.Transaction{ID: []byte("id2")},
-	Fee:         2,
+	Transaction: &kernel.Transaction{
+		ID:   []byte("id2"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, "scriptSig", "pubKey")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(2, script.P2PK, "scriptPubKey")},
+	},
+	Fee: 2,
 }
 
 var txFeePair3 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: &kernel.Transaction{ID: []byte("id3")},
+	Transaction: &kernel.Transaction{
+		ID:   []byte("id3"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid3"), 2, "scriptSig", "pubKey")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(3, script.P2PK, "scriptPubKey")},
+	},
 }
 
 var txFeePair4 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: &kernel.Transaction{ID: []byte("id4")},
-	Fee:         1,
+	Transaction: &kernel.Transaction{
+		ID:   []byte("id4"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid4"), 3, "scriptSig", "pubKey")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(4, script.P2PK, "scriptPubKey")},
+	},
+	Fee: 1,
 }
 
 var txFeePair5 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: &kernel.Transaction{ID: []byte("id5")},
-	Fee:         9,
+	Transaction: &kernel.Transaction{
+		ID:   []byte("id5"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid5"), 4, "scriptSig", "pubKey")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(5, script.P2PK, "scriptPubKey")},
+	},
+	Fee: 9,
 }
 
 var txFeePair6 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: &kernel.Transaction{ID: []byte("id6")},
-	Fee:         6,
+	Transaction: &kernel.Transaction{
+		ID:   []byte("id6"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid6"), 5, "scriptSig", "pubKey")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(6, script.P2PK, "scriptPubKey")},
+	},
+	Fee: 6,
 }
 
 var txs = []txFeePair{txFeePair1, txFeePair2, txFeePair3, txFeePair4, txFeePair5, txFeePair6} //nolint: gochecknoglobals // no need to lint this global variable
@@ -45,12 +70,16 @@ var txs = []txFeePair{txFeePair1, txFeePair2, txFeePair3, txFeePair4, txFeePair5
 func TestMiner_MineBlock(t *testing.T) {
 	mempool := NewMemPool()
 	for _, v := range txs {
+		txId, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
+		require.NoError(t, err)
+
+		v.Transaction.SetID(txId)
 		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
 	miner := Miner{
 		mempool:      mempool,
 		hasherType:   hash.SHA256,
-		minerAddress: "minerAddress",
+		minerAddress: []byte("minerAddress"),
 		blockHeight:  0,
 		target:       16,
 	}
