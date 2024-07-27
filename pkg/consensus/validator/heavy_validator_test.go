@@ -108,10 +108,16 @@ func TestHValidator_validatePreviousBlockMatchCurrentLatest(t *testing.T) {
 	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(mockStore), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	// check that the previous block hash of the block matches the latest block
-	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1")}}))
+	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 1}}))
 
 	// check that the previous block hash of the block does not match the latest block
-	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-2")}}))
+	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-2"), Height: 1}}))
+
+	// check that genesis block does not validate the previous block hash
+	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte{}, Height: 0}}))
+
+	// check that genesis block requires empty previous block hash
+	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 0}}))
 }
 
 func TestHValidator_validateBlockHeight(t *testing.T) {

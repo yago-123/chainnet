@@ -74,5 +74,5 @@ func NewGenesisBlock(blockHeader *BlockHeader, transactions []*Transaction, bloc
 }
 
 func (block *Block) IsGenesisBlock() bool {
-	return len(block.Header.PrevBlockHash) == 0
+	return len(block.Header.PrevBlockHash) == 0 && block.Header.Height == 0
 }

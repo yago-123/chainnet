@@ -166,6 +166,17 @@ func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
 
 // validatePreviousBlockMatchCurrentLatest checks that the previous block hash of the block matches the latest block
 func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) error {
+	// if is genesis block and does not contain previous block hash, don't check previous block (does not exist)
+	if b.IsGenesisBlock() {
+		return nil
+	}
+
+	// if is height 0 but contains previous block hash, return error
+	if b.Header.Height == 0 && len(b.Header.PrevBlockHash) != 0 {
+		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %s", b.Header.PrevBlockHash)
+	}
+
+	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
 		return err
