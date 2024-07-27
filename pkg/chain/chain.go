@@ -97,6 +97,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	// no need to store the block itself, will be commited to storage as part of the observer call
 
 	// update the last block and save the block header
+	bc.lastHeight++
 	bc.lastBlockHash = block.Hash
 	bc.headers[string(block.Hash)] = *block.Header
 
@@ -116,6 +117,6 @@ func (bc *Blockchain) GetLastHeight() uint {
 	return bc.lastHeight
 }
 
-func reconstructHeaders(latestBlockHash []byte) (map[string]kernel.BlockHeader, error) {
+func reconstructHeaders(_ []byte) (map[string]kernel.BlockHeader, error) {
 	return map[string]kernel.BlockHeader{}, nil
 }
