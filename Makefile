@@ -65,5 +65,5 @@ imports:
 
 .PHONY: debug
 debug: chainnet-node
-	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet
+	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet-miner
 

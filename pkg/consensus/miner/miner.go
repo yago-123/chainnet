@@ -18,14 +18,14 @@ const (
 	// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
 	AdjustDifficultyHeight = 2016
 
-	BlockVersion = "0.0.1"
+	BlockVersion = "1"
 
 	MinerObserverID = "miner"
 )
 
 type Miner struct {
 	mempool *MemPool
-	// import hasher type instead of directly hasher because will be used in multi-threaded scenario
+	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
 
@@ -67,6 +67,7 @@ func (m *Miner) CancelMining() {
 func (m *Miner) MineBlock() (*kernel.Block, error) {
 	var err error
 
+	defer m.CancelMining()
 	if m.isMining {
 		// impossible case in theory
 		return nil, fmt.Errorf("miner is already mining ")

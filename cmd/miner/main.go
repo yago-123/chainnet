@@ -55,7 +55,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		&config.Config{},
 		boltdb,
-		validator.NewHeavyValidator(validator.NewLightValidator(hash.NewSHA256()), explorer.NewExplorer(boltdb), crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()), sha256Ripemd160Hasher),
+		validator.NewHeavyValidator(validator.NewLightValidator(sha256Ripemd160Hasher), explorer.NewExplorer(boltdb), crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()), sha256Ripemd160Hasher),
 		subjectObserver,
 	)
 	if err != nil {
