@@ -29,7 +29,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(&mockHash.MockHashing{}), &signer, &mockHash.MockHashing{})
+	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(&mockHash.MockHashing{}), &signer, &mockHash.MockHashing{}, &mockHash.MockHashing{})
 	require.NoError(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
@@ -66,7 +66,7 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(hasher), &signer, hasher)
+	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(hasher), &signer, hasher, hasher)
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.SendTransaction("pubkey-1", 10, 0, utxos)

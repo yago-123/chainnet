@@ -30,6 +30,7 @@ var createCmd = &cobra.Command{
 			validator.NewLightValidator(hash.NewSHA256()),
 			ecdsaSha256Signer,
 			sha256Ripemd160Hasher,
+			hash.NewSHA256(),
 		)
 
 		if err != nil {

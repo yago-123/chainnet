@@ -21,36 +21,40 @@ type Wallet struct {
 
 	id []byte
 
-	validator   consensus.LightValidator
-	signer      sign.Signature
-	hasher      hash.Hashing
-	interpreter *rpnInter.RPNInterpreter
+	validator consensus.LightValidator
+	signer    sign.Signature
+	// hasher used for deriving wallet related values
+	walletHasher hash.Hashing
+	// hasher used for deriving blockchain related values (tx ID for example)
+	consensusHasher hash.Hashing
+	interpreter     *rpnInter.RPNInterpreter
 }
 
 func (w *Wallet) ID() string {
 	return string(w.id)
 }
 
-func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, hasher hash.Hashing) (*Wallet, error) {
+func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, walletHasher hash.Hashing, consensusHasher hash.Hashing) (*Wallet, error) {
 	publicKey, privateKey, err := signer.NewKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := hasher.Hash(publicKey)
+	id, err := walletHasher.Hash(publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("could not hash the public key: %w", err)
 	}
 
 	return &Wallet{
-		version:     version,
-		PrivateKey:  privateKey,
-		PublicKey:   publicKey,
-		validator:   validator,
-		id:          id,
-		signer:      signer,
-		hasher:      hasher,
-		interpreter: rpnInter.NewScriptInterpreter(signer),
+		version:         version,
+		PrivateKey:      privateKey,
+		PublicKey:       publicKey,
+		validator:       validator,
+		id:              id,
+		signer:          signer,
+		walletHasher:    walletHasher,
+		consensusHasher: consensusHasher,
+		interpreter:     rpnInter.NewScriptInterpreter(signer),
 	}, nil
 }
 
@@ -58,14 +62,14 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetAddress() ([]byte, error) {
 	// hash the public key
-	pubKeyHash, err := w.hasher.Hash(w.PublicKey)
+	pubKeyHash, err := w.walletHasher.Hash(w.PublicKey)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
 	}
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
 	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
-	checksum, err := w.hasher.Hash(versionedPayload)
+	checksum, err := w.walletHasher.Hash(versionedPayload)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
 	}
@@ -99,7 +103,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 	}
 
 	// generate tx hash
-	txHash, err := util.CalculateTxHash(tx, w.hasher)
+	txHash, err := util.CalculateTxHash(tx, w.consensusHasher)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
