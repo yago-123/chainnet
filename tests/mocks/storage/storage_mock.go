@@ -56,6 +56,14 @@ func (ms *MockStorage) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, e
 	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
 }
 
+func (ms *MockStorage) ID() string {
+	return ms.Called().String(0)
+}
+
+func (ms *MockStorage) OnBlockAddition(block *kernel.Block) {
+	ms.Called(block)
+}
+
 func (ms *MockStorage) Close() error {
 	args := ms.Called()
 	return args.Error(0)

@@ -1,10 +1,15 @@
 package miner //nolint:testpackage // don't create separate package for tests
 
 import (
+	"chainnet/config"
+	blockchain "chainnet/pkg/chain"
+	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
+	"chainnet/tests/mocks/consensus"
+	mockStorage "chainnet/tests/mocks/storage"
 	"context"
 	"testing"
 
@@ -76,17 +81,21 @@ func TestMiner_MineBlock(t *testing.T) {
 		v.Transaction.SetID(txId)
 		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
+
+	chain, err := blockchain.NewBlockchain(&config.Config{}, &mockStorage.MockStorage{}, consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
+	require.NoError(t, err)
+
 	miner := Miner{
 		mempool:      mempool,
 		hasherType:   hash.SHA256,
 		minerAddress: []byte("minerAddress"),
 		blockHeight:  0,
 		target:       16,
+		chain:        chain,
 	}
 
 	// simple block mining with hash difficulty 16
-	ctx := context.Background()
-	block, err := miner.MineBlock(ctx)
+	block, err := miner.MineBlock()
 	require.NoError(t, err)
 	assert.Len(t, block.Transactions, len(txs)+1)
 	assert.True(t, block.Transactions[0].IsCoinbase())
@@ -95,14 +104,17 @@ func TestMiner_MineBlock(t *testing.T) {
 	assert.Equal(t, []byte{0x0, 0x0}, block.Hash[:2])
 
 	// cancel block in the middle of mining aborting the process
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	_, err = miner.MineBlock(ctx)
+	miner.ctx, miner.cancel = context.WithCancel(context.Background())
+	miner.isMining = true
+	miner.cancel()
+	_, err = miner.MineBlock()
 	require.Error(t, err)
 }
 
 func TestMiner_createCoinbaseTransaction(t *testing.T) {
-	miner := NewMiner("minerAddress", hash.SHA256)
+	chain, err := blockchain.NewBlockchain(&config.Config{}, &mockStorage.MockStorage{}, consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
+	require.NoError(t, err)
+	miner := NewMiner([]byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)
 	require.NoError(t, err)

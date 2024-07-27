@@ -25,13 +25,13 @@ type Blockchain struct {
 }
 
 func NewBlockchain(cfg *config.Config, storage storage.Storage, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
-	lastBlock, err := storage.GetLastBlock()
+	lastBlockHash, err := storage.GetLastBlockHash()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Blockchain{
-		lastBlockHash: lastBlock.Hash,
+		lastBlockHash: lastBlockHash,
 		headers:       map[string]kernel.BlockHeader{},
 		storage:       storage,
 		validator:     validator,

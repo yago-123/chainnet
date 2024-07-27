@@ -42,7 +42,7 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 		},
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), *expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
+	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.MockHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}), &mockSign.MockSign{}, &mockHash.MockHashing{})
 
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithoutCoinbase))
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithTwoCoinbase))
