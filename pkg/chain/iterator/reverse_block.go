@@ -5,24 +5,24 @@ import (
 	"chainnet/pkg/storage"
 )
 
-// ReverseIterator
-type ReverseIterator struct {
+// ReverseBlockIterator
+type ReverseBlockIterator struct {
 	prevBlockHash []byte
 	storage       storage.Storage
 }
 
-func NewReverseIterator(storage storage.Storage) *ReverseIterator {
-	return &ReverseIterator{
+func NewReverseIterator(storage storage.Storage) *ReverseBlockIterator {
+	return &ReverseBlockIterator{
 		storage: storage,
 	}
 }
 
-func (it *ReverseIterator) Initialize(reference []byte) error {
+func (it *ReverseBlockIterator) Initialize(reference []byte) error {
 	it.prevBlockHash = reference
 	return nil
 }
 
-func (it *ReverseIterator) GetNextBlock() (*kernel.Block, error) {
+func (it *ReverseBlockIterator) GetNextBlock() (*kernel.Block, error) {
 	block, err := it.storage.RetrieveBlockByHash(it.prevBlockHash)
 	if err != nil {
 		return nil, err
@@ -33,6 +33,6 @@ func (it *ReverseIterator) GetNextBlock() (*kernel.Block, error) {
 	return block, err
 }
 
-func (it *ReverseIterator) HasNext() bool {
+func (it *ReverseBlockIterator) HasNext() bool {
 	return len(it.prevBlockHash) > 0
 }

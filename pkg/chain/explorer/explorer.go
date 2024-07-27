@@ -34,7 +34,7 @@ func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Tran
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
 // todo() remove this method, we will be using findUnspentOutputs instead most likely
-func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Iterator) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
+func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.BlockIterator) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	var unspentTXs []*kernel.Transaction
 
@@ -104,7 +104,7 @@ func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UnspentOut
 }
 
 // findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
-func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.Iterator) ([]kernel.UnspentOutput, error) { //nolint:gocognit // ok for now
+func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIterator) ([]kernel.UnspentOutput, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	unspentTXOs := []kernel.UnspentOutput{}
 	spentTXOs := make(map[string][]uint)
