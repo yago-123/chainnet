@@ -111,7 +111,8 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 			blockHash, nonce, errPow := pow.CalculateBlockHash()
 			if errPow != nil {
 				// if no nonce was found, readjust the timestamp and try again
-				m.cfg.Logger.Debugf("didn't find hash matching target, updating block header timestamp")
+				m.cfg.Logger.Errorf("didn't find hash matching target: %w", errPow)
+				m.cfg.Logger.Debugf("updating timestamp and starting mining process again for block with height: %d", blockHeader.Height)
 				blockHeader.SetTimestamp(time.Now().Unix())
 				continue
 			}
