@@ -1,12 +1,29 @@
 # ChainNet
-Running the `chainnet` node: 
+## Setup
 ```bash
-$ ./chainnet
+$ 
 ```
 
-Running the cli: 
+## Build
+Running the `chainnet-miner` node:
 ```bash
-$ ./chainnet-cli balance --address <address> 
+$ make
+```
+
+## Run
+Running the miner:
+```bash
+$ ./bin/chainnet-cli miner 
+```
+
+Running the node:
+```bash
+
+```
+
+Running `nespv` wallet:
+```bash
+
 ```
 
 ## Architecture
