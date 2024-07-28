@@ -17,6 +17,8 @@ const (
 	MaxNonce   = ^uint(0)
 )
 
+var ErrMiningCancelled = errors.New("mining cancelled by context")
+
 type miningResult struct {
 	hash  []byte
 	nonce uint
@@ -25,7 +27,7 @@ type miningResult struct {
 
 // ProofOfWork holds the components needed for mining
 type ProofOfWork struct {
-	ctx            context.Context
+	externalCtx    context.Context
 	results        chan miningResult
 	wg             sync.WaitGroup
 	hashDifficulty *big.Int
@@ -45,7 +47,7 @@ func NewProofOfWork(ctx context.Context, bh *kernel.BlockHeader, hasherType hash
 	hashDifficulty.Lsh(hashDifficulty, HashLength-bh.Target)
 
 	return &ProofOfWork{
-		ctx:            ctx,
+		externalCtx:    ctx,
 		results:        make(chan miningResult),
 		hashDifficulty: hashDifficulty,
 		hasherType:     hasherType,
@@ -62,10 +64,16 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	numGoroutines := runtime.NumCPU()
 	nonceRange := MaxNonce / uint(numGoroutines)
 
+	// if one of the goroutines finds a block, use this context to propagate the cancellation. This cancellation
+	// is an overlap of the pow.externalCtx given that in case of block addition, the observer code will trigger
+	// the cancellation too (however, this one is more specific and more responsive)
+	blockMinedCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// split work and ranges among go routines
 	for i := range make([]int, numGoroutines) {
 		pow.wg.Add(1)
-		go pow.startMining(pow.bh, nonceRange, uint(i)*nonceRange)
+		go pow.startMining(blockMinedCtx, *pow.bh, nonceRange, uint(i)*nonceRange)
 	}
 
 	// wait for all go routines to finish
@@ -77,42 +85,46 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	// wait for the first result to be returned
 	for result := range pow.results {
 		if result.err == nil {
+			// retrieve block data mined
 			return result.hash, result.nonce, nil
-		} else if result.err.Error() == "mining cancelled by context" {
+		}
+
+		// if mining have been cancelled, return error
+		if errors.Is(result.err, ErrMiningCancelled) {
 			return nil, 0, result.err
 		}
 	}
 
-	return nil, 0, errors.New("could not find hash for kernel")
+	// at this point no go routine have found a valid block
+	return nil, 0, errors.New("could not find hash for block being mined")
 }
 
 // startMining starts a mining process in a goroutine
-func (pow *ProofOfWork) startMining(bh *kernel.BlockHeader, nonceRange uint, startNonce uint) {
+func (pow *ProofOfWork) startMining(blockMinedCtx context.Context, bh kernel.BlockHeader, nonceRange uint, startNonce uint) {
 	defer pow.wg.Done()
 	// initialize hash function in each goroutine because is not thread safe by default
 	hasher := hash.GetHasher(pow.hasherType)
-	var localHashInt big.Int
 
 	// iterate over the nonce range and calculate the hash
 	for nonce := startNonce; nonce < startNonce+nonceRange && nonce < MaxNonce; nonce++ {
 		select {
-		case <-pow.ctx.Done():
+		case <-pow.externalCtx.Done():
 			// if the context is cancelled, return immediately
-			pow.results <- miningResult{nil, 0, errors.New("mining cancelled by context")}
+			pow.results <- miningResult{nil, 0, ErrMiningCancelled}
+			return
+		case <-blockMinedCtx.Done():
+			pow.results <- miningResult{nil, 0, ErrMiningCancelled}
 			return
 		default:
 			// calculate the hash of the block
 			bh.SetNonce(nonce)
-			blockHash, err := util.CalculateBlockHash(bh, hasher)
+			blockHash, err := util.CalculateBlockHash(&bh, hasher)
 			if err != nil {
-				pow.results <- miningResult{nil, 0, fmt.Errorf("could not hash block: %w", err)}
+				pow.results <- miningResult{nil, 0, fmt.Errorf("did not found hash for block: %w", err)}
 				return
 			}
 
-			localHashInt.SetBytes(blockHash)
-
-			// check if the hash meets the difficulty
-			if localHashInt.Cmp(pow.hashDifficulty) == -1 {
+			if util.IsFirstNBitsZero(blockHash, bh.Target) {
 				pow.results <- miningResult{blockHash, nonce, nil}
 				return
 			}

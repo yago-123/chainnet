@@ -18,7 +18,7 @@ func TestLValidator_ValidateHeader(_ *testing.T) {
 }
 
 func TestLValidator_validateTxID(t *testing.T) {
-	hasher := &hash.MockHashing{}
+	hasher := &hash.FakeHashing{}
 	tx := kernel.NewTransaction(
 		[]kernel.TxInput{kernel.NewInput([]byte("tx-id-1"), 1, "scriptsig", "pubkey")},
 		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey2")},
