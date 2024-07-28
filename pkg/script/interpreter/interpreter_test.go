@@ -250,7 +250,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 }
 
 func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.FakeHashing{}))
 
 	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
@@ -284,7 +284,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKMocked(t *testing.T) {
 }
 
 func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.FakeHashing{}))
 
 	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
@@ -318,7 +318,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
 }
 
 func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.FakeHashing{}))
 
 	pubKey, _, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
@@ -349,7 +349,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKMocked(t *testing.T) {
 }
 
 func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.MockHashing{}))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(&mockSign.MockSign{}, &mockHash.FakeHashing{}))
 
 	pubKey, _, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)

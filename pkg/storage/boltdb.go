@@ -268,6 +268,7 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error) {
 	var err error
 	var headerBytes []byte
+
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bolt.bucketExists(bolt.headerBucket, tx)
 		if !exists {
