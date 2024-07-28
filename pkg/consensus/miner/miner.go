@@ -25,7 +25,7 @@ const (
 )
 
 // MiningTarget will be eventually replaced with variable mining difficulty
-const MiningTarget = 12
+const MiningTarget = 8
 
 type Miner struct {
 	mempool *MemPool

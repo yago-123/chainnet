@@ -89,7 +89,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 		Return(&kernel.BlockHeader{}, nil)
 
 	chain, err := NewBlockchain(
-		&config.Config{},
+		&config.Config{Logger: logrus.New()},
 		storage,
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},

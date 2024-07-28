@@ -13,7 +13,7 @@ $ make
 ## Run
 Running the miner:
 ```bash
-$ ./bin/chainnet-cli miner 
+$ ./bin/chainnet-miner 
 ```
 
 Running the node:

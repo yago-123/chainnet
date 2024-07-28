@@ -40,8 +40,13 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		return nil, fmt.Errorf("error retrieving last header: %w", err)
 	}
 
-	// if exists a last header, sync the actual status of the chain
+	if lastHeader.IsEmpty() {
+		// there is no genesis block yet, start chain from scratch
+		cfg.Logger.Debugf("no previous block headers found, starting chain from scratch")
+	}
+
 	if !lastHeader.IsEmpty() {
+		// if exists a last header, sync the actual status of the chain
 		// specify the current height
 		lastHeight = lastHeader.Height + 1
 

@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const MiningInterval = 30 * time.Second
+const MiningInterval = 15 * time.Second
 
 func main() {
 	var block *kernel.Block
@@ -104,14 +104,14 @@ func main() {
 
 		if block.IsGenesisBlock() {
 			logger.Infof(
-				"Genesis block mined successfully: hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
+				"genesis block mined successfully: hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
 				block.Hash, len(block.Transactions), miningTime, block.Header.Height, block.Header.Target, block.Header.Nonce,
 			)
 			continue
 		}
 
 		logger.Infof(
-			"Block mined successfully: hash %x, previous hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
+			"block mined successfully: hash %x, previous hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
 			block.Hash, block.Header.PrevBlockHash, len(block.Transactions), miningTime, block.Header.Height, block.Header.Target, block.Header.Nonce,
 		)
 	}
