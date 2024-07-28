@@ -24,6 +24,9 @@ const (
 	MinerObserverID = "miner"
 )
 
+// MiningTarget will be eventually replaced with variable mining difficulty
+const MiningTarget = 12
+
 type Miner struct {
 	mempool *MemPool
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
@@ -47,7 +50,7 @@ func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain
 		chain:        chain,
 		minerAddress: publicKey,
 		isMining:     false,
-		target:       12,
+		target:       MiningTarget,
 		cfg:          cfg,
 	}
 }
@@ -111,7 +114,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 			blockHash, nonce, errPow := pow.CalculateBlockHash()
 			if errPow != nil {
 				// if no nonce was found, readjust the timestamp and try again
-				m.cfg.Logger.Errorf("didn't find hash matching target: %w", errPow)
+				m.cfg.Logger.Errorf("didn't find hash matching target: %v", errPow)
 				m.cfg.Logger.Debugf("updating timestamp and starting mining process again for block with height: %d", blockHeader.Height)
 				blockHeader.SetTimestamp(time.Now().Unix())
 				continue

@@ -64,7 +64,11 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	numGoroutines := runtime.NumCPU()
 	nonceRange := MaxNonce / uint(numGoroutines)
 
+	// if one of the goroutines finds a block, use this context to propagate the cancellation. This cancellation
+	// is an overlap of the pow.externalCtx given that in case of block addition, the observer code will trigger
+	// the cancellation too (however, this one is more specific and more responsive)
 	blockMinedCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// split work and ranges among go routines
 	for i := range make([]int, numGoroutines) {
@@ -81,15 +85,17 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	// wait for the first result to be returned
 	for result := range pow.results {
 		if result.err == nil {
-			// notify other go routines that the block have been found
-			cancel()
-			// return correct result
+			// retrieve block data mined
 			return result.hash, result.nonce, nil
-		} else if errors.Is(result.err, ErrMiningCancelled) {
+		}
+
+		// if mining have been cancelled, return error
+		if errors.Is(result.err, ErrMiningCancelled) {
 			return nil, 0, result.err
 		}
 	}
 
+	// at this point no go routine have found a valid block
 	return nil, 0, errors.New("could not find hash for block being mined")
 }
 
