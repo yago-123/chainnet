@@ -11,6 +11,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -119,7 +121,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 
 	// initialize chain and make sure that the values are retrieved correctly
 	chain, err := NewBlockchain(
-		&config.Config{},
+		&config.Config{Logger: logrus.New()},
 		boltdb,
 		mockHashing,
 		&consensus.MockHeavyValidator{},

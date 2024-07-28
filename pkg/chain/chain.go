@@ -42,6 +42,8 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 
 	// if exists a last header, sync the actual status of the chain
 	if !lastHeader.IsEmpty() {
+		cfg.Logger.Debugf("recovering chain with last hash: %x", lastHeader.PrevBlockHash)
+
 		// specify the current height
 		lastHeight = lastHeader.Height + 1
 

@@ -19,12 +19,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// temporary constant while the mining difficulty is adjusted
-const MiningInterval = 10 * time.Second
+const MiningInterval = 1 * time.Second
 
 func main() {
 	var block *kernel.Block
 	logger := logrus.New()
+	logger.SetLevel(logrus.DebugLevel)
 
 	cfg := config.NewConfig(logger, MiningInterval)
 
@@ -90,7 +90,7 @@ func main() {
 	subjectObserver.Register(mempool)
 
 	for {
-		time.Sleep(MiningInterval)
+		time.Sleep(cfg.MiningInterval)
 
 		// start mining block
 		block, err = mine.MineBlock()
@@ -99,17 +99,19 @@ func main() {
 			continue
 		}
 
+		miningTime := time.Unix(block.Header.Timestamp, 0).Format(time.RFC3339)
+
 		if block.IsGenesisBlock() {
 			logger.Infof(
-				"Genesis block mined successfully: hash %x, number txs: %d, height %d, target %d, nonce %d",
-				block.Hash, len(block.Transactions), block.Header.Height, block.Header.Target, block.Header.Nonce,
+				"Genesis block mined successfully: hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
+				block.Hash, len(block.Transactions), miningTime, block.Header.Height, block.Header.Target, block.Header.Nonce,
 			)
 			continue
 		}
 
 		logger.Infof(
-			"Block mined successfully: hash %x, previous hash %x, number txs %d, height %d, target %d, nonce %d",
-			block.Hash, block.Header.PrevBlockHash, len(block.Transactions), block.Header.Height, block.Header.Target, block.Header.Nonce,
+			"Block mined successfully: hash %x, previous hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
+			block.Hash, block.Header.PrevBlockHash, len(block.Transactions), miningTime, block.Header.Height, block.Header.Target, block.Header.Nonce,
 		)
 	}
 }
