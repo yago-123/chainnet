@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const MiningInterval = 1 * time.Minute
+const MiningInterval = 30 * time.Second
 
 func main() {
 	var block *kernel.Block
