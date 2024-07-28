@@ -65,7 +65,7 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	// split work and ranges among go routines
 	for i := range make([]int, numGoroutines) {
 		pow.wg.Add(1)
-		go pow.startMining(pow.bh, nonceRange, uint(i)*nonceRange)
+		go pow.startMining(*pow.bh, nonceRange, uint(i)*nonceRange)
 	}
 
 	// wait for all go routines to finish
@@ -87,11 +87,10 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 }
 
 // startMining starts a mining process in a goroutine
-func (pow *ProofOfWork) startMining(bh *kernel.BlockHeader, nonceRange uint, startNonce uint) {
+func (pow *ProofOfWork) startMining(bh kernel.BlockHeader, nonceRange uint, startNonce uint) {
 	defer pow.wg.Done()
 	// initialize hash function in each goroutine because is not thread safe by default
 	hasher := hash.GetHasher(pow.hasherType)
-	var localHashInt big.Int
 
 	// iterate over the nonce range and calculate the hash
 	for nonce := startNonce; nonce < startNonce+nonceRange && nonce < MaxNonce; nonce++ {
@@ -103,17 +102,15 @@ func (pow *ProofOfWork) startMining(bh *kernel.BlockHeader, nonceRange uint, sta
 		default:
 			// calculate the hash of the block
 			bh.SetNonce(nonce)
-			blockHash, err := util.CalculateBlockHash(bh, hasher)
+			blockHash, err := util.CalculateBlockHash(&bh, hasher)
 			if err != nil {
 				pow.results <- miningResult{nil, 0, fmt.Errorf("could not hash block: %w", err)}
 				return
 			}
 
-			localHashInt.SetBytes(blockHash)
-
-			// check if the hash meets the difficulty
-			if localHashInt.Cmp(pow.hashDifficulty) == -1 {
+			if util.IsFirstNBitsZero(blockHash, bh.Target) {
 				pow.results <- miningResult{blockHash, nonce, nil}
+				// pow.ctx.Done()
 				return
 			}
 		}

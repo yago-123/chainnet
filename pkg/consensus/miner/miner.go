@@ -47,7 +47,7 @@ func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain
 		chain:        chain,
 		minerAddress: publicKey,
 		isMining:     false,
-		target:       1,
+		target:       12,
 		cfg:          cfg,
 	}
 }
@@ -111,6 +111,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 			blockHash, nonce, errPow := pow.CalculateBlockHash()
 			if errPow != nil {
 				// if no nonce was found, readjust the timestamp and try again
+				m.cfg.Logger.Debugf("didn't find hash matching target, updating block header timestamp")
 				blockHeader.SetTimestamp(time.Now().Unix())
 				continue
 			}

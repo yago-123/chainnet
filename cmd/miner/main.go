@@ -23,6 +23,7 @@ const MiningInterval = 1 * time.Second
 
 func main() {
 	var block *kernel.Block
+
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel)
 
