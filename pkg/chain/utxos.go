@@ -66,5 +66,9 @@ func (u *UTXOSet) ID() string {
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
 func (u *UTXOSet) OnBlockAddition(block *kernel.Block) {
-	_ = u.AddBlock(block)
+	err := u.AddBlock(block)
+	if err != nil {
+		// add logging
+		return
+	}
 }
