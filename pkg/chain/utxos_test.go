@@ -3,12 +3,13 @@ package blockchain //nolint:testpackage // don't create separate package for tes
 import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-var b1 = &kernel.Block{
+var b1 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 	Transactions: []*kernel.Transaction{
 		{
 			ID: []byte("coinbase-transaction-block-1"),
@@ -22,7 +23,7 @@ var b1 = &kernel.Block{
 	},
 }
 
-var b2 = &kernel.Block{
+var b2 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 	Transactions: []*kernel.Transaction{
 		{
 			ID: []byte("coinbase-transaction-block-2"),
@@ -59,7 +60,7 @@ var b2 = &kernel.Block{
 	},
 }
 
-var b3 = &kernel.Block{
+var b3 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 	Transactions: []*kernel.Transaction{
 		{
 			ID: []byte("coinbase-transaction-block-3"),
@@ -94,9 +95,9 @@ var b3 = &kernel.Block{
 func TestUTXOSet_AddBlock(t *testing.T) {
 	utxos := NewUTXOSet()
 
-	utxos.AddBlock(b1)
-	utxos.AddBlock(b2)
-	utxos.AddBlock(b3)
+	require.NoError(t, utxos.AddBlock(b1))
+	require.NoError(t, utxos.AddBlock(b2))
+	require.NoError(t, utxos.AddBlock(b3))
 
 	require.Len(t, utxos.utxos, 4)
 
@@ -130,5 +131,4 @@ func TestUTXOSet_AddBlockWithInvalidInput(t *testing.T) {
 
 	// add block that references input not in the UTXO set
 	require.Error(t, utxos.AddBlock(b2))
-
 }
