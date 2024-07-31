@@ -214,15 +214,3 @@ func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutpu
 func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
 }
-
-// UnspentOutput represents the unspent transaction output
-type UnspentOutput struct {
-	TxID   []byte
-	OutIdx uint
-	Output TxOutput
-}
-
-// EqualInput checks if the input is the same as the given input
-func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
-	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
-}
