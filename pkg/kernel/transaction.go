@@ -153,6 +153,13 @@ type TxInput struct {
 	PubKey string
 }
 
+// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be
+// the STXO or Spent Transaction Output. This method is used in the UTXO set in order to remove those
+// utxo that are being spent
+func (in *TxInput) UniqueTxoKey() string {
+	return fmt.Sprintf("%s-%d", in.Txid, in.Vout)
+}
+
 // NewCoinbaseInput represents the source of the transactions for paying the miners (comes from nowhere)
 func NewCoinbaseInput() TxInput {
 	return TxInput{}
@@ -213,16 +220,4 @@ func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutpu
 // canBeUnlockedWith checks if the output can be unlocked with the given public key
 func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
-}
-
-// UnspentOutput represents the unspent transaction output
-type UnspentOutput struct {
-	TxID   []byte
-	OutIdx uint
-	Output TxOutput
-}
-
-// EqualInput checks if the input is the same as the given input
-func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
-	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
 }

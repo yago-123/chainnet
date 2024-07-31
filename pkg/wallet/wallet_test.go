@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var utxos = []*kernel.UnspentOutput{ //nolint:gochecknoglobals // data that is used across all test funcs
+var utxos = []*kernel.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
 	{TxID: []byte("random-id-0"), OutIdx: 1, Output: kernel.NewOutput(1, script.P2PK, "pubkey-2")},
 	{TxID: []byte("random-id-1"), OutIdx: 3, Output: kernel.NewOutput(2, script.P2PK, "pubkey-2")},
 	{TxID: []byte("random-id-2"), OutIdx: 1, Output: kernel.NewOutput(5, script.P2PK, "pubkey-2")},
@@ -41,7 +41,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 	require.Error(t, err)
 
 	// send transaction without utxos
-	_, err = wallet.SendTransaction("pubkey-1", 10, 1, []*kernel.UnspentOutput{})
+	_, err = wallet.SendTransaction("pubkey-1", 10, 1, []*kernel.UTXO{})
 	require.Error(t, err)
 
 	// send transaction with incorrect utxos unlocking scripts

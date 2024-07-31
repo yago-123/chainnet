@@ -80,7 +80,7 @@ func (w *Wallet) GetAddress() ([]byte, error) {
 }
 
 // SendTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos []*kernel.UnspentOutput) (*kernel.Transaction, error) {
+func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
 	inputs, totalBalance, err := generateInputs(utxos, targetAmount+txFee)
 	if err != nil {
@@ -119,7 +119,7 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
 // be used
-func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOutput) (*kernel.Transaction, error) {
+func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
 	scripSigs := []string{}
 	for _, vin := range tx.Vin {
@@ -155,7 +155,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UnspentOu
 
 // generateInputs set up the inputs for the transaction and returns the total balance of the UTXOs that are going to be
 // spent in the transaction
-func generateInputs(utxos []*kernel.UnspentOutput, targetAmount uint) ([]kernel.TxInput, uint, error) {
+func generateInputs(utxos []*kernel.UTXO, targetAmount uint) ([]kernel.TxInput, uint, error) {
 	// for now simple FIFO method, first outputs are the first to be spent
 	balance := uint(0)
 	inputs := []kernel.TxInput{}
