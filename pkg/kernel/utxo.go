@@ -1,15 +1,23 @@
 package kernel
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
-// UnspentOutput represents the unspent transaction output
-type UnspentOutput struct {
+// UTXO represents the unspent transaction output
+type UTXO struct {
 	TxID   []byte
 	OutIdx uint
 	Output TxOutput
 }
 
 // EqualInput checks if the input is the same as the given input
-func (utxo *UnspentOutput) EqualInput(input TxInput) bool {
+func (utxo *UTXO) EqualInput(input TxInput) bool {
 	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
+}
+
+// UniqueKey represents the unique key for the UTXO
+func (utxo *UTXO) UniqueKey() string {
+	return fmt.Sprintf("%s-%d", utxo.TxID, utxo.OutIdx)
 }

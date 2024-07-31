@@ -10,16 +10,17 @@ const UTXOSObserverID = "utxos"
 
 type UTXOSet struct {
 	mu    sync.Mutex
-	utxos map[string]kernel.UnspentOutput
+	utxos map[string]kernel.UTXO
 }
 
 func NewUTXOSet() *UTXOSet {
 	return &UTXOSet{
 		mu:    sync.Mutex{},
-		utxos: make(map[string]kernel.UnspentOutput),
+		utxos: make(map[string]kernel.UTXO),
 	}
 }
 
+// AddBlock invalidates the new inputs of the block and adds the new outputs to the UTXO set
 func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -32,26 +33,26 @@ func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 				continue
 			}
 
-			_, ok := u.utxos[string(input.Txid)]
+			_, ok := u.utxos[input.UniqueTxoKey()]
 			if !ok {
 				// if the utxo is not found, return error (impossible scenario in theory)
 				return fmt.Errorf("transaction %s not found in the UTXO set", tx.ID)
 			}
 
 			// delete the utxo from the set
-			delete(u.utxos, string(tx.ID))
+			delete(u.utxos, input.UniqueTxoKey())
 		}
 
 		// add new outputs to the set
 		for index, output := range tx.Vout {
-			utxo := kernel.UnspentOutput{
+			utxo := kernel.UTXO{
 				TxID:   tx.ID,
 				OutIdx: uint(index),
 				Output: output,
 			}
 
 			// store utxo in the set
-			u.utxos[string(tx.ID)] = utxo
+			u.utxos[utxo.UniqueKey()] = utxo
 		}
 	}
 
@@ -64,6 +65,6 @@ func (u *UTXOSet) ID() string {
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (u *UTXOSet) OnBlockAddition(_ *kernel.Block) {
-
+func (u *UTXOSet) OnBlockAddition(block *kernel.Block) {
+	_ = u.AddBlock(block)
 }

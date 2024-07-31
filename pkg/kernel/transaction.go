@@ -153,6 +153,13 @@ type TxInput struct {
 	PubKey string
 }
 
+// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be
+// the STXO or Spent Transaction Output. This method is used in the UTXO set in order to remove those
+// utxo that are being spent
+func (in *TxInput) UniqueTxoKey() string {
+	return fmt.Sprintf("%s-%d", in.Txid, in.Vout)
+}
+
 // NewCoinbaseInput represents the source of the transactions for paying the miners (comes from nowhere)
 func NewCoinbaseInput() TxInput {
 	return TxInput{}
