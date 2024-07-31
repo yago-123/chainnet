@@ -126,5 +126,9 @@ func TestUTXOSet_AddBlock(t *testing.T) {
 }
 
 func TestUTXOSet_AddBlockWithInvalidInput(t *testing.T) {
+	utxos := NewUTXOSet()
+
+	// add block that references input not in the UTXO set
+	require.Error(t, utxos.AddBlock(b2))
 
 }
