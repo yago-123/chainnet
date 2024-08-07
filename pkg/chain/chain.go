@@ -3,6 +3,7 @@ package blockchain
 import (
 	"chainnet/config"
 	"chainnet/pkg/chain/observer"
+	"chainnet/pkg/chain/p2p"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
@@ -64,6 +65,8 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 			return nil, fmt.Errorf("error reconstructing headers: %w", err)
 		}
 	}
+
+	p2p.NewP2PNodeDiscovery(cfg)
 
 	return &Blockchain{
 		lastBlockHash: lastBlockHash,
