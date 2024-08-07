@@ -23,10 +23,16 @@ jobs:
           version: 'v1.59.1'
 
       - name: Build CLI
-        run: make chainnet-cli
+        run: make cli
 
       - name: Build Node
-        run: make chainnet-node
+        run: make node
+
+      - name: Build Miner
+        run: make miner
+
+      - name: Build NESPV
+        run: make nespv
 
       - name: Test code
         run: make test
