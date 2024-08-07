@@ -86,3 +86,9 @@ node-image: node
 
 .PHONY: images
 images: miner-image node-image
+
+.PHONY: push
+push: miner-image node-image
+	@echo "Pushing Docker images to Docker Hub..."
+	docker push $(DOCKER_IMAGE_MINER)
+	docker push $(DOCKER_IMAGE_NODE)
