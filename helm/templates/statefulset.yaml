@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chainnet-miner
+  labels:
+    app: chainnet
+spec:
+  serviceName: "chainnet-miner"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chainnet-miner
+  template:
+    metadata:
+      labels:
+        app: chainnet-miner
+    spec:
+      containers:
+        - name: chainnet-miner
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: chainnet-miner-storage
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: chainnet-miner-storage
+          persistentVolumeClaim:
+            claimName: chainnet-miner-pvc
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chainnet-node
+  labels:
+    app: chainnet
+spec:
+  serviceName: "chainnet-node"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chainnet-node
+  template:
+    metadata:
+      labels:
+        app: chainnet-node
+    spec:
+      containers:
+        - name: chainnet-node
+          image: "{{ .Values.imageNode.repository }}:{{ .Values.imageNode.tag }}"
+          imagePullPolicy: "{{ .Values.imageNode.pullPolicy }}"
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: chainnet-node-storage
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: chainnet-node-storage
+          persistentVolumeClaim:
+            claimName: chainnet-node-pvc

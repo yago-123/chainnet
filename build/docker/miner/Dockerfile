@@ -4,9 +4,6 @@ FROM ubuntu:24.04
 # Set the working directory
 WORKDIR /app
 
-# Copy the miner binary into the container
-COPY bin/chainnet-miner /app/chainnet-miner
-
 # Install necessary packages and dependencies
 RUN apt-get update && apt-get install -y \
     curl
@@ -16,6 +13,9 @@ RUN mkdir -p /data
 
 # Set the database directory as a volume
 VOLUME /data
+
+# Copy the miner binary into the container
+COPY bin/chainnet-miner /app/chainnet-miner
 
 # Expose the port the miner service runs on
 EXPOSE 8080

@@ -1,0 +1,38 @@
+replicaCount: 1
+
+image:
+  repository: yagoninja/chainnet-miner
+  tag: latest
+  pullPolicy: Always
+
+imageNode:
+  repository: yagoninja/chainnet-node
+  tag: latest
+  pullPolicy: Always
+
+service:
+  name: chainnet-miner
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+serviceNode:
+  name: chainnet-node
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+persistence:
+  enabled: true
+  storageClass: "standard"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+resources: {}
+
+serviceAccount:
+  create: true
+  name: ""  # Leave as an empty string to use the default name

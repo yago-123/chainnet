@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chainnet-miner-pvc
+  labels:
+    app: chainnet
+spec:
+  accessModes:
+    - "ReadWriteOnce"  # Directly specifying the access mode as it's a constant
+  resources:
+    requests:
+      storage: "10Gi"  # Directly specifying the storage size
+  storageClassName: "standard"  # Directly specifying the storage class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chainnet-node-pvc
+  labels:
+    app: chainnet
+spec:
+  accessModes:
+    - "ReadWriteOnce"  # Directly specifying the access mode as it's a constant
+  resources:
+    requests:
+      storage: "10Gi"  # Directly specifying the storage size
+  storageClassName: "standard"  # Directly specifying the storage class
