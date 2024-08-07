@@ -24,6 +24,8 @@ type Blockchain struct {
 	validator consensus.HeavyValidator
 	subject   *observer.SubjectObserver
 
+	p2pNet *p2p.NodeP2P
+
 	logger *logrus.Logger
 	cfg    *config.Config
 }
@@ -66,7 +68,13 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		}
 	}
 
-	p2p.NewP2PNodeDiscovery(cfg)
+	var p2pNet *p2p.NodeP2P
+	if cfg.P2PEnabled {
+		p2pNet, err = p2p.NewP2PNodeDiscovery(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
+		}
+	}
 
 	return &Blockchain{
 		lastBlockHash: lastBlockHash,
@@ -75,6 +83,7 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		storage:       storage,
 		validator:     validator,
 		subject:       subject,
+		p2pNet:        p2pNet,
 		logger:        cfg.Logger,
 		cfg:           cfg,
 	}, nil
