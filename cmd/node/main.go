@@ -11,7 +11,6 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
-	"chainnet/pkg/wallet"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -35,18 +34,6 @@ func main() {
 	walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
 		logger.Fatalf("Error creating multi-hash configuration: %s", err)
-	}
-
-	// create new wallet for storing mining rewards
-	w, err := wallet.NewWallet(
-		[]byte("1"),
-		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-		crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()),
-		walletSha256Ripemd160Hasher,
-		hash.GetHasher(consensusHasherType),
-	)
-	if err != nil {
-		logger.Fatalf("Error creating new wallet: %s", err)
 	}
 
 	// create instance for persisting data
