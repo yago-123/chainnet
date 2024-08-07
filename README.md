@@ -26,6 +26,17 @@ Running `nespv` wallet:
 
 ```
 
+## Run in Kubernetes 
+Deploy the helm chart: 
+```bash
+$ helm install chainnet ./helm
+```
+
+Uninstall the helm chart: 
+```bash
+$ helm uninstall chainnet
+```
+
 ## Architecture
 ```ascii
 ┌──────────────────┐                 ┌──────────────────┐

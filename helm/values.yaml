@@ -3,12 +3,12 @@ replicaCount: 1
 image:
   repository: yagoninja/chainnet-miner
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imageNode:
   repository: yagoninja/chainnet-node
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 service:
   name: chainnet-miner
