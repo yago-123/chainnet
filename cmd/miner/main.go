@@ -27,7 +27,7 @@ func main() {
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel)
 
-	cfg := config.NewConfig(logger, MiningInterval)
+	cfg := config.NewConfig(logger, MiningInterval, false, 0, 0)
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256

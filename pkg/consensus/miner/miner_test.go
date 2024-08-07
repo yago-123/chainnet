@@ -132,7 +132,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 
 	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
 	require.NoError(t, err)
-	miner := NewMiner(config.NewConfig(logrus.New(), time.Second*10), []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
+	miner := NewMiner(config.NewConfig(logrus.New(), time.Second*10, false, 0, 0), []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)
 	require.NoError(t, err)
