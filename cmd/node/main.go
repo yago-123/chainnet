@@ -28,13 +28,6 @@ func main() {
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
-	// todo(): add consensusSignatureType
-
-	// create wallet address hasher
-	walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-	if err != nil {
-		logger.Fatalf("Error creating multi-hash configuration: %s", err)
-	}
 
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
