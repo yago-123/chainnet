@@ -14,6 +14,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Discovery will be used to discover peers in the network and connect to them (these must be
+// the methods used by chain package
+type Discovery interface {
+}
+
 const DiscoveryServiceTag = "node-p2p-discovery"
 
 type NodeP2P struct {
