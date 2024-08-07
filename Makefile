@@ -2,10 +2,10 @@
 OUTPUT_DIR := bin
 
 # Define the name of the CLI binary file
-CLI_BINARY_NAME := chainnet-cli
+CLI_BINARY_NAME   := chainnet-cli
 MINER_BINARY_NAME := chainnet-miner
-NESPV_BINARY_NAME := nespv
-NODE_BINARY_NAME := chainnet
+NESPV_BINARY_NAME := chainnet-nespv
+NODE_BINARY_NAME  := chainnet-node
 
 # Define the source file for the CLI application
 CLI_SOURCE := $(wildcard cmd/cli/*.go)
@@ -16,21 +16,27 @@ NODE_SOURCE := $(wildcard cmd/node/*.go)
 # Define build flags
 GCFLAGS := -gcflags "all=-N -l"
 
-.PHONY: all
-all: test lint chainnet-cli chainnet-miner chainnet-node nespv
+# Docker image names and paths
+DOCKER_IMAGE_MINER := yagoninja/chainnet-miner:latest
+DOCKER_IMAGE_NODE  := yagoninja/chainnet-node:latest
+DOCKERFILE_MINER   := ./build/docker/miner/Dockerfile
+DOCKERFILE_NODE    := ./build/docker/node/Dockerfile
 
-.PHONY: chainnet-cli
-chainnet-cli: output-dir
+.PHONY: all
+all: test lint cli miner node nespv
+
+.PHONY: cli
+cli: output-dir
 	@echo "Building chainnet CLI..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
 
-.PHONY: chainnet-miner
-chainnet-miner: output-dir
+.PHONY: miner
+miner: output-dir
 	@echo "Building chainnet miner..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(MINER_BINARY_NAME) $(MINER_SOURCE)
 
-.PHONY: chainnet-node
-chainnet-node: output-dir
+.PHONY: node
+node: output-dir
 	@echo "Building chainnet node..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
 
@@ -42,6 +48,7 @@ nespv: output-dir
 .PHONY: output-dir
 output-dir:
 	@mkdir -p $(OUTPUT_DIR)
+
 .PHONY: lint
 lint:
 	@echo "Running linter..."
@@ -64,6 +71,24 @@ imports:
 	@find . -name "*.go" | xargs goimports -w
 
 .PHONY: debug
-debug: chainnet-node
+debug: node
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet-miner
 
+.PHONY: miner-image
+miner-image: miner
+	@echo "Building Docker image for chainnet miner..."
+	docker build -t $(DOCKER_IMAGE_MINER) -f $(DOCKERFILE_MINER) .
+
+.PHONY: node-image
+node-image: node
+	@echo "Building Docker image for chainnet node..."
+	docker build -t $(DOCKER_IMAGE_NODE) -f $(DOCKERFILE_NODE) .
+
+.PHONY: images
+images: miner-image node-image
+
+.PHONY: push
+push: miner-image node-image
+	@echo "Pushing Docker images to Docker Hub..."
+	docker push $(DOCKER_IMAGE_MINER)
+	docker push $(DOCKER_IMAGE_NODE)
