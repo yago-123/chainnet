@@ -11,6 +11,7 @@ import (
 
 // default config keys
 const (
+	KeyConfigFile     = "config"
 	KeyStorageFile    = "storage-file"
 	KeyMiningInterval = "mining-interval"
 	KeyP2PEnabled     = "p2p-enabled"
@@ -20,6 +21,7 @@ const (
 
 // default config values
 const (
+	DefaultConfigFile      = ""
 	DefaultChainnetStorage = "chainnet-storage"
 	DefaultMiningInterval  = 1 * time.Minute
 	DefaultP2PEnabled      = true
@@ -29,11 +31,11 @@ const (
 
 type Config struct {
 	Logger         *logrus.Logger
-	StorageFile    string
-	MiningInterval time.Duration
-	P2PEnabled     bool
-	P2PMinNumConn  uint
-	P2PMaxNumConn  uint
+	StorageFile    string        `mapstructure:"storage-file"`
+	MiningInterval time.Duration `mapstructure:"mining-interval"`
+	P2PEnabled     bool          `mapstructure:"p2p-enabled"`
+	P2PMinNumConn  uint          `mapstructure:"min-p2p-conn"`
+	P2PMaxNumConn  uint          `mapstructure:"max-p2p-conn"`
 }
 
 func NewConfig() *Config {
@@ -52,39 +54,64 @@ func (c *Config) SetP2PStatus(enable bool) {
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
-	cfg := NewConfig()
+	var cfg Config
 
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigName("config")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
+	if cfgFile == "" {
+		return nil, fmt.Errorf("config file not specified")
 	}
 
+	viper.SetConfigFile(cfgFile)
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
-	if err := viper.Unmarshal(cfg); err != nil {
+	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode into struct: %w", err)
 	}
 
-	return cfg, nil
+	cfg.Logger = logrus.New()
+
+	return &cfg, nil
+}
+
+func InitConfig(cmd *cobra.Command) *Config {
+	cfg, err := LoadConfig(GetConfigFilePath(cmd))
+	if err != nil {
+		cfg = NewConfig()
+
+		cfg.Logger.Infof("unable to load config file: %v", err)
+		cfg.Logger.Infof("relying in default configuration")
+	}
+
+	cfg.Logger.Infof("config loaded: %v", cfg)
+
+	ApplyFlagsToConfig(cmd, cfg)
+
+	return cfg
 }
 
 func AddConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 
+	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
+}
+
+func GetConfigFilePath(cmd *cobra.Command) string {
+	if cmd.Flags().Changed(KeyConfigFile) {
+		return viper.GetString(KeyConfigFile)
+	}
+
+	return ""
 }
 
 // ApplyFlagsToConfig updates the config struct with flag values if they have been set
@@ -92,7 +119,6 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyStorageFile) {
 		cfg.StorageFile = viper.GetString(KeyStorageFile)
 	}
-
 	if cmd.Flags().Changed(KeyMiningInterval) {
 		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
 	}
