@@ -67,11 +67,11 @@ func NewP2PNodeDiscovery(cfg *config.Config) (*NodeP2P, error) {
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
 
-	cfg.Logger.Infof("Host created for peer discovery: %s", host.ID())
+	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
-	cfg.Logger.Infof("Our addresses:")
+	cfg.Logger.Debugf("p2p addresses:")
 	for _, addr := range host.Addrs() {
-		cfg.Logger.Infof(" - %v\n", addr)
+		cfg.Logger.Debugf(" - %v\n", addr)
 	}
 
 	// set up mDNS discovery

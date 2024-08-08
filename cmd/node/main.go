@@ -11,7 +11,11 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
+	"fmt"
+	"os"
 	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/sirupsen/logrus"
 )
@@ -20,11 +24,51 @@ const (
 	MiningInterval = 1 * time.Minute
 )
 
-func main() {
-	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
+var rootCmd = &cobra.Command{
+	Use:   "node",
+	Short: "Chainnet node app",
+}
 
-	cfg := config.NewConfig(logger, MiningInterval, false, 0, 0)
+var cfg *config.Config
+var cfgFile string
+
+func init() {
+	cobra.OnInitialize(initConfig)
+	// initialize config file flag
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./config.yaml)")
+
+	// add general config flags
+	config.AddConfigFlags(rootCmd)
+}
+
+func initConfig() {
+	var err error
+	cfg, err = config.LoadConfig(cfgFile)
+	if err != nil {
+		fmt.Printf("unable to find config file: %s\n", err)
+
+		fmt.Println("relying in default config file...")
+		cfg = config.NewConfig()
+	}
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func main() {
+	// Initialize configuration before executing commands
+	initConfig()
+
+	fmt.Printf("Loaded Configuration: %+v\n", cfg)
+
+	// Execute the root command
+	Execute()
+
+	cfg.Logger.SetLevel(logrus.DebugLevel)
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
@@ -32,7 +76,7 @@ func main() {
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
-		logger.Fatalf("Error creating bolt db: %s", err)
+		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
 	// create new observer
@@ -54,7 +98,7 @@ func main() {
 		subjectObserver,
 	)
 	if err != nil {
-		logger.Fatalf("Error creating blockchain: %s", err)
+		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
 	}
 
 	subjectObserver.Register(boltdb)
