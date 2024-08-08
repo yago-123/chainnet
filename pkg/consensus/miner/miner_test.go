@@ -11,10 +11,8 @@ import (
 	"chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
 	"context"
-	"testing"
-	"time"
-
 	"github.com/sirupsen/logrus"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -130,9 +128,12 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, nil)
 
+	cfg := config.NewConfig()
+	cfg.SetP2PStatus(false)
+
 	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
 	require.NoError(t, err)
-	miner := NewMiner(config.NewConfig(logrus.New(), time.Second*10, false, 0, 0), []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
+	miner := NewMiner(cfg, []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)
 	require.NoError(t, err)

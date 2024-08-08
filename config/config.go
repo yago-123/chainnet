@@ -34,7 +34,7 @@ func NewConfig() *Config {
 	}
 }
 
-func (c *Config) SetP2PEnabled(enable bool) {
+func (c *Config) SetP2PStatus(enable bool) {
 	c.P2PEnabled = enable
 }
 
