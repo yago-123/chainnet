@@ -2,9 +2,9 @@ package main
 
 import (
 	"chainnet/config"
-	"fmt"
+
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -12,23 +12,17 @@ var rootCmd = &cobra.Command{
 	Short: "Chainnet node app",
 }
 
-func Execute() {
+func Execute(logger *logrus.Logger) {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		logger.Fatalf("error executing command: %v", err)
 	}
 }
 
-func initConfig() {
+func initConfig(logger *logrus.Logger) {
 	var err error
 	cfg, err = config.LoadConfig(cfgFile)
-	if err == nil {
-		// success reading config file in file system
-		return
+	if err != nil {
+		logger.Infof("unable to find config file, relying in default config file...")
+		cfg = config.NewConfig()
 	}
-
-	fmt.Printf("unable to find config file: %s\n", err)
-
-	fmt.Println("relying in default config file...")
-	cfg = config.NewConfig()
 }

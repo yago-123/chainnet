@@ -11,7 +11,6 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
-	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -25,13 +24,13 @@ var cfg *config.Config
 var cfgFile string
 
 func main() {
-	// Initialize configuration before executing commands
-	initConfig()
+	logger := logrus.New()
 
-	fmt.Printf("Loaded Configuration: %+v\n", cfg)
+	// Initialize configuration before executing commands
+	initConfig(logger)
 
 	// Execute the root command
-	Execute()
+	Execute(logger)
 
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 

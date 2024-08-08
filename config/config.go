@@ -67,7 +67,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint("min-num-p2p-conn", DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint("max-num-p2p-conn", DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 
-	viper.BindPFlag("mining-interval", cmd.Flags().Lookup("mining-interval"))
-	viper.BindPFlag("min-num-p2p-conn", cmd.Flags().Lookup("min-num-p2p-conn"))
-	viper.BindPFlag("max-num-p2p-conn", cmd.Flags().Lookup("max-num-p2p-conn"))
+	_ = viper.BindPFlag("mining-interval", cmd.Flags().Lookup("mining-interval"))
+	_ = viper.BindPFlag("min-num-p2p-conn", cmd.Flags().Lookup("min-num-p2p-conn"))
+	_ = viper.BindPFlag("max-num-p2p-conn", cmd.Flags().Lookup("max-num-p2p-conn"))
 }
