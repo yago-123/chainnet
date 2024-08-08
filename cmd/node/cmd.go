@@ -8,8 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "node",
-	Short: "Chainnet node app",
+	Use: "chainnet-node",
 }
 
 func Execute(logger *logrus.Logger) {
