@@ -9,15 +9,27 @@ import (
 	"github.com/spf13/viper"
 )
 
+// default config keys
 const (
-	DefaultMiningInterval = 1 * time.Minute
-	DefaultP2PEnabled     = true
-	DefaultP2PMinNumConn  = 1
-	DefaultP2PMaxNumConn  = 100
+	KeyStorageFile    = "storage-file"
+	KeyMiningInterval = "mining-interval"
+	KeyP2PEnabled     = "p2p-enabled"
+	KeyP2PMinNumConn  = "min-p2p-conn"
+	KeyP2PMaxNumConn  = "max-p2p-conn"
+)
+
+// default config values
+const (
+	DefaultChainnetStorage = "chainnet-storage"
+	DefaultMiningInterval  = 1 * time.Minute
+	DefaultP2PEnabled      = true
+	DefaultP2PMinNumConn   = 1
+	DefaultP2PMaxNumConn   = 100
 )
 
 type Config struct {
 	Logger         *logrus.Logger
+	StorageFile    string
 	MiningInterval time.Duration
 	P2PEnabled     bool
 	P2PMinNumConn  uint
@@ -27,6 +39,7 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		Logger:         logrus.New(),
+		StorageFile:    DefaultChainnetStorage,
 		MiningInterval: DefaultMiningInterval,
 		P2PEnabled:     DefaultP2PEnabled,
 		P2PMinNumConn:  DefaultP2PMinNumConn,
@@ -63,24 +76,30 @@ func LoadConfig(cfgFile string) (*Config, error) {
 }
 
 func AddConfigFlags(cmd *cobra.Command) {
-	cmd.Flags().Duration("mining-interval", DefaultMiningInterval, "Mining interval in seconds")
-	cmd.Flags().Uint("min-num-p2p-conn", DefaultP2PMinNumConn, "Minimum number of P2P connections")
-	cmd.Flags().Uint("max-num-p2p-conn", DefaultP2PMaxNumConn, "Maximum number of P2P connections")
+	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
+	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
+	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
+	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 
-	_ = viper.BindPFlag("mining-interval", cmd.Flags().Lookup("mining-interval"))
-	_ = viper.BindPFlag("min-num-p2p-conn", cmd.Flags().Lookup("min-num-p2p-conn"))
-	_ = viper.BindPFlag("max-num-p2p-conn", cmd.Flags().Lookup("max-num-p2p-conn"))
+	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
+	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
+	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
+	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
 }
 
 // ApplyFlagsToConfig updates the config struct with flag values if they have been set
 func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
-	if cmd.Flags().Changed("mining-interval") {
-		cfg.MiningInterval = viper.GetDuration("mining-interval")
+	if cmd.Flags().Changed(KeyStorageFile) {
+		cfg.StorageFile = viper.GetString(KeyStorageFile)
 	}
-	if cmd.Flags().Changed("min-num-p2p-conn") {
-		cfg.P2PMinNumConn = viper.GetUint("min-num-p2p-conn")
+
+	if cmd.Flags().Changed(KeyMiningInterval) {
+		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
 	}
-	if cmd.Flags().Changed("max-num-p2p-conn") {
-		cfg.P2PMaxNumConn = viper.GetUint("max-num-p2p-conn")
+	if cmd.Flags().Changed(KeyP2PMinNumConn) {
+		cfg.P2PMinNumConn = viper.GetUint(KeyP2PMinNumConn)
+	}
+	if cmd.Flags().Changed(KeyP2PMaxNumConn) {
+		cfg.P2PMaxNumConn = viper.GetUint(KeyP2PMaxNumConn)
 	}
 }
