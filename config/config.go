@@ -96,12 +96,14 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
+	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
+	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
 }
@@ -121,6 +123,9 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyMiningInterval) {
 		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
+	}
+	if cmd.Flags().Changed(KeyP2PEnabled) {
+		cfg.P2PEnabled = viper.GetBool(KeyP2PEnabled)
 	}
 	if cmd.Flags().Changed(KeyP2PMinNumConn) {
 		cfg.P2PMinNumConn = viper.GetUint(KeyP2PMinNumConn)
