@@ -10,7 +10,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use: "chainnet-node",
 	Run: func(cmd *cobra.Command, _ []string) {
-		config.ApplyFlagsToConfig(cmd, cfg)
+		cfg = config.InitConfig(cmd)
 	},
 }
 
@@ -19,14 +19,5 @@ func Execute(logger *logrus.Logger) {
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.Fatalf("error executing command: %v", err)
-	}
-}
-
-func initConfig(logger *logrus.Logger) {
-	var err error
-	cfg, err = config.LoadConfig(cfgFile)
-	if err != nil {
-		logger.Infof("unable to find config file, relying in default config file...")
-		cfg = config.NewConfig()
 	}
 }

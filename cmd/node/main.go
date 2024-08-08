@@ -21,15 +21,12 @@ const (
 )
 
 var cfg *config.Config
-var cfgFile string
 
 func main() {
+	var err error
 	logger := logrus.New()
 
-	// Initialize configuration before executing commands
-	initConfig(logger)
-
-	// Execute the root command
+	// execute the root command
 	Execute(logger)
 
 	cfg.Logger.SetLevel(logrus.DebugLevel)
