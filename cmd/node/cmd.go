@@ -9,9 +9,14 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use: "chainnet-node",
+	Run: func(cmd *cobra.Command, _ []string) {
+		config.ApplyFlagsToConfig(cmd, cfg)
+	},
 }
 
 func Execute(logger *logrus.Logger) {
+	config.AddConfigFlags(rootCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		logger.Fatalf("error executing command: %v", err)
 	}

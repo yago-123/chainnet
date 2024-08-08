@@ -71,3 +71,16 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag("min-num-p2p-conn", cmd.Flags().Lookup("min-num-p2p-conn"))
 	_ = viper.BindPFlag("max-num-p2p-conn", cmd.Flags().Lookup("max-num-p2p-conn"))
 }
+
+// ApplyFlagsToConfig updates the config struct with flag values if they have been set
+func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	if cmd.Flags().Changed("mining-interval") {
+		cfg.MiningInterval = viper.GetDuration("mining-interval")
+	}
+	if cmd.Flags().Changed("min-num-p2p-conn") {
+		cfg.P2PMinNumConn = viper.GetUint("min-num-p2p-conn")
+	}
+	if cmd.Flags().Changed("max-num-p2p-conn") {
+		cfg.P2PMaxNumConn = viper.GetUint("max-num-p2p-conn")
+	}
+}

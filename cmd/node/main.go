@@ -34,6 +34,8 @@ func main() {
 
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
+	logger.Infof("started config with %v", cfg)
+
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
 
