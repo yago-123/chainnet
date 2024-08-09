@@ -9,6 +9,7 @@ import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -70,10 +71,15 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 
 	var p2pNet *p2p.NodeP2P
 	if cfg.P2PEnabled {
-		p2pNet, err = p2p.NewP2PNodeDiscovery(cfg)
+		ctx := context.Background()
+		p2pNet, err = p2p.NewP2PNodeDiscovery(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 		}
+
+		// todo() move as goroutine
+		p2pNet.InitializeHandlers()
+		_ = p2pNet.Sync()
 	}
 
 	return &Blockchain{
