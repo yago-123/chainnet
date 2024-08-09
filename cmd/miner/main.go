@@ -62,7 +62,7 @@ func main() {
 	mempool := miner.NewMemPool()
 
 	// create new observer
-	subjectObserver := observer.NewSubjectObserver()
+	subjectObserver := observer.NewBlockObserver()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(

@@ -38,7 +38,7 @@ func main() {
 	}
 
 	// create new observer
-	subjectObserver := observer.NewSubjectObserver()
+	subjectObserver := observer.NewBlockObserver()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(

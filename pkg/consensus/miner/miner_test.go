@@ -92,7 +92,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, nil)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockObserver())
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -132,7 +132,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	cfg := config.NewConfig()
 	cfg.SetP2PStatus(false)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewSubjectObserver())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockObserver())
 	require.NoError(t, err)
 	miner := NewMiner(cfg, []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 

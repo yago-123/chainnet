@@ -23,7 +23,7 @@ type Blockchain struct {
 
 	storage   storage.Storage
 	validator consensus.HeavyValidator
-	subject   *observer.SubjectObserver
+	subject   *observer.BlockObservers
 
 	p2pNet *p2p.NodeP2P
 
@@ -31,7 +31,7 @@ type Blockchain struct {
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
+func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject *observer.BlockObservers) (*Blockchain, error) {
 	var err error
 	var lastHeight uint
 	var lastBlockHash []byte
