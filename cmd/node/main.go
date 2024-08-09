@@ -16,10 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	MiningInterval = 1 * time.Minute
-)
-
 var cfg *config.Config
 
 func main() {
@@ -37,7 +33,7 @@ func main() {
 	consensusHasherType := hash.SHA256
 
 	// create instance for persisting data
-	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
+	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
@@ -68,5 +64,5 @@ func main() {
 
 	chain.Sync() //?
 
-	time.Sleep(MiningInterval)
+	time.Sleep(cfg.MiningInterval)
 }
