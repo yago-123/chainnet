@@ -20,14 +20,13 @@ var cfg *config.Config
 
 func main() {
 	var err error
-	logger := logrus.New()
 
 	// execute the root command
-	Execute(logger)
+	Execute(logrus.New())
 
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
-	logger.Infof("started config with %v", cfg)
+	cfg.Logger.Infof("starting chain node with config %v", cfg)
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
