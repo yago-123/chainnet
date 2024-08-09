@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "chainnet/pkg/chain/p2p";
+
+package chain.p2p;
+
+message Message {
+  string sender = 1;
+  string text = 2;
+  int64 timestamp = 3;
+}
