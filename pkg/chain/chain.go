@@ -15,6 +15,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const BlockchainObserver = "blockchain"
+
 type Blockchain struct {
 	lastBlockHash []byte
 	lastHeight    uint
@@ -23,7 +25,8 @@ type Blockchain struct {
 
 	storage   storage.Storage
 	validator consensus.HeavyValidator
-	subject   *observer.BlockObservers
+
+	blockSubject observer.BlockSubject
 
 	p2pNet *p2p.NodeP2P
 
@@ -31,7 +34,7 @@ type Blockchain struct {
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject *observer.BlockObservers) (*Blockchain, error) {
+func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject observer.BlockSubject) (*Blockchain, error) {
 	var err error
 	var lastHeight uint
 	var lastBlockHash []byte
@@ -71,8 +74,12 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 
 	var p2pNet *p2p.NodeP2P
 	if cfg.P2PEnabled {
+		netSubject := observer.NewNetSubject()
+		// netSubject.Register()
+		// pass the this blockchain itself to the subject
+
 		ctx := context.Background()
-		p2pNet, err = p2p.NewP2PNodeDiscovery(ctx, cfg)
+		p2pNet, err = p2p.NewP2PNodeDiscovery(ctx, cfg, netSubject)
 		if err != nil {
 			return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 		}
@@ -88,7 +95,7 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		headers:       headers,
 		storage:       storage,
 		validator:     validator,
-		subject:       subject,
+		blockSubject:  subject,
 		p2pNet:        p2pNet,
 		logger:        cfg.Logger,
 		cfg:           cfg,
@@ -127,7 +134,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	bc.headers[string(block.Hash)] = *block.Header
 
 	// notify observers of a new block added
-	bc.subject.NotifyBlockAdded(block)
+	bc.blockSubject.NotifyBlockAdded(block)
 
 	return nil
 }
@@ -140,6 +147,17 @@ func (bc *Blockchain) GetLastBlockHash() []byte {
 // GetLastHeight returns the latest block height
 func (bc *Blockchain) GetLastHeight() uint {
 	return bc.lastHeight
+}
+
+// ID returns the observer id
+func (bc *Blockchain) ID() string {
+	return BlockchainObserver
+}
+
+// OnNodeDiscovered is called when a new node is discovered via the observer pattern
+func (bc *Blockchain) OnNodeDiscovered(peerID string) {
+	bc.logger.Infof("discovered new peer %s", peerID)
+	// sync to see if we can update
 }
 
 // reconstructHeaders

@@ -15,33 +15,33 @@ type NetSubject interface {
 	NotifyNodeDiscovered(peerID string)
 }
 
-type NetObservers struct {
+type NetSubjectController struct {
 	observers map[string]NetObserver
 	mu        sync.Mutex
 }
 
-func NewNetObserver() *NetObservers {
-	return &NetObservers{
+func NewNetSubject() *NetSubjectController {
+	return &NetSubjectController{
 		observers: make(map[string]NetObserver),
 	}
 }
 
 // Register adds an observer to the list of observers
-func (no *NetObservers) Register(observer NetObserver) {
+func (no *NetSubjectController) Register(observer NetObserver) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	no.observers[observer.ID()] = observer
 }
 
 // Unregister removes an observer from the list of observers
-func (no *NetObservers) Unregister(observer NetObserver) {
+func (no *NetSubjectController) Unregister(observer NetObserver) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	delete(no.observers, observer.ID())
 }
 
 // NotifyNodeDiscovered notifies all observers that a new node has been discovered
-func (no *NetObservers) NotifyNodeDiscovered(peerID string) {
+func (no *NetSubjectController) NotifyNodeDiscovered(peerID string) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	for _, observer := range no.observers {

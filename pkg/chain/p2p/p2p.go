@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"bufio"
+	"chainnet/pkg/chain/observer"
 	"fmt"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -20,11 +21,13 @@ type NodeP2P struct {
 	cfg  *config.Config
 	host host.Host
 
+	netSubject observer.NetSubject
+
 	ctx    context.Context
 	logger *logrus.Logger
 }
 
-func NewP2PNodeDiscovery(ctx context.Context, cfg *config.Config) (*NodeP2P, error) {
+func NewP2PNodeDiscovery(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject) (*NodeP2P, error) {
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2PMinNumConn),
 		int(cfg.P2PMaxNumConn),
@@ -50,10 +53,11 @@ func NewP2PNodeDiscovery(ctx context.Context, cfg *config.Config) (*NodeP2P, err
 	}
 
 	return &NodeP2P{
-		cfg:    cfg,
-		host:   host,
-		ctx:    ctx,
-		logger: cfg.Logger,
+		cfg:        cfg,
+		host:       host,
+		netSubject: netSubject,
+		ctx:        ctx,
+		logger:     cfg.Logger,
 	}, nil
 }
 
