@@ -75,8 +75,10 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 	var p2pNet *p2p.NodeP2P
 	if cfg.P2PEnabled {
 		netSubject := observer.NewNetSubject()
-		// netSubject.Register()
+		netSubject.Register(&Blockchain{})
 		// pass the this blockchain itself to the subject
+		// decide how we should do this register, maybe we should add Start method?
+		// or initialize network?
 
 		ctx := context.Background()
 		p2pNet, err = p2p.NewP2PNodeDiscovery(ctx, cfg, netSubject)
