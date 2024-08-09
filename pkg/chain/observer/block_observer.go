@@ -5,13 +5,13 @@ import (
 	"sync"
 )
 
-// BlockObserver interface that defines the methods that an observer should implement
+// BlockObserver interface that defines the methods that a block observer should implement
 type BlockObserver interface {
 	ID() string
 	OnBlockAddition(block *kernel.Block)
 }
 
-// BlockSubject controller that manages the observers
+// BlockSubject controller that manages the block observers
 type BlockSubject interface {
 	Register(observer BlockObserver)
 	Unregister(observer BlockObserver)
