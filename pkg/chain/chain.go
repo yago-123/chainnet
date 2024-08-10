@@ -13,6 +13,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/libp2p/go-libp2p/core/peer"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -180,11 +182,11 @@ func (bc *Blockchain) ID() string {
 }
 
 // OnNodeDiscovered is called when a new node is discovered via the observer pattern
-func (bc *Blockchain) OnNodeDiscovered(peerID string) {
+func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	// sync to see if we can update
 
-	_ = bc.p2pNet.SendHello(peerID)
+	_, _ = bc.p2pNet.AskLastHeader(peerID)
 }
 
 // GetLastBlockHash returns the latest block hash

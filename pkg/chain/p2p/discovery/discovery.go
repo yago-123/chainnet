@@ -52,5 +52,5 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 
 	n.logger.Debugf("successfully connected to peer %s", pi.ID)
 
-	n.netSubject.NotifyNodeDiscovered(pi.ID.String())
+	n.netSubject.NotifyNodeDiscovered(pi.ID)
 }

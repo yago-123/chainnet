@@ -25,8 +25,10 @@ import (
 const (
 	P2PObserverID = "p2p-observer"
 
-	EchoProtocol           = "/echo/1.0.0"
 	P2PComunicationTimeout = 10 * time.Second
+	P2PReadTimeout         = 10 * time.Second
+
+	AskLastHeaderProtocol = "/lastHeader/0.1.0"
 )
 
 type NodeP2P struct {
@@ -100,34 +102,37 @@ func (n *NodeP2P) Stop() error {
 }
 
 func (n *NodeP2P) InitHandlers() {
-	n.host.SetStreamHandler(EchoProtocol, n.handleEchoStream)
+	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
 }
 
-func (n *NodeP2P) SendHello(peerID string) error {
-	peerReference, err := peer.Decode(peerID)
-	if err != nil {
-		n.logger.Errorf("failed to decode peer reference: %v", err)
-	}
-
+// AskLastHeader sends a request to a specific peer to get the last block header
+func (n *NodeP2P) AskLastHeader(peerID peer.ID) (*kernel.BlockHeader, error) {
 	ctx, cancel := context.WithTimeout(n.ctx, P2PComunicationTimeout)
 	defer cancel()
 
-	stream, err := n.host.NewStream(ctx, peerReference, EchoProtocol)
+	// open stream to peer
+	stream, err := n.host.NewStream(ctx, peerID, AskLastHeaderProtocol)
 	if err != nil {
-		return fmt.Errorf("error enabling stream: %w", err)
+		return nil, fmt.Errorf("error enabling stream: %w", err)
 	}
 	defer stream.Close()
 
-	// Send a message to the peer
-	_, err = stream.Write([]byte("Hello from " + peerID + "!\n"))
-	if err != nil {
-		n.logger.Errorf("Failed to send message to peer %s: %s\n", peerID, err)
+	// set deadline so we don't wait forever
+	if err = stream.SetReadDeadline(time.Now().Add(P2PReadTimeout)); err != nil {
+		return nil, fmt.Errorf("error setting read deadline: %w", err)
 	}
 
-	return nil
+	var data []byte
+	// read and decode reply
+	_, err = stream.Read(data)
+	if err != nil {
+		return nil, fmt.Errorf("error reading data from stream: %w", err)
+	}
+
+	return n.encoder.DeserializeHeader(data)
 }
 
-func (n *NodeP2P) handleEchoStream(stream network.Stream) {
+func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	defer stream.Close()
 
 	buf := bufio.NewReader(stream)
@@ -147,6 +152,7 @@ func (n *NodeP2P) ID() string {
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
 func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
+
 	// todo(): notify the network about the new node that has been added
 
 }

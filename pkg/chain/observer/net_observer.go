@@ -1,18 +1,22 @@
 package observer
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/libp2p/go-libp2p/core/peer"
+)
 
 // NetObserver interface that defines the methods that a network observer should implement
 type NetObserver interface {
 	ID() string
-	OnNodeDiscovered(peerID string)
+	OnNodeDiscovered(peerID peer.ID)
 }
 
 // NetSubject controller that manages the net observers
 type NetSubject interface {
 	Register(observer NetObserver)
 	Unregister(observer NetObserver)
-	NotifyNodeDiscovered(peerID string)
+	NotifyNodeDiscovered(peerID peer.ID)
 }
 
 type NetSubjectController struct {
@@ -41,7 +45,7 @@ func (no *NetSubjectController) Unregister(observer NetObserver) {
 }
 
 // NotifyNodeDiscovered notifies all observers that a new node has been discovered
-func (no *NetSubjectController) NotifyNodeDiscovered(peerID string) {
+func (no *NetSubjectController) NotifyNodeDiscovered(peerID peer.ID) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	for _, observer := range no.observers {
