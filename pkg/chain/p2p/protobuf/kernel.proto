@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "chainnet/pkg/chain/p2p";
+
+message Transaction {
+  bytes id = 1;
+  repeated TxInput vin = 2;
+  repeated TxOutput vout = 3;
+}
+
+message TxInput {
+  bytes txid = 1;
+  uint32 vout = 2;
+  string script_sig = 3;
+  string pub_key = 4;
+}
+
+message TxOutput {
+  uint32 amount = 1;
+  string script_pub_key = 2;
+  string pub_key = 3;
+}
+
+
+message BlockHeader {
+  bytes version = 1;
+  bytes prev_block_hash = 2;
+  bytes merkle_root = 3;
+  uint32 height = 4;
+  int64 timestamp = 5;
+  uint32 target = 6;
+  uint32 nonce = 7;
+}
+
+message Block {
+  BlockHeader header = 1;
+  repeated Transaction transactions = 2;
+  bytes hash = 3;
+}

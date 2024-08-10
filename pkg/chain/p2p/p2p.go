@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/chain/p2p/discovery"
+	"chainnet/pkg/encoding"
 	"fmt"
 	"time"
 
@@ -33,12 +34,16 @@ type NodeP2P struct {
 	netSubject observer.NetSubject
 	ctx        context.Context
 
+	// disco is in charge of setting up the logic for node discovery
 	disco discovery.Discovery
+
+	// encoding contains the communication data serialization between peers
+	encoder encoding.Encoding
 
 	logger *logrus.Logger
 }
 
-func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject) (*NodeP2P, error) {
+func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject, encoder encoding.Encoding) (*NodeP2P, error) {
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2PMinNumConn),
@@ -74,6 +79,7 @@ func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.Net
 		netSubject: netSubject,
 		ctx:        ctx,
 		disco:      disco,
+		encoder:    encoder,
 		logger:     cfg.Logger,
 	}, nil
 }

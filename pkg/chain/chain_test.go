@@ -94,6 +94,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewBlockSubject(),
+		encoding.NewGobEncoder(),
 	)
 
 	require.NoError(t, err)
@@ -126,6 +127,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 		mockHashing,
 		&consensus.MockHeavyValidator{},
 		observer.NewBlockSubject(),
+		encoding.NewGobEncoder(),
 	)
 
 	require.NoError(t, err)

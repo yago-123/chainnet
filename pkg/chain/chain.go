@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"context"
@@ -33,11 +34,20 @@ type Blockchain struct {
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 
+	p2pEncoder encoding.Encoding
+
 	logger *logrus.Logger
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject observer.BlockSubject) (*Blockchain, error) {
+func NewBlockchain(
+	cfg *config.Config,
+	storage storage.Storage,
+	hasher hash.Hashing,
+	validator consensus.HeavyValidator,
+	subject observer.BlockSubject,
+	p2pEncoder encoding.Encoding,
+) (*Blockchain, error) {
 	var err error
 	var lastHeight uint
 	var lastBlockHash []byte
@@ -83,6 +93,7 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		validator:     validator,
 		blockSubject:  subject,
 		p2pActive:     false,
+		p2pEncoder:    p2pEncoder,
 		logger:        cfg.Logger,
 		cfg:           cfg,
 	}, nil
@@ -107,7 +118,7 @@ func (bc *Blockchain) InitNetwork() error {
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject)
+	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder)
 	if err != nil {
 		return fmt.Errorf("error creating p2p node discovery: %w", err)
 	}

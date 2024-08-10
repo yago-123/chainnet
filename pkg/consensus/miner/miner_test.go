@@ -6,6 +6,7 @@ import (
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	"chainnet/tests/mocks/consensus"
@@ -92,7 +93,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, nil)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -132,7 +133,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	cfg := config.NewConfig()
 	cfg.SetP2PStatus(false)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 	miner := NewMiner(cfg, []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 
