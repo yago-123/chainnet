@@ -3,6 +3,7 @@ package p2p
 import (
 	"bufio"
 	"chainnet/pkg/chain/observer"
+	"chainnet/pkg/chain/p2p/discovery"
 	"fmt"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -24,7 +25,7 @@ type NodeP2P struct {
 	netSubject observer.NetSubject
 	ctx        context.Context
 
-	disco Discovery
+	disco discovery.Discovery
 
 	logger *logrus.Logger
 }
@@ -54,7 +55,7 @@ func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.Net
 		cfg.Logger.Debugf(" - %v\n", addr)
 	}
 
-	disco, err := NewMdnsDiscovery(cfg, host, netSubject)
+	disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery module: %w", err)
 	}
