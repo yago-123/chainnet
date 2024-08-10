@@ -78,7 +78,7 @@ func main() {
 			hash.GetHasher(consensusHasherType),
 		),
 		subjectObserver,
-		encoding.NewGobEncoder(),
+		encoding.NewProtobufEncoder(),
 	)
 	if err != nil {
 		logger.Fatalf("Error creating blockchain: %s", err)
