@@ -1,15 +1,17 @@
-package encoding
+package encoding //nolint:testpackage // don't create separate package for tests
 
 import (
 	pb "chainnet/pkg/chain/p2p/protobuf"
 	"chainnet/pkg/kernel"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 )
 
-var testBlock = kernel.Block{
+var testBlock = kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 	Header: &kernel.BlockHeader{
 		Version:       []byte("v1"),
 		PrevBlockHash: []byte("prevhash"),
@@ -42,7 +44,7 @@ var testBlock = kernel.Block{
 	Hash: []byte("blockhash"),
 }
 
-var expectedPbBlock = &pb.Block{
+var expectedPbBlock = &pb.Block{ //nolint:gochecknoglobals // ignore linter in this case
 	Header: &pb.BlockHeader{
 		Version:       []byte("v1"),
 		PrevBlockHash: []byte("prevhash"),
@@ -78,11 +80,11 @@ var expectedPbBlock = &pb.Block{
 func TestSerializeBlock(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := p.SerializeBlock(testBlock)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var pbBlock pb.Block
 	err = proto.Unmarshal(data, &pbBlock)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
 	assert.True(t, proto.Equal(expectedPbBlock, &pbBlock))
 }
@@ -90,21 +92,21 @@ func TestSerializeBlock(t *testing.T) {
 func TestDeserializeBlock(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := proto.Marshal(expectedPbBlock)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	block, err := p.DeserializeBlock(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, testBlock, *block)
 }
 
 func TestSerializeHeader(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := p.SerializeHeader(*testBlock.Header)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var pbHeader pb.BlockHeader
 	err = proto.Unmarshal(data, &pbHeader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
 	assert.True(t, proto.Equal(expectedPbBlock.GetHeader(), &pbHeader))
@@ -113,21 +115,21 @@ func TestSerializeHeader(t *testing.T) {
 func TestDeserializeHeader(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := proto.Marshal(expectedPbBlock.GetHeader())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	header, err := p.DeserializeHeader(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, *testBlock.Header, *header)
 }
 
 func TestSerializeTransaction(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := p.SerializeTransaction(*testBlock.Transactions[0])
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var pbTransaction pb.Transaction
 	err = proto.Unmarshal(data, &pbTransaction)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectedPbTransaction := expectedPbBlock.GetTransactions()[0]
 	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
@@ -137,10 +139,10 @@ func TestSerializeTransaction(t *testing.T) {
 func TestDeserializeTransaction(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := proto.Marshal(expectedPbBlock.GetTransactions()[0])
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tx, err := p.DeserializeTransaction(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, *testBlock.Transactions[0], *tx)
 }
 
