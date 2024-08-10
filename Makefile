@@ -31,12 +31,12 @@ DOCKERFILE_NODE    := ./build/docker/node/Dockerfile
 all: test lint cli miner node nespv
 
 .PHONY: cli
-cli: output-dir
+cli: protobuf output-dir
 	@echo "Building chainnet CLI..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
 
 .PHONY: miner
-miner: output-dir
+miner: protobuf output-dir
 	@echo "Building chainnet miner..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(MINER_BINARY_NAME) $(MINER_SOURCE)
 
@@ -46,7 +46,7 @@ node: protobuf output-dir
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
 
 .PHONY: nespv
-nespv: output-dir
+nespv: protobuf output-dir
 	@echo "Building chainnet nespv..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NESPV_BINARY_NAME) $(NESPV_SOURCE)
 
@@ -60,12 +60,12 @@ output-dir:
 	@mkdir -p $(OUTPUT_DIR)
 
 .PHONY: lint
-lint:
+lint: protobuf
 	@echo "Running linter..."
 	@golangci-lint run ./...
 
 .PHONY: test
-test:
+test: protobuf
 	@echo "Running tests..."
 	@go test -v -cover ./...
 
