@@ -26,9 +26,6 @@ jobs:
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30.0
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-        env:
-          GOBIN: /go/bin
-          PATH: $PATH:/go/bin
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v2
