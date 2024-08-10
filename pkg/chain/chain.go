@@ -113,10 +113,9 @@ func (bc *Blockchain) InitNetwork() error {
 	// initialize network handlers
 	p2pNet.InitHandlers()
 
-	// initialize node discovery
-	err = p2pNet.InitNodeDiscovery()
-	if err != nil {
-		return fmt.Errorf("error initializing node discovery: %w", err)
+	// start the p2p node
+	if err = p2pNet.Start(); err != nil {
+		return fmt.Errorf("error starting p2p node: %w", err)
 	}
 
 	bc.p2pNet = p2pNet

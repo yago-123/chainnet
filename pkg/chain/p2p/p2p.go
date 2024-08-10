@@ -13,7 +13,6 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 )
 
@@ -21,26 +20,29 @@ type NodeP2P struct {
 	cfg  *config.Config
 	host host.Host
 
+	// netSubject notifies other components about network events
 	netSubject observer.NetSubject
+	ctx        context.Context
 
-	ctx    context.Context
+	disco Discovery
+
 	logger *logrus.Logger
 }
 
 func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject) (*NodeP2P, error) {
+	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2PMinNumConn),
 		int(cfg.P2PMaxNumConn),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection manager during peer discovery: %w", err)
 	}
 
+	// create host
 	host, err := libp2p.New(
 		libp2p.ConnectionManager(connMgr),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
@@ -52,46 +54,35 @@ func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.Net
 		cfg.Logger.Debugf(" - %v\n", addr)
 	}
 
+	disco, err := NewMdnsDiscovery(cfg, host, netSubject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery module: %w", err)
+	}
+
 	return &NodeP2P{
 		cfg:        cfg,
 		host:       host,
 		netSubject: netSubject,
 		ctx:        ctx,
+		disco:      disco,
 		logger:     cfg.Logger,
 	}, nil
 }
 
 func (n *NodeP2P) Start() error {
-	// init node discovery
-	return nil
+	return n.disco.Start()
 }
 
 func (n *NodeP2P) Stop() error {
-	n.host.Addrs()
+	if err := n.disco.Stop(); err != nil {
+		return err
+	}
+
 	return n.host.Close()
 }
 
 func (n *NodeP2P) InitHandlers() {
 	n.host.SetStreamHandler("/echo/1.0.0", n.handleEchoStream)
-}
-
-// InitNodeDiscovery initializes the mechanism for discovering peers in the network
-func (n *NodeP2P) InitNodeDiscovery() error {
-	mdnsService := mdns.NewMdnsService(n.host, DiscoveryServiceTag, NewDiscoNotifee(n.cfg, n.host, n.netSubject))
-
-	err := mdnsService.Start()
-	if err != nil {
-		return fmt.Errorf("failed to start mDNS service: %w", err)
-	}
-
-	// mdnsService can't be returned because is unexported from the package itself,
-	// so we need to wait for closure in a goroutine
-	go func() {
-		<-n.ctx.Done()
-		mdnsService.Close()
-	}()
-
-	return nil
 }
 
 func (n *NodeP2P) handleEchoStream(stream network.Stream) {
