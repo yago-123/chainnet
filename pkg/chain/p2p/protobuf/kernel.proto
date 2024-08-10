@@ -10,13 +10,13 @@ message Transaction {
 
 message TxInput {
   bytes txid = 1;
-  uint32 vout = 2;
+  uint64 vout = 2;
   string script_sig = 3;
   string pub_key = 4;
 }
 
 message TxOutput {
-  uint32 amount = 1;
+  uint64 amount = 1;
   string script_pub_key = 2;
   string pub_key = 3;
 }
@@ -26,10 +26,10 @@ message BlockHeader {
   bytes version = 1;
   bytes prev_block_hash = 2;
   bytes merkle_root = 3;
-  uint32 height = 4;
+  uint64 height = 4;
   int64 timestamp = 5;
-  uint32 target = 6;
-  uint32 nonce = 7;
+  uint64 target = 6;
+  uint64 nonce = 7;
 }
 
 message Block {
