@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-const MemPoolObserverID = "mempool"
+const MemPoolObserverID = "mempool-observer"
 
 type txFeePair struct {
 	Transaction *kernel.Transaction

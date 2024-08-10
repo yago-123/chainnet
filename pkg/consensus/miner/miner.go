@@ -21,7 +21,7 @@ const (
 
 	BlockVersion = "1"
 
-	MinerObserverID = "miner"
+	MinerObserverID = "miner-observer"
 )
 
 // MiningTarget will be eventually replaced with variable mining difficulty

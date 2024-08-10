@@ -5,6 +5,7 @@ import (
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/chain/p2p/discovery"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/kernel"
 	"fmt"
 	"time"
 
@@ -22,6 +23,8 @@ import (
 )
 
 const (
+	P2PObserverID = "p2p-observer"
+
 	EchoProtocol           = "/echo/1.0.0"
 	P2PComunicationTimeout = 10 * time.Second
 )
@@ -135,4 +138,15 @@ func (n *NodeP2P) handleEchoStream(stream network.Stream) {
 		}
 		n.logger.Debugf("Received: %s", str)
 	}
+}
+
+func (n *NodeP2P) ID() string {
+	return P2PObserverID
+}
+
+// OnBlockAddition is triggered as part of the chain controller, this function is
+// executed when a new block is added into the chain
+func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
+	// todo(): notify the network about the new node that has been added
+
 }

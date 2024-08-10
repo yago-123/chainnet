@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-const UTXOSObserverID = "utxos"
+const UTXOSObserverID = "utxos-observer"
 
 type UTXOSet struct {
 	mu    sync.Mutex
