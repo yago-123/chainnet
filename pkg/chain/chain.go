@@ -91,12 +91,14 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 func (bc *Blockchain) InitNetwork() error {
 	var p2pNet *p2p.NodeP2P
 
-	if bc.p2pActive {
-		return fmt.Errorf("p2p network already active")
-	}
-
+	// check if the network is supposed to be enabled
 	if !bc.cfg.P2PEnabled {
 		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+	}
+
+	// check if the network has been initialized before
+	if bc.p2pActive {
+		return fmt.Errorf("p2p network already active")
 	}
 
 	// create a new blockchain observer that will react to network events
@@ -124,19 +126,6 @@ func (bc *Blockchain) InitNetwork() error {
 	return nil
 }
 
-func (bc *Blockchain) Sync() {
-	// if there is latest block (node has been started before)
-	// - retrieve latest block hash
-	// - compare height and hash
-	// - decide with the other peers next steps (download next headers or execute some conflict resolution)
-
-	// if there is not latest block (node is new)
-	// - ask for headers
-	// - download & verify headers
-	// - start IBD (Initial Block Download): download block from each header
-	// 		- validate each block
-}
-
 func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	if err := bc.validator.ValidateBlock(block); err != nil {
 		return fmt.Errorf("block validation failed: %w", err)
@@ -161,14 +150,17 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-// GetLastBlockHash returns the latest block hash
-func (bc *Blockchain) GetLastBlockHash() []byte {
-	return bc.lastBlockHash
-}
+func (bc *Blockchain) Sync() {
+	// if there is latest block (node has been started before)
+	// - retrieve latest block hash
+	// - compare height and hash
+	// - decide with the other peers next steps (download next headers or execute some conflict resolution)
 
-// GetLastHeight returns the latest block height
-func (bc *Blockchain) GetLastHeight() uint {
-	return bc.lastHeight
+	// if there is not latest block (node is new)
+	// - ask for headers
+	// - download & verify headers
+	// - start IBD (Initial Block Download): download block from each header
+	// 		- validate each block
 }
 
 // ID returns the observer id
@@ -180,6 +172,18 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID string) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	// sync to see if we can update
+
+	_ = bc.p2pNet.SendHello(peerID)
+}
+
+// GetLastBlockHash returns the latest block hash
+func (bc *Blockchain) GetLastBlockHash() []byte {
+	return bc.lastBlockHash
+}
+
+// GetLastHeight returns the latest block height
+func (bc *Blockchain) GetLastHeight() uint {
+	return bc.lastHeight
 }
 
 // reconstructHeaders

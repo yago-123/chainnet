@@ -5,6 +5,9 @@ import (
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/chain/p2p/discovery"
 	"fmt"
+	"time"
+
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/sirupsen/logrus"
@@ -15,6 +18,11 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
+)
+
+const (
+	EchoProtocol           = "/echo/1.0.0"
+	P2PComunicationTimeout = 10 * time.Second
 )
 
 type NodeP2P struct {
@@ -83,7 +91,31 @@ func (n *NodeP2P) Stop() error {
 }
 
 func (n *NodeP2P) InitHandlers() {
-	n.host.SetStreamHandler("/echo/1.0.0", n.handleEchoStream)
+	n.host.SetStreamHandler(EchoProtocol, n.handleEchoStream)
+}
+
+func (n *NodeP2P) SendHello(peerID string) error {
+	peerReference, err := peer.Decode(peerID)
+	if err != nil {
+		n.logger.Errorf("failed to decode peer reference: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(n.ctx, P2PComunicationTimeout)
+	defer cancel()
+
+	stream, err := n.host.NewStream(ctx, peerReference, EchoProtocol)
+	if err != nil {
+		return fmt.Errorf("error enabling stream: %w", err)
+	}
+	defer stream.Close()
+
+	// Send a message to the peer
+	_, err = stream.Write([]byte("Hello from " + peerID + "!\n"))
+	if err != nil {
+		n.logger.Errorf("Failed to send message to peer %s: %s\n", peerID, err)
+	}
+
+	return nil
 }
 
 func (n *NodeP2P) handleEchoStream(stream network.Stream) {

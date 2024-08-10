@@ -40,7 +40,6 @@ func newDiscoNotifee(cfg *config.Config, host host.Host, netSubject observer.Net
 
 // HandlePeerFound connects to newly discovered peers
 func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
-	n.logger.Infof("discovered new peer %s", pi.ID)
 	n.host.Peerstore().AddAddrs(pi.ID, pi.Addrs, peerstore.PermanentAddrTTL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), DiscoveryTimeout)
@@ -53,5 +52,5 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 
 	n.logger.Debugf("successfully connected to peer %s", pi.ID)
 
-	n.netSubject.NotifyNodeDiscovered(string(pi.ID))
+	n.netSubject.NotifyNodeDiscovered(pi.ID.String())
 }
