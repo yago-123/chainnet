@@ -28,7 +28,10 @@ type Blockchain struct {
 
 	blockSubject observer.BlockSubject
 
-	p2pNet *p2p.NodeP2P
+	p2pActive    bool
+	p2pNet       *p2p.NodeP2P
+	p2pCtx       context.Context
+	p2pCancelCtx context.CancelFunc
 
 	logger *logrus.Logger
 	cfg    *config.Config
@@ -72,25 +75,6 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		}
 	}
 
-	var p2pNet *p2p.NodeP2P
-	if cfg.P2PEnabled {
-		netSubject := observer.NewNetSubject()
-		netSubject.Register(&Blockchain{})
-		// pass the this blockchain itself to the subject
-		// decide how we should do this register, maybe we should add Start method?
-		// or initialize network?
-
-		ctx := context.Background()
-		p2pNet, err = p2p.NewP2PNodeDiscovery(ctx, cfg, netSubject)
-		if err != nil {
-			return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
-		}
-
-		// todo() move as goroutine
-		p2pNet.InitializeHandlers()
-		_ = p2pNet.Sync()
-	}
-
 	return &Blockchain{
 		lastBlockHash: lastBlockHash,
 		lastHeight:    lastHeight,
@@ -98,10 +82,47 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		storage:       storage,
 		validator:     validator,
 		blockSubject:  subject,
-		p2pNet:        p2pNet,
+		p2pActive:     false,
 		logger:        cfg.Logger,
 		cfg:           cfg,
 	}, nil
+}
+
+func (bc *Blockchain) InitNetwork() error {
+	var p2pNet *p2p.NodeP2P
+
+	if bc.p2pActive {
+		return fmt.Errorf("p2p network already active")
+	}
+
+	if !bc.cfg.P2PEnabled {
+		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+	}
+
+	// create a new blockchain observer that will react to network events
+	netSubject := observer.NewNetSubject()
+	netSubject.Register(bc)
+
+	// create new P2P node
+	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
+	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject)
+	if err != nil {
+		return fmt.Errorf("error creating p2p node discovery: %w", err)
+	}
+
+	// initialize network handlers
+	p2pNet.InitHandlers()
+
+	// initialize node discovery
+	err = p2pNet.InitNodeDiscovery()
+	if err != nil {
+		return fmt.Errorf("error initializing node discovery: %w", err)
+	}
+
+	bc.p2pNet = p2pNet
+	bc.p2pActive = true
+
+	return nil
 }
 
 func (bc *Blockchain) Sync() {

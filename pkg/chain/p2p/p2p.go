@@ -27,7 +27,7 @@ type NodeP2P struct {
 	logger *logrus.Logger
 }
 
-func NewP2PNodeDiscovery(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject) (*NodeP2P, error) {
+func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject) (*NodeP2P, error) {
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2PMinNumConn),
 		int(cfg.P2PMaxNumConn),
@@ -61,29 +61,37 @@ func NewP2PNodeDiscovery(ctx context.Context, cfg *config.Config, netSubject obs
 	}, nil
 }
 
+func (n *NodeP2P) Start() error {
+	// init node discovery
+	return nil
+}
+
 func (n *NodeP2P) Stop() error {
 	n.host.Addrs()
 	return n.host.Close()
 }
 
-func (n *NodeP2P) InitializeHandlers() {
+func (n *NodeP2P) InitHandlers() {
 	n.host.SetStreamHandler("/echo/1.0.0", n.handleEchoStream)
 }
 
-func (n *NodeP2P) Sync() error {
-	// set up mDNS discovery
-	mdnsService := mdns.NewMdnsService(n.host, DiscoveryServiceTag, NewDiscoNotifee(n.cfg, n.host))
-	defer mdnsService.Close()
+// InitNodeDiscovery initializes the mechanism for discovering peers in the network
+func (n *NodeP2P) InitNodeDiscovery() error {
+	mdnsService := mdns.NewMdnsService(n.host, DiscoveryServiceTag, NewDiscoNotifee(n.cfg, n.host, n.netSubject))
 
 	err := mdnsService.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start mDNS service: %w", err)
 	}
 
-	select { //nolint:gosimple // ignore linter in this case
-	case <-n.ctx.Done():
-		return n.ctx.Err()
-	}
+	// mdnsService can't be returned because is unexported from the package itself,
+	// so we need to wait for closure in a goroutine
+	go func() {
+		<-n.ctx.Done()
+		mdnsService.Close()
+	}()
+
+	return nil
 }
 
 func (n *NodeP2P) handleEchoStream(stream network.Stream) {
