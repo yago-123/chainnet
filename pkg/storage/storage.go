@@ -10,7 +10,7 @@ const (
 	// LastBlockHashKey is updated when persisting a new block header
 	LastBlockHashKey = "lastblockhash"
 
-	StorageObserverID = "storage"
+	StorageObserverID = "storage-observer"
 )
 
 type Storage interface {

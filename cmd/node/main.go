@@ -16,34 +16,29 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	MiningInterval = 1 * time.Minute
-)
-
 var cfg *config.Config
 
 func main() {
 	var err error
-	logger := logrus.New()
 
 	// execute the root command
-	Execute(logger)
+	Execute(logrus.New())
 
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
-	logger.Infof("started config with %v", cfg)
+	cfg.Logger.Infof("starting chain node with config %v", cfg)
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
 
 	// create instance for persisting data
-	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
+	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
 	// create new observer
-	subjectObserver := observer.NewSubjectObserver()
+	subjectObserver := observer.NewBlockSubject()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -59,6 +54,7 @@ func main() {
 			hash.GetHasher(consensusHasherType),
 		),
 		subjectObserver,
+		encoding.NewProtobufEncoder(),
 	)
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
@@ -66,7 +62,9 @@ func main() {
 
 	subjectObserver.Register(boltdb)
 
-	chain.Sync() //?
+	if err = chain.InitNetwork(); err != nil {
+		cfg.Logger.Errorf("Error initializing network: %s", err)
+	}
 
-	time.Sleep(MiningInterval)
+	time.Sleep(cfg.MiningInterval)
 }

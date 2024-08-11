@@ -85,8 +85,6 @@ func InitConfig(cmd *cobra.Command) *Config {
 		cfg.Logger.Infof("relying in default configuration")
 	}
 
-	cfg.Logger.Infof("config loaded: %v", cfg)
-
 	ApplyFlagsToConfig(cmd, cfg)
 
 	return cfg

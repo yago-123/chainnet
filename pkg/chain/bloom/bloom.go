@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	BloomObserverID = "bloomfilter"
+	BloomObserverID = "bloomfilter-observer"
 	BloomFilterSize = 32
 )
 

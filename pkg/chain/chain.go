@@ -2,17 +2,24 @@ package blockchain
 
 import (
 	"chainnet/config"
+	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/chain/p2p"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
+	"context"
 	"fmt"
+
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/sirupsen/logrus"
 )
+
+const BlockchainObserver = "blockchain"
 
 type Blockchain struct {
 	lastBlockHash []byte
@@ -22,15 +29,28 @@ type Blockchain struct {
 
 	storage   storage.Storage
 	validator consensus.HeavyValidator
-	subject   *observer.SubjectObserver
 
-	p2pNet *p2p.NodeP2P
+	blockSubject observer.BlockSubject
+
+	p2pActive    bool
+	p2pNet       *p2p.NodeP2P
+	p2pCtx       context.Context
+	p2pCancelCtx context.CancelFunc
+
+	p2pEncoder encoding.Encoding
 
 	logger *logrus.Logger
 	cfg    *config.Config
 }
 
-func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hashing, validator consensus.HeavyValidator, subject *observer.SubjectObserver) (*Blockchain, error) {
+func NewBlockchain(
+	cfg *config.Config,
+	storage storage.Storage,
+	hasher hash.Hashing,
+	validator consensus.HeavyValidator,
+	subject observer.BlockSubject,
+	p2pEncoder encoding.Encoding,
+) (*Blockchain, error) {
 	var err error
 	var lastHeight uint
 	var lastBlockHash []byte
@@ -68,38 +88,56 @@ func NewBlockchain(cfg *config.Config, storage storage.Storage, hasher hash.Hash
 		}
 	}
 
-	var p2pNet *p2p.NodeP2P
-	if cfg.P2PEnabled {
-		p2pNet, err = p2p.NewP2PNodeDiscovery(cfg)
-		if err != nil {
-			return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
-		}
-	}
-
 	return &Blockchain{
 		lastBlockHash: lastBlockHash,
 		lastHeight:    lastHeight,
 		headers:       headers,
 		storage:       storage,
 		validator:     validator,
-		subject:       subject,
-		p2pNet:        p2pNet,
+		blockSubject:  subject,
+		p2pActive:     false,
+		p2pEncoder:    p2pEncoder,
 		logger:        cfg.Logger,
 		cfg:           cfg,
 	}, nil
 }
 
-func (bc *Blockchain) Sync() {
-	// if there is latest block (node has been started before)
-	// - retrieve latest block hash
-	// - compare height and hash
-	// - decide with the other peers next steps (download next headers or execute some conflict resolution)
+func (bc *Blockchain) InitNetwork() error {
+	var p2pNet *p2p.NodeP2P
 
-	// if there is not latest block (node is new)
-	// - ask for headers
-	// - download & verify headers
-	// - start IBD (Initial Block Download): download block from each header
-	// 		- validate each block
+	// check if the network is supposed to be enabled
+	if !bc.cfg.P2PEnabled {
+		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+	}
+
+	// check if the network has been initialized before
+	if bc.p2pActive {
+		return fmt.Errorf("p2p network already active")
+	}
+
+	// create a new blockchain observer that will react to network events
+	netSubject := observer.NewNetSubject()
+	netSubject.Register(bc)
+
+	// create new P2P node
+	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
+	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.storage))
+	if err != nil {
+		return fmt.Errorf("error creating p2p node discovery: %w", err)
+	}
+
+	// initialize network handlers
+	p2pNet.InitHandlers()
+
+	// start the p2p node
+	if err = p2pNet.Start(); err != nil {
+		return fmt.Errorf("error starting p2p node: %w", err)
+	}
+
+	bc.p2pNet = p2pNet
+	bc.p2pActive = true
+
+	return nil
 }
 
 func (bc *Blockchain) AddBlock(block *kernel.Block) error {
@@ -121,9 +159,35 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	bc.headers[string(block.Hash)] = *block.Header
 
 	// notify observers of a new block added
-	bc.subject.NotifyBlockAdded(block)
+	bc.blockSubject.NotifyBlockAdded(block)
 
 	return nil
+}
+
+func (bc *Blockchain) Sync() {
+	// if there is latest block (node has been started before)
+	// - retrieve latest block hash
+	// - compare height and hash
+	// - decide with the other peers next steps (download next headers or execute some conflict resolution)
+
+	// if there is not latest block (node is new)
+	// - ask for headers
+	// - download & verify headers
+	// - start IBD (Initial Block Download): download block from each header
+	// 		- validate each block
+}
+
+// ID returns the observer id
+func (bc *Blockchain) ID() string {
+	return BlockchainObserver
+}
+
+// OnNodeDiscovered is called when a new node is discovered via the observer pattern
+func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
+	bc.logger.Infof("discovered new peer %s", peerID)
+	// sync to see if we can update
+
+	_, _ = bc.p2pNet.AskLastHeader(peerID)
 }
 
 // GetLastBlockHash returns the latest block hash

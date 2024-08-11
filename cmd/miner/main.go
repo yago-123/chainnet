@@ -62,7 +62,7 @@ func main() {
 	mempool := miner.NewMemPool()
 
 	// create new observer
-	subjectObserver := observer.NewSubjectObserver()
+	subjectObserver := observer.NewBlockSubject()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -78,6 +78,7 @@ func main() {
 			hash.GetHasher(consensusHasherType),
 		),
 		subjectObserver,
+		encoding.NewProtobufEncoder(),
 	)
 	if err != nil {
 		logger.Fatalf("Error creating blockchain: %s", err)

@@ -1,7 +1,6 @@
 package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/encoding"
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
@@ -19,6 +18,8 @@ const (
 	BoltDBStorageFile = "bolt-db-tmp-storage"
 	BoltBlockBucket   = "chainnet-block"
 	BoltHeaderBucket  = "chainnet-header"
+
+	InitialCoinbaseReward = 50
 )
 
 // set up genesis block with coinbase transaction
@@ -35,7 +36,7 @@ var GenesisBlock = Block{ //nolint:gochecknoglobals // data that is used across 
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-1"),
+				NewOutput(InitialCoinbaseReward, script.P2PK, "pubKey-1"),
 			},
 		},
 	},
@@ -56,7 +57,7 @@ var Block1 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-2"),
+				NewOutput(InitialCoinbaseReward, script.P2PK, "pubKey-2"),
 			},
 		},
 	},
@@ -77,7 +78,7 @@ var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-3"),
+				NewOutput(InitialCoinbaseReward, script.P2PK, "pubKey-3"),
 			},
 		},
 		{
@@ -110,7 +111,7 @@ var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-4"),
+				NewOutput(InitialCoinbaseReward, script.P2PK, "pubKey-4"),
 			},
 		},
 		{
@@ -153,7 +154,7 @@ var Block4 = Block{ //nolint:gochecknoglobals // data that is used across all te
 				NewCoinbaseInput(),
 			},
 			Vout: []TxOutput{
-				NewOutput(miner.InitialCoinbaseReward, script.P2PK, "pubKey-7"),
+				NewOutput(InitialCoinbaseReward, script.P2PK, "pubKey-7"),
 			},
 		},
 	},

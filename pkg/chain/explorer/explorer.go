@@ -15,7 +15,7 @@ func NewExplorer(storage storage.Storage) *Explorer {
 	return &Explorer{storage: storage}
 }
 
-// GetLastBlockHash returns the hash of the last block in the blockchain
+// GetLastBlock returns the last block in the chain persisted
 func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 	block, err := explorer.storage.GetLastBlock()
 	if err != nil {
@@ -24,6 +24,16 @@ func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 
 	// todo(): consider returning block header directly instead of the whole block
 	return block, nil
+}
+
+// GetLastHeader returns the last block header in the chain persisted
+func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
+	header, err := explorer.storage.GetLastHeader()
+	if err != nil {
+		return nil, err
+	}
+
+	return header, nil
 }
 
 func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
