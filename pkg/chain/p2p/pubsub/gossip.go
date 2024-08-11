@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// todo(): BlackListedNodes?
 	BlockAddedPubSubTopic = "blockAddedTopic"
 )
 

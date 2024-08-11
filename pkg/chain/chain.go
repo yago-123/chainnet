@@ -234,6 +234,8 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		// in case the peer have only one more block than local chain and previous block hash matches
 		// ask for the block and try to add it to the chain
 		if heightDiff == 1 && bytes.Equal(lastHeaderPeer.PrevBlockHash, bc.lastBlockHash) {
+			// todo() introduce this into an auxiliar function
+
 			// ask for the whole block to the peer
 			block, err = bc.p2pNet.AskSpecificBlock(peerID, headerHashPeer)
 			if err != nil {
