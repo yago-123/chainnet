@@ -117,11 +117,9 @@ func (n *NodeP2P) Stop() error {
 	return n.host.Close()
 }
 
-func (n *NodeP2P) InitHandlers() error {
+func (n *NodeP2P) InitHandlers() {
 	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
 	n.host.SetStreamHandler(AskSpecificBlockProtocol, n.handleAskSpecificBlock)
-
-	return nil
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
@@ -247,15 +245,6 @@ func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 		n.logger.Errorf("error writing block with hash %x to stream: %s", hash, err)
 		return
 	}
-
-}
-
-func (n *NodeP2P) NotifyBlockAddition(block *kernel.Block) {
-	// todo(): notify the network about the new node that has been added
-}
-
-func (n *NodeP2P) handleNotifyBlockAddition(stream network.Stream) {
-	// todo(): notify the network about the new node that has been added
 }
 
 func (n *NodeP2P) ID() string {
@@ -264,7 +253,7 @@ func (n *NodeP2P) ID() string {
 
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
-func (n *NodeP2P) OnBlockAddition(b *kernel.Block) {
+func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
 	// use n.pubsub to notify about new block addition
-	go n.NotifyBlockAddition(b)
+	// go n.NotifyBlockAddition(b)
 }

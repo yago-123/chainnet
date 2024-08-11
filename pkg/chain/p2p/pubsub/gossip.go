@@ -4,6 +4,7 @@ import (
 	"chainnet/pkg/kernel"
 	"context"
 	"fmt"
+
 	pubSubP2P "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 )
@@ -28,13 +29,13 @@ func NewGossipPubSub(ctx context.Context, host host.Host) (*Gossip, error) {
 	// joing the block added topic
 	topic, err := pubsub.Join(BlockAddedPubSubTopic)
 	if err != nil {
-		return nil, fmt.Errorf("error joining pubsub topic: %s", err)
+		return nil, fmt.Errorf("error joining pubsub topic: %w", err)
 	}
 
 	// subscribe to the topic to listen for new blocks
 	sub, err := topic.Subscribe()
 	if err != nil {
-		return nil, fmt.Errorf("error subscribing to pubsub topic: %s", err)
+		return nil, fmt.Errorf("error subscribing to pubsub topic: %w", err)
 	}
 
 	// listen messages from the topic
@@ -53,15 +54,15 @@ func NewGossipPubSub(ctx context.Context, host host.Host) (*Gossip, error) {
 
 func listenForBlocksAdded(ctx context.Context, sub *pubSubP2P.Subscription) {
 	for {
-		msg, err := sub.Next(ctx)
+		_, err := sub.Next(ctx)
 		if err != nil {
 			return
 		}
 
-		fmt.Println("Received message:", string(msg.Data))
+		// fmt.Println("Received message:", string(msg.Data))
 	}
 }
 
-func (g *Gossip) NotifyBlockAdded(block kernel.Block) error {
+func (g *Gossip) NotifyBlockAdded(_ kernel.Block) error {
 	return nil
 }

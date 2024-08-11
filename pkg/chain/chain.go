@@ -187,6 +187,7 @@ func (bc *Blockchain) ID() string {
 
 // OnNodeDiscovered is called when a new node is discovered via the observer pattern
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
+	var block *kernel.Block
 	bc.logger.Infof("discovered new peer %s", peerID)
 
 	// ask new peer for last header
@@ -233,13 +234,20 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		// in case the peer have only one more block than local chain and previous block hash matches
 		// ask for the block and try to add it to the chain
 		if heightDiff == 1 && bytes.Equal(lastHeaderPeer.PrevBlockHash, bc.lastBlockHash) {
-			// todo() maybe should be added some trust score to peers, if the peer returns a wrong block
-			// todo() consider some sort of blacklist or reporting mechanism (via gossip maybe?)
+			// ask for the whole block to the peer
+			block, err = bc.p2pNet.AskSpecificBlock(peerID, headerHashPeer)
+			if err != nil {
+				bc.logger.Errorf("error asking for block %x to %s: %s", headerHashPeer, peerID.String(), err)
+				return
+			}
 
-			// todo() ask for the block and add
-			bc.p2pNet.AskSpecificBlock(peerID, headerHashPeer)
-			// p2p.AskBlock(peerID, lastHeaderPeer.Hash)
-			// bc.AddBlock(block)
+			// try to add the block to the chain
+			if err = bc.AddBlock(block); err != nil {
+				// todo() maybe should be added some trust score to peers, if the peer returns a wrong block
+				// todo() consider some sort of blacklist or reporting mechanism (via gossip maybe?)
+				bc.logger.Errorf("error adding block %x from peer %s, verification failed: %s", headerHashPeer, peerID.String(), err)
+				return
+			}
 		}
 
 		// todo() take into account if height is bigger than 6 blocks
