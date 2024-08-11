@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -192,7 +193,9 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	// todo() apply the sync mutex here
-	go bc.sync(peerID)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second
+	// defer cancel()
+	go bc.sync(ctx, peerID)
 }
 
 // sync function is in charge of handling all the logic related to node synchronization. The algorithm is as follows:
@@ -206,9 +209,9 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 //     chain in case it's not contained, log it and return
 //     2.5 if the height of the remote header is bigger, retrieve the headers that are in between and retrieve one by
 //     one the blocks to try to add them to the chain. Executed by handleNodeSync auxiliar function
-func (bc *Blockchain) sync(peerID peer.ID) {
+func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) {
 	// ask new peer for last header
-	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(peerID)
+	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(ctx, peerID)
 	if err != nil {
 		bc.logger.Errorf("error asking for last header to %s: %s", peerID.String(), err)
 		return
@@ -223,7 +226,7 @@ func (bc *Blockchain) sync(peerID peer.ID) {
 	// in case local node have no headers yet, start syncing with the remote node
 	if bc.lastHeight == 0 {
 		bc.logger.Debugf("local node has no headers, trying to sync with %s", peerID.String())
-		bc.syncWithNoLocalHeader(lastHeaderPeer, peerID)
+		bc.syncWithNoLocalHeader(ctx, lastHeaderPeer, peerID)
 		return
 	}
 
@@ -238,7 +241,7 @@ func (bc *Blockchain) sync(peerID peer.ID) {
 	// if height is equal, check if the hashes are equal or not
 	if currentLocalHeight == lastHeaderPeer.Height {
 		if bytes.Equal(bc.GetLastBlockHash(), lastHashPeer) {
-			bc.logger.Debugf("peer %s has the same height and hash as local node", peerID.String())
+			bc.logger.Debugf("out of sync: peer %s has the same height and hash as local node", peerID.String())
 		}
 
 		bc.logger.Debugf("peer %s has the same height as local node but different hash", peerID.String())
@@ -248,7 +251,7 @@ func (bc *Blockchain) sync(peerID peer.ID) {
 	// if local height is bigger, check if the header hash is contained in the local chain
 	if currentLocalHeight > lastHeaderPeer.Height {
 		if _, ok := bc.headers[string(lastHashPeer)]; !ok {
-			bc.logger.Debugf("peer %s has smaller height and last header is not contained in the local chain", peerID.String())
+			bc.logger.Debugf("out of sync: peer %s has smaller height and last header is not contained in the local chain", peerID.String())
 			return
 		}
 
@@ -258,15 +261,17 @@ func (bc *Blockchain) sync(peerID peer.ID) {
 
 	// if local height is smaller than remote, try to add the remaining blocks to the chain
 	lastHeaderLocal := bc.headers[string(bc.GetLastBlockHash())]
-	bc.syncWithHeaders(&lastHeaderLocal, lastHeaderPeer, peerID)
+	bc.syncWithHeaders(ctx, &lastHeaderLocal, lastHeaderPeer, peerID)
 }
 
-func (bc *Blockchain) syncWithNoLocalHeader(remoteHeader *kernel.BlockHeader, peerID peer.ID) {
+// syncWithNoLocalHeader called when the local node has no headers (not even genesis block) and needs to be synchronized
+// with a remote node that have at least the genesis block
+func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, remoteHeader *kernel.BlockHeader, peerID peer.ID) {
 	// in case local header is empty
 }
 
-// handleNodeSync is called when a node with a bigger height needs is found and the local node needs to sync with it
-func (bc *Blockchain) syncWithHeaders(localHeader, remoteHeader *kernel.BlockHeader, peerID peer.ID) {
+// syncWithHeaders called when a node with a bigger height than the local is found and the local node needs to sync with it
+func (bc *Blockchain) syncWithHeaders(ctx context.Context, localHeader, remoteHeader *kernel.BlockHeader, peerID peer.ID) {
 	// in case remote header is bigger than local header
 }
 

@@ -121,10 +121,7 @@ func (n *NodeP2P) InitHandlers() {
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
-func (n *NodeP2P) AskLastHeader(peerID peer.ID) (*kernel.BlockHeader, error) {
-	ctx, cancel := context.WithTimeout(n.ctx, P2PStreamTimeout)
-	defer cancel()
-
+func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.BlockHeader, error) {
 	// open stream to peer with timeout
 	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskLastHeaderProtocol)
 	if err != nil {
@@ -171,10 +168,7 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 }
 
 // AskSpecificBlock sends a request to a specific peer to get a block by hash
-func (n *NodeP2P) AskSpecificBlock(peerID peer.ID, hash []byte) (*kernel.Block, error) {
-	ctx, cancel := context.WithTimeout(n.ctx, P2PStreamTimeout)
-	defer cancel()
-
+func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []byte) (*kernel.Block, error) {
 	// open stream to peer with timeout
 	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskSpecificBlockProtocol)
 	if err != nil {
