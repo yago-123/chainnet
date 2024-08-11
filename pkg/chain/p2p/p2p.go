@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	"bufio"
+	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/chain/p2p/discovery"
 	"chainnet/pkg/encoding"
@@ -42,13 +42,21 @@ type NodeP2P struct {
 	// disco is in charge of setting up the logic for node discovery
 	disco discovery.Discovery
 
-	// encoding contains the communication data serialization between peers
+	// encoder contains the communication data serialization between peers
 	encoder encoding.Encoding
+
+	explorer *explorer.Explorer
 
 	logger *logrus.Logger
 }
 
-func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.NetSubject, encoder encoding.Encoding) (*NodeP2P, error) {
+func NewP2PNode(
+	ctx context.Context,
+	cfg *config.Config,
+	netSubject observer.NetSubject,
+	encoder encoding.Encoding,
+	explorer *explorer.Explorer,
+) (*NodeP2P, error) {
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2PMinNumConn),
@@ -85,6 +93,7 @@ func NewP2PNode(ctx context.Context, cfg *config.Config, netSubject observer.Net
 		ctx:        ctx,
 		disco:      disco,
 		encoder:    encoder,
+		explorer:   explorer,
 		logger:     cfg.Logger,
 	}, nil
 }
@@ -135,14 +144,12 @@ func (n *NodeP2P) AskLastHeader(peerID peer.ID) (*kernel.BlockHeader, error) {
 func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	defer stream.Close()
 
-	buf := bufio.NewReader(stream)
-	for {
-		str, err := buf.ReadString('\n')
-		if err != nil {
-			break
-		}
-		n.logger.Debugf("Received: %s", str)
-	}
+	// get last block header
+	n.explorer.GetLastBlockHeader()
+
+	// encode block header
+
+	// send block header over the network
 }
 
 func (n *NodeP2P) ID() string {

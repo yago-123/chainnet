@@ -26,6 +26,10 @@ func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 	return block, nil
 }
 
+func (explorer *Explorer) GetLastBlockHeader() {
+
+}
+
 func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
 	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseIterator(explorer.storage))
 }
