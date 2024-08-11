@@ -4,6 +4,7 @@ import (
 	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/chain/p2p/discovery"
+	"chainnet/pkg/chain/p2p/pubsub"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"fmt"
@@ -29,7 +30,6 @@ const (
 	P2PReadTimeout         = 10 * time.Second
 
 	AskLastHeaderProtocol = "/askLastHeader/0.1.0"
-	NotifyBlockAddition   = "/notifyBlockAddition/0.1.0"
 )
 
 type NodeP2P struct {
@@ -42,6 +42,8 @@ type NodeP2P struct {
 
 	// disco is in charge of setting up the logic for node discovery
 	disco discovery.Discovery
+	// pubsub is in charge of setting up the logic for data propagation
+	pubsub pubsub.PubSub
 
 	// encoder contains the communication data serialization between peers
 	encoder encoding.Encoding
@@ -77,9 +79,16 @@ func NewP2PNode(
 
 	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
+	// initialize discovery module
 	disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery module: %w", err)
+	}
+
+	// initialize pubsub module
+	pubsub, err := pubsub.NewGossipPubSub(ctx, host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
 	return &NodeP2P{
@@ -88,6 +97,7 @@ func NewP2PNode(
 		netSubject: netSubject,
 		ctx:        ctx,
 		disco:      disco,
+		pubsub:     pubsub,
 		encoder:    encoder,
 		explorer:   explorer,
 		logger:     cfg.Logger,
@@ -106,9 +116,10 @@ func (n *NodeP2P) Stop() error {
 	return n.host.Close()
 }
 
-func (n *NodeP2P) InitHandlers() {
+func (n *NodeP2P) InitHandlers() error {
 	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
-	// n.host.SetStreamHandler(NotifyBlockAddition, n.handleNotifyBlockAddition)
+
+	return nil
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
