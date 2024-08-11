@@ -189,22 +189,25 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 
+	// ask new peer for last header
 	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(peerID)
 	if err != nil {
 		bc.logger.Errorf("error asking for last header to %s: %s", peerID.String(), err)
 		return
 	}
 
+	// retrieve local last header (todo(): consider caching this last header?)
 	lastHeaderLocal, ok := bc.headers[string(bc.lastBlockHash)]
 	if !ok {
 		if len(bc.lastBlockHash) == 0 {
-			bc.logger.Debugf("last block hash not found, chain may not have genesis block yet")
+			bc.logger.Infof("last block hash not found, chain may not have genesis block yet")
 			return
 		}
 
 		bc.logger.Errorf("last block hash %s not found in headers", bc.lastBlockHash)
 	}
 
+	// calculate hash of the peer header
 	headerHashPeer, err := util.CalculateBlockHash(lastHeaderPeer, bc.hasher)
 	if err != nil {
 		bc.logger.Errorf("error calculating header hash for peer %s: %s", peerID.String(), err)
@@ -225,6 +228,20 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 
 	// local chain have less blocks, ask for headers to try to "escalate"
 	if lastHeaderLocal.Height < lastHeaderPeer.Height {
+		heightDiff := lastHeaderPeer.Height - lastHeaderLocal.Height
+		// in case the peer have only one more block than local chain and previous block hash matches
+		// ask for the block and try to add it to the chain
+		if heightDiff == 1 && bytes.Equal(lastHeaderPeer.PrevBlockHash, bc.lastBlockHash) {
+			// todo() maybe should be added some trust score to peers, if the peer returns a wrong block
+			// todo() consider some sort of blacklist or reporting mechanism (via gossip maybe?)
+
+			// todo() ask for the block and add
+			// p2p.AskBlock(peerID, lastHeaderPeer.Hash)
+			// bc.AddBlock(block)
+		}
+
+		// todo() take into account if height is bigger than 6 blocks
+		// todo() ask other peers if they have this addition too
 		return
 	}
 

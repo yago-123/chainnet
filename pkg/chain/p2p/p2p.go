@@ -28,7 +28,8 @@ const (
 	P2PComunicationTimeout = 10 * time.Second
 	P2PReadTimeout         = 10 * time.Second
 
-	AskLastHeaderProtocol = "/lastHeader/0.1.0"
+	AskLastHeaderProtocol = "/askLastHeader/0.1.0"
+	NotifyBlockAddition   = "/notifyBlockAddition/0.1.0"
 )
 
 type NodeP2P struct {
@@ -76,11 +77,6 @@ func NewP2PNode(
 
 	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
-	cfg.Logger.Debugf("p2p addresses:")
-	for _, addr := range host.Addrs() {
-		cfg.Logger.Debugf(" - %v\n", addr)
-	}
-
 	disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery module: %w", err)
@@ -112,6 +108,7 @@ func (n *NodeP2P) Stop() error {
 
 func (n *NodeP2P) InitHandlers() {
 	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
+	// n.host.SetStreamHandler(NotifyBlockAddition, n.handleNotifyBlockAddition)
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
@@ -166,12 +163,20 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	}
 }
 
+func (n *NodeP2P) NotifyBlockAddition(block *kernel.Block) {
+	// todo(): notify the network about the new node that has been added
+}
+
+func (n *NodeP2P) handleNotifyBlockAddition(stream network.Stream) {
+	// todo(): notify the network about the new node that has been added
+}
+
 func (n *NodeP2P) ID() string {
 	return P2PObserverID
 }
 
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
-func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
-	// todo(): notify the network about the new node that has been added
+func (n *NodeP2P) OnBlockAddition(b *kernel.Block) {
+	go n.NotifyBlockAddition(b)
 }
