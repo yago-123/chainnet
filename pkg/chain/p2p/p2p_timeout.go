@@ -59,6 +59,7 @@ func (t *TimeoutStream) WriteWithTimeout(buf []byte) (int, error) {
 	return t.stream.Write(buf)
 }
 
+// Close closes the stream
 func (t *TimeoutStream) Close() error {
 	return t.stream.Close()
 }
