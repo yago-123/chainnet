@@ -15,7 +15,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -192,10 +191,13 @@ func (bc *Blockchain) ID() string {
 // OnNodeDiscovered is called when a new node is discovered via the observer pattern.
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
-	// todo() apply the sync mutex here
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second
-	// defer cancel()
-	go bc.sync(ctx, peerID)
+	go func() {
+		// todo() apply the sync mutex here
+		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
+		defer cancel()
+
+		bc.sync(ctx, peerID)
+	}()
 }
 
 // sync function is in charge of handling all the logic related to node synchronization. The algorithm is as follows:

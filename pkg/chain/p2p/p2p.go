@@ -23,9 +23,9 @@ import (
 const (
 	P2PObserverID = "p2p-observer"
 
-	P2PStreamTimeout = 20 * time.Second
-	P2PWriteTimeout  = 10 * time.Second
-	P2PReadTimeout   = 10 * time.Second
+	P2PTotalTimeout = 20 * time.Second
+	P2PWriteTimeout = 10 * time.Second
+	P2PReadTimeout  = 10 * time.Second
 
 	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
 	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
