@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"bytes"
 	"chainnet/config"
 	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/chain/observer"
@@ -27,6 +28,7 @@ type Blockchain struct {
 	headers       map[string]kernel.BlockHeader
 	// blockTxsBloomFilter map[string]string
 
+	hasher    hash.Hashing
 	storage   storage.Storage
 	validator consensus.HeavyValidator
 
@@ -92,6 +94,7 @@ func NewBlockchain(
 		lastBlockHash: lastBlockHash,
 		lastHeight:    lastHeight,
 		headers:       headers,
+		hasher:        hasher,
 		storage:       storage,
 		validator:     validator,
 		blockSubject:  subject,
@@ -185,9 +188,47 @@ func (bc *Blockchain) ID() string {
 // OnNodeDiscovered is called when a new node is discovered via the observer pattern
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
-	// sync to see if we can update
 
-	_, _ = bc.p2pNet.AskLastHeader(peerID)
+	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(peerID)
+	if err != nil {
+		bc.logger.Errorf("error asking for last header to %s: %s", peerID.String(), err)
+		return
+	}
+
+	lastHeaderLocal, ok := bc.headers[string(bc.lastBlockHash)]
+	if !ok {
+		if len(bc.lastBlockHash) == 0 {
+			bc.logger.Debugf("last block hash not found, chain may not have genesis block yet")
+			return
+		}
+
+		bc.logger.Errorf("last block hash %s not found in headers", bc.lastBlockHash)
+	}
+
+	headerHashPeer, err := util.CalculateBlockHash(lastHeaderPeer, bc.hasher)
+	if err != nil {
+		bc.logger.Errorf("error calculating header hash for peer %s: %s", peerID.String(), err)
+		return
+	}
+
+	// same height, may be in sync
+	if lastHeaderLocal.Height == lastHeaderPeer.Height {
+		// in case last hash and height are the same, the peer is in sync
+		if bytes.Equal(bc.lastBlockHash, headerHashPeer) {
+			bc.logger.Debugf("peer %s is in sync with local chain", peerID)
+			return
+		}
+
+		// todo() cover case when the peer have same height but different hash
+		return
+	}
+
+	// local chain have less blocks, ask for headers to try to "escalate"
+	if lastHeaderLocal.Height < lastHeaderPeer.Height {
+		return
+	}
+
+	// in case local chain have more blocks, do nothing the other node will try to sync with local chain
 }
 
 // GetLastBlockHash returns the latest block hash
