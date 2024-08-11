@@ -29,7 +29,8 @@ const (
 	P2PComunicationTimeout = 10 * time.Second
 	P2PReadTimeout         = 10 * time.Second
 
-	AskLastHeaderProtocol = "/askLastHeader/0.1.0"
+	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
+	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
 )
 
 type NodeP2P struct {
@@ -118,6 +119,7 @@ func (n *NodeP2P) Stop() error {
 
 func (n *NodeP2P) InitHandlers() error {
 	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
+	n.host.SetStreamHandler(AskSpecificBlockProtocol, n.handleAskSpecificBlock)
 
 	return nil
 }
@@ -149,6 +151,7 @@ func (n *NodeP2P) AskLastHeader(peerID peer.ID) (*kernel.BlockHeader, error) {
 	return n.encoder.DeserializeHeader(data)
 }
 
+// handleAskLastHeader handler that replies to the requests from AskLastHeader
 func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	defer stream.Close()
 
@@ -174,6 +177,79 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	}
 }
 
+// AskSpecificBlock sends a request to a specific peer to get a block by hash
+func (n *NodeP2P) AskSpecificBlock(peerID peer.ID, hash []byte) (*kernel.Block, error) {
+	ctx, cancel := context.WithTimeout(n.ctx, P2PComunicationTimeout)
+	defer cancel()
+
+	// open stream to peer
+	stream, err := n.host.NewStream(ctx, peerID, AskSpecificBlockProtocol)
+	if err != nil {
+		return nil, fmt.Errorf("error enabling stream: %w", err)
+	}
+	defer stream.Close()
+
+	_, err = stream.Write(hash)
+	if err != nil {
+		return nil, fmt.Errorf("error writing block hash %x to stream: %w", hash, err)
+	}
+
+	// set deadline so we don't wait forever
+	if err = stream.SetReadDeadline(time.Now().Add(P2PReadTimeout)); err != nil {
+		return nil, fmt.Errorf("error setting read deadline: %w", err)
+	}
+
+	var data []byte
+	// read and decode block retrieved
+	_, err = stream.Read(data)
+	if err != nil {
+		return nil, fmt.Errorf("error reading data from stream: %w", err)
+	}
+
+	return n.encoder.DeserializeBlock(data)
+}
+
+// handleAskSpecificBlock handler that replies to the requests from AskSpecificBlock
+func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
+	defer stream.Close()
+
+	// todo() use wrapper to hide this stuff
+	err := stream.SetReadDeadline(time.Now().Add(P2PReadTimeout))
+	if err != nil {
+		n.logger.Errorf("error setting read deadline: %s", err)
+		return
+	}
+
+	var hash []byte
+	// read hash of block that is being requested
+	_, err = stream.Read(hash)
+	if err != nil {
+		n.logger.Errorf("error reading block hash from stream: %s", err)
+		return
+	}
+
+	// retrieve block from explorer
+	block, err := n.explorer.GetBlockByHash(hash)
+	if err != nil {
+		n.logger.Errorf("error getting block with hash %x: %s", hash, err)
+		return
+	}
+
+	// encode block and send it to the peer
+	data, err := n.encoder.SerializeBlock(*block)
+	if err != nil {
+		n.logger.Errorf("error serializing block with hash %x: %s", hash, err)
+		return
+	}
+
+	_, err = stream.Write(data)
+	if err != nil {
+		n.logger.Errorf("error writing block with hash %x to stream: %s", hash, err)
+		return
+	}
+
+}
+
 func (n *NodeP2P) NotifyBlockAddition(block *kernel.Block) {
 	// todo(): notify the network about the new node that has been added
 }
@@ -189,5 +265,6 @@ func (n *NodeP2P) ID() string {
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
 func (n *NodeP2P) OnBlockAddition(b *kernel.Block) {
+	// use n.pubsub to notify about new block addition
 	go n.NotifyBlockAddition(b)
 }

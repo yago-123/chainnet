@@ -26,6 +26,16 @@ func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 	return block, nil
 }
 
+// GetBlockByHash returns the block corresponding to the hash provided
+func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
+	block, err := explorer.storage.RetrieveBlockByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return block, nil
+}
+
 // GetLastHeader returns the last block header in the chain persisted
 func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	header, err := explorer.storage.GetLastHeader()

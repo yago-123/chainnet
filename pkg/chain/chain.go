@@ -223,6 +223,7 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		}
 
 		// todo() cover case when the peer have same height but different hash
+
 		return
 	}
 
@@ -236,6 +237,7 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 			// todo() consider some sort of blacklist or reporting mechanism (via gossip maybe?)
 
 			// todo() ask for the block and add
+			bc.p2pNet.AskSpecificBlock(peerID, headerHashPeer)
 			// p2p.AskBlock(peerID, lastHeaderPeer.Hash)
 			// bc.AddBlock(block)
 		}
