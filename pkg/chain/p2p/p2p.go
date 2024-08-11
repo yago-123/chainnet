@@ -145,11 +145,25 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	defer stream.Close()
 
 	// get last block header
-	n.explorer.GetLastBlockHeader()
+	header, err := n.explorer.GetLastHeader()
+	if err != nil {
+		n.logger.Errorf("error getting last block header: %s", err)
+		return
+	}
 
 	// encode block header
+	data, err := n.encoder.SerializeHeader(*header)
+	if err != nil {
+		n.logger.Errorf("error serializing block header: %s", err)
+		return
+	}
 
 	// send block header over the network
+	_, err = stream.Write(data)
+	if err != nil {
+		n.logger.Errorf("error writing block header to stream: %s", err)
+		return
+	}
 }
 
 func (n *NodeP2P) ID() string {
@@ -159,7 +173,5 @@ func (n *NodeP2P) ID() string {
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
 func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
-
 	// todo(): notify the network about the new node that has been added
-
 }
