@@ -37,6 +37,7 @@ func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 }
 
 // GetLastHeader returns the last block header in the chain persisted
+// todo() handle the case when there is no last header yet
 func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	header, err := explorer.storage.GetLastHeader()
 	if err != nil {

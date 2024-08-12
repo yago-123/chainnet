@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"bytes"
 	"chainnet/config"
 	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/chain/observer"
@@ -175,165 +174,73 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-// sync function is in charge of handling all the logic related to node synchronization. The algorithm is as follows:
-//  1. Ask the new node for the last header
-//  2. Check the height of the remote header
-//     2.1 if the height of the remote header is 0 (genesis block not yet created), log and return (we can't sync anything)
-//     2.2 if there is no local header, start syncing with the remote node directly (we already know that remote is not empty)
-//     2.3 if the height of the remote header is equal, check if the hashes are also equal, if they are not, log it
-//     and return
-//     2.4 if the height of remote header is smaller than local, check if the header hash is contained in the local
-//     chain in case it's not contained, log it and return
-//     2.5 if the height of the remote header is bigger, retrieve the headers that are in between and retrieve one by
-//     one the blocks to try to add them to the chain. Executed by handleNodeSync auxiliar function
+// sync function is in charge of handling all the logic related to node synchronization. Simple algorithm:
+//  1. Ask the remote node for the last header
+//  2. If the local height is smaller or equal than the remote HEADER height, try to synchronize via headers
+//  3. If the local height is bigger than the remote HEADER height, there is nothing to synchronize, just return
 func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) error {
+	localCurrentHeight := bc.GetLastHeight()
+
 	// ask new peer for last header
 	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(ctx, peerID)
+	// todo() handle case where there is no last header yet
 	if err != nil {
 		return fmt.Errorf("error asking for last header: %w", err)
 	}
 
-	// in case peer has no headers, log and return (we can't sync anything)
-	if lastHeaderPeer.Height == 0 {
-		bc.logger.Debugf("peer %s has no headers", peerID.String())
-		return nil
-	}
-
-	// in case local node have no headers yet, start syncing with the remote node
-	if bc.lastHeight == 0 {
-		bc.logger.Debugf("local node has no headers, trying to sync with %s", peerID.String())
-		if err = bc.syncWithNoLocalHeader(ctx, peerID); err != nil {
-			return fmt.Errorf("error with no local header: %w", err)
+	// in case current height is smaller or equal than the remote latest header, try to upgrade local node
+	if localCurrentHeight <= lastHeaderPeer.Height {
+		if err = bc.syncFromHeaders(ctx, peerID, localCurrentHeight); err != nil {
+			return fmt.Errorf("error trying to sync with headers from height %d: %w", localCurrentHeight, err)
 		}
-
-		return nil
 	}
 
-	// calculate hash of the last header from the peer
-	lastHashPeer, err := util.CalculateBlockHash(lastHeaderPeer, bc.hasher)
-	if err != nil {
-		return fmt.Errorf("error calculating block hash: %w", err)
-	}
-
-	currentLocalHeight := bc.GetLastHeight() - 1
-	// if height is equal, check if the hashes are equal or not
-	if currentLocalHeight == lastHeaderPeer.Height {
-		if bytes.Equal(bc.GetLastBlockHash(), lastHashPeer) {
-			bc.logger.Debugf("out of sync: peer %s has the same height and hash as local node", peerID.String())
-		}
-
-		bc.logger.Debugf("peer %s has the same height as local node but different hash", peerID.String())
-		return nil
-	}
-
-	// if local height is bigger, check if the header hash is contained in the local chain
-	if currentLocalHeight > lastHeaderPeer.Height {
-		if _, ok := bc.headers[string(lastHashPeer)]; !ok {
-			bc.logger.Debugf("out of sync: peer %s has smaller height and last header is not contained in the local chain", peerID.String())
-			return nil
-		}
-
-		bc.logger.Debugf("peer %s has smaller height and last header is contained in the local chain", peerID.String())
-		return nil
-	}
-
-	// if local height is smaller than remote, try to add the remaining blocks to the chain
-	lastHeaderLocal := bc.headers[string(bc.GetLastBlockHash())]
-	if err = bc.syncWithHeaders(ctx, peerID, &lastHeaderLocal); err != nil {
-		return fmt.Errorf("error trying to sync: %w", err)
-	}
-
+	// in case current height is bigger than latest remote header height, there is nothing to sync, just return
 	return nil
 }
 
-// syncWithNoLocalHeader called when the local node has no headers (not even genesis block) and needs to be synchronized
-// with a remote node that have at least the genesis block. This function retrieves all the headers from the remote node,
-// pull block by block and try to add them to the chain
-func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, peerID peer.ID) error {
-	var blockHash []byte
+// syncFromHeaders is in charge of synchronizing the local node with the remote node via headers. First retrieve all the
+// remote headers and ignore those that are already in the local chain. Then retrieve the block instance for each header
+// and try to add it.
+//
+// If there is some problem while adding the block, return the error (most likely the validator have not accepted the block)
+func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, localCurrentHeight uint) error {
 	var block *kernel.Block
+	var remoteBlockHash []byte
 
 	// retrieve all headers from the remote node
-	headers, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
+	remoteHeaders, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
 	if err != nil {
-		return fmt.Errorf("error asking for all headers to: %w", err)
+		return fmt.Errorf("error asking for all remoteHeaders: %w", err)
 	}
 
 	// sort headers by height
-	sort.Slice(headers, func(i, j int) bool {
-		return headers[i].Height < headers[j].Height
+	sort.Slice(remoteHeaders, func(i, j int) bool {
+		return remoteHeaders[i].Height < remoteHeaders[j].Height
 	})
 
 	// retrieve the block for each header and try to add it to the chain
-	for _, header := range headers {
-		blockHash, err = util.CalculateBlockHash(header, bc.hasher)
-		if err != nil {
-			return fmt.Errorf("error calculating block hash from header: %w", err)
-		}
-
-		// retrieve block from peer
-		block, err = bc.p2pNet.AskSpecificBlock(ctx, peerID, blockHash)
-		if err != nil {
-			return fmt.Errorf("error asking for block %x: %w", blockHash, err)
-		}
-
-		// try to add block to the chain, if it fails, log it and finish the sync
-		if err = bc.AddBlock(block); err != nil {
-			// todo(): maybe the node should be blamed and black listed?
-			return fmt.Errorf("error adding block %x to the chain: %w", blockHash, err)
-		}
-	}
-
-	return nil
-}
-
-// syncWithHeaders called when a node with a bigger height than the local is found and the local node needs to sync with it
-func (bc *Blockchain) syncWithHeaders(ctx context.Context, peerID peer.ID, localHeader *kernel.BlockHeader) error {
-	var blockHash []byte
-	var block *kernel.Block
-
-	// retrieve all headers from the remote node
-	headers, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
-	if err != nil {
-		return fmt.Errorf("error asking for all headers: %w", err)
-	}
-
-	// sort headers by height
-	sort.Slice(headers, func(i, j int) bool {
-		return headers[i].Height < headers[j].Height
-	})
-
-	// retrieve the block for each header and try to add it to the chain
-	for _, header := range headers {
-		// todo(): optimize this part **************************
+	for _, header := range remoteHeaders {
 		// skip those headers that are already in the local chain
-		if localHeader.Height > header.Height {
+		if localCurrentHeight > header.Height {
 			continue
 		}
 
-		blockHash, err = util.CalculateBlockHash(header, bc.hasher)
+		remoteBlockHash, err = util.CalculateBlockHash(header, bc.hasher)
 		if err != nil {
 			return fmt.Errorf("error calculating block hash from header: %w", err)
 		}
 
-		if localHeader.Height == header.Height {
-			// check if the hashes are equal, if they are not, log it and return
-			if !bytes.Equal(localHeader.PrevBlockHash, header.PrevBlockHash) {
-				bc.logger.Debugf("out of sync: peer %s has the same height as local node but different hash", peerID.String())
-				return nil
-			}
-		}
-
-		// retrieve block from peer
-		block, err = bc.p2pNet.AskSpecificBlock(ctx, peerID, blockHash)
+		// retrieve complete block from peer
+		block, err = bc.p2pNet.AskSpecificBlock(ctx, peerID, remoteBlockHash)
 		if err != nil {
-			return fmt.Errorf("error asking for block %x: %w", blockHash, err)
+			return fmt.Errorf("error asking for block %x: %w", remoteBlockHash, err)
 		}
 
-		// try to add block to the chain, if it fails, log it and finish the sync
+		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside AddBlock)
 		if err = bc.AddBlock(block); err != nil {
 			// todo(): maybe the node should be blamed and black listed?
-			return fmt.Errorf("error adding block %x to the chain: %w", blockHash, err)
+			return fmt.Errorf("error adding block %x to the chain: %w", remoteBlockHash, err)
 		}
 	}
 
