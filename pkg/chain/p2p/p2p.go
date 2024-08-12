@@ -235,13 +235,12 @@ func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 
 // AskAllHeaders sends a request to a specific peer to get all headers from the remote chain. The reply contains
 // a list of headers unsorted
-func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.BlockHeader, error) {
-
+func (n *NodeP2P) AskAllHeaders(_ context.Context, _ peer.ID) ([]*kernel.BlockHeader, error) {
 	return nil, nil
 }
 
 // handleAskAllHeaders handler that replies to the requests from AskAllHeaders
-func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
+func (n *NodeP2P) handleAskAllHeaders(_ network.Stream) {
 
 }
 
