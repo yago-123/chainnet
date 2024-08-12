@@ -186,35 +186,33 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 //     chain in case it's not contained, log it and return
 //     2.5 if the height of the remote header is bigger, retrieve the headers that are in between and retrieve one by
 //     one the blocks to try to add them to the chain. Executed by handleNodeSync auxiliar function
-func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) {
+func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) error {
 	// ask new peer for last header
 	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(ctx, peerID)
 	if err != nil {
-		bc.logger.Errorf("error asking for last header to %s: %s", peerID.String(), err)
-		return
+		return fmt.Errorf("error asking for last header: %w", err)
 	}
 
 	// in case peer has no headers, log and return (we can't sync anything)
 	if lastHeaderPeer.Height == 0 {
 		bc.logger.Debugf("peer %s has no headers", peerID.String())
-		return
+		return nil
 	}
 
 	// in case local node have no headers yet, start syncing with the remote node
 	if bc.lastHeight == 0 {
 		bc.logger.Debugf("local node has no headers, trying to sync with %s", peerID.String())
 		if err = bc.syncWithNoLocalHeader(ctx, peerID); err != nil {
-			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
+			return fmt.Errorf("error with no local header: %w", err)
 		}
 
-		return
+		return nil
 	}
 
 	// calculate hash of the last header from the peer
 	lastHashPeer, err := util.CalculateBlockHash(lastHeaderPeer, bc.hasher)
 	if err != nil {
-		bc.logger.Errorf("error calculating block hash from peer %s: %s", peerID.String(), err)
-		return
+		return fmt.Errorf("error calculating block hash: %w", err)
 	}
 
 	currentLocalHeight := bc.GetLastHeight() - 1
@@ -225,23 +223,27 @@ func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) {
 		}
 
 		bc.logger.Debugf("peer %s has the same height as local node but different hash", peerID.String())
-		return
+		return nil
 	}
 
 	// if local height is bigger, check if the header hash is contained in the local chain
 	if currentLocalHeight > lastHeaderPeer.Height {
 		if _, ok := bc.headers[string(lastHashPeer)]; !ok {
 			bc.logger.Debugf("out of sync: peer %s has smaller height and last header is not contained in the local chain", peerID.String())
-			return
+			return nil
 		}
 
 		bc.logger.Debugf("peer %s has smaller height and last header is contained in the local chain", peerID.String())
-		return
+		return nil
 	}
 
 	// if local height is smaller than remote, try to add the remaining blocks to the chain
 	lastHeaderLocal := bc.headers[string(bc.GetLastBlockHash())]
-	bc.syncWithHeaders(ctx, peerID, &lastHeaderLocal, lastHeaderPeer)
+	if err = bc.syncWithHeaders(ctx, peerID, &lastHeaderLocal); err != nil {
+		return fmt.Errorf("error trying to sync: %w", err)
+	}
+
+	return nil
 }
 
 // syncWithNoLocalHeader called when the local node has no headers (not even genesis block) and needs to be synchronized
@@ -254,7 +256,7 @@ func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, peerID peer.ID)
 	// retrieve all headers from the remote node
 	headers, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
 	if err != nil {
-		return fmt.Errorf("error asking for all headers to %s: %w", peerID.String(), err)
+		return fmt.Errorf("error asking for all headers to: %w", err)
 	}
 
 	// sort headers by height
@@ -272,7 +274,7 @@ func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, peerID peer.ID)
 		// retrieve block from peer
 		block, err = bc.p2pNet.AskSpecificBlock(ctx, peerID, blockHash)
 		if err != nil {
-			return fmt.Errorf("error asking for block %x to %s: %w", blockHash, peerID.String(), err)
+			return fmt.Errorf("error asking for block %x: %w", blockHash, err)
 		}
 
 		// try to add block to the chain, if it fails, log it and finish the sync
@@ -286,8 +288,56 @@ func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, peerID peer.ID)
 }
 
 // syncWithHeaders called when a node with a bigger height than the local is found and the local node needs to sync with it
-func (bc *Blockchain) syncWithHeaders(ctx context.Context, peerID peer.ID, localHeader, remoteHeader *kernel.BlockHeader) {
-	// in case remote header is bigger than local header
+func (bc *Blockchain) syncWithHeaders(ctx context.Context, peerID peer.ID, localHeader *kernel.BlockHeader) error {
+	var blockHash []byte
+	var block *kernel.Block
+
+	// retrieve all headers from the remote node
+	headers, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
+	if err != nil {
+		return fmt.Errorf("error asking for all headers: %w", err)
+	}
+
+	// sort headers by height
+	sort.Slice(headers, func(i, j int) bool {
+		return headers[i].Height < headers[j].Height
+	})
+
+	// retrieve the block for each header and try to add it to the chain
+	for _, header := range headers {
+		// todo(): optimize this part **************************
+		// skip those headers that are already in the local chain
+		if localHeader.Height > header.Height {
+			continue
+		}
+
+		blockHash, err = util.CalculateBlockHash(header, bc.hasher)
+		if err != nil {
+			return fmt.Errorf("error calculating block hash from header: %w", err)
+		}
+
+		if localHeader.Height == header.Height {
+			// check if the hashes are equal, if they are not, log it and return
+			if !bytes.Equal(localHeader.PrevBlockHash, header.PrevBlockHash) {
+				bc.logger.Debugf("out of sync: peer %s has the same height as local node but different hash", peerID.String())
+				return nil
+			}
+		}
+
+		// retrieve block from peer
+		block, err = bc.p2pNet.AskSpecificBlock(ctx, peerID, blockHash)
+		if err != nil {
+			return fmt.Errorf("error asking for block %x: %w", blockHash, err)
+		}
+
+		// try to add block to the chain, if it fails, log it and finish the sync
+		if err = bc.AddBlock(block); err != nil {
+			// todo(): maybe the node should be blamed and black listed?
+			return fmt.Errorf("error adding block %x to the chain: %w", blockHash, err)
+		}
+	}
+
+	return nil
 }
 
 // ID returns the observer id
@@ -303,7 +353,9 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
 		defer cancel()
 
-		bc.sync(ctx, peerID)
+		if err := bc.sync(ctx, peerID); err != nil {
+			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
+		}
 	}()
 }
 
