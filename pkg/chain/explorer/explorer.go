@@ -46,6 +46,15 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	return header, nil
 }
 
+// GetAllHeaders returns all the block headers added to the chain. This implementation is not efficient, headers should
+// be cached but would introduce a lot of complexity and inconsistency. All the headers persisted are cached in the chain
+// module itself but it is not exposed to the outside and even if it was public, it would require a circular dependency,
+// This Explorer module was specifically introduced to avoid the dependency with the chain module
+func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
+	// todo() iterate over all headers
+	return []*kernel.BlockHeader{}, nil
+}
+
 func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
 	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseIterator(explorer.storage))
 }

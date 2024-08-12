@@ -14,12 +14,16 @@ import (
 	"chainnet/pkg/storage"
 	"context"
 	"fmt"
+	"sort"
+
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/sirupsen/logrus"
 )
 
-const BlockchainObserver = "blockchain"
+const (
+	BlockchainObserver = "blockchain"
+)
 
 type Blockchain struct {
 	lastBlockHash []byte
@@ -146,6 +150,7 @@ func (bc *Blockchain) InitNetwork() error {
 	return nil
 }
 
+// AddBlock adds a new block to the blockchain. The block is validated before being added to the chain
 func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	if err := bc.validator.ValidateBlock(block); err != nil {
 		return fmt.Errorf("block validation failed: %w", err)
@@ -168,36 +173,6 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	bc.blockSubject.NotifyBlockAdded(block)
 
 	return nil
-}
-
-func (bc *Blockchain) Sync() {
-	// if there is latest block (node has been started before)
-	// - retrieve latest block hash
-	// - compare height and hash
-	// - decide with the other peers next steps (download next headers or execute some conflict resolution)
-
-	// if there is not latest block (node is new)
-	// - ask for headers
-	// - download & verify headers
-	// - start IBD (Initial Block Download): download block from each header
-	// 		- validate each block
-}
-
-// ID returns the observer id
-func (bc *Blockchain) ID() string {
-	return BlockchainObserver
-}
-
-// OnNodeDiscovered is called when a new node is discovered via the observer pattern.
-func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
-	bc.logger.Infof("discovered new peer %s", peerID)
-	go func() {
-		// todo() apply the sync mutex here
-		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
-		defer cancel()
-
-		bc.sync(ctx, peerID)
-	}()
 }
 
 // sync function is in charge of handling all the logic related to node synchronization. The algorithm is as follows:
@@ -228,7 +203,10 @@ func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) {
 	// in case local node have no headers yet, start syncing with the remote node
 	if bc.lastHeight == 0 {
 		bc.logger.Debugf("local node has no headers, trying to sync with %s", peerID.String())
-		bc.syncWithNoLocalHeader(ctx, lastHeaderPeer, peerID)
+		if err = bc.syncWithNoLocalHeader(ctx, peerID); err != nil {
+			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
+		}
+
 		return
 	}
 
@@ -263,18 +241,70 @@ func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) {
 
 	// if local height is smaller than remote, try to add the remaining blocks to the chain
 	lastHeaderLocal := bc.headers[string(bc.GetLastBlockHash())]
-	bc.syncWithHeaders(ctx, &lastHeaderLocal, lastHeaderPeer, peerID)
+	bc.syncWithHeaders(ctx, peerID, &lastHeaderLocal, lastHeaderPeer)
 }
 
 // syncWithNoLocalHeader called when the local node has no headers (not even genesis block) and needs to be synchronized
-// with a remote node that have at least the genesis block
-func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, remoteHeader *kernel.BlockHeader, peerID peer.ID) {
-	// in case local header is empty
+// with a remote node that have at least the genesis block. This function retrieves all the headers from the remote node,
+// pull block by block and try to add them to the chain
+func (bc *Blockchain) syncWithNoLocalHeader(ctx context.Context, peerID peer.ID) error {
+	var blockHash []byte
+	var block *kernel.Block
+
+	// retrieve all headers from the remote node
+	headers, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
+	if err != nil {
+		return fmt.Errorf("error asking for all headers to %s: %w", peerID.String(), err)
+	}
+
+	// sort headers by height
+	sort.Slice(headers, func(i, j int) bool {
+		return headers[i].Height < headers[j].Height
+	})
+
+	// retrieve the block for each header and try to add it to the chain
+	for _, header := range headers {
+		blockHash, err = util.CalculateBlockHash(header, bc.hasher)
+		if err != nil {
+			return fmt.Errorf("error calculating block hash from header: %w", err)
+		}
+
+		// retrieve block from peer
+		block, err = bc.p2pNet.AskSpecificBlock(ctx, peerID, blockHash)
+		if err != nil {
+			return fmt.Errorf("error asking for block %x to %s: %w", blockHash, peerID.String(), err)
+		}
+
+		// try to add block to the chain, if it fails, log it and finish the sync
+		if err = bc.AddBlock(block); err != nil {
+			// todo(): maybe the node should be blamed and black listed?
+			return fmt.Errorf("error adding block %x to the chain: %w", blockHash, err)
+		}
+	}
+
+	return nil
 }
 
 // syncWithHeaders called when a node with a bigger height than the local is found and the local node needs to sync with it
-func (bc *Blockchain) syncWithHeaders(ctx context.Context, localHeader, remoteHeader *kernel.BlockHeader, peerID peer.ID) {
+func (bc *Blockchain) syncWithHeaders(ctx context.Context, peerID peer.ID, localHeader, remoteHeader *kernel.BlockHeader) {
 	// in case remote header is bigger than local header
+}
+
+// ID returns the observer id
+func (bc *Blockchain) ID() string {
+	return BlockchainObserver
+}
+
+// OnNodeDiscovered is called when a new node is discovered via the observer pattern.
+func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
+	bc.logger.Infof("discovered new peer %s", peerID)
+	go func() {
+		// todo() apply the sync mutex here
+		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
+		defer cancel()
+
+		bc.sync(ctx, peerID)
+	}()
 }
 
 // GetLastBlockHash returns the latest block hash

@@ -23,12 +23,15 @@ import (
 const (
 	P2PObserverID = "p2p-observer"
 
+	MaxNumberOfHeaderRequest = 1000
+
 	P2PTotalTimeout = 20 * time.Second
 	P2PWriteTimeout = 10 * time.Second
 	P2PReadTimeout  = 10 * time.Second
 
 	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
 	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
+	AskAllHeaders            = "/askAllHeaders/0.1.0"
 )
 
 type NodeP2P struct {
@@ -118,6 +121,7 @@ func (n *NodeP2P) Stop() error {
 func (n *NodeP2P) InitHandlers() {
 	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
 	n.host.SetStreamHandler(AskSpecificBlockProtocol, n.handleAskSpecificBlock)
+	n.host.SetStreamHandler(AskAllHeaders, n.handleAskAllHeaders)
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
@@ -226,6 +230,18 @@ func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 		n.logger.Errorf("error writing block with hash %x to stream: %s", hash, err)
 		return
 	}
+}
+
+// AskAllHeaders sends a request to a specific peer to get all headers from the remote chain. The reply contains
+// a list of headers unsorted
+func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.BlockHeader, error) {
+
+	return nil, nil
+}
+
+// handleAskAllHeaders handler that replies to the requests from AskAllHeaders
+func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
+
 }
 
 func (n *NodeP2P) ID() string {
