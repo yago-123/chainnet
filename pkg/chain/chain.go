@@ -174,22 +174,22 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-func (bc *Blockchain) generalSync() {
-	// try to sync regularly with other nodes to see if there is some sort of fork (take into account that +6 blocks of
-	// difference is already considered kind of a fork)
-	// 1. Ask for the latest header to all peers that the chain is connected to
-	// 2. Once all headers are retrieved check if more or less is in sync with the local node (to be developed what that means)
-	// 3. If it's not in sync ask all the peers for the header number N (where N is the lowest header that has been
-	//    retrieved, but should be bigger than current height)
-	//    3.1 What happens if after doing that the sync still not works? Maybe we should start erasing local headers and
-	//        reduce the local height?
-	// 4. Once all headers with height N arrive, compare them and choose the header with the hash most popular (the one
-	//    that most nodes have
-	// 5. Once you have the header most popular, ask one of the peers that contained that header for all headers
-	// 6. Once you have all headers, try to start pulling blocks and adding to the local chain until the header height
-	//    that was targeted at the step 3.
-	// 7. Repeat the process until is considered that the local node is in sync (TO BE DEVELOPED WHAT IN SYNC MEANS)
-}
+//func (bc *Blockchain) generalSync() {
+// 	try to sync regularly with other nodes to see if there is some sort of fork (take into account that +6 blocks of
+// 	difference is already considered kind of a fork)
+// 		1. Ask for the latest header to all peers that the chain is connected to
+// 		2. Once all headers are retrieved check if more or less is in sync with the local node (to be developed what that means)
+// 		3. If it's not in sync ask all the peers for the header number N (where N is the lowest header that has been
+//    	   retrieved, but should be bigger than current height)
+//      		3.1 What happens if after doing that the sync still not works? Maybe we should start erasing local headers and
+//        			reduce the local height?
+// 		4. Once all headers with height N arrive, compare them and choose the header with the hash most popular (the one
+//    	   that most nodes have
+// 		5. Once you have the header most popular, ask one of the peers that contained that header for all headers
+// 		6. Once you have all headers, try to start pulling blocks and adding to the local chain until the header height
+//         that was targeted at the step 3.
+// 		7. Repeat the process until is considered that the local node is in sync (TO BE DEVELOPED WHAT IN SYNC MEANS)
+// }
 
 // syncWithPeer function is in charge of handling all the logic related to node synchronization. Simple algorithm:
 //  1. Ask the remote node for the last header
