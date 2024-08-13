@@ -31,7 +31,7 @@ type Blockchain struct {
 	// blockTxsBloomFilter map[string]string
 
 	// syncMutex is used to lock the chain while performing syncs with other nodes
-	// this avoids collisions when multiple nodes are trying to sync with the local node
+	// this avoids collisions when multiple nodes are trying to syncWithPeer with the local node
 	syncMutex mutex.CtxMutex
 
 	hasher    hash.Hashing
@@ -77,7 +77,7 @@ func NewBlockchain(
 	}
 
 	if !lastHeader.IsEmpty() {
-		// if exists a last header, sync the actual status of the chain
+		// if exists a last header, syncWithPeer the actual status of the chain
 		// specify the current height
 		lastHeight = lastHeader.Height + 1
 
@@ -174,11 +174,28 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-// sync function is in charge of handling all the logic related to node synchronization. Simple algorithm:
+func (bc *Blockchain) generalSync() {
+	// try to sync regularly with other nodes to see if there is some sort of fork (take into account that +6 blocks of
+	// difference is already considered kind of a fork)
+	// 1. Ask for the latest header to all peers that the chain is connected to
+	// 2. Once all headers are retrieved check if more or less is in sync with the local node (to be developed what that means)
+	// 3. If it's not in sync ask all the peers for the header number N (where N is the lowest header that has been
+	//    retrieved, but should be bigger than current height)
+	//    3.1 What happens if after doing that the sync still not works? Maybe we should start erasing local headers and
+	//        reduce the local height?
+	// 4. Once all headers with height N arrive, compare them and choose the header with the hash most popular (the one
+	//    that most nodes have
+	// 5. Once you have the header most popular, ask one of the peers that contained that header for all headers
+	// 6. Once you have all headers, try to start pulling blocks and adding to the local chain until the header height
+	//    that was targeted at the step 3.
+	// 7. Repeat the process until is considered that the local node is in sync (TO BE DEVELOPED WHAT IN SYNC MEANS)
+}
+
+// syncWithPeer function is in charge of handling all the logic related to node synchronization. Simple algorithm:
 //  1. Ask the remote node for the last header
 //  2. If the local height is smaller or equal than the remote HEADER height, try to synchronize via headers
 //  3. If the local height is bigger than the remote HEADER height, there is nothing to synchronize, just return
-func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) error {
+func (bc *Blockchain) syncWithPeer(ctx context.Context, peerID peer.ID) error {
 	localCurrentHeight := bc.GetLastHeight()
 
 	// ask new peer for last header
@@ -191,11 +208,11 @@ func (bc *Blockchain) sync(ctx context.Context, peerID peer.ID) error {
 	// in case current height is smaller or equal than the remote latest header, try to upgrade local node
 	if localCurrentHeight <= lastHeaderPeer.Height {
 		if err = bc.syncFromHeaders(ctx, peerID, localCurrentHeight); err != nil {
-			return fmt.Errorf("error trying to sync with headers from height %d: %w", localCurrentHeight, err)
+			return fmt.Errorf("error trying to syncWithPeer with headers from height %d: %w", localCurrentHeight, err)
 		}
 	}
 
-	// in case current height is bigger than latest remote header height, there is nothing to sync, just return
+	// in case current height is bigger than latest remote header height, there is nothing to syncWithPeer, just return
 	return nil
 }
 
@@ -237,7 +254,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 			return fmt.Errorf("error asking for block %x: %w", remoteBlockHash, err)
 		}
 
-		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside AddBlock)
+		// try to add block to the chain, if it fails, log it and finish the syncWithPeer (blocks are validated insiside AddBlock)
 		if err = bc.AddBlock(block); err != nil {
 			// todo(): maybe the node should be blamed and black listed?
 			return fmt.Errorf("error adding block %x to the chain: %w", remoteBlockHash, err)
@@ -256,13 +273,13 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	go func() {
-		// todo() apply the sync mutex here
+		// todo() apply the syncWithPeer mutex here
 		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
 		defer cancel()
 
 		bc.syncMutex.Lock(ctx)
 		defer bc.syncMutex.Unlock()
-		if err := bc.sync(ctx, peerID); err != nil {
+		if err := bc.syncWithPeer(ctx, peerID); err != nil {
 			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
 		}
 	}()
