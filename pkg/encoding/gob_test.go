@@ -5,9 +5,10 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"encoding/gob"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 /*
