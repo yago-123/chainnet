@@ -31,7 +31,7 @@ type Blockchain struct {
 	// blockTxsBloomFilter map[string]string
 
 	// syncMutex is used to lock the chain while performing syncs with other nodes
-	// this avoids collisions when multiple nodes are trying to syncWithPeer with the local node
+	// this avoids collisions when multiple nodes are trying to sync with the local node
 	syncMutex mutex.CtxMutex
 
 	hasher    hash.Hashing
@@ -77,7 +77,7 @@ func NewBlockchain(
 	}
 
 	if !lastHeader.IsEmpty() {
-		// if exists a last header, syncWithPeer the actual status of the chain
+		// if exists a last header, sync the actual status of the chain
 		// specify the current height
 		lastHeight = lastHeader.Height + 1
 
@@ -208,11 +208,11 @@ func (bc *Blockchain) syncWithPeer(ctx context.Context, peerID peer.ID) error {
 	// in case current height is smaller or equal than the remote latest header, try to upgrade local node
 	if localCurrentHeight <= lastHeaderPeer.Height {
 		if err = bc.syncFromHeaders(ctx, peerID, localCurrentHeight); err != nil {
-			return fmt.Errorf("error trying to syncWithPeer with headers from height %d: %w", localCurrentHeight, err)
+			return fmt.Errorf("error trying to sync with headers from height %d: %w", localCurrentHeight, err)
 		}
 	}
 
-	// in case current height is bigger than latest remote header height, there is nothing to syncWithPeer, just return
+	// in case current height is bigger than latest remote header height, there is nothing to sync, just return
 	return nil
 }
 
@@ -254,7 +254,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 			return fmt.Errorf("error asking for block %x: %w", remoteBlockHash, err)
 		}
 
-		// try to add block to the chain, if it fails, log it and finish the syncWithPeer (blocks are validated insiside AddBlock)
+		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside AddBlock)
 		if err = bc.AddBlock(block); err != nil {
 			// todo(): maybe the node should be blamed and black listed?
 			return fmt.Errorf("error adding block %x to the chain: %w", remoteBlockHash, err)
@@ -273,7 +273,6 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	go func() {
-		// todo() apply the syncWithPeer mutex here
 		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
 		defer cancel()
 
