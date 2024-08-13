@@ -11,13 +11,12 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
+	. "chainnet/pkg/util"
 	"context"
 	"fmt"
-	"sort"
-
 	"github.com/libp2p/go-libp2p/core/peer"
-
 	"github.com/sirupsen/logrus"
+	"sort"
 )
 
 const (
@@ -30,9 +29,9 @@ type Blockchain struct {
 	headers       map[string]kernel.BlockHeader
 	// blockTxsBloomFilter map[string]string
 
-	// syncMutex is used to lock the blockchain while performing syncs with other nodes
+	// syncMutex is used to lock the chain while performing syncs with other nodes
 	// this avoids collisions when multiple nodes are trying to sync with the local node
-	// syncMutex sync.Mutex
+	syncMutex CtxMutex
 
 	hasher    hash.Hashing
 	storage   storage.Storage
@@ -260,6 +259,8 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
 		defer cancel()
 
+		bc.syncMutex.Lock(ctx)
+		defer bc.syncMutex.Unlock()
 		if err := bc.sync(ctx, peerID); err != nil {
 			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
 		}
