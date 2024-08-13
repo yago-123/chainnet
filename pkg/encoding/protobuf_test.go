@@ -77,7 +77,7 @@ var expectedPbBlock = &pb.Block{ //nolint:gochecknoglobals // ignore linter in t
 	Hash: []byte("blockhash"),
 }
 
-var testBlockHeader = &kernel.BlockHeader{ // Test BlockHeader for serialization/deserialization
+var testBlockHeader = &kernel.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Version:       []byte("v1"),
 	PrevBlockHash: []byte("prevhash"),
 	MerkleRoot:    []byte("merkleroot"),
@@ -87,7 +87,7 @@ var testBlockHeader = &kernel.BlockHeader{ // Test BlockHeader for serialization
 	Nonce:         789,
 }
 
-var expectedPbBlockHeader = &pb.BlockHeader{ // Expected Protobuf BlockHeader
+var expectedPbBlockHeader = &pb.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Version:       []byte("v1"),
 	PrevBlockHash: []byte("prevhash"),
 	MerkleRoot:    []byte("merkleroot"),
@@ -97,7 +97,7 @@ var expectedPbBlockHeader = &pb.BlockHeader{ // Expected Protobuf BlockHeader
 	Nonce:         789,
 }
 
-var testBlockHeaders = []*kernel.BlockHeader{ // Test slice of BlockHeaders for serialization/deserialization
+var testBlockHeaders = []*kernel.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
 	testBlockHeader,
 	{
 		Version:       []byte("v2"),
@@ -110,7 +110,7 @@ var testBlockHeaders = []*kernel.BlockHeader{ // Test slice of BlockHeaders for 
 	},
 }
 
-var expectedPbBlockHeaders = &pb.BlockHeaders{ // Expected Protobuf BlockHeaders
+var expectedPbBlockHeaders = &pb.BlockHeaders{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Headers: []*pb.BlockHeader{
 		expectedPbBlockHeader,
 		{

@@ -234,7 +234,7 @@ var transaction2Encoded = []byte{38, 255, 129, 3, 1, 2, 255, 130, 0, 1, 3, 1, 2,
 	}
 */
 
-var testBlockHeaders = []*kernel.BlockHeader{ // Test slice of BlockHeaders for serialization/deserialization
+var testBlockHeaders = []*kernel.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
 	{
 		Version:       []byte("v1"),
 		PrevBlockHash: []byte("prevhash"),

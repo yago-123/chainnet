@@ -89,7 +89,7 @@ func (p *Protobuf) DeserializeHeaders(data []byte) ([]*kernel.BlockHeader, error
 
 	// convert each Protobuf BlockHeader to a kernel.BlockHeader
 	var bhs []*kernel.BlockHeader
-	for _, pbHeader := range pbHeaders.Headers {
+	for _, pbHeader := range pbHeaders.GetHeaders() {
 		bh := convertFromProtobufBlockHeader(pbHeader)
 		bhs = append(bhs, bh)
 	}
