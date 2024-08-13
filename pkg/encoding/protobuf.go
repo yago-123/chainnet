@@ -57,6 +57,46 @@ func (p *Protobuf) DeserializeHeader(data []byte) (*kernel.BlockHeader, error) {
 	return bh, nil
 }
 
+// SerializeHeaders serializes a slice of kernel.BlockHeader into a Protobuf byte array.
+func (p *Protobuf) SerializeHeaders(bhs []*kernel.BlockHeader) ([]byte, error) {
+	var pbHeaders []*pb.BlockHeader
+
+	for _, bh := range bhs {
+		pbHeader := convertToProtobufBlockHeader(*bh)
+		pbHeaders = append(pbHeaders, pbHeader)
+	}
+
+	// create a Protobuf BlockHeaders message and set headers field
+	container := &pb.BlockHeaders{
+		Headers: pbHeaders,
+	}
+
+	data, err := proto.Marshal(container)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing block headers: %w", err)
+	}
+
+	return data, nil
+}
+
+// DeserializeHeaders deserializes a Protobuf byte array into a slice of kernel.BlockHeader.
+func (p *Protobuf) DeserializeHeaders(data []byte) ([]*kernel.BlockHeader, error) {
+	var pbHeaders pb.BlockHeaders // Adjust to your Protobuf message type.
+
+	if err := proto.Unmarshal(data, &pbHeaders); err != nil {
+		return nil, fmt.Errorf("error deserializing block headers: %w", err)
+	}
+
+	// convert each Protobuf BlockHeader to a kernel.BlockHeader
+	var bhs []*kernel.BlockHeader
+	for _, pbHeader := range pbHeaders.Headers {
+		bh := convertFromProtobufBlockHeader(pbHeader)
+		bhs = append(bhs, bh)
+	}
+
+	return bhs, nil
+}
+
 // SerializeTransaction serializes a kernel.Transaction into a Protobuf byte array
 func (p *Protobuf) SerializeTransaction(tx kernel.Transaction) ([]byte, error) {
 	pbTransaction := convertToProtobufTransaction(tx)

@@ -11,12 +11,13 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
-	. "chainnet/pkg/util"
+	"chainnet/pkg/util/mutex"
 	"context"
 	"fmt"
+	"sort"
+
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/sirupsen/logrus"
-	"sort"
 )
 
 const (
@@ -31,7 +32,7 @@ type Blockchain struct {
 
 	// syncMutex is used to lock the chain while performing syncs with other nodes
 	// this avoids collisions when multiple nodes are trying to sync with the local node
-	syncMutex CtxMutex
+	syncMutex mutex.CtxMutex
 
 	hasher    hash.Hashing
 	storage   storage.Storage

@@ -77,6 +77,54 @@ var expectedPbBlock = &pb.Block{ //nolint:gochecknoglobals // ignore linter in t
 	Hash: []byte("blockhash"),
 }
 
+var testBlockHeader = &kernel.BlockHeader{ // Test BlockHeader for serialization/deserialization
+	Version:       []byte("v1"),
+	PrevBlockHash: []byte("prevhash"),
+	MerkleRoot:    []byte("merkleroot"),
+	Height:        123,
+	Timestamp:     1610000000,
+	Target:        456,
+	Nonce:         789,
+}
+
+var expectedPbBlockHeader = &pb.BlockHeader{ // Expected Protobuf BlockHeader
+	Version:       []byte("v1"),
+	PrevBlockHash: []byte("prevhash"),
+	MerkleRoot:    []byte("merkleroot"),
+	Height:        123,
+	Timestamp:     1610000000,
+	Target:        456,
+	Nonce:         789,
+}
+
+var testBlockHeaders = []*kernel.BlockHeader{ // Test slice of BlockHeaders for serialization/deserialization
+	testBlockHeader,
+	{
+		Version:       []byte("v2"),
+		PrevBlockHash: []byte("prevhash2"),
+		MerkleRoot:    []byte("merkleroot2"),
+		Height:        456,
+		Timestamp:     1620000000,
+		Target:        789,
+		Nonce:         101112,
+	},
+}
+
+var expectedPbBlockHeaders = &pb.BlockHeaders{ // Expected Protobuf BlockHeaders
+	Headers: []*pb.BlockHeader{
+		expectedPbBlockHeader,
+		{
+			Version:       []byte("v2"),
+			PrevBlockHash: []byte("prevhash2"),
+			MerkleRoot:    []byte("merkleroot2"),
+			Height:        456,
+			Timestamp:     1620000000,
+			Target:        789,
+			Nonce:         101112,
+		},
+	},
+}
+
 func TestSerializeBlock(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := p.SerializeBlock(testBlock)
@@ -120,6 +168,30 @@ func TestDeserializeHeader(t *testing.T) {
 	header, err := p.DeserializeHeader(data)
 	require.NoError(t, err)
 	assert.Equal(t, *testBlock.Header, *header)
+}
+
+func TestSerializeHeaders(t *testing.T) {
+	p := NewProtobufEncoder()
+	data, err := p.SerializeHeaders(testBlockHeaders)
+	require.NoError(t, err)
+
+	var pbBlockHeaders pb.BlockHeaders
+	err = proto.Unmarshal(data, &pbBlockHeaders)
+	require.NoError(t, err)
+
+	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
+	assert.True(t, proto.Equal(expectedPbBlockHeaders, &pbBlockHeaders))
+}
+
+func TestDeserializeHeaders(t *testing.T) {
+	p := NewProtobufEncoder()
+	data, err := proto.Marshal(expectedPbBlockHeaders)
+	require.NoError(t, err)
+
+	headers, err := p.DeserializeHeaders(data)
+	require.NoError(t, err)
+
+	assert.ElementsMatch(t, testBlockHeaders, headers)
 }
 
 func TestSerializeTransaction(t *testing.T) {
