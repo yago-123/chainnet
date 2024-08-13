@@ -174,7 +174,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-//func (bc *Blockchain) generalSync() {
+// func (bc *Blockchain) generalSync() {
 // 	try to sync regularly with other nodes to see if there is some sort of fork (take into account that +6 blocks of
 // 	difference is already considered kind of a fork)
 // 		1. Ask for the latest header to all peers that the chain is connected to
