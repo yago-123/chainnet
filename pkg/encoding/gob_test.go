@@ -11,228 +11,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-/*
-import (
-
-	"chainnet/pkg/encoding"
-	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
-	"chainnet/pkg/script"
-	"reflect"
-	"testing"
-
-)
-
-var block1 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-
-		Timestamp: 0,
-		Transactions: []*Transaction{
-			{
-				ID: []byte("coinbase-transaction-block-1-id"),
-				Vin: []TxInput{
-					NewCoinbaseInput(),
-				},
-				Vout: []TxOutput{
-					NewOutput(CoinbaseReward, script.P2PK, "pubKey-2"),
-				},
+var testBlock = &kernel.Block{ //nolint:gochecknoglobals // data that is used across all test funcs
+	Header: &kernel.BlockHeader{
+		Version:       []byte("v1"),
+		PrevBlockHash: []byte("prevhash"),
+		MerkleRoot:    []byte("merkleroot"),
+		Height:        123,
+		Timestamp:     1610000000,
+		Target:        456,
+		Nonce:         789,
+	},
+	Transactions: []*kernel.Transaction{
+		{
+			ID: []byte("tx1"),
+			Vin: []kernel.TxInput{
+				{Txid: []byte("tx0"), Vout: 0, ScriptSig: "script1", PubKey: "pubkey1"},
+				{Txid: []byte("tx0"), Vout: 1, ScriptSig: "script2", PubKey: "pubkey2"},
+			},
+			Vout: []kernel.TxOutput{
+				{Amount: 50, ScriptPubKey: "scriptpubkey1", PubKey: "pubkey1"},
+				{Amount: 30, ScriptPubKey: "scriptpubkey2", PubKey: "pubkey2"},
 			},
 		},
-		PrevBlockHash: []byte("genesish-block-hash"),
-		Nonce:         1,
-		Hash:          []byte("block-hash-1"),
-	}
-
-var block1Encoded = []byte{98, 127, 3, 1, 1, 5, 66, 108, 111, 99, 107, 1, 255, 128, 0, 1, 6, 1, 9, 84, 105, 109, 101, 115, 116, 97, 109, 112, 1, 4, 0, 1, 12, 84, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 115, 1, 255, 140, 0, 1, 13, 80, 114, 101, 118, 66, 108, 111, 99, 107, 72, 97, 115, 104, 1, 10, 0, 1, 6, 84, 97, 114, 103, 101, 116, 1, 6, 0, 1, 5, 78, 111, 110, 99, 101, 1, 6, 0, 1, 4, 72, 97, 115, 104, 1, 10, 0, 0, 0, 36, 255, 139, 2, 1, 1, 21, 91, 93, 42, 107, 101, 114, 110, 101, 108, 46, 84, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 1, 255, 140, 0, 1, 255, 130, 0, 0, 38, 255, 129, 3, 1, 2, 255, 130, 0, 1, 3, 1, 2, 73, 68, 1, 10, 0, 1, 3, 86, 105, 110, 1, 255, 134, 0, 1, 4, 86, 111, 117, 116, 1, 255, 138, 0, 0, 0, 31, 255, 133, 2, 1, 1, 16, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 73, 110, 112, 117, 116, 1, 255, 134, 0, 1, 255, 132, 0, 0, 64, 255, 131, 3, 1, 1, 7, 84, 120, 73, 110, 112, 117, 116, 1, 255, 132, 0, 1, 4, 1, 4, 84, 120, 105, 100, 1, 10, 0, 1, 4, 86, 111, 117, 116, 1, 6, 0, 1, 9, 83, 99, 114, 105, 112, 116, 83, 105, 103, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 32, 255, 137, 2, 1, 1, 17, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 138, 0, 1, 255, 136, 0, 0, 61, 255, 135, 3, 1, 1, 8, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 136, 0, 1, 3, 1, 6, 65, 109, 111, 117, 110, 116, 1, 6, 0, 1, 12, 83, 99, 114, 105, 112, 116, 80, 117, 98, 75, 101, 121, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 116, 255, 128, 2, 1, 1, 31, 99, 111, 105, 110, 98, 97, 115, 101, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 49, 45, 105, 100, 1, 1, 0, 1, 1, 1, 50, 1, 20, 112, 117, 98, 75, 101, 121, 45, 50, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 0, 1, 19, 103, 101, 110, 101, 115, 105, 115, 104, 45, 98, 108, 111, 99, 107, 45, 104, 97, 115, 104, 2, 1, 1, 12, 98, 108, 111, 99, 107, 45, 104, 97, 115, 104, 45, 49, 0} //nolint:gochecknoglobals // data that is used across all test funcs
-
-var block2 = Block{ //nolint:gochecknoglobals // data that is used across all test funcs
-
-		Timestamp: 0,
-		Transactions: []*Transaction{
-			{
-				ID: []byte("coinbase-transaction-block-2-id"),
-				Vin: []TxInput{
-					NewCoinbaseInput(),
-				},
-				Vout: []TxOutput{
-					NewOutput(CoinbaseReward, script.P2PK, "pubKey-3"),
-				},
+		{
+			ID: []byte("tx2"),
+			Vin: []kernel.TxInput{
+				{Txid: []byte("tx1"), Vout: 0, ScriptSig: "script3", PubKey: "pubkey3"},
 			},
-			{
-				ID: []byte("regular-transaction-block-2-id"),
-				Vin: []TxInput{
-					NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2", "pubKey-2"),
-				},
-				Vout: []TxOutput{
-					NewOutput(2, script.P2PK, "pubKey-3"),
-					NewOutput(3, script.P2PK, "pubKey-4"),
-					NewOutput(44, script.P2PK, "pubKey-5"),
-					NewOutput(1, script.P2PK, "pubKey-2"),
-				},
+			Vout: []kernel.TxOutput{
+				{Amount: 20, ScriptPubKey: "scriptpubkey3", PubKey: "pubkey3"},
+				{Amount: 10, ScriptPubKey: "scriptpubkey4", PubKey: "pubkey4"},
 			},
 		},
-		PrevBlockHash: []byte("block-2-hash"),
-		Nonce:         1,
-		Hash:          []byte("block-hash-2"),
-	}
+	},
+	Hash: []byte("blockhash"),
+}
 
-var block2Encoded = []byte{98, 127, 3, 1, 1, 5, 66, 108, 111, 99, 107, 1, 255, 128, 0, 1, 6, 1, 9, 84, 105, 109, 101, 115, 116, 97, 109, 112, 1, 4, 0, 1, 12, 84, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 115, 1, 255, 140, 0, 1, 13, 80, 114, 101, 118, 66, 108, 111, 99, 107, 72, 97, 115, 104, 1, 10, 0, 1, 6, 84, 97, 114, 103, 101, 116, 1, 6, 0, 1, 5, 78, 111, 110, 99, 101, 1, 6, 0, 1, 4, 72, 97, 115, 104, 1, 10, 0, 0, 0, 36, 255, 139, 2, 1, 1, 21, 91, 93, 42, 107, 101, 114, 110, 101, 108, 46, 84, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 1, 255, 140, 0, 1, 255, 130, 0, 0, 38, 255, 129, 3, 1, 2, 255, 130, 0, 1, 3, 1, 2, 73, 68, 1, 10, 0, 1, 3, 86, 105, 110, 1, 255, 134, 0, 1, 4, 86, 111, 117, 116, 1, 255, 138, 0, 0, 0, 31, 255, 133, 2, 1, 1, 16, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 73, 110, 112, 117, 116, 1, 255, 134, 0, 1, 255, 132, 0, 0, 64, 255, 131, 3, 1, 1, 7, 84, 120, 73, 110, 112, 117, 116, 1, 255, 132, 0, 1, 4, 1, 4, 84, 120, 105, 100, 1, 10, 0, 1, 4, 86, 111, 117, 116, 1, 6, 0, 1, 9, 83, 99, 114, 105, 112, 116, 83, 105, 103, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 32, 255, 137, 2, 1, 1, 17, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 138, 0, 1, 255, 136, 0, 0, 61, 255, 135, 3, 1, 1, 8, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 136, 0, 1, 3, 1, 6, 65, 109, 111, 117, 110, 116, 1, 6, 0, 1, 12, 83, 99, 114, 105, 112, 116, 80, 117, 98, 75, 101, 121, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 254, 1, 84, 255, 128, 2, 2, 1, 31, 99, 111, 105, 110, 98, 97, 115, 101, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 50, 45, 105, 100, 1, 1, 0, 1, 1, 1, 50, 1, 20, 112, 117, 98, 75, 101, 121, 45, 51, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 51, 0, 0, 1, 30, 114, 101, 103, 117, 108, 97, 114, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 50, 45, 105, 100, 1, 1, 1, 31, 99, 111, 105, 110, 98, 97, 115, 101, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 49, 45, 105, 100, 2, 8, 112, 117, 98, 75, 101, 121, 45, 50, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 1, 4, 1, 2, 1, 20, 112, 117, 98, 75, 101, 121, 45, 51, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 51, 0, 1, 3, 1, 20, 112, 117, 98, 75, 101, 121, 45, 52, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 52, 0, 1, 44, 1, 20, 112, 117, 98, 75, 101, 121, 45, 53, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 53, 0, 1, 1, 1, 20, 112, 117, 98, 75, 101, 121, 45, 50, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 0, 1, 12, 98, 108, 111, 99, 107, 45, 50, 45, 104, 97, 115, 104, 2, 1, 1, 12, 98, 108, 111, 99, 107, 45, 104, 97, 115, 104, 45, 50, 0} //nolint:gochecknoglobals // data that is used across all test funcs
-
-var transaction1 = Transaction{ //nolint:gochecknoglobals // data that is used across all test funcs
-
-		ID: []byte("coinbase-transaction-block-1-id"),
-		Vin: []TxInput{
-			NewCoinbaseInput(),
-		},
-		Vout: []TxOutput{
-			NewOutput(CoinbaseReward, script.P2PK, "pubKey-2"),
-		},
-	}
-
-var transaction1Encoded = []byte{38, 255, 129, 3, 1, 2, 255, 130, 0, 1, 3, 1, 2, 73, 68, 1, 10, 0, 1, 3, 86, 105, 110, 1, 255, 134, 0, 1, 4, 86, 111, 117, 116, 1, 255, 138, 0, 0, 0, 31, 255, 133, 2, 1, 1, 16, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 73, 110, 112, 117, 116, 1, 255, 134, 0, 1, 255, 132, 0, 0, 64, 255, 131, 3, 1, 1, 7, 84, 120, 73, 110, 112, 117, 116, 1, 255, 132, 0, 1, 4, 1, 4, 84, 120, 105, 100, 1, 10, 0, 1, 4, 86, 111, 117, 116, 1, 6, 0, 1, 9, 83, 99, 114, 105, 112, 116, 83, 105, 103, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 32, 255, 137, 2, 1, 1, 17, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 138, 0, 1, 255, 136, 0, 0, 61, 255, 135, 3, 1, 1, 8, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 136, 0, 1, 3, 1, 6, 65, 109, 111, 117, 110, 116, 1, 6, 0, 1, 12, 83, 99, 114, 105, 112, 116, 80, 117, 98, 75, 101, 121, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 76, 255, 130, 1, 31, 99, 111, 105, 110, 98, 97, 115, 101, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 49, 45, 105, 100, 1, 1, 0, 1, 1, 1, 50, 1, 20, 112, 117, 98, 75, 101, 121, 45, 50, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 0} //nolint:gochecknoglobals // data that is used across all test funcs
-
-var transaction2 = Transaction{ //nolint:gochecknoglobals // data that is used across all test funcs
-
-		ID: []byte("regular-transaction-block-2-id"),
-		Vin: []TxInput{
-			NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2", "pubKey-2"),
-		},
-		Vout: []TxOutput{
-			NewOutput(2, script.P2PK, "pubKey-3"),
-			NewOutput(3, script.P2PK, "pubKey-4"),
-			NewOutput(44, script.P2PK, "pubKey-5"),
-			NewOutput(1, script.P2PK, "pubKey-2"),
-		},
-	}
-
-var transaction2Encoded = []byte{38, 255, 129, 3, 1, 2, 255, 130, 0, 1, 3, 1, 2, 73, 68, 1, 10, 0, 1, 3, 86, 105, 110, 1, 255, 134, 0, 1, 4, 86, 111, 117, 116, 1, 255, 138, 0, 0, 0, 31, 255, 133, 2, 1, 1, 16, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 73, 110, 112, 117, 116, 1, 255, 134, 0, 1, 255, 132, 0, 0, 64, 255, 131, 3, 1, 1, 7, 84, 120, 73, 110, 112, 117, 116, 1, 255, 132, 0, 1, 4, 1, 4, 84, 120, 105, 100, 1, 10, 0, 1, 4, 86, 111, 117, 116, 1, 6, 0, 1, 9, 83, 99, 114, 105, 112, 116, 83, 105, 103, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 32, 255, 137, 2, 1, 1, 17, 91, 93, 107, 101, 114, 110, 101, 108, 46, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 138, 0, 1, 255, 136, 0, 0, 61, 255, 135, 3, 1, 1, 8, 84, 120, 79, 117, 116, 112, 117, 116, 1, 255, 136, 0, 1, 3, 1, 6, 65, 109, 111, 117, 110, 116, 1, 6, 0, 1, 12, 83, 99, 114, 105, 112, 116, 80, 117, 98, 75, 101, 121, 1, 12, 0, 1, 6, 80, 117, 98, 75, 101, 121, 1, 12, 0, 0, 0, 255, 233, 255, 130, 1, 30, 114, 101, 103, 117, 108, 97, 114, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 50, 45, 105, 100, 1, 1, 1, 31, 99, 111, 105, 110, 98, 97, 115, 101, 45, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 45, 98, 108, 111, 99, 107, 45, 49, 45, 105, 100, 2, 8, 112, 117, 98, 75, 101, 121, 45, 50, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 1, 4, 1, 2, 1, 20, 112, 117, 98, 75, 101, 121, 45, 51, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 51, 0, 1, 3, 1, 20, 112, 117, 98, 75, 101, 121, 45, 52, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 52, 0, 1, 44, 1, 20, 112, 117, 98, 75, 101, 121, 45, 53, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 53, 0, 1, 1, 1, 20, 112, 117, 98, 75, 101, 121, 45, 50, 32, 79, 80, 95, 67, 72, 69, 67, 75, 83, 73, 71, 1, 8, 112, 117, 98, 75, 101, 121, 45, 50, 0, 0} //nolint:gochecknoglobals // data that is used across all test funcs
-
-	func _TestGobEncoder_DeserializeBlock(t *testing.T) {
-		type args struct {
-			data []byte
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    *Block
-			wantErr bool
-		}{
-			{"Deserialize block 1", args{block1Encoded}, &block1, false},
-			{"Deserialize block 2", args{block2Encoded}, &block2, false},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				gobenc := &encoding.GobEncoder{}
-				got, err := gobenc.DeserializeBlock(tt.args.data)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("DeserializeBlock() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("DeserializeBlock() got = %v, want %v", got, tt.want)
-				}
-			})
-		}
-	}
-
-	func _TestGobEncoder_DeserializeTransaction(t *testing.T) {
-		type args struct {
-			data []byte
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    *Transaction
-			wantErr bool
-		}{
-			{"Deserialize transaction 1", args{transaction1Encoded}, &transaction1, false},
-			{"Deserialize transaction 2", args{transaction2Encoded}, &transaction2, false},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				gobenc := &encoding.GobEncoder{}
-				got, err := gobenc.DeserializeTransaction(tt.args.data)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("DeserializeTransaction() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("DeserializeTransaction() got = %v, want %v", got, tt.want)
-				}
-			})
-		}
-	}
-
-	func _TestGobEncoder_SerializeBlock(t *testing.T) {
-		type args struct {
-			b Block
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    []byte
-			wantErr bool
-		}{
-			{"Serialize Block 1", args{block1}, block1Encoded, false},
-			{"Serialize Block 2", args{block2}, block2Encoded, false},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				gobenc := &encoding.GobEncoder{}
-				got, err := gobenc.SerializeBlock(tt.args.b)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("SerializeBlock() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("SerializeBlock() got = %v, want %v", got, tt.want)
-				}
-			})
-		}
-	}
-
-	func _TestGobEncoder_SerializeTransaction(t *testing.T) {
-		type args struct {
-			tx Transaction
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    []byte
-			wantErr bool
-		}{
-			{"Serialize Transaction 1", args{transaction1}, transaction1Encoded, false},
-			{"Serialize Transaction 2", args{transaction2}, transaction2Encoded, false},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				gobenc := &encoding.GobEncoder{}
-				got, err := gobenc.SerializeTransaction(tt.args.tx)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("SerializeTransaction() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("SerializeTransaction() got = %v, want %v", got, tt.want)
-				}
-			})
-		}
-	}
-
-	func _TestNewGobEncoder(t *testing.T) {
-		tests := []struct {
-			name string
-			want *encoding.GobEncoder
-		}{
-			// TODO: AppendTransaction test cases.
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				if got := encoding.NewGobEncoder(); !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("NewGobEncoder() = %v, want %v", got, tt.want)
-				}
-			})
-		}
-	}
-*/
+var testTransaction = kernel.Transaction{ //nolint:gochecknoglobals // data that is used across all test funcs
+	ID: []byte("tx1"),
+	Vin: []kernel.TxInput{
+		{Txid: []byte("tx0"), Vout: 0, ScriptSig: "script1", PubKey: "pubkey1"},
+		{Txid: []byte("tx0"), Vout: 1, ScriptSig: "script2", PubKey: "pubkey2"},
+	},
+	Vout: []kernel.TxOutput{
+		{Amount: 50, ScriptPubKey: "scriptpubkey1", PubKey: "pubkey1"},
+		{Amount: 30, ScriptPubKey: "scriptpubkey2", PubKey: "pubkey2"},
+	},
+}
 
 var testBlockHeaders = []*kernel.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
 	{
@@ -253,6 +78,58 @@ var testBlockHeaders = []*kernel.BlockHeader{ //nolint:gochecknoglobals // data 
 		Target:        789,
 		Nonce:         101112,
 	},
+}
+
+func TestSerializeBlock(t *testing.T) {
+	gobenc := encoding.NewGobEncoder()
+
+	data, err := gobenc.SerializeBlock(*testBlock)
+	require.NoError(t, err)
+
+	var block kernel.Block
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err = decoder.Decode(&block)
+	require.NoError(t, err)
+
+	assert.Equal(t, *testBlock, block)
+}
+
+func TestDeserializeBlock(t *testing.T) {
+	gobenc := encoding.NewGobEncoder()
+
+	data, err := gobenc.SerializeBlock(*testBlock)
+	require.NoError(t, err)
+
+	block, err := gobenc.DeserializeBlock(data)
+	require.NoError(t, err)
+
+	assert.Equal(t, testBlock, block)
+}
+
+func TestSerializeHeader(t *testing.T) {
+	gobenc := encoding.NewGobEncoder()
+
+	data, err := gobenc.SerializeHeader(*testBlock.Header)
+	require.NoError(t, err)
+
+	var header kernel.BlockHeader
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err = decoder.Decode(&header)
+	require.NoError(t, err)
+
+	assert.Equal(t, *testBlock.Header, header)
+}
+
+func TestDeserializeHeader(t *testing.T) {
+	gobenc := encoding.NewGobEncoder()
+
+	data, err := gobenc.SerializeHeader(*testBlock.Header)
+	require.NoError(t, err)
+
+	header, err := gobenc.DeserializeHeader(data)
+	require.NoError(t, err)
+
+	assert.Equal(t, testBlock.Header, header)
 }
 
 func TestSerializeHeaders(t *testing.T) {
@@ -279,4 +156,30 @@ func TestDeserializeHeaders(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.ElementsMatch(t, testBlockHeaders, headers)
+}
+
+func TestSerializeTransaction(t *testing.T) {
+	gobenc := encoding.NewGobEncoder()
+
+	data, err := gobenc.SerializeTransaction(testTransaction)
+	require.NoError(t, err)
+
+	var transaction kernel.Transaction
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err = decoder.Decode(&transaction)
+	require.NoError(t, err)
+
+	assert.Equal(t, testTransaction, transaction)
+}
+
+func TestDeserializeTransaction(t *testing.T) {
+	gobenc := encoding.NewGobEncoder()
+
+	data, err := gobenc.SerializeTransaction(testTransaction)
+	require.NoError(t, err)
+
+	transaction, err := gobenc.DeserializeTransaction(data)
+	require.NoError(t, err)
+
+	assert.Equal(t, &testTransaction, transaction)
 }
