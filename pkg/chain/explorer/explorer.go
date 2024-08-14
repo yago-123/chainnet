@@ -2,7 +2,6 @@ package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
-	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"encoding/hex"
@@ -10,13 +9,11 @@ import (
 
 type Explorer struct {
 	storage storage.Storage
-	hasher  hash.Hashing
 }
 
-func NewExplorer(storage storage.Storage, hasher hash.Hashing) *Explorer {
+func NewExplorer(storage storage.Storage) *Explorer {
 	return &Explorer{
 		storage: storage,
-		hasher:  hasher,
 	}
 }
 
