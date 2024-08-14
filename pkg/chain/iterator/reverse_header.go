@@ -5,10 +5,10 @@ import (
 	"chainnet/pkg/storage"
 )
 
-// ReverseHeaderIterator 
+// ReverseHeaderIterator
 type ReverseHeaderIterator struct {
-	prevBlockHash []byte
-	storage       storage.Storage
+	prevHeaderHash []byte
+	storage        storage.Storage
 }
 
 func NewReverseHeaderIterator(storage storage.Storage) *ReverseHeaderIterator {
@@ -18,21 +18,21 @@ func NewReverseHeaderIterator(storage storage.Storage) *ReverseHeaderIterator {
 }
 
 func (it *ReverseHeaderIterator) Initialize(reference []byte) error {
-	it.prevBlockHash = reference
+	it.prevHeaderHash = reference
 	return nil
 }
 
-func (it *ReverseHeaderIterator) GetNextBlock() (*kernel.BlockHeader, error) {
-	header, err := it.storage.RetrieveHeaderByHash(it.prevBlockHash)
+func (it *ReverseHeaderIterator) GetNextHeader() (*kernel.BlockHeader, error) {
+	header, err := it.storage.RetrieveHeaderByHash(it.prevHeaderHash)
 	if err != nil {
 		return nil, err
 	}
 
-	it.prevBlockHash = header.PrevBlockHash
+	it.prevHeaderHash = header.PrevBlockHash
 
 	return header, err
 }
 
 func (it *ReverseHeaderIterator) HasNext() bool {
-	return len(it.prevBlockHash) > 0
+	return len(it.prevHeaderHash) > 0
 }
