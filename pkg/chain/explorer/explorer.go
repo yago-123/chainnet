@@ -75,7 +75,10 @@ func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	}
 
 	it := iterator.NewReverseHeaderIterator(explorer.storage)
-	it.Initialize(lastHeaderHash)
+	err = it.Initialize(lastHeaderHash)
+	if err != nil {
+		return nil, err
+	}
 
 	// iterate until all the headers are retrieved
 	for it.HasNext() {

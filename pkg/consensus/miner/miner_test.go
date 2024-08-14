@@ -109,7 +109,7 @@ func TestMiner_MineBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, block.Transactions, len(txs)+1)
 	assert.True(t, block.Transactions[0].IsCoinbase())
-	assert.Greater(t, block.Header.Nonce, uint(0))
+	assert.Positive(t, block.Header.Nonce)
 	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerAddress")), block.Transactions[0].Vout[0].ScriptPubKey)
 	assert.Equal(t, []byte{0x0, 0x0}, block.Hash[:2])
 

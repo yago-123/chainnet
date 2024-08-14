@@ -24,7 +24,7 @@ func TestProofOfWork_CalculateBlockHash(t *testing.T) {
 	require.NoError(t, err)
 	blockHash, nonce, err := pow.CalculateBlockHash()
 	require.NoError(t, err)
-	assert.Greater(t, nonce, uint(0))
+	assert.Positive(t, nonce)
 	assert.Equal(t, []byte{0x0}, blockHash[:1])
 	assert.NotEqual(t, []byte{0x0}, blockHash[1:2])
 
@@ -34,7 +34,7 @@ func TestProofOfWork_CalculateBlockHash(t *testing.T) {
 	require.NoError(t, err)
 	blockHash, nonce, err = pow.CalculateBlockHash()
 	require.NoError(t, err)
-	assert.Greater(t, nonce, uint(0))
+	assert.Positive(t, nonce)
 	assert.Equal(t, []byte{0x0, 0x0}, blockHash[:2])
 	assert.NotEqual(t, []byte{0x0}, blockHash[2:3])
 
