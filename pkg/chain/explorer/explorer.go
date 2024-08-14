@@ -2,7 +2,6 @@ package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
-	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
@@ -63,13 +62,7 @@ func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	var headers []*kernel.BlockHeader
 
 	// get last header
-	lastHeader, err := explorer.storage.GetLastHeader()
-	if err != nil {
-		return nil, err
-	}
-
-	// calculate hash of header and initialize iterator
-	lastHeaderHash, err := util.CalculateBlockHash(lastHeader, explorer.hasher)
+	lastHeaderHash, err := explorer.storage.GetLastBlockHash()
 	if err != nil {
 		return nil, err
 	}
