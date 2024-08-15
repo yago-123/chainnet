@@ -33,7 +33,7 @@ type Blockchain struct {
 
 	// syncMutex is used to lock the chain while performing syncs with other nodes
 	// this avoids collisions when multiple nodes are trying to sync with the local node
-	syncMutex mutex.CtxMutex
+	syncMutex *mutex.CtxMutex
 
 	hasher    hash.Hashing
 	store     storage.Storage
@@ -103,6 +103,7 @@ func NewBlockchain(
 		lastBlockHash: lastBlockHash,
 		lastHeight:    lastHeight,
 		headers:       headers,
+		syncMutex:     mutex.NewCtxMutex(1),
 		hasher:        hasher,
 		store:         store,
 		validator:     validator,

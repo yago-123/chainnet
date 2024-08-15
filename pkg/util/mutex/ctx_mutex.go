@@ -18,6 +18,10 @@ type CtxMutex struct {
 	ch chan struct{}
 }
 
+func NewCtxMutex(maxConcurrent uint) *CtxMutex {
+	return &CtxMutex{ch: make(chan struct{}, maxConcurrent)}
+}
+
 func (mu *CtxMutex) Lock(ctx context.Context) bool {
 	select {
 	case <-ctx.Done():
