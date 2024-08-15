@@ -13,6 +13,7 @@ import (
 	"chainnet/pkg/storage"
 	"chainnet/pkg/util/mutex"
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -53,7 +54,7 @@ type Blockchain struct {
 
 func NewBlockchain(
 	cfg *config.Config,
-	storage storage.Storage,
+	store storage.Storage,
 	hasher hash.Hashing,
 	validator consensus.HeavyValidator,
 	subject observer.BlockSubject,
@@ -66,17 +67,19 @@ func NewBlockchain(
 	headers := make(map[string]kernel.BlockHeader)
 
 	// retrieve the last header stored
-	lastHeader, err := storage.GetLastHeader()
+	lastHeader, err := store.GetLastHeader()
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving last header: %w", err)
+		if errors.Is(err, storage.ErrNotFound) {
+			// there is no genesis block yet, start chain from scratch
+			cfg.Logger.Debugf("no previous block headers found, starting chain from scratch")
+		}
+
+		if !errors.Is(err, storage.ErrNotFound) {
+			return nil, fmt.Errorf("error retrieving last header: %w", err)
+		}
 	}
 
-	if lastHeader.IsEmpty() {
-		// there is no genesis block yet, start chain from scratch
-		cfg.Logger.Debugf("no previous block headers found, starting chain from scratch")
-	}
-
-	if !lastHeader.IsEmpty() {
+	if err == nil {
 		// if exists a last header, sync the actual status of the chain
 		// specify the current height
 		lastHeight = lastHeader.Height + 1
@@ -90,7 +93,7 @@ func NewBlockchain(
 		cfg.Logger.Debugf("recovering chain with last hash: %x", lastBlockHash)
 
 		// reload the headers into memory
-		headers, err = reconstructHeaders(lastBlockHash, storage)
+		headers, err = reconstructHeaders(lastBlockHash, store)
 		if err != nil {
 			return nil, fmt.Errorf("error reconstructing headers: %w", err)
 		}
@@ -101,7 +104,7 @@ func NewBlockchain(
 		lastHeight:    lastHeight,
 		headers:       headers,
 		hasher:        hasher,
-		storage:       storage,
+		storage:       store,
 		validator:     validator,
 		blockSubject:  subject,
 		p2pActive:     false,
