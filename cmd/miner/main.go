@@ -21,14 +21,17 @@ import (
 
 const MiningInterval = 15 * time.Second
 
+var cfg *config.Config
+
 func main() {
 	var block *kernel.Block
 
-	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
+	// execute the root command
+	Execute(logrus.New())
 
-	cfg := config.NewConfig()
-	cfg.SetP2PStatus(false)
+	cfg.Logger.SetLevel(logrus.DebugLevel)
+
+	cfg.Logger.Infof("starting chain node with config %v", cfg)
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
@@ -37,7 +40,7 @@ func main() {
 	// create wallet address hasher
 	walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 	if err != nil {
-		logger.Fatalf("Error creating multi-hash configuration: %s", err)
+		cfg.Logger.Fatalf("Error creating multi-hash configuration: %s", err)
 	}
 
 	// create new wallet for storing mining rewards
@@ -49,13 +52,13 @@ func main() {
 		hash.GetHasher(consensusHasherType),
 	)
 	if err != nil {
-		logger.Fatalf("Error creating new wallet: %s", err)
+		cfg.Logger.Fatalf("Error creating new wallet: %s", err)
 	}
 
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
-		logger.Fatalf("Error creating bolt db: %s", err)
+		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
 	// create new mempool
@@ -81,7 +84,7 @@ func main() {
 		encoding.NewProtobufEncoder(),
 	)
 	if err != nil {
-		logger.Fatalf("Error creating blockchain: %s", err)
+		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
 	}
 
 	// create new miner
@@ -98,21 +101,21 @@ func main() {
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
-			logger.Errorf("Error mining block: %s", err)
+			cfg.Logger.Errorf("Error mining block: %s", err)
 			continue
 		}
 
 		miningTime := time.Unix(block.Header.Timestamp, 0).Format(time.RFC3339)
 
 		if block.IsGenesisBlock() {
-			logger.Infof(
+			cfg.Logger.Infof(
 				"genesis block mined successfully: hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
 				block.Hash, len(block.Transactions), miningTime, block.Header.Height, block.Header.Target, block.Header.Nonce,
 			)
 			continue
 		}
 
-		logger.Infof(
+		cfg.Logger.Infof(
 			"block mined successfully: hash %x, previous hash %x, number txs %d, time %s, height %d, target %d, nonce %d",
 			block.Hash, block.Header.PrevBlockHash, len(block.Transactions), miningTime, block.Header.Height, block.Header.Target, block.Header.Nonce,
 		)
