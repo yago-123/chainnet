@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	BoltDBStorageFile = "bolt-db-tmp-storage"
+	BoltDBStorageFile = "bolt-db-tmp-store"
 	BoltBlockBucket   = "chainnet-block"
 	BoltHeaderBucket  = "chainnet-header"
 

@@ -8,12 +8,12 @@ import (
 // ReverseHeaderIterator
 type ReverseHeaderIterator struct {
 	prevHeaderHash []byte
-	storage        storage.Storage
+	store          storage.Storage
 }
 
-func NewReverseHeaderIterator(storage storage.Storage) *ReverseHeaderIterator {
+func NewReverseHeaderIterator(store storage.Storage) *ReverseHeaderIterator {
 	return &ReverseHeaderIterator{
-		storage: storage,
+		store: store,
 	}
 }
 
@@ -23,7 +23,7 @@ func (it *ReverseHeaderIterator) Initialize(reference []byte) error {
 }
 
 func (it *ReverseHeaderIterator) GetNextHeader() (*kernel.BlockHeader, error) {
-	header, err := it.storage.RetrieveHeaderByHash(it.prevHeaderHash)
+	header, err := it.store.RetrieveHeaderByHash(it.prevHeaderHash)
 	if err != nil {
 		return nil, err
 	}

@@ -47,7 +47,7 @@ func TestReverseIterator(t *testing.T) {
 	blockHeader.SetNonce(1)
 	block2 := kernel.NewBlock(blockHeader, []*kernel.Transaction{coinbaseTx3, regularTx}, []byte("kernel-hash-2"))
 
-	// set up the storage mock with the corresponding returns
+	// set up the store mock with the corresponding returns
 	storage := mockStorage.MockStorage{}
 	storage.
 		On("RetrieveBlockByHash", block2.Hash).
@@ -96,7 +96,7 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 	blockHeader.SetNonce(1)
 	genesisBlock := kernel.NewGenesisBlock(blockHeader, []*kernel.Transaction{coinbaseTx}, []byte("genesis-kernel-hash"))
 
-	// set up the storage mock with the corresponding returns
+	// set up the store mock with the corresponding returns
 	storage := mockStorage.MockStorage{}
 	storage.
 		On("RetrieveBlockByHash", genesisBlock.Hash).

@@ -109,7 +109,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove("temp-file")
 
-	// persist headers in storage
+	// persist headers in store
 	require.NoError(t, boltdb.PersistHeader(block1.Hash, *block1.Header))
 	require.NoError(t, boltdb.PersistHeader(block2.Hash, *block2.Header))
 	require.NoError(t, boltdb.PersistHeader(block3.Hash, *block3.Header))

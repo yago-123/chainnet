@@ -8,18 +8,18 @@ import (
 )
 
 type Explorer struct {
-	storage storage.Storage
+	store storage.Storage
 }
 
-func NewExplorer(storage storage.Storage) *Explorer {
+func NewExplorer(store storage.Storage) *Explorer {
 	return &Explorer{
-		storage: storage,
+		store: store,
 	}
 }
 
 // GetLastBlock returns the last block in the chain persisted
 func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
-	block, err := explorer.storage.GetLastBlock()
+	block, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 
 // GetBlockByHash returns the block corresponding to the hash provided
 func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
-	block, err := explorer.storage.RetrieveBlockByHash(hash)
+	block, err := explorer.store.RetrieveBlockByHash(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 // GetLastHeader returns the last block header in the chain persisted
 // todo() handle the case when there is no last header yet
 func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
-	header, err := explorer.storage.GetLastHeader()
+	header, err := explorer.store.GetLastHeader()
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +59,12 @@ func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	var headers []*kernel.BlockHeader
 
 	// get last header
-	lastHeaderHash, err := explorer.storage.GetLastBlockHash()
+	lastHeaderHash, err := explorer.store.GetLastBlockHash()
 	if err != nil {
 		return nil, err
 	}
 
-	it := iterator.NewReverseHeaderIterator(explorer.storage)
+	it := iterator.NewReverseHeaderIterator(explorer.store)
 	err = it.Initialize(lastHeaderHash)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 }
 
 func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
-	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseBlockIterator(explorer.storage))
+	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
@@ -97,7 +97,7 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 
 	spentTXOs := make(map[string][]uint)
 
-	lastBlock, err := explorer.storage.GetLastBlock()
+	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return []*kernel.Transaction{}, err
 	}
@@ -157,7 +157,7 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 }
 
 func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UTXO, error) {
-	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseBlockIterator(explorer.storage))
+	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
 // findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
@@ -166,7 +166,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIte
 	unspentTXOs := []kernel.UTXO{}
 	spentTXOs := make(map[string][]uint)
 
-	lastBlock, err := explorer.storage.GetLastBlock()
+	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return []kernel.UTXO{}, err
 	}

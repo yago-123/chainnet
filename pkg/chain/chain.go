@@ -36,7 +36,7 @@ type Blockchain struct {
 	syncMutex mutex.CtxMutex
 
 	hasher    hash.Hashing
-	storage   storage.Storage
+	store     storage.Storage
 	validator consensus.HeavyValidator
 
 	blockSubject observer.BlockSubject
@@ -104,7 +104,7 @@ func NewBlockchain(
 		lastHeight:    lastHeight,
 		headers:       headers,
 		hasher:        hasher,
-		storage:       store,
+		store:         store,
 		validator:     validator,
 		blockSubject:  subject,
 		p2pActive:     false,
@@ -133,7 +133,7 @@ func (bc *Blockchain) InitNetwork() error {
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.storage))
+	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store))
 	if err != nil {
 		return fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
@@ -159,12 +159,12 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	}
 
 	// persist block header, once the header has been persisted the block has been commited to the chain
-	if err := bc.storage.PersistHeader(block.Hash, *block.Header); err != nil {
+	if err := bc.store.PersistHeader(block.Hash, *block.Header); err != nil {
 		return fmt.Errorf("block header persistence failed: %w", err)
 	}
 
 	// STARTING FROM HERE: the code can fail without becoming an issue, the header has been already commited
-	// no need to store the block itself, will be commited to storage as part of the observer call
+	// no need to store the block itself, will be commited to store as part of the observer call
 
 	// update the last block and save the block header
 	bc.lastHeight++
@@ -298,12 +298,12 @@ func (bc *Blockchain) GetLastHeight() uint {
 }
 
 // reconstructHeaders
-func reconstructHeaders(lastBlockHash []byte, storage storage.Storage) (map[string]kernel.BlockHeader, error) {
+func reconstructHeaders(lastBlockHash []byte, store storage.Storage) (map[string]kernel.BlockHeader, error) {
 	headers := make(map[string]kernel.BlockHeader)
 
 	// todo(): move to explorer instead?
 	for len(lastBlockHash) != 0 {
-		blockHeader, err := storage.RetrieveHeaderByHash(lastBlockHash)
+		blockHeader, err := store.RetrieveHeaderByHash(lastBlockHash)
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving block header %x: %w", lastBlockHash, err)
 		}
