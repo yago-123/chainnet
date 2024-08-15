@@ -8,6 +8,7 @@ import (
 	"chainnet/pkg/chain/p2p/pubsub"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/storage"
 	"context"
 	"fmt"
 	"time"
@@ -152,6 +153,11 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	// get last block header
 	header, err := n.explorer.GetLastHeader()
 	if err != nil {
+		if err == storage.ErrNotFound {
+			n.logger.Infof("unable to retrieve last header for stream %s: no headers in the chain", stream.ID())
+			return
+		}
+
 		n.logger.Errorf("error getting last block header for stream %s: %s", stream.ID(), err)
 		return
 	}
@@ -213,6 +219,11 @@ func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 	// retrieve block from explorer
 	block, err := n.explorer.GetBlockByHash(hash)
 	if err != nil {
+		if err == storage.ErrNotFound {
+			n.logger.Infof("unable to retrieve block for stream %s: block not found", stream.ID())
+			return
+		}
+
 		n.logger.Errorf("error getting block with hash %x for stream %s: %s", hash, stream.ID(), err)
 		return
 	}
@@ -261,6 +272,10 @@ func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
 	// retrieve headers from explorer
 	headers, err := n.explorer.GetAllHeaders()
 	if err != nil {
+		if err == storage.ErrNotFound {
+			n.logger.Infof("unable to retrieve headers for stream %s: no headers in the chain", stream.ID())
+		}
+
 		n.logger.Errorf("error getting headers for stream %s: %s", stream.ID(), err)
 		return
 	}

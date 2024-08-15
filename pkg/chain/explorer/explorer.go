@@ -80,6 +80,10 @@ func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 		headers = append(headers, header)
 	}
 
+	if len(headers) == 0 {
+		return []*kernel.BlockHeader{}, storage.ErrNotFound
+	}
+
 	return headers, nil
 }
 

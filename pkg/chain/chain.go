@@ -216,6 +216,10 @@ func (bc *Blockchain) syncWithPeer(ctx context.Context, peerID peer.ID) error {
 		}
 	}
 
+	if localCurrentHeight > lastHeaderPeer.Height {
+		bc.logger.Debugf("local height bigger than remote height for %s: nothing to sync", peerID.String())
+	}
+
 	// in case current height is bigger than latest remote header height, there is nothing to sync, just return
 	return nil
 }
@@ -232,7 +236,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 	// retrieve all headers from the remote node
 	remoteHeaders, err := bc.p2pNet.AskAllHeaders(ctx, peerID)
 	if err != nil {
-		return fmt.Errorf("error asking for all remoteHeaders: %w", err)
+		return fmt.Errorf("error asking for all headers: %w", err)
 	}
 
 	// sort headers by height
@@ -280,6 +284,7 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
 		defer cancel()
 
+		// todo(): revisit this, not sure if makes sense at all this lock type
 		bc.syncMutex.Lock(ctx)
 		defer bc.syncMutex.Unlock()
 		if err := bc.syncWithPeer(ctx, peerID); err != nil {
