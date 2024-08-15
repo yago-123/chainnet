@@ -11,7 +11,7 @@ type ReverseBlockIterator struct {
 	storage       storage.Storage
 }
 
-func NewReverseIterator(storage storage.Storage) *ReverseBlockIterator {
+func NewReverseBlockIterator(storage storage.Storage) *ReverseBlockIterator {
 	return &ReverseBlockIterator{
 		storage: storage,
 	}

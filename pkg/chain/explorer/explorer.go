@@ -12,7 +12,9 @@ type Explorer struct {
 }
 
 func NewExplorer(storage storage.Storage) *Explorer {
-	return &Explorer{storage: storage}
+	return &Explorer{
+		storage: storage,
+	}
 }
 
 // GetLastBlock returns the last block in the chain persisted
@@ -52,12 +54,37 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 // module itself but it is not exposed to the outside and even if it was public, it would require a circular dependency,
 // This Explorer module was specifically introduced to avoid the dependency with the chain module
 func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
-	// todo() iterate over all headers
-	return []*kernel.BlockHeader{}, nil
+	var err error
+	var header *kernel.BlockHeader
+	var headers []*kernel.BlockHeader
+
+	// get last header
+	lastHeaderHash, err := explorer.storage.GetLastBlockHash()
+	if err != nil {
+		return nil, err
+	}
+
+	it := iterator.NewReverseHeaderIterator(explorer.storage)
+	err = it.Initialize(lastHeaderHash)
+	if err != nil {
+		return nil, err
+	}
+
+	// iterate until all the headers are retrieved
+	for it.HasNext() {
+		header, err = it.GetNextHeader()
+		if err != nil {
+			return nil, err
+		}
+
+		headers = append(headers, header)
+	}
+
+	return headers, nil
 }
 
 func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
-	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseIterator(explorer.storage))
+	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseBlockIterator(explorer.storage))
 }
 
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
@@ -130,7 +157,7 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 }
 
 func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UTXO, error) {
-	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseIterator(explorer.storage))
+	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseBlockIterator(explorer.storage))
 }
 
 // findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key

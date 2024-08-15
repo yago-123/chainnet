@@ -60,7 +60,7 @@ func TestReverseIterator(t *testing.T) {
 		Return(genesisBlock, nil)
 
 	// check that the iterator works as expected
-	reverseIterator := NewReverseIterator(&storage)
+	reverseIterator := NewReverseBlockIterator(&storage)
 
 	// initialize iterator with the last kernel hash
 	err := reverseIterator.Initialize(block2.Hash)
@@ -103,7 +103,7 @@ func TestReverseIteratorWithOnlyGenesisBlock(t *testing.T) {
 		Return(genesisBlock, nil)
 
 	// check that the iterator works as expected
-	reverseIterator := NewReverseIterator(&storage)
+	reverseIterator := NewReverseBlockIterator(&storage)
 
 	// initialize iterator with the last kernel hash
 	err := reverseIterator.Initialize(genesisBlock.Hash)

@@ -133,7 +133,7 @@ func (bc *Blockchain) InitNetwork() error {
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.storage))
+	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.storage, bc.hasher))
 	if err != nil {
 		return fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
