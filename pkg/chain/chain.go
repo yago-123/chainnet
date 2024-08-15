@@ -203,7 +203,6 @@ func (bc *Blockchain) syncWithPeer(ctx context.Context, peerID peer.ID) error {
 
 	// ask new peer for last header
 	lastHeaderPeer, err := bc.p2pNet.AskLastHeader(ctx, peerID)
-	// todo() handle case where there is no last header yet
 	if err != nil {
 		return fmt.Errorf("error asking for last header: %w", err)
 	}

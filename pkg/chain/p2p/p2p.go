@@ -137,7 +137,6 @@ func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.Bl
 	// read and decode reply
 	_, err = timeoutStream.ReadWithTimeout(data)
 	if err != nil {
-		// todo(): handle the case in which the last header does not exist yet
 		return nil, fmt.Errorf("error reading data from stream: %w", err)
 	}
 
