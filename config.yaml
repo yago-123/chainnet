@@ -1,0 +1,6 @@
+storage-file: "chainnet-storage"      # File used for persisting the chain status
+mining-interval: "1200s"              # Interval between block creation
+p2p-enabled: true                     # Enable or disable network communication
+p2p-min-conn: 5                       # Minimum number of connections
+p2p-max-conn: 100                     # Maximum number of connections
+p2p-buffer-size: 4096                 # Read/write buffer over the network

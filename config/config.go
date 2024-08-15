@@ -15,8 +15,9 @@ const (
 	KeyStorageFile    = "storage-file"
 	KeyMiningInterval = "mining-interval"
 	KeyP2PEnabled     = "p2p-enabled"
-	KeyP2PMinNumConn  = "min-p2p-conn"
-	KeyP2PMaxNumConn  = "max-p2p-conn"
+	KeyP2PMinNumConn  = "p2p-min-conn"
+	KeyP2PMaxNumConn  = "p2p-max-conn"
+	KeyP2PBufferSize  = "p2p-buffer-size"
 )
 
 // default config values
@@ -27,6 +28,7 @@ const (
 	DefaultP2PEnabled      = true
 	DefaultP2PMinNumConn   = 1
 	DefaultP2PMaxNumConn   = 100
+	DefaultP2PBufferSize   = 8192
 )
 
 type Config struct {
@@ -34,8 +36,9 @@ type Config struct {
 	StorageFile    string        `mapstructure:"storage-file"`
 	MiningInterval time.Duration `mapstructure:"mining-interval"`
 	P2PEnabled     bool          `mapstructure:"p2p-enabled"`
-	P2PMinNumConn  uint          `mapstructure:"min-p2p-conn"`
-	P2PMaxNumConn  uint          `mapstructure:"max-p2p-conn"`
+	P2PMinNumConn  uint          `mapstructure:"p2p-min-conn"`
+	P2PMaxNumConn  uint          `mapstructure:"p2p-max-conn"`
+	P2PBufferSize  uint          `mapstructure:"p2p-buffer-size"`
 }
 
 func NewConfig() *Config {
@@ -46,6 +49,7 @@ func NewConfig() *Config {
 		P2PEnabled:     DefaultP2PEnabled,
 		P2PMinNumConn:  DefaultP2PMinNumConn,
 		P2PMaxNumConn:  DefaultP2PMaxNumConn,
+		P2PBufferSize:  DefaultP2PBufferSize,
 	}
 }
 
@@ -97,6 +101,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
+	cmd.Flags().Uint(KeyP2PBufferSize, DefaultP2PBufferSize, "P2P buffer size for read/write from stream")
 
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
@@ -104,6 +109,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
+	_ = viper.BindPFlag(KeyP2PBufferSize, cmd.Flags().Lookup(KeyP2PBufferSize))
 }
 
 func GetConfigFilePath(cmd *cobra.Command) string {
@@ -130,5 +136,8 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyP2PMaxNumConn) {
 		cfg.P2PMaxNumConn = viper.GetUint(KeyP2PMaxNumConn)
+	}
+	if cmd.Flags().Changed(KeyP2PBufferSize) {
+		cfg.P2PBufferSize = viper.GetUint(KeyP2PBufferSize)
 	}
 }
