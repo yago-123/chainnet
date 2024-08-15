@@ -83,7 +83,7 @@ imports:
 
 .PHONY: debug
 debug: node
-	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet-miner
+	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet-node -- --storage-file ./bin/storage
 
 .PHONY: miner-image
 miner-image: miner

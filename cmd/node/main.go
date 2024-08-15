@@ -11,7 +11,6 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/storage"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -66,5 +65,5 @@ func main() {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 
-	time.Sleep(cfg.MiningInterval)
+	select {}
 }

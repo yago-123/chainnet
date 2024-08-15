@@ -129,7 +129,7 @@ func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.Bl
 	// open stream to peer with timeout
 	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskLastHeaderProtocol)
 	if err != nil {
-		return nil, fmt.Errorf("error enabling stream: %w", err)
+		return nil, err
 	}
 	defer timeoutStream.Close()
 
@@ -176,7 +176,7 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 	// open stream to peer with timeout
 	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskSpecificBlockProtocol)
 	if err != nil {
-		return nil, fmt.Errorf("error enabling stream: %w", err)
+		return nil, err
 	}
 	defer timeoutStream.Close()
 
@@ -238,7 +238,7 @@ func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.
 	// open stream to peer with timeout
 	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskAllHeaders)
 	if err != nil {
-		return nil, fmt.Errorf("error enabling stream: %w", err)
+		return nil, err
 	}
 	defer timeoutStream.Close()
 
