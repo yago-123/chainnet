@@ -83,14 +83,14 @@ var block4 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this c
 
 // tests the NewBlockchain method when there is not any previous chain addition
 func TestBlockchain_InitializationFromScratch(t *testing.T) {
-	storage := &mockStorage.MockStorage{}
-	storage.
+	store := &mockStorage.MockStorage{}
+	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, nil)
+		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
 
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
-		storage,
+		store,
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewBlockSubject(),

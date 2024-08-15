@@ -47,7 +47,7 @@ func main() {
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
+			explorer.NewExplorer(boltdb),
 			crypto.NewHashedSignature(
 				sign.NewECDSASignature(), hash.NewSHA256(),
 			),
