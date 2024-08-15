@@ -18,8 +18,8 @@ type CtxMutex struct {
 	ch chan struct{}
 }
 
-func NewCtxMutex(maxConcurrent uint) *CtxMutex {
-	return &CtxMutex{ch: make(chan struct{}, maxConcurrent)}
+func NewCtxMutex(maxConcurrentLocks uint) *CtxMutex {
+	return &CtxMutex{ch: make(chan struct{}, maxConcurrentLocks)}
 }
 
 func (mu *CtxMutex) Lock(ctx context.Context) bool {

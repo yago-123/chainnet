@@ -23,6 +23,7 @@ import (
 
 const (
 	BlockchainObserver = "blockchain"
+	MaxConcurrentSyncs = 1
 )
 
 type Blockchain struct {
@@ -103,7 +104,7 @@ func NewBlockchain(
 		lastBlockHash: lastBlockHash,
 		lastHeight:    lastHeight,
 		headers:       headers,
-		syncMutex:     mutex.NewCtxMutex(1),
+		syncMutex:     mutex.NewCtxMutex(MaxConcurrentSyncs),
 		hasher:        hasher,
 		store:         store,
 		validator:     validator,
