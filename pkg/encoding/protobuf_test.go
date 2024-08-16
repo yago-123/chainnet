@@ -221,7 +221,8 @@ func TestDeserializeTransaction(t *testing.T) {
 
 func TestConvertTopbBlock(t *testing.T) {
 	expected := expectedPbBlock
-	result := convertToProtobufBlock(testBlock)
+	result, err := convertToProtobufBlock(testBlock)
+	require.NoError(t, err)
 
 	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
 	assert.True(t, proto.Equal(expected, result))
@@ -403,10 +404,37 @@ func TestUtf8InvalidCharacters(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestNilPointerExceptions(t *testing.T) {
-	block := kernel.Block{}
-
+func TestNoNilPointerExceptionsSerialize(t *testing.T) {
 	p := NewProtobufEncoder()
-	_, err := p.SerializeBlock(block)
+
+	_, err := p.SerializeBlock(kernel.Block{})
+	require.Error(t, err)
+
+	_, err = p.SerializeHeader(kernel.BlockHeader{})
+	require.NoError(t, err)
+
+	_, err = p.SerializeHeaders([]*kernel.BlockHeader{})
+	require.NoError(t, err)
+
+	_, err = p.SerializeHeaders([]*kernel.BlockHeader{{}})
+	require.NoError(t, err)
+
+	_, err = p.SerializeTransaction(kernel.Transaction{})
+	require.NoError(t, err)
+}
+
+func TestNoNilPointerExceptionsDeserialize(t *testing.T) {
+	p := NewProtobufEncoder()
+
+	_, err := p.DeserializeBlock([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeHeader([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeHeaders([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeHeaders([]byte{})
 	require.NoError(t, err)
 }

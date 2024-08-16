@@ -17,7 +17,10 @@ func NewProtobufEncoder() *Protobuf {
 
 // SerializeBlock serializes a kernel.Block into a Protobuf byte array
 func (p *Protobuf) SerializeBlock(b kernel.Block) ([]byte, error) {
-	pbBlock := convertToProtobufBlock(b)
+	pbBlock, err := convertToProtobufBlock(b)
+	if err != nil {
+		return nil, fmt.Errorf("error converting block %x: %w", b.Hash, err)
+	}
 	data, err := proto.Marshal(pbBlock)
 	if err != nil {
 		return nil, fmt.Errorf("error serializing block %x: %w", b.Hash, err)
@@ -118,12 +121,16 @@ func (p *Protobuf) DeserializeTransaction(data []byte) (*kernel.Transaction, err
 	return &tx, nil
 }
 
-func convertToProtobufBlock(b kernel.Block) *pb.Block {
+func convertToProtobufBlock(b kernel.Block) (*pb.Block, error) {
+	if b.Header == nil {
+		return &pb.Block{}, fmt.Errorf("empty header, not safe to serialize")
+	}
+
 	return &pb.Block{
 		Header:       convertToProtobufBlockHeader(*b.Header),
 		Transactions: convertToProtobufTransactions(b.Transactions),
 		Hash:         b.Hash,
-	}
+	}, nil
 }
 
 func convertFromProtobufBlock(pbBlock *pb.Block) kernel.Block {
