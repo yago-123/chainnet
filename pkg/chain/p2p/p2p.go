@@ -10,6 +10,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/libp2p/go-libp2p"
@@ -147,7 +148,7 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	// get last block header
 	header, err := n.explorer.GetLastHeader()
 	if err != nil {
-		if err == storage.ErrNotFound {
+		if errors.Is(err, storage.ErrNotFound) {
 			n.logger.Infof("unable to retrieve last header for stream %s: no headers in the chain", stream.ID())
 			return
 		}
@@ -169,7 +170,6 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 		n.logger.Errorf("error writing block header for stream %s: %s", stream.ID(), err)
 		return
 	}
-
 }
 
 // AskSpecificBlock sends a request to a specific peer to get a block by hash
@@ -187,7 +187,10 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 		return nil, fmt.Errorf("error writing block hash %x to stream: %w", hash, err)
 	}
 	// close write side of the stream so the peer knows we are done writing
-	timeoutStream.stream.CloseWrite()
+	err = timeoutStream.stream.CloseWrite()
+	if err != nil {
+		return nil, fmt.Errorf("error closing write side of the stream: %w", err)
+	}
 
 	// read and decode block retrieved
 	data, err := timeoutStream.ReadWithTimeout()
@@ -214,7 +217,7 @@ func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 	// retrieve block from explorer
 	block, err := n.explorer.GetBlockByHash(hash)
 	if err != nil {
-		if err == storage.ErrNotFound {
+		if errors.Is(err, storage.ErrNotFound) {
 			n.logger.Infof("unable to retrieve block for stream %s: block not found", stream.ID())
 			return
 		}
@@ -266,7 +269,7 @@ func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
 	// retrieve headers from explorer
 	headers, err := n.explorer.GetAllHeaders()
 	if err != nil {
-		if err == storage.ErrNotFound {
+		if errors.Is(err, storage.ErrNotFound) {
 			n.logger.Infof("unable to retrieve headers for stream %s: no headers in the chain", stream.ID())
 		}
 

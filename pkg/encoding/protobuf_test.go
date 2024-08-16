@@ -4,7 +4,6 @@ import (
 	pb "chainnet/pkg/chain/p2p/protobuf"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -395,7 +394,7 @@ func TestUtf8InvalidCharacters(t *testing.T) {
 	block := kernel.Block{
 		Header: testBlockHeader,
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction(fmt.Sprintf("%s", pubKey), 50, 0),
+			kernel.NewCoinbaseTransaction(string(pubKey), 50, 0),
 		},
 		Hash: []byte("blockhash"),
 	}

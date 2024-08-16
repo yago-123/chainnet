@@ -3,6 +3,7 @@ package p2p
 import (
 	"chainnet/config"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -59,7 +60,7 @@ func (t *TimeoutStream) ReadWithTimeout() ([]byte, error) {
 			data = append(data, buf[:n]...)
 		}
 
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			// end of stream, break the loop
 			break
 		}
