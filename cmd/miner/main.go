@@ -95,6 +95,10 @@ func main() {
 	subjectObserver.Register(boltdb)
 	subjectObserver.Register(mempool)
 
+	if err = chain.InitNetwork(); err != nil {
+		cfg.Logger.Errorf("Error initializing network: %s", err)
+	}
+
 	for {
 		time.Sleep(cfg.MiningInterval)
 
