@@ -167,6 +167,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 
 	// STARTING FROM HERE: the code can fail without becoming an issue, the header has been already commited
 	// no need to store the block itself, will be commited to store as part of the observer call
+	bc.logger.Debugf("block %x added to the chain", block.Hash)
 
 	// update the last block and save the block header
 	bc.lastHeight++
@@ -217,7 +218,7 @@ func (bc *Blockchain) syncWithPeer(ctx context.Context, peerID peer.ID) error {
 	}
 
 	if localCurrentHeight > lastHeaderPeer.Height {
-		bc.logger.Debugf("local height bigger than remote height for %s: nothing to sync", peerID.String())
+		bc.logger.Debugf("local height bigger or equal than remote height for %s: nothing to sync", peerID.String())
 	}
 
 	// in case current height is bigger than latest remote header height, there is nothing to sync, just return
