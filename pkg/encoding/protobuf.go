@@ -3,6 +3,7 @@ package encoding
 import (
 	pb "chainnet/pkg/chain/p2p/protobuf"
 	"chainnet/pkg/kernel"
+	"encoding/hex"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
@@ -35,7 +36,12 @@ func (p *Protobuf) DeserializeBlock(data []byte) (*kernel.Block, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error deserializing block: %w", err)
 	}
-	b := convertFromProtobufBlock(&pbBlock)
+
+	b, err := convertFromProtobufBlock(&pbBlock)
+	if err != nil {
+		return nil, fmt.Errorf("error converting block from protobuf: %w", err)
+	}
+
 	return &b, nil
 }
 
@@ -117,7 +123,10 @@ func (p *Protobuf) DeserializeTransaction(data []byte) (*kernel.Transaction, err
 	if err != nil {
 		return nil, fmt.Errorf("error deserializing transaction: %w", err)
 	}
-	tx := convertFromProtobufTransaction(&pbTransaction)
+	tx, err := convertFromProtobufTransaction(&pbTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("error converting transaction from protobuf: %w", err)
+	}
 	return &tx, nil
 }
 
@@ -133,12 +142,17 @@ func convertToProtobufBlock(b kernel.Block) (*pb.Block, error) {
 	}, nil
 }
 
-func convertFromProtobufBlock(pbBlock *pb.Block) kernel.Block {
+func convertFromProtobufBlock(pbBlock *pb.Block) (kernel.Block, error) {
+	txs, err := convertFromProtobufTransactions(pbBlock.GetTransactions())
+	if err != nil {
+		return kernel.Block{}, err
+	}
+
 	return kernel.Block{
 		Header:       convertFromProtobufBlockHeader(pbBlock.GetHeader()),
-		Transactions: convertFromProtobufTransactions(pbBlock.GetTransactions()),
+		Transactions: txs,
 		Hash:         pbBlock.GetHash(),
-	}
+	}, nil
 }
 
 func convertToProtobufBlockHeader(bh kernel.BlockHeader) *pb.BlockHeader {
@@ -173,12 +187,22 @@ func convertToProtobufTransaction(tx kernel.Transaction) *pb.Transaction {
 	}
 }
 
-func convertFromProtobufTransaction(pbTransaction *pb.Transaction) kernel.Transaction {
+func convertFromProtobufTransaction(pbTransaction *pb.Transaction) (kernel.Transaction, error) {
+	txInput, err := convertFromProtobufTxInputs(pbTransaction.GetVin())
+	if err != nil {
+		return kernel.Transaction{}, err
+	}
+
+	txOutput, err := convertFromProtobufTxOutputs(pbTransaction.GetVout())
+	if err != nil {
+		return kernel.Transaction{}, err
+	}
+
 	return kernel.Transaction{
 		ID:   pbTransaction.GetId(),
-		Vin:  convertFromProtobufTxInputs(pbTransaction.GetVin()),
-		Vout: convertFromProtobufTxOutputs(pbTransaction.GetVout()),
-	}
+		Vin:  txInput,
+		Vout: txOutput,
+	}, nil
 }
 
 func convertToProtobufTxInput(txin kernel.TxInput) *pb.TxInput {
@@ -186,33 +210,43 @@ func convertToProtobufTxInput(txin kernel.TxInput) *pb.TxInput {
 		Txid:      txin.Txid,
 		Vout:      uint64(txin.Vout),
 		ScriptSig: txin.ScriptSig,
-		PubKey:    txin.PubKey,
+		PubKey:    fmt.Sprintf("%x", txin.PubKey),
 	}
 }
 
-func convertFromProtobufTxInput(pbInput *pb.TxInput) kernel.TxInput {
+func convertFromProtobufTxInput(pbInput *pb.TxInput) (kernel.TxInput, error) {
+	decodedPubKey, err := hex.DecodeString(pbInput.GetPubKey())
+	if err != nil {
+		return kernel.TxInput{}, fmt.Errorf("error decoding pubkey %s: %w", pbInput.GetPubKey(), err)
+	}
+
 	return kernel.TxInput{
 		Txid:      pbInput.GetTxid(),
 		Vout:      uint(pbInput.GetVout()),
 		ScriptSig: pbInput.GetScriptSig(),
-		PubKey:    pbInput.GetPubKey(),
-	}
+		PubKey:    string(decodedPubKey),
+	}, nil
 }
 
 func convertToProtobufTxOutput(txout kernel.TxOutput) *pb.TxOutput {
 	return &pb.TxOutput{
 		Amount:       uint64(txout.Amount),
 		ScriptPubKey: txout.ScriptPubKey,
-		PubKey:       txout.PubKey,
+		PubKey:       fmt.Sprintf("%x", txout.PubKey),
 	}
 }
 
-func convertFromProtobufTxOutput(pbOutput *pb.TxOutput) kernel.TxOutput {
+func convertFromProtobufTxOutput(pbOutput *pb.TxOutput) (kernel.TxOutput, error) {
+	decodedPubKey, err := hex.DecodeString(pbOutput.GetPubKey())
+	if err != nil {
+		return kernel.TxOutput{}, fmt.Errorf("error decoding pubkey %s: %w", pbOutput.GetPubKey(), err)
+	}
+
 	return kernel.TxOutput{
 		Amount:       uint(pbOutput.GetAmount()),
 		ScriptPubKey: pbOutput.GetScriptPubKey(),
-		PubKey:       pbOutput.GetPubKey(),
-	}
+		PubKey:       string(decodedPubKey),
+	}, nil
 }
 
 func convertToProtobufTransactions(transactions []*kernel.Transaction) []*pb.Transaction {
@@ -223,13 +257,16 @@ func convertToProtobufTransactions(transactions []*kernel.Transaction) []*pb.Tra
 	return pbTxs
 }
 
-func convertFromProtobufTransactions(pbs []*pb.Transaction) []*kernel.Transaction {
+func convertFromProtobufTransactions(pbs []*pb.Transaction) ([]*kernel.Transaction, error) {
 	var txs []*kernel.Transaction
 	for _, pb := range pbs {
-		tx := convertFromProtobufTransaction(pb)
+		tx, err := convertFromProtobufTransaction(pb)
+		if err != nil {
+			return []*kernel.Transaction{}, err
+		}
 		txs = append(txs, &tx)
 	}
-	return txs
+	return txs, nil
 }
 
 func convertToProtobufTxInputs(inputs []kernel.TxInput) []*pb.TxInput {
@@ -240,12 +277,16 @@ func convertToProtobufTxInputs(inputs []kernel.TxInput) []*pb.TxInput {
 	return pbInputs
 }
 
-func convertFromProtobufTxInputs(pbs []*pb.TxInput) []kernel.TxInput {
+func convertFromProtobufTxInputs(pbs []*pb.TxInput) ([]kernel.TxInput, error) {
 	var inputs []kernel.TxInput
 	for _, pb := range pbs {
-		inputs = append(inputs, convertFromProtobufTxInput(pb))
+		txInput, err := convertFromProtobufTxInput(pb)
+		if err != nil {
+			return []kernel.TxInput{}, err
+		}
+		inputs = append(inputs, txInput)
 	}
-	return inputs
+	return inputs, nil
 }
 
 func convertToProtobufTxOutputs(outputs []kernel.TxOutput) []*pb.TxOutput {
@@ -256,10 +297,15 @@ func convertToProtobufTxOutputs(outputs []kernel.TxOutput) []*pb.TxOutput {
 	return pbOutputs
 }
 
-func convertFromProtobufTxOutputs(pbs []*pb.TxOutput) []kernel.TxOutput {
+func convertFromProtobufTxOutputs(pbs []*pb.TxOutput) ([]kernel.TxOutput, error) {
 	var outputs []kernel.TxOutput
+
 	for _, pb := range pbs {
-		outputs = append(outputs, convertFromProtobufTxOutput(pb))
+		txOutput, err := convertFromProtobufTxOutput(pb)
+		if err != nil {
+			return []kernel.TxOutput{}, err
+		}
+		outputs = append(outputs, txOutput)
 	}
-	return outputs
+	return outputs, nil
 }

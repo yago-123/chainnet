@@ -63,14 +63,14 @@ var expectedPbBlock = &pb.Block{ //nolint:gochecknoglobals // ignore linter in t
 					Txid:      []byte("txid0"),
 					Vout:      0,
 					ScriptSig: "sig1",
-					PubKey:    "pubkey1",
+					PubKey:    "7075626b657931", // hexadecimal encoded to prevent UTF-8 issues
 				},
 			},
 			Vout: []*pb.TxOutput{
 				{
 					Amount:       100,
 					ScriptPubKey: "scriptpubkey1",
-					PubKey:       "pubkey1",
+					PubKey:       "7075626b657931", // hexadecimal encoded to prevent UTF-8 issues
 				},
 			},
 		},
@@ -230,7 +230,8 @@ func TestConvertTopbBlock(t *testing.T) {
 
 func TestConvertFrompbBlock(t *testing.T) {
 	expected := testBlock
-	result := convertFromProtobufBlock(expectedPbBlock)
+	result, err := convertFromProtobufBlock(expectedPbBlock)
+	require.NoError(t, err)
 
 	assert.Equal(t, expected, result)
 }
@@ -269,14 +270,14 @@ func TestConvertTopbTransaction(t *testing.T) {
 				Txid:      []byte("txid0"),
 				Vout:      0,
 				ScriptSig: "sig1",
-				PubKey:    "pubkey1",
+				PubKey:    "7075626b657931",
 			},
 		},
 		Vout: []*pb.TxOutput{
 			{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "pubkey1",
+				PubKey:       "7075626b657931",
 			},
 		},
 	}
@@ -288,8 +289,8 @@ func TestConvertTopbTransaction(t *testing.T) {
 func TestConvertFrompbTransaction(t *testing.T) {
 	tx := *testBlock.Transactions[0]
 	expected := tx
-	result := convertFromProtobufTransaction(expectedPbBlock.GetTransactions()[0])
-
+	result, err := convertFromProtobufTransaction(expectedPbBlock.GetTransactions()[0])
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -300,7 +301,7 @@ func TestConvertTopbTxInput(t *testing.T) {
 		Txid:      []byte("txid0"),
 		Vout:      0,
 		ScriptSig: "sig1",
-		PubKey:    "pubkey1",
+		PubKey:    "7075626b657931",
 	}
 	result := convertToProtobufTxInput(input)
 
@@ -309,8 +310,8 @@ func TestConvertTopbTxInput(t *testing.T) {
 
 func TestConvertFrompbTxInput(t *testing.T) {
 	expected := testBlock.Transactions[0].Vin[0]
-	result := convertFromProtobufTxInput(expectedPbBlock.GetTransactions()[0].GetVin()[0])
-
+	result, err := convertFromProtobufTxInput(expectedPbBlock.GetTransactions()[0].GetVin()[0])
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -320,7 +321,7 @@ func TestConvertTopbTxOutput(t *testing.T) {
 	expected := &pb.TxOutput{
 		Amount:       100,
 		ScriptPubKey: "scriptpubkey1",
-		PubKey:       "pubkey1",
+		PubKey:       "7075626b657931",
 	}
 	result := convertToProtobufTxOutput(output)
 
@@ -329,7 +330,8 @@ func TestConvertTopbTxOutput(t *testing.T) {
 
 func TestConvertFrompbTxOutput(t *testing.T) {
 	expected := testBlock.Transactions[0].Vout[0]
-	result := convertFromProtobufTxOutput(expectedPbBlock.GetTransactions()[0].GetVout()[0])
+	result, err := convertFromProtobufTxOutput(expectedPbBlock.GetTransactions()[0].GetVout()[0])
+	require.NoError(t, err)
 
 	assert.Equal(t, expected, result)
 }
@@ -342,7 +344,7 @@ func TestConvertTopbTxInputs(t *testing.T) {
 			Txid:      []byte("txid0"),
 			Vout:      0,
 			ScriptSig: "sig1",
-			PubKey:    "pubkey1",
+			PubKey:    "7075626b657931",
 		},
 	}
 	result := convertToProtobufTxInputs(inputs)
@@ -354,8 +356,8 @@ func TestConvertFrompbTxInputs(t *testing.T) {
 	pbInputs := expectedPbBlock.GetTransactions()[0].GetVin()
 
 	expected := testBlock.Transactions[0].Vin
-	result := convertFromProtobufTxInputs(pbInputs)
-
+	result, err := convertFromProtobufTxInputs(pbInputs)
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -366,7 +368,7 @@ func TestConvertTopbTxOutputs(t *testing.T) {
 		{
 			Amount:       100,
 			ScriptPubKey: "scriptpubkey1",
-			PubKey:       "pubkey1",
+			PubKey:       "7075626b657931",
 		},
 	}
 	result := convertToProtobufTxOutputs(outputs)
@@ -378,8 +380,8 @@ func TestConvertFrompbTxOutputs(t *testing.T) {
 	pbOutputs := expectedPbBlock.GetTransactions()[0].GetVout()
 
 	expected := testBlock.Transactions[0].Vout
-	result := convertFromProtobufTxOutputs(pbOutputs)
-
+	result, err := convertFromProtobufTxOutputs(pbOutputs)
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
