@@ -196,6 +196,7 @@ func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
 		return nil
 	}
 
+	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
 		return fmt.Errorf("unable to retrieve last block: %w", err)

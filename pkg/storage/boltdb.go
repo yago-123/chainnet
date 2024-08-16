@@ -313,13 +313,14 @@ func (bolt *BoltDB) ID() string {
 
 func (bolt *BoltDB) OnBlockAddition(block *kernel.Block) {
 	// async function because we don't want to create a deadlock (observer is sync by default)
-	go func() {
-		err := bolt.PersistBlock(*block)
-		if err != nil {
-			// todo(): add logging about the issue, if this fails, will eventually be pulled and stored again by P2P
-			return
-		}
-	}()
+	// todo(): had to remove the async because apparently during synchronization with p2p some cases were failing (recheck)
+	// go func() {
+	err := bolt.PersistBlock(*block)
+	if err != nil {
+		// todo(): add logging about the issue, if this fails, will eventually be pulled and stored again by P2P
+		return
+	}
+	// }
 }
 
 func (bolt *BoltDB) Close() error {
