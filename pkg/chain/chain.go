@@ -281,7 +281,7 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), p2p.P2PTotalTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2PConnTimeout)
 		defer cancel()
 
 		// todo(): revisit this, not sure if makes sense at all this lock type

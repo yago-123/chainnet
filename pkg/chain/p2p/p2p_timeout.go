@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"chainnet/config"
 	"context"
 	"fmt"
 	"io"
@@ -21,22 +22,22 @@ type TimeoutStream struct {
 }
 
 // NewTimeoutStream creates a network.Stream with read and write timeouts
-func NewTimeoutStream(ctx context.Context, host host.Host, p peer.ID, readTimeout, writeTimeout time.Duration, bufferSize uint, pids ...protocol.ID) (*TimeoutStream, error) {
+func NewTimeoutStream(ctx context.Context, cfg *config.Config, host host.Host, p peer.ID, pids ...protocol.ID) (*TimeoutStream, error) {
 	stream, err := host.NewStream(ctx, p, pids...)
 	if err != nil {
 		return nil, fmt.Errorf("error enabling stream to %s: %w", p.String(), err)
 	}
 
-	return AddTimeoutToStream(stream, readTimeout, writeTimeout, bufferSize), nil
+	return AddTimeoutToStream(stream, cfg), nil
 }
 
 // AddTimeoutToStream wraps a network.Stream with TimeoutStream
-func AddTimeoutToStream(s network.Stream, readTimeout, writeTimeout time.Duration, bufferSize uint) *TimeoutStream {
+func AddTimeoutToStream(s network.Stream, cfg *config.Config) *TimeoutStream {
 	return &TimeoutStream{
 		stream:       s,
-		readTimeout:  readTimeout,
-		writeTimeout: writeTimeout,
-		bufferSize:   bufferSize,
+		readTimeout:  cfg.P2PReadTimeout,
+		writeTimeout: cfg.P2PWriteTimeout,
+		bufferSize:   cfg.P2PBufferSize,
 	}
 }
 
