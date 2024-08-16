@@ -5,8 +5,9 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
