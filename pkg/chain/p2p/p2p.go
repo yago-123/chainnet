@@ -185,6 +185,8 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 	if err != nil {
 		return nil, fmt.Errorf("error writing block hash %x to stream: %w", hash, err)
 	}
+	// close write side of the stream so the peer knows we are done writing
+	timeoutStream.stream.CloseWrite()
 
 	// read and decode block retrieved
 	data, err := timeoutStream.ReadWithTimeout()

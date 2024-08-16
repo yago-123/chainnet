@@ -80,6 +80,7 @@ func (t *TimeoutStream) WriteWithTimeout(buf []byte) (int, error) {
 			return 0, err
 		}
 	}
+
 	return t.stream.Write(buf)
 }
 
