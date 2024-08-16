@@ -320,7 +320,7 @@ func (bolt *BoltDB) OnBlockAddition(block *kernel.Block) {
 		// todo(): add logging about the issue, if this fails, will eventually be pulled and stored again by P2P
 		return
 	}
-	// }
+	// }()
 }
 
 func (bolt *BoltDB) Close() error {
