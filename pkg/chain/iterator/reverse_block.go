@@ -8,12 +8,12 @@ import (
 // ReverseBlockIterator
 type ReverseBlockIterator struct {
 	prevBlockHash []byte
-	storage       storage.Storage
+	store         storage.Storage
 }
 
-func NewReverseIterator(storage storage.Storage) *ReverseBlockIterator {
+func NewReverseBlockIterator(store storage.Storage) *ReverseBlockIterator {
 	return &ReverseBlockIterator{
-		storage: storage,
+		store: store,
 	}
 }
 
@@ -23,7 +23,7 @@ func (it *ReverseBlockIterator) Initialize(reference []byte) error {
 }
 
 func (it *ReverseBlockIterator) GetNextBlock() (*kernel.Block, error) {
-	block, err := it.storage.RetrieveBlockByHash(it.prevBlockHash)
+	block, err := it.store.RetrieveBlockByHash(it.prevBlockHash)
 	if err != nil {
 		return nil, err
 	}

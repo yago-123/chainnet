@@ -39,16 +39,6 @@ func (bh *BlockHeader) SetTimestamp(timestamp int64) {
 	bh.Timestamp = timestamp
 }
 
-func (bh *BlockHeader) IsEmpty() bool {
-	return len(bh.Version) == 0 &&
-		len(bh.PrevBlockHash) == 0 &&
-		len(bh.MerkleRoot) == 0 &&
-		bh.Height == 0 &&
-		bh.Timestamp == 0 &&
-		bh.Target == 0 &&
-		bh.Nonce == 0
-}
-
 func (bh *BlockHeader) Assemble() []byte {
 	data := [][]byte{
 		[]byte(fmt.Sprintf("version %s", bh.Version)),

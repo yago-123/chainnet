@@ -32,6 +32,10 @@ message BlockHeader {
   uint64 nonce = 7;
 }
 
+message BlockHeaders {
+  repeated BlockHeader headers = 1;
+}
+
 message Block {
   BlockHeader header = 1;
   repeated Transaction transactions = 2;

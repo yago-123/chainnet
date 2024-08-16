@@ -179,7 +179,7 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to retrieve last block: %w", err)
 	}
 
 	if !bytes.Equal(b.Header.PrevBlockHash, lastChainBlock.Hash) {
@@ -196,9 +196,10 @@ func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
 		return nil
 	}
 
+	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to retrieve last block: %w", err)
 	}
 
 	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
@@ -212,7 +213,7 @@ func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
 func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 	merkletree, err := consensus.NewMerkleTreeFromTxs(b.Transactions, hv.hasher)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while constructing merkle tree: %w", err)
 	}
 
 	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {

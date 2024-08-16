@@ -1,6 +1,9 @@
 package storage
 
-import "chainnet/pkg/kernel"
+import (
+	"chainnet/pkg/kernel"
+	"errors"
+)
 
 const (
 	FirstBlockKey  = "firstblock"
@@ -12,6 +15,8 @@ const (
 
 	StorageObserverID = "storage-observer"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type Storage interface {
 	// PersistBlock stores a new block and updates LastBlockKey

@@ -30,6 +30,16 @@ func (m *MockEncoding) DeserializeHeader(data []byte) (*kernel.BlockHeader, erro
 	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
 }
 
+func (m *MockEncoding) SerializeHeaders(bhs []*kernel.BlockHeader) ([]byte, error) {
+	args := m.Called(bhs)
+	return args.Get(0).([]byte), args.Error(1)
+}
+
+func (m *MockEncoding) DeserializeHeaders(data []byte) ([]*kernel.BlockHeader, error) {
+	args := m.Called(data)
+	return args.Get(0).([]*kernel.BlockHeader), args.Error(1)
+}
+
 func (m *MockEncoding) SerializeTransaction(tx kernel.Transaction) ([]byte, error) {
 	args := m.Called(tx)
 	return args.Get(0).([]byte), args.Error(1)

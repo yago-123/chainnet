@@ -9,6 +9,7 @@ import (
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
+	"chainnet/pkg/storage"
 	"chainnet/tests/mocks/consensus"
 	mockStorage "chainnet/tests/mocks/storage"
 	"context"
@@ -85,15 +86,15 @@ func TestMiner_MineBlock(t *testing.T) {
 		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
 
-	storage := &mockStorage.MockStorage{}
-	storage.
+	store := &mockStorage.MockStorage{}
+	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, nil)
-	storage.
+		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
+	store.
 		On("GetLastBlockHash").
-		Return([]byte{}, nil)
+		Return([]byte{}, storage.ErrNotFound)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -109,7 +110,7 @@ func TestMiner_MineBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, block.Transactions, len(txs)+1)
 	assert.True(t, block.Transactions[0].IsCoinbase())
-	assert.Greater(t, block.Header.Nonce, uint(0))
+	assert.Positive(t, block.Header.Nonce)
 	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerAddress")), block.Transactions[0].Vout[0].ScriptPubKey)
 	assert.Equal(t, []byte{0x0, 0x0}, block.Hash[:2])
 
@@ -122,18 +123,18 @@ func TestMiner_MineBlock(t *testing.T) {
 }
 
 func TestMiner_createCoinbaseTransaction(t *testing.T) {
-	storage := &mockStorage.MockStorage{}
-	storage.
+	store := &mockStorage.MockStorage{}
+	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, nil)
-	storage.
+		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
+	store.
 		On("GetLastBlockHash").
-		Return([]byte{}, nil)
+		Return([]byte{}, storage.ErrNotFound)
 
 	cfg := config.NewConfig()
 	cfg.SetP2PStatus(false)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, storage, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 	miner := NewMiner(cfg, []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
 

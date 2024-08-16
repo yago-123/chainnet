@@ -83,14 +83,14 @@ var block4 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this c
 
 // tests the NewBlockchain method when there is not any previous chain addition
 func TestBlockchain_InitializationFromScratch(t *testing.T) {
-	storage := &mockStorage.MockStorage{}
-	storage.
+	store := &mockStorage.MockStorage{}
+	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, nil)
+		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
 
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
-		storage,
+		store,
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewBlockSubject(),
@@ -109,7 +109,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove("temp-file")
 
-	// persist headers in storage
+	// persist headers in store
 	require.NoError(t, boltdb.PersistHeader(block1.Hash, *block1.Header))
 	require.NoError(t, boltdb.PersistHeader(block2.Hash, *block2.Header))
 	require.NoError(t, boltdb.PersistHeader(block3.Hash, *block3.Header))

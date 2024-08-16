@@ -2,6 +2,7 @@ package encoding //nolint:testpackage // don't create separate package for tests
 
 import (
 	pb "chainnet/pkg/chain/p2p/protobuf"
+	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
 	"testing"
 
@@ -62,19 +63,67 @@ var expectedPbBlock = &pb.Block{ //nolint:gochecknoglobals // ignore linter in t
 					Txid:      []byte("txid0"),
 					Vout:      0,
 					ScriptSig: "sig1",
-					PubKey:    "pubkey1",
+					PubKey:    "7075626b657931", // hexadecimal encoded to prevent UTF-8 issues
 				},
 			},
 			Vout: []*pb.TxOutput{
 				{
 					Amount:       100,
 					ScriptPubKey: "scriptpubkey1",
-					PubKey:       "pubkey1",
+					PubKey:       "7075626b657931", // hexadecimal encoded to prevent UTF-8 issues
 				},
 			},
 		},
 	},
 	Hash: []byte("blockhash"),
+}
+
+var testBlockHeader = &kernel.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
+	Version:       []byte("v1"),
+	PrevBlockHash: []byte("prevhash"),
+	MerkleRoot:    []byte("merkleroot"),
+	Height:        123,
+	Timestamp:     1610000000,
+	Target:        456,
+	Nonce:         789,
+}
+
+var expectedPbBlockHeader = &pb.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
+	Version:       []byte("v1"),
+	PrevBlockHash: []byte("prevhash"),
+	MerkleRoot:    []byte("merkleroot"),
+	Height:        123,
+	Timestamp:     1610000000,
+	Target:        456,
+	Nonce:         789,
+}
+
+var testBlockHeaders = []*kernel.BlockHeader{ //nolint:gochecknoglobals // data that is used across all test funcs
+	testBlockHeader,
+	{
+		Version:       []byte("v2"),
+		PrevBlockHash: []byte("prevhash2"),
+		MerkleRoot:    []byte("merkleroot2"),
+		Height:        456,
+		Timestamp:     1620000000,
+		Target:        789,
+		Nonce:         101112,
+	},
+}
+
+var expectedPbBlockHeaders = &pb.BlockHeaders{ //nolint:gochecknoglobals // data that is used across all test funcs
+	Headers: []*pb.BlockHeader{
+		expectedPbBlockHeader,
+		{
+			Version:       []byte("v2"),
+			PrevBlockHash: []byte("prevhash2"),
+			MerkleRoot:    []byte("merkleroot2"),
+			Height:        456,
+			Timestamp:     1620000000,
+			Target:        789,
+			Nonce:         101112,
+		},
+	},
 }
 
 func TestSerializeBlock(t *testing.T) {
@@ -122,6 +171,30 @@ func TestDeserializeHeader(t *testing.T) {
 	assert.Equal(t, *testBlock.Header, *header)
 }
 
+func TestSerializeHeaders(t *testing.T) {
+	p := NewProtobufEncoder()
+	data, err := p.SerializeHeaders(testBlockHeaders)
+	require.NoError(t, err)
+
+	var pbBlockHeaders pb.BlockHeaders
+	err = proto.Unmarshal(data, &pbBlockHeaders)
+	require.NoError(t, err)
+
+	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
+	assert.True(t, proto.Equal(expectedPbBlockHeaders, &pbBlockHeaders))
+}
+
+func TestDeserializeHeaders(t *testing.T) {
+	p := NewProtobufEncoder()
+	data, err := proto.Marshal(expectedPbBlockHeaders)
+	require.NoError(t, err)
+
+	headers, err := p.DeserializeHeaders(data)
+	require.NoError(t, err)
+
+	assert.ElementsMatch(t, testBlockHeaders, headers)
+}
+
 func TestSerializeTransaction(t *testing.T) {
 	p := NewProtobufEncoder()
 	data, err := p.SerializeTransaction(*testBlock.Transactions[0])
@@ -148,7 +221,8 @@ func TestDeserializeTransaction(t *testing.T) {
 
 func TestConvertTopbBlock(t *testing.T) {
 	expected := expectedPbBlock
-	result := convertToProtobufBlock(testBlock)
+	result, err := convertToProtobufBlock(testBlock)
+	require.NoError(t, err)
 
 	// can't use assert.Equal because of the internal proto fields (state can't be stripped)
 	assert.True(t, proto.Equal(expected, result))
@@ -156,7 +230,8 @@ func TestConvertTopbBlock(t *testing.T) {
 
 func TestConvertFrompbBlock(t *testing.T) {
 	expected := testBlock
-	result := convertFromProtobufBlock(expectedPbBlock)
+	result, err := convertFromProtobufBlock(expectedPbBlock)
+	require.NoError(t, err)
 
 	assert.Equal(t, expected, result)
 }
@@ -195,14 +270,14 @@ func TestConvertTopbTransaction(t *testing.T) {
 				Txid:      []byte("txid0"),
 				Vout:      0,
 				ScriptSig: "sig1",
-				PubKey:    "pubkey1",
+				PubKey:    "7075626b657931",
 			},
 		},
 		Vout: []*pb.TxOutput{
 			{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "pubkey1",
+				PubKey:       "7075626b657931",
 			},
 		},
 	}
@@ -214,8 +289,8 @@ func TestConvertTopbTransaction(t *testing.T) {
 func TestConvertFrompbTransaction(t *testing.T) {
 	tx := *testBlock.Transactions[0]
 	expected := tx
-	result := convertFromProtobufTransaction(expectedPbBlock.GetTransactions()[0])
-
+	result, err := convertFromProtobufTransaction(expectedPbBlock.GetTransactions()[0])
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -226,7 +301,7 @@ func TestConvertTopbTxInput(t *testing.T) {
 		Txid:      []byte("txid0"),
 		Vout:      0,
 		ScriptSig: "sig1",
-		PubKey:    "pubkey1",
+		PubKey:    "7075626b657931",
 	}
 	result := convertToProtobufTxInput(input)
 
@@ -235,8 +310,8 @@ func TestConvertTopbTxInput(t *testing.T) {
 
 func TestConvertFrompbTxInput(t *testing.T) {
 	expected := testBlock.Transactions[0].Vin[0]
-	result := convertFromProtobufTxInput(expectedPbBlock.GetTransactions()[0].GetVin()[0])
-
+	result, err := convertFromProtobufTxInput(expectedPbBlock.GetTransactions()[0].GetVin()[0])
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -246,7 +321,7 @@ func TestConvertTopbTxOutput(t *testing.T) {
 	expected := &pb.TxOutput{
 		Amount:       100,
 		ScriptPubKey: "scriptpubkey1",
-		PubKey:       "pubkey1",
+		PubKey:       "7075626b657931",
 	}
 	result := convertToProtobufTxOutput(output)
 
@@ -255,7 +330,8 @@ func TestConvertTopbTxOutput(t *testing.T) {
 
 func TestConvertFrompbTxOutput(t *testing.T) {
 	expected := testBlock.Transactions[0].Vout[0]
-	result := convertFromProtobufTxOutput(expectedPbBlock.GetTransactions()[0].GetVout()[0])
+	result, err := convertFromProtobufTxOutput(expectedPbBlock.GetTransactions()[0].GetVout()[0])
+	require.NoError(t, err)
 
 	assert.Equal(t, expected, result)
 }
@@ -268,7 +344,7 @@ func TestConvertTopbTxInputs(t *testing.T) {
 			Txid:      []byte("txid0"),
 			Vout:      0,
 			ScriptSig: "sig1",
-			PubKey:    "pubkey1",
+			PubKey:    "7075626b657931",
 		},
 	}
 	result := convertToProtobufTxInputs(inputs)
@@ -280,8 +356,8 @@ func TestConvertFrompbTxInputs(t *testing.T) {
 	pbInputs := expectedPbBlock.GetTransactions()[0].GetVin()
 
 	expected := testBlock.Transactions[0].Vin
-	result := convertFromProtobufTxInputs(pbInputs)
-
+	result, err := convertFromProtobufTxInputs(pbInputs)
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -292,7 +368,7 @@ func TestConvertTopbTxOutputs(t *testing.T) {
 		{
 			Amount:       100,
 			ScriptPubKey: "scriptpubkey1",
-			PubKey:       "pubkey1",
+			PubKey:       "7075626b657931",
 		},
 	}
 	result := convertToProtobufTxOutputs(outputs)
@@ -304,7 +380,63 @@ func TestConvertFrompbTxOutputs(t *testing.T) {
 	pbOutputs := expectedPbBlock.GetTransactions()[0].GetVout()
 
 	expected := testBlock.Transactions[0].Vout
-	result := convertFromProtobufTxOutputs(pbOutputs)
-
+	result, err := convertFromProtobufTxOutputs(pbOutputs)
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
+}
+
+func TestUtf8InvalidCharacters(t *testing.T) {
+	ecdsa := sign.NewECDSASignature()
+	pubKey, _, err := ecdsa.NewKeyPair()
+	require.NoError(t, err)
+
+	p := NewProtobufEncoder()
+	block := kernel.Block{
+		Header: testBlockHeader,
+		Transactions: []*kernel.Transaction{
+			kernel.NewCoinbaseTransaction(string(pubKey), 50, 0),
+		},
+		Hash: []byte("blockhash"),
+	}
+
+	data, err := p.SerializeBlock(block)
+	require.NoError(t, err)
+
+	_, err = p.DeserializeBlock(data)
+	require.NoError(t, err)
+}
+
+func TestNoNilPointerExceptionsSerialize(t *testing.T) {
+	p := NewProtobufEncoder()
+
+	_, err := p.SerializeBlock(kernel.Block{})
+	require.Error(t, err)
+
+	_, err = p.SerializeHeader(kernel.BlockHeader{})
+	require.NoError(t, err)
+
+	_, err = p.SerializeHeaders([]*kernel.BlockHeader{})
+	require.NoError(t, err)
+
+	_, err = p.SerializeHeaders([]*kernel.BlockHeader{{}})
+	require.NoError(t, err)
+
+	_, err = p.SerializeTransaction(kernel.Transaction{})
+	require.NoError(t, err)
+}
+
+func TestNoNilPointerExceptionsDeserialize(t *testing.T) {
+	p := NewProtobufEncoder()
+
+	_, err := p.DeserializeBlock([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeHeader([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeHeaders([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeHeaders([]byte{})
+	require.NoError(t, err)
 }

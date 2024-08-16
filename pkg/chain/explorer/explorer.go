@@ -8,16 +8,18 @@ import (
 )
 
 type Explorer struct {
-	storage storage.Storage
+	store storage.Storage
 }
 
-func NewExplorer(storage storage.Storage) *Explorer {
-	return &Explorer{storage: storage}
+func NewExplorer(store storage.Storage) *Explorer {
+	return &Explorer{
+		store: store,
+	}
 }
 
 // GetLastBlock returns the last block in the chain persisted
 func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
-	block, err := explorer.storage.GetLastBlock()
+	block, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return nil, err
 	}
@@ -26,9 +28,20 @@ func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 	return block, nil
 }
 
+// GetBlockByHash returns the block corresponding to the hash provided
+func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
+	block, err := explorer.store.RetrieveBlockByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return block, nil
+}
+
 // GetLastHeader returns the last block header in the chain persisted
+// todo() handle the case when there is no last header yet
 func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
-	header, err := explorer.storage.GetLastHeader()
+	header, err := explorer.store.GetLastHeader()
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +49,46 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	return header, nil
 }
 
+// GetAllHeaders returns all the block headers added to the chain. This implementation is not efficient, headers should
+// be cached but would introduce a lot of complexity and inconsistency. All the headers persisted are cached in the chain
+// module itself but it is not exposed to the outside and even if it was public, it would require a circular dependency,
+// This Explorer module was specifically introduced to avoid the dependency with the chain module
+func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
+	var err error
+	var header *kernel.BlockHeader
+	var headers []*kernel.BlockHeader
+
+	// get last header
+	lastHeaderHash, err := explorer.store.GetLastBlockHash()
+	if err != nil {
+		return nil, err
+	}
+
+	it := iterator.NewReverseHeaderIterator(explorer.store)
+	err = it.Initialize(lastHeaderHash)
+	if err != nil {
+		return nil, err
+	}
+
+	// iterate until all the headers are retrieved
+	for it.HasNext() {
+		header, err = it.GetNextHeader()
+		if err != nil {
+			return nil, err
+		}
+
+		headers = append(headers, header)
+	}
+
+	if len(headers) == 0 {
+		return []*kernel.BlockHeader{}, storage.ErrNotFound
+	}
+
+	return headers, nil
+}
+
 func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
-	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseIterator(explorer.storage))
+	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
 // findUnspentTransactions finds all unspent transaction outputs that can be unlocked with the given address. Starts
@@ -50,7 +101,7 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 
 	spentTXOs := make(map[string][]uint)
 
-	lastBlock, err := explorer.storage.GetLastBlock()
+	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return []*kernel.Transaction{}, err
 	}
@@ -110,7 +161,7 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 }
 
 func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UTXO, error) {
-	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseIterator(explorer.storage))
+	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
 // findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
@@ -119,7 +170,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIte
 	unspentTXOs := []kernel.UTXO{}
 	spentTXOs := make(map[string][]uint)
 
-	lastBlock, err := explorer.storage.GetLastBlock()
+	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return []kernel.UTXO{}, err
 	}

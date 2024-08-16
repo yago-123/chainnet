@@ -2,5 +2,4 @@ __debug_bin*
 .idea
 bin/
 *.pb.go
-*.yaml
 _fixture/
