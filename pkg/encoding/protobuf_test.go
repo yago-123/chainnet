@@ -2,10 +2,11 @@ package encoding //nolint:testpackage // don't create separate package for tests
 
 import (
 	pb "chainnet/pkg/chain/p2p/protobuf"
+	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/kernel"
-	"testing"
-
+	"fmt"
 	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
@@ -379,4 +380,33 @@ func TestConvertFrompbTxOutputs(t *testing.T) {
 	result := convertFromProtobufTxOutputs(pbOutputs)
 
 	assert.Equal(t, expected, result)
+}
+
+func TestUtf8InvalidCharacters(t *testing.T) {
+	ecdsa := sign.NewECDSASignature()
+	pubKey, _, err := ecdsa.NewKeyPair()
+	require.NoError(t, err)
+
+	p := NewProtobufEncoder()
+	block := kernel.Block{
+		Header: testBlockHeader,
+		Transactions: []*kernel.Transaction{
+			kernel.NewCoinbaseTransaction(fmt.Sprintf("%s", pubKey), 50, 0),
+		},
+		Hash: []byte("blockhash"),
+	}
+
+	data, err := p.SerializeBlock(block)
+	require.NoError(t, err)
+
+	_, err = p.DeserializeBlock(data)
+	require.NoError(t, err)
+}
+
+func TestNilPointerExceptions(t *testing.T) {
+	block := kernel.Block{}
+
+	p := NewProtobufEncoder()
+	_, err := p.SerializeBlock(block)
+	require.NoError(t, err)
 }
