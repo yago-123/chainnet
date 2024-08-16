@@ -24,8 +24,6 @@ import (
 const (
 	P2PObserverID = "p2p-observer"
 
-	MaxNumberOfHeaderRequest = 1000
-
 	P2PTotalTimeout = 20 * time.Second
 	P2PWriteTimeout = 10 * time.Second
 	P2PReadTimeout  = 10 * time.Second
@@ -47,11 +45,12 @@ type NodeP2P struct {
 	disco discovery.Discovery
 	// pubsub is in charge of setting up the logic for data propagation
 	pubsub pubsub.PubSub
-
 	// encoder contains the communication data serialization between peers
-	encoder encoding.Encoding
-
+	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+
+	// bufferSize represents size of buffer for reading over the network
+	bufferSize uint
 
 	logger *logrus.Logger
 }
@@ -103,6 +102,7 @@ func NewP2PNode(
 		pubsub:     pubsub,
 		encoder:    encoder,
 		explorer:   explorer,
+		bufferSize: cfg.P2PBufferSize,
 		logger:     cfg.Logger,
 	}, nil
 }
@@ -128,17 +128,16 @@ func (n *NodeP2P) InitHandlers() {
 // AskLastHeader sends a request to a specific peer to get the last block header
 func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.BlockHeader, error) {
 	// open stream to peer with timeout
-	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskLastHeaderProtocol)
+	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, n.bufferSize, AskLastHeaderProtocol)
 	if err != nil {
 		return nil, err
 	}
 	defer timeoutStream.Close()
 
-	var data []byte
 	// read and decode reply
-	_, err = timeoutStream.ReadWithTimeout(data)
+	data, err := timeoutStream.ReadWithTimeout()
 	if err != nil {
-		return nil, fmt.Errorf("error reading data from stream: %w", err)
+		return nil, fmt.Errorf("error reading data from stream %s: %w", timeoutStream.stream.ID(), err)
 	}
 
 	return n.encoder.DeserializeHeader(data)
@@ -147,7 +146,7 @@ func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.Bl
 // handleAskLastHeader handler that replies to the requests from AskLastHeader
 func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 	// open stream with timeout
-	timeoutStream := AddTimeoutToStream(stream, P2PReadTimeout, P2PWriteTimeout)
+	timeoutStream := AddTimeoutToStream(stream, P2PReadTimeout, P2PWriteTimeout, n.bufferSize)
 	defer timeoutStream.Close()
 
 	// get last block header
@@ -175,12 +174,13 @@ func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
 		n.logger.Errorf("error writing block header for stream %s: %s", stream.ID(), err)
 		return
 	}
+
 }
 
 // AskSpecificBlock sends a request to a specific peer to get a block by hash
 func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []byte) (*kernel.Block, error) {
 	// open stream to peer with timeout
-	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskSpecificBlockProtocol)
+	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, n.bufferSize, AskSpecificBlockProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +192,8 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 		return nil, fmt.Errorf("error writing block hash %x to stream: %w", hash, err)
 	}
 
-	var data []byte
 	// read and decode block retrieved
-	_, err = timeoutStream.ReadWithTimeout(data)
+	data, err := timeoutStream.ReadWithTimeout()
 	if err != nil {
 		return nil, fmt.Errorf("error reading data from stream: %w", err)
 	}
@@ -205,12 +204,11 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 // handleAskSpecificBlock handler that replies to the requests from AskSpecificBlock
 func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 	// open stream with timeout
-	timeoutStream := AddTimeoutToStream(stream, P2PReadTimeout, P2PWriteTimeout)
+	timeoutStream := AddTimeoutToStream(stream, P2PReadTimeout, P2PWriteTimeout, n.bufferSize)
 	defer timeoutStream.Close()
 
-	var hash []byte
 	// read hash of block that is being requested
-	_, err := timeoutStream.ReadWithTimeout(hash)
+	hash, err := timeoutStream.ReadWithTimeout()
 	if err != nil {
 		n.logger.Errorf("error reading block hash from stream %s: %s", stream.ID(), err)
 		return
@@ -247,15 +245,14 @@ func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
 // a list of headers unsorted
 func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.BlockHeader, error) {
 	// open stream to peer with timeout
-	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, AskAllHeaders)
+	timeoutStream, err := NewTimeoutStream(ctx, n.host, peerID, P2PReadTimeout, P2PWriteTimeout, n.bufferSize, AskAllHeaders)
 	if err != nil {
 		return nil, err
 	}
 	defer timeoutStream.Close()
 
-	var data []byte
 	// read and decode block headers retrieved
-	_, err = timeoutStream.ReadWithTimeout(data)
+	data, err := timeoutStream.ReadWithTimeout()
 	if err != nil {
 		return nil, fmt.Errorf("error reading data from stream: %w", err)
 	}
@@ -266,7 +263,7 @@ func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.
 // handleAskAllHeaders handler that replies to the requests from AskAllHeaders
 func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
 	// open stream with timeout
-	timeoutStream := AddTimeoutToStream(stream, P2PReadTimeout, P2PWriteTimeout)
+	timeoutStream := AddTimeoutToStream(stream, P2PReadTimeout, P2PWriteTimeout, n.bufferSize)
 	defer timeoutStream.Close()
 
 	// retrieve headers from explorer
