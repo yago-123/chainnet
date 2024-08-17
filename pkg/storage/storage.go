@@ -46,8 +46,8 @@ type Storage interface {
 	RetrieveBlockByHash(hash []byte) (*kernel.Block, error)
 	// RetrieveHeaderByHash retrieves the block header that corresponds to the block hash
 	RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error)
-	// ID returns the key StorageObserverID used for running Observer code
-	ID() string
+	// NetObserverID returns the key StorageObserverID used for running Observer code
+	BlockObserverID() string
 	// OnBlockAddition called when a new block is added to the chain, in the case of storage must be async
 	OnBlockAddition(block *kernel.Block)
 	// Close finishes the connection with the DB

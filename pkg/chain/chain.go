@@ -116,7 +116,7 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork() error {
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 	var p2pNet *p2p.NodeP2P
 
 	// check if the network is supposed to be enabled
@@ -128,10 +128,6 @@ func (bc *Blockchain) InitNetwork() error {
 	if bc.p2pActive {
 		return fmt.Errorf("p2p network already active")
 	}
-
-	// create a new blockchain observer that will react to network events
-	netSubject := observer.NewNetSubject()
-	netSubject.Register(bc)
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
@@ -274,7 +270,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 }
 
 // ID returns the observer id
-func (bc *Blockchain) ID() string {
+func (bc *Blockchain) NetObserverID() string {
 	return BlockchainObserver
 }
 

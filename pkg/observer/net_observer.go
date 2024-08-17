@@ -9,7 +9,7 @@ import (
 
 // NetObserver interface that defines the methods that a network observer should implement
 type NetObserver interface {
-	ID() string
+	NetObserverID() string
 	OnNodeDiscovered(peerID peer.ID)
 	OnUnconfirmedTxReceived(tx kernel.Transaction)
 }
@@ -37,14 +37,14 @@ func NewNetSubject() *NetSubjectController {
 func (no *NetSubjectController) Register(observer NetObserver) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
-	no.observers[observer.ID()] = observer
+	no.observers[observer.NetObserverID()] = observer
 }
 
 // Unregister removes an observer from the list of observers
 func (no *NetSubjectController) Unregister(observer NetObserver) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
-	delete(no.observers, observer.ID())
+	delete(no.observers, observer.NetObserverID())
 }
 
 // NotifyNodeDiscovered notifies all observers that a new node has been discovered

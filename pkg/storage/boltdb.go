@@ -307,7 +307,7 @@ func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, erro
 	return bolt.encoding.DeserializeHeader(headerBytes)
 }
 
-func (bolt *BoltDB) ID() string {
+func (bolt *BoltDB) BlockObserverID() string {
 	return StorageObserverID
 }
 

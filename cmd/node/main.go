@@ -61,7 +61,11 @@ func main() {
 
 	subjectObserver.Register(boltdb)
 
-	if err = chain.InitNetwork(); err != nil {
+	// create net subject and register chain
+	netSubject := observer.NewNetSubject()
+	netSubject.Register(chain)
+
+	if err = chain.InitNetwork(netSubject); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 

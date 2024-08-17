@@ -34,7 +34,7 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 		return err
 	}
 
-	// validate transaction hash match the transaction ID field
+	// validate transaction hash match the transaction BlockObserverID field
 	if err := lv.validateTxID(tx); err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) error {
 	return nil
 }
 
-// validateTxID checks that the hash of the transaction matches the ID field
+// validateTxID checks that the hash of the transaction matches the BlockObserverID field
 func (lv *LValidator) validateTxID(tx *kernel.Transaction) error {
 	return util.VerifyTxHash(tx, tx.ID, lv.hasher)
 }

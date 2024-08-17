@@ -292,7 +292,7 @@ func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
 	}
 }
 
-func (n *NodeP2P) ID() string {
+func (n *NodeP2P) BlockObserverID() string {
 	return P2PObserverID
 }
 

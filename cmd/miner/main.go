@@ -95,7 +95,12 @@ func main() {
 	subjectObserver.Register(boltdb)
 	subjectObserver.Register(mempool)
 
-	if err = chain.InitNetwork(); err != nil {
+	// create net subject and register chain and miner
+	subjectNet := observer.NewNetSubject()
+	subjectNet.Register(chain)
+	subjectNet.Register(mine)
+
+	if err = chain.InitNetwork(subjectNet); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 

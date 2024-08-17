@@ -59,8 +59,8 @@ func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
-// ID returns the observer id
-func (u *UTXOSet) ID() string {
+// NetObserverID returns the observer id
+func (u *UTXOSet) BlockObserverID() string {
 	return UTXOSObserverID
 }
 

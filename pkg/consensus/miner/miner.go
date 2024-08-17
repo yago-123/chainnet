@@ -134,8 +134,8 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	}
 }
 
-// ID returns the observer id
-func (m *Miner) ID() string {
+// NetObserverID returns the observer id
+func (m *Miner) BlockObserverID() string {
 	return MinerObserverID
 }
 
