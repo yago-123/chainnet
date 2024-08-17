@@ -10,8 +10,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 const (
@@ -45,9 +43,8 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, hasherType hash.HasherType) *Miner {
+func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain, hasherType hash.HasherType) *Miner {
 	return &Miner{
-		mempool:      mempool,
 		hasherType:   hasherType,
 		chain:        chain,
 		minerAddress: publicKey,
@@ -145,16 +142,6 @@ func (m *Miner) ID() string {
 func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
-}
-
-func (m *Miner) OnNodeDiscovered(_ peer.ID) {
-	// do nothing, only chain cares about nodes discovered for now
-}
-
-func (m *Miner) OnUnconfirmedTxReceived(tx kernel.Transaction) {
-	// add transaction to the mempool
-	// todo(): how to calculate fee? Maybe via utxos?
-	m.mempool.AppendTransaction(&tx, 0)
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees

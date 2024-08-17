@@ -1,4 +1,4 @@
-package miner //nolint:testpackage // don't create separate package for tests
+package mempool //nolint:testpackage // don't create separate package for tests
 
 import (
 	"chainnet/pkg/kernel"
