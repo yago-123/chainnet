@@ -11,6 +11,7 @@ import (
 
 const (
 	// todo(): BlackListedNodes?
+	TxMempoolPubSubTopic  = "txMempoolTopic"
 	BlockAddedPubSubTopic = "blockAddedTopic"
 )
 

@@ -1,6 +1,6 @@
 # Define directories
 OUTPUT_DIR := bin
-NODE_PROTOBUF_DIR := pkg/chain/p2p/protobuf
+NODE_PROTOBUF_DIR := pkg/p2p/protobuf
 
 # Define the name of the CLI binary file
 CLI_BINARY_NAME   := chainnet-cli

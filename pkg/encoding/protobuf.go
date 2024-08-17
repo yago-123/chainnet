@@ -1,8 +1,8 @@
 package encoding
 
 import (
-	pb "chainnet/pkg/chain/p2p/protobuf"
 	"chainnet/pkg/kernel"
+	pb "chainnet/pkg/p2p/protobuf"
 	"encoding/hex"
 	"fmt"
 
