@@ -1,8 +1,8 @@
 package pubsub
 
 import (
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/observer"
 	"context"
 	"fmt"
 

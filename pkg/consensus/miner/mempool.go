@@ -61,7 +61,7 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 }
 
 // Id returns the observer id
-func (m *MemPool) BlockObserverID() string {
+func (m *MemPool) ID() string {
 	return MemPoolObserverID
 }
 

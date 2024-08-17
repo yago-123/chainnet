@@ -4,12 +4,12 @@ import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus/validator"
 	"chainnet/pkg/crypto"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
 
 	"github.com/sirupsen/logrus"

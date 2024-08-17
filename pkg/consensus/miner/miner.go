@@ -10,6 +10,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 const (
@@ -135,7 +137,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 }
 
 // NetObserverID returns the observer id
-func (m *Miner) BlockObserverID() string {
+func (m *Miner) ID() string {
 	return MinerObserverID
 }
 
@@ -143,6 +145,16 @@ func (m *Miner) BlockObserverID() string {
 func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
+}
+
+func (m *Miner) OnNodeDiscovered(_ peer.ID) {
+	// do nothing, only chain cares about nodes discovered for now
+}
+
+func (m *Miner) OnUnconfirmedTxReceived(tx kernel.Transaction) {
+	// add transaction to the mempool
+	// todo(): how to calculate fee? Maybe via utxos?
+	m.mempool.AppendTransaction(&tx, 0)
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees

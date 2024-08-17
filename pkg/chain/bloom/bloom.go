@@ -39,7 +39,7 @@ func (bf *BlockBloomFilter) PresentInBlock(txID, blockID []byte) (bool, error) {
 	return false, fmt.Errorf("block %s not found in bloom filter", string(blockID))
 }
 
-func (bf *BlockBloomFilter) BlockObserverID() string {
+func (bf *BlockBloomFilter) ID() string {
 	return BloomObserverID
 }
 

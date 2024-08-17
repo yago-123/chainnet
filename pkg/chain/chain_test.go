@@ -1,9 +1,9 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/config"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
 	"chainnet/tests/mocks/consensus"
 	mockHash "chainnet/tests/mocks/crypto/hash"

@@ -130,7 +130,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
 				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.PrivateKey, w.PublicKey, tx)
 				if err != nil {
-					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with BlockObserverID %s and index %d: %w", vin.Txid, vin.Vout, err)
+					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %s and index %d: %w", vin.Txid, vin.Vout, err)
 				}
 
 				scripSigs = append(scripSigs, scriptSig)
@@ -142,7 +142,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 
 		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
 		if !unlocked {
-			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with BlockObserverID %s and index %d", vin.Txid, vin.Vout)
+			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
 		}
 	}
 

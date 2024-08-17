@@ -3,9 +3,9 @@ package p2p
 import (
 	"chainnet/config"
 	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p/discovery"
 	"chainnet/pkg/p2p/pubsub"
 	"chainnet/pkg/storage"
@@ -292,7 +292,7 @@ func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
 	}
 }
 
-func (n *NodeP2P) BlockObserverID() string {
+func (n *NodeP2P) ID() string {
 	return P2PObserverID
 }
 

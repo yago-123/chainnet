@@ -2,7 +2,7 @@ package discovery
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/chain/observer"
+	"chainnet/pkg/observer"
 	"context"
 	"time"
 

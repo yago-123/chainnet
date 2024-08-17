@@ -55,7 +55,7 @@ func (ms *MockStorage) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, e
 	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
 }
 
-func (ms *MockStorage) BlockObserverID() string {
+func (ms *MockStorage) ID() string {
 	return ms.Called().String(0)
 }
 

@@ -3,11 +3,11 @@ package miner //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
 	"chainnet/tests/mocks/consensus"

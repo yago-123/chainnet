@@ -3,12 +3,12 @@ package blockchain
 import (
 	"chainnet/config"
 	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p"
 	"chainnet/pkg/storage"
 	"chainnet/pkg/util/mutex"
@@ -270,7 +270,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 }
 
 // ID returns the observer id
-func (bc *Blockchain) NetObserverID() string {
+func (bc *Blockchain) ID() string {
 	return BlockchainObserver
 }
 
