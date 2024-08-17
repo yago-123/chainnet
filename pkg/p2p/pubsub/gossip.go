@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/kernel"
 	"context"
 	"fmt"
@@ -15,7 +16,7 @@ const (
 	BlockAddedPubSubTopic = "blockAddedTopic"
 )
 
-var topicHandlers = map[string]func(ctx context.Context, sub *pubSubP2P.Subscription){ //nolint:gochecknoglobals // this can be global var
+var topicHandlers = map[string]func(ctx context.Context, sub *pubSubP2P.Subscription, netSubject observer.NetSubject){ //nolint:gochecknoglobals // this can be global var
 	TxMempoolPubSubTopic:  listenForTxMempool,
 	BlockAddedPubSubTopic: listenForBlocksAdded,
 }
@@ -24,10 +25,11 @@ type Gossip struct {
 	ctx    context.Context
 	pubsub *pubSubP2P.PubSub
 
+	netSubject observer.NetSubject
 	topicStore map[string]*pubSubP2P.Topic
 }
 
-func NewGossipPubSub(ctx context.Context, host host.Host, topics []string) (*Gossip, error) {
+func NewGossipPubSub(ctx context.Context, host host.Host, netSubject observer.NetSubject, topics []string) (*Gossip, error) {
 	pubsub, errGossip := pubSubP2P.NewGossipSub(ctx, host)
 	if errGossip != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", errGossip)
@@ -51,7 +53,7 @@ func NewGossipPubSub(ctx context.Context, host host.Host, topics []string) (*Gos
 		if handler, ok := topicHandlers[topicName]; !ok {
 			return nil, fmt.Errorf("unable to initialize handler for topic %s", topicName)
 		} else if ok {
-			go handler(ctx, sub)
+			go handler(ctx, sub, netSubject)
 		}
 
 		// save the topics
@@ -61,28 +63,30 @@ func NewGossipPubSub(ctx context.Context, host host.Host, topics []string) (*Gos
 	return &Gossip{
 		ctx:        ctx,
 		pubsub:     pubsub,
+		netSubject: netSubject,
 		topicStore: topicStore,
 	}, nil
 }
 
-func listenForBlocksAdded(ctx context.Context, sub *pubSubP2P.Subscription) {
+func listenForBlocksAdded(ctx context.Context, sub *pubSubP2P.Subscription, _ observer.NetSubject) {
 	for {
 		_, err := sub.Next(ctx)
 		if err != nil {
 			return
 		}
-
-		// fmt.Println("Received message:", string(msg.Data))
 	}
+
+	//
 }
 
-func listenForTxMempool(ctx context.Context, sub *pubSubP2P.Subscription) {
+func listenForTxMempool(ctx context.Context, sub *pubSubP2P.Subscription, netSubject observer.NetSubject) {
 	for {
 		_, err := sub.Next(ctx)
 		if err != nil {
 			return
 		}
 
+		netSubject.NotifyUnconfirmedTxReceived(kernel.Transaction{})
 	}
 }
 

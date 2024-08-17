@@ -294,6 +294,10 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	}()
 }
 
+func (bc *Blockchain) OnUnconfirmedTxReceived(_ kernel.Transaction) {
+	// do nothing, only miner cares about uncommitted transactions
+}
+
 // GetLastBlockHash returns the latest block hash
 func (bc *Blockchain) GetLastBlockHash() []byte {
 	return bc.lastBlockHash

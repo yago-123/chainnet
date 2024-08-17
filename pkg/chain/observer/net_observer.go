@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"chainnet/pkg/kernel"
 	"sync"
 
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -10,6 +11,7 @@ import (
 type NetObserver interface {
 	ID() string
 	OnNodeDiscovered(peerID peer.ID)
+	OnUnconfirmedTxReceived(tx kernel.Transaction)
 }
 
 // NetSubject controller that manages the net observers
@@ -17,6 +19,7 @@ type NetSubject interface {
 	Register(observer NetObserver)
 	Unregister(observer NetObserver)
 	NotifyNodeDiscovered(peerID peer.ID)
+	NotifyUnconfirmedTxReceived(tx kernel.Transaction)
 }
 
 type NetSubjectController struct {
@@ -50,5 +53,13 @@ func (no *NetSubjectController) NotifyNodeDiscovered(peerID peer.ID) {
 	defer no.mu.Unlock()
 	for _, observer := range no.observers {
 		observer.OnNodeDiscovered(peerID)
+	}
+}
+
+func (no *NetSubjectController) NotifyUnconfirmedTxReceived(tx kernel.Transaction) {
+	no.mu.Lock()
+	defer no.mu.Unlock()
+	for _, observer := range no.observers {
+		observer.OnUnconfirmedTxReceived(tx)
 	}
 }

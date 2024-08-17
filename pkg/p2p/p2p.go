@@ -84,7 +84,7 @@ func NewP2PNode(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, host, []string{})
+	pubsub, err := pubsub.NewGossipPubSub(ctx, host, netSubject, []string{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
