@@ -1,0 +1,78 @@
+- name: Deploy application from Git
+  hosts: nodes
+  become: yes
+  become_method: sudo
+
+  vars:
+    app_dir: /var/chainnet
+    repo_url: 'https://github.com/yago-123/chainnet.git'
+    branch: 'master'
+    go_version: '1.23'
+    go_bin_path: "{{ ansible_env.HOME }}/go/bin"  # Default GOPATH bin directory
+
+  tasks:
+    - name: Ensure necessary packages are installed
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - make
+        - snapd
+        - protobuf-compiler
+      tags:
+        - packages
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+      tags:
+        - directory
+
+    - name: Clone the repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ branch }}"
+        force: yes
+        update: yes
+      tags:
+        - git
+
+    - name: Install Go using snap
+      snap:
+        name: "go"
+        state: present
+        channel: "{{ go_version }}/stable"
+      tags:
+        - go
+
+    - name: Install protoc-gen-go
+      command: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+      environment:
+        GOPATH: "{{ ansible_env.HOME }}/go"
+      tags:
+        - go-tools
+
+    - name: Install protoc-gen-go-grpc
+      command: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+      environment:
+        GOPATH: "{{ ansible_env.HOME }}/go"
+      tags:
+        - go-tools
+
+    - name: Update PATH to include Go binaries
+      lineinfile:
+        path: /etc/environment
+        line: 'PATH="{{ ansible_env.PATH }}:{{ go_bin_path }}"'
+        create: yes
+      tags:
+        - environment
+
+    - name: Build the application with make
+      command: make node
+      args:
+        chdir: "{{ app_dir }}"
+      tags:
+        - build

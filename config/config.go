@@ -28,7 +28,7 @@ const (
 const (
 	DefaultConfigFile = ""
 
-	DefaultNodeSeed  = "seed.chainnet.yago.ninja"
+	DefaultNodeSeed1 = "seed-1.chainnet.yago.ninja"
 	DefaultNodeSeed2 = "seed-2.chainnet.yago.ninja"
 	DefaultNodeSeed3 = "seed-3.chainnet.yago.ninja"
 
@@ -60,7 +60,7 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		Logger:          logrus.New(),
-		NodeSeeds:       []string{DefaultNodeSeed, DefaultNodeSeed2, DefaultNodeSeed3},
+		NodeSeeds:       []string{DefaultNodeSeed1, DefaultNodeSeed2, DefaultNodeSeed3},
 		StorageFile:     DefaultChainnetStorage,
 		MiningInterval:  DefaultMiningInterval,
 		P2PEnabled:      DefaultP2PEnabled,
@@ -116,7 +116,7 @@ func InitConfig(cmd *cobra.Command) *Config {
 
 func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
-	cmd.Flags().StringArray(KeyNodeSeeds, []string{DefaultNodeSeed, DefaultNodeSeed2, DefaultNodeSeed3}, "Node seeds used to synchronize during startup")
+	cmd.Flags().StringArray(KeyNodeSeeds, []string{DefaultNodeSeed1, DefaultNodeSeed2, DefaultNodeSeed3}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")

@@ -26,7 +26,7 @@ $ make
 Default configuration: 
 ```yaml
 node-seeds: [                       # List of seed nodes
-  "seed.chainnet.yago.ninja",
+  "seed-1.chainnet.yago.ninja",
   "seed-2.chainnet.yago.ninja",
   "seed-3.chainnet.yago.ninja",
 ]
@@ -41,6 +41,10 @@ p2p-read-timeout: "20s"             # Maximum duration of a read stream
 p2p-buffer-size: 4096               # Read buffer over the network
 ```
 
+## Deploy seed node with Ansible 
+```bash
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml --ask-become-pass
+```
 
 ## Run
 Running the miner:

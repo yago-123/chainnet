@@ -1,5 +1,5 @@
 node-seeds: [                       # List of seed nodes
-  "seed.chainnet.yago.ninja",
+  "seed-1.chainnet.yago.ninja",
   "seed-2.chainnet.yago.ninja",
   "seed-3.chainnet.yago.ninja",
 ]
