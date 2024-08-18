@@ -1,0 +1,10 @@
+[Unit]
+Description=Chainnet miner service
+After=network.target
+
+[Service]
+ExecStart={{ app_dir }}/bin/chainnet-miner --config {{ app_dir }}/config.yaml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
