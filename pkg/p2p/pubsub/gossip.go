@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/observer"
 	"context"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 
 	pubSubP2P "github.com/libp2p/go-libp2p-pubsub"
@@ -15,8 +16,8 @@ import (
 
 const (
 	// todo(): BlackListedNodes?
-	TxMempoolPubSubTopic  = "txMempoolTopic"
-	BlockAddedPubSubTopic = "blockAddedTopic"
+	TxMempoolPubSubTopic  = "tx-mempool-topic"
+	BlockAddedPubSubTopic = "block-added-topic"
 )
 
 type gossipHandler struct {
@@ -26,7 +27,7 @@ type gossipHandler struct {
 	netSubject observer.NetSubject
 }
 
-func NewGossipHandler(ctx context.Context, logger *logrus.Logger, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
+func newGossipHandler(ctx context.Context, logger *logrus.Logger, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
 	return &gossipHandler{
 		ctx:        ctx,
 		logger:     logger,
@@ -68,9 +69,8 @@ type GossipPubSub struct {
 
 	encoder encoding.Encoding
 
-	netSubject    observer.NetSubject
-	topicStore    map[string]*pubSubP2P.Topic
-	topicHandlers map[string]func()
+	netSubject observer.NetSubject
+	topicStore map[string]*pubSubP2P.Topic
 }
 
 func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, encoder encoding.Encoding, netSubject observer.NetSubject, topics []string, enableSubscribe bool) (*GossipPubSub, error) {
@@ -79,7 +79,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
-	handler := NewGossipHandler(ctx, cfg.Logger, encoder, netSubject)
+	handler := newGossipHandler(ctx, cfg.Logger, encoder, netSubject)
 
 	// initialize handlers for the topics available
 	topicHandlers := map[string]func(sub *pubSubP2P.Subscription){
@@ -105,7 +105,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 				return nil, fmt.Errorf("error subscribing to pubsub topic %s: %w", topicName, errSub)
 			}
 
-			// initialize handler
+			// start handlers
 			if handlerFunc, ok := topicHandlers[topicName]; !ok {
 				return nil, fmt.Errorf("unable to initialize handler for topic %s", topicName)
 			} else if ok {

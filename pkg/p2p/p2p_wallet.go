@@ -63,7 +63,7 @@ func NewWalletP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, host, encoder, observer.NewNetSubject(), []string{}, false)
+	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, observer.NewNetSubject(), []string{}, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
