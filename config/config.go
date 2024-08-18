@@ -12,6 +12,7 @@ import (
 // default config keys
 const (
 	KeyConfigFile      = "config"
+	KeyNodeSeeds       = "node-seeds"
 	KeyStorageFile     = "storage-file"
 	KeyMiningInterval  = "mining-interval"
 	KeyP2PEnabled      = "p2p-enabled"
@@ -25,7 +26,12 @@ const (
 
 // default config values
 const (
-	DefaultConfigFile      = ""
+	DefaultConfigFile = ""
+
+	DefaultNodeSeed  = "seed.chainnet.yago.ninja"
+	DefaultNodeSeed2 = "seed-2.chainnet.yago.ninja"
+	DefaultNodeSeed3 = "seed-3.chainnet.yago.ninja"
+
 	DefaultChainnetStorage = "chainnet-storage"
 	DefaultMiningInterval  = 1 * time.Minute
 	DefaultP2PEnabled      = true
@@ -39,6 +45,7 @@ const (
 
 type Config struct {
 	Logger          *logrus.Logger
+	NodeSeeds       []string      `mapstructure:"node-seeds"`
 	StorageFile     string        `mapstructure:"storage-file"`
 	MiningInterval  time.Duration `mapstructure:"mining-interval"`
 	P2PEnabled      bool          `mapstructure:"p2p-enabled"`
@@ -53,6 +60,7 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		Logger:          logrus.New(),
+		NodeSeeds:       []string{DefaultNodeSeed, DefaultNodeSeed2, DefaultNodeSeed3},
 		StorageFile:     DefaultChainnetStorage,
 		MiningInterval:  DefaultMiningInterval,
 		P2PEnabled:      DefaultP2PEnabled,
@@ -108,6 +116,7 @@ func InitConfig(cmd *cobra.Command) *Config {
 
 func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
+	cmd.Flags().StringArray(KeyNodeSeeds, []string{DefaultNodeSeed, DefaultNodeSeed2, DefaultNodeSeed3}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
@@ -141,6 +150,9 @@ func GetConfigFilePath(cmd *cobra.Command) string {
 // ApplyFlagsToConfig updates the config struct with flag values if they have been set
 func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	// todo(): use flag-to-config mapping function
+	if cmd.Flags().Changed(KeyNodeSeeds) {
+		cfg.NodeSeeds = viper.GetStringSlice(KeyNodeSeeds)
+	}
 	if cmd.Flags().Changed(KeyStorageFile) {
 		cfg.StorageFile = viper.GetString(KeyStorageFile)
 	}

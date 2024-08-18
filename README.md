@@ -25,8 +25,13 @@ $ make
 ## Configuration
 Default configuration: 
 ```yaml
+node-seeds: [                       # List of seed nodes
+  "seed.chainnet.yago.ninja",
+  "seed-2.chainnet.yago.ninja",
+  "seed-3.chainnet.yago.ninja",
+]
 storage-file: "bin/miner-storage"   # File used for persisting the chain status
-mining-interval: "1s"               # Interval between block creation
+mining-interval: "30s"               # Interval between block creation
 p2p-enabled: true                   # Enable or disable network communication
 p2p-min-conn: 5                     # Minimum number of connections
 p2p-max-conn: 100                   # Maximum number of connections
