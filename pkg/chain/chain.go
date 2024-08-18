@@ -141,9 +141,6 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 		return fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
 
-	// initialize network handlers
-	p2pNet.InitHandlers()
-
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {
 		return fmt.Errorf("error starting p2p node: %w", err)

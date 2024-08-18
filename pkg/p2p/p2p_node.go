@@ -29,6 +29,127 @@ const (
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
 )
 
+type nodeP2PHandler struct {
+	cfg      *config.Config
+	logger   *logrus.Logger
+	encoder  encoding.Encoding
+	explorer *explorer.Explorer
+}
+
+func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *nodeP2PHandler {
+	return &nodeP2PHandler{
+		cfg:      cfg,
+		logger:   cfg.Logger,
+		encoder:  encoder,
+		explorer: explorer,
+	}
+}
+
+// handleAskLastHeader handler that replies to the requests from AskLastHeader
+func (h *nodeP2PHandler) handleAskLastHeader(stream network.Stream) {
+	// open stream with timeout
+	timeoutStream := AddTimeoutToStream(stream, h.cfg)
+	defer timeoutStream.Close()
+
+	// get last block header
+	header, err := h.explorer.GetLastHeader()
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			h.logger.Infof("unable to retrieve last header for stream %s: no headers in the chain", stream.ID())
+			return
+		}
+
+		h.logger.Errorf("error getting last block header for stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	// encode block header
+	data, err := h.encoder.SerializeHeader(*header)
+	if err != nil {
+		h.logger.Errorf("error serializing block header for stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	// send block header to the peer
+	_, err = timeoutStream.WriteWithTimeout(data)
+	if err != nil {
+		h.logger.Errorf("error writing block header for stream %s: %s", stream.ID(), err)
+		return
+	}
+}
+
+// handleAskSpecificBlock handler that replies to the requests from AskSpecificBlock
+func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
+	// open stream with timeout
+	timeoutStream := AddTimeoutToStream(stream, h.cfg)
+	defer timeoutStream.Close()
+
+	// read hash of block that is being requested
+	hash, err := timeoutStream.ReadWithTimeout()
+	if err != nil {
+		h.logger.Errorf("error reading block hash from stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	// retrieve block from explorer
+	block, err := h.explorer.GetBlockByHash(hash)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			h.logger.Infof("unable to retrieve block for stream %s: block not found", stream.ID())
+			return
+		}
+
+		h.logger.Errorf("error getting block with hash %x for stream %s: %s", hash, stream.ID(), err)
+		return
+	}
+
+	// encode block
+	data, err := h.encoder.SerializeBlock(*block)
+	if err != nil {
+		h.logger.Errorf("error serializing block with hash %x for stream %s: %s", hash, stream.ID(), err)
+		return
+	}
+
+	// send block encoded to the peer
+	_, err = timeoutStream.WriteWithTimeout(data)
+	if err != nil {
+		h.logger.Errorf("error writing block with hash %x to stream %s: %s", hash, stream.ID(), err)
+		return
+	}
+}
+
+// handleAskAllHeaders handler that replies to the requests from AskAllHeaders
+func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
+	// open stream with timeout
+	timeoutStream := AddTimeoutToStream(stream, h.cfg)
+	defer timeoutStream.Close()
+
+	// retrieve headers from explorer
+	headers, err := h.explorer.GetAllHeaders()
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			h.logger.Infof("unable to retrieve headers for stream %s: no headers in the chain", stream.ID())
+		}
+
+		h.logger.Errorf("error getting headers for stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	// encode headers
+	data, err := h.encoder.SerializeHeaders(headers)
+	if err != nil {
+		h.logger.Errorf("error serializing headers for stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	// send headers encoded to the peer
+	_, err = timeoutStream.WriteWithTimeout(data)
+	if err != nil {
+		h.logger.Errorf("error writing headers for stream %s: %s", stream.ID(), err)
+		return
+	}
+}
+
 type NodeP2P struct {
 	cfg  *config.Config
 	host host.Host
@@ -89,6 +210,12 @@ func NewNodeP2P(
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
+	// initialize handlers
+	handler := newNodeP2PHandler(cfg, encoder, explorer)
+	host.SetStreamHandler(AskLastHeaderProtocol, handler.handleAskLastHeader)
+	host.SetStreamHandler(AskSpecificBlockProtocol, handler.handleAskSpecificBlock)
+	host.SetStreamHandler(AskAllHeaders, handler.handleAskAllHeaders)
+
 	return &NodeP2P{
 		cfg:        cfg,
 		host:       host,
@@ -115,12 +242,6 @@ func (n *NodeP2P) Stop() error {
 	return n.host.Close()
 }
 
-func (n *NodeP2P) InitHandlers() {
-	n.host.SetStreamHandler(AskLastHeaderProtocol, n.handleAskLastHeader)
-	n.host.SetStreamHandler(AskSpecificBlockProtocol, n.handleAskSpecificBlock)
-	n.host.SetStreamHandler(AskAllHeaders, n.handleAskAllHeaders)
-}
-
 // AskLastHeader sends a request to a specific peer to get the last block header
 func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.BlockHeader, error) {
 	// open stream to peer with timeout
@@ -137,39 +258,6 @@ func (n *NodeP2P) AskLastHeader(ctx context.Context, peerID peer.ID) (*kernel.Bl
 	}
 
 	return n.encoder.DeserializeHeader(data)
-}
-
-// handleAskLastHeader handler that replies to the requests from AskLastHeader
-func (n *NodeP2P) handleAskLastHeader(stream network.Stream) {
-	// open stream with timeout
-	timeoutStream := AddTimeoutToStream(stream, n.cfg)
-	defer timeoutStream.Close()
-
-	// get last block header
-	header, err := n.explorer.GetLastHeader()
-	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			n.logger.Infof("unable to retrieve last header for stream %s: no headers in the chain", stream.ID())
-			return
-		}
-
-		n.logger.Errorf("error getting last block header for stream %s: %s", stream.ID(), err)
-		return
-	}
-
-	// encode block header
-	data, err := n.encoder.SerializeHeader(*header)
-	if err != nil {
-		n.logger.Errorf("error serializing block header for stream %s: %s", stream.ID(), err)
-		return
-	}
-
-	// send block header to the peer
-	_, err = timeoutStream.WriteWithTimeout(data)
-	if err != nil {
-		n.logger.Errorf("error writing block header for stream %s: %s", stream.ID(), err)
-		return
-	}
 }
 
 // AskSpecificBlock sends a request to a specific peer to get a block by hash
@@ -201,46 +289,6 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 	return n.encoder.DeserializeBlock(data)
 }
 
-// handleAskSpecificBlock handler that replies to the requests from AskSpecificBlock
-func (n *NodeP2P) handleAskSpecificBlock(stream network.Stream) {
-	// open stream with timeout
-	timeoutStream := AddTimeoutToStream(stream, n.cfg)
-	defer timeoutStream.Close()
-
-	// read hash of block that is being requested
-	hash, err := timeoutStream.ReadWithTimeout()
-	if err != nil {
-		n.logger.Errorf("error reading block hash from stream %s: %s", stream.ID(), err)
-		return
-	}
-
-	// retrieve block from explorer
-	block, err := n.explorer.GetBlockByHash(hash)
-	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			n.logger.Infof("unable to retrieve block for stream %s: block not found", stream.ID())
-			return
-		}
-
-		n.logger.Errorf("error getting block with hash %x for stream %s: %s", hash, stream.ID(), err)
-		return
-	}
-
-	// encode block
-	data, err := n.encoder.SerializeBlock(*block)
-	if err != nil {
-		n.logger.Errorf("error serializing block with hash %x for stream %s: %s", hash, stream.ID(), err)
-		return
-	}
-
-	// send block encoded to the peer
-	_, err = timeoutStream.WriteWithTimeout(data)
-	if err != nil {
-		n.logger.Errorf("error writing block with hash %x to stream %s: %s", hash, stream.ID(), err)
-		return
-	}
-}
-
 // AskAllHeaders sends a request to a specific peer to get all headers from the remote chain. The reply contains
 // a list of headers unsorted
 func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.BlockHeader, error) {
@@ -258,38 +306,6 @@ func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.
 	}
 
 	return n.encoder.DeserializeHeaders(data)
-}
-
-// handleAskAllHeaders handler that replies to the requests from AskAllHeaders
-func (n *NodeP2P) handleAskAllHeaders(stream network.Stream) {
-	// open stream with timeout
-	timeoutStream := AddTimeoutToStream(stream, n.cfg)
-	defer timeoutStream.Close()
-
-	// retrieve headers from explorer
-	headers, err := n.explorer.GetAllHeaders()
-	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			n.logger.Infof("unable to retrieve headers for stream %s: no headers in the chain", stream.ID())
-		}
-
-		n.logger.Errorf("error getting headers for stream %s: %s", stream.ID(), err)
-		return
-	}
-
-	// encode headers
-	data, err := n.encoder.SerializeHeaders(headers)
-	if err != nil {
-		n.logger.Errorf("error serializing headers for stream %s: %s", stream.ID(), err)
-		return
-	}
-
-	// send headers encoded to the peer
-	_, err = timeoutStream.WriteWithTimeout(data)
-	if err != nil {
-		n.logger.Errorf("error writing headers for stream %s: %s", stream.ID(), err)
-		return
-	}
 }
 
 func (n *NodeP2P) ID() string {
