@@ -8,6 +8,7 @@ import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/mempool"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p"
 	"chainnet/pkg/storage"
@@ -36,8 +37,10 @@ type Blockchain struct {
 	// this avoids collisions when multiple nodes are trying to sync with the local node
 	syncMutex *mutex.CtxMutex
 
-	hasher    hash.Hashing
-	store     storage.Storage
+	hasher  hash.Hashing
+	store   storage.Storage
+	mempool *mempool.MemPool
+
 	validator consensus.HeavyValidator
 
 	blockSubject observer.BlockSubject
@@ -56,6 +59,7 @@ type Blockchain struct {
 func NewBlockchain(
 	cfg *config.Config,
 	store storage.Storage,
+	mempool *mempool.MemPool,
 	hasher hash.Hashing,
 	validator consensus.HeavyValidator,
 	subject observer.BlockSubject,
@@ -106,6 +110,7 @@ func NewBlockchain(
 		headers:       headers,
 		syncMutex:     mutex.NewCtxMutex(MaxConcurrentSyncs),
 		hasher:        hasher,
+		mempool:       mempool,
 		store:         store,
 		validator:     validator,
 		blockSubject:  subject,
@@ -269,6 +274,11 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 	return nil
 }
 
+// RetrieveMempoolTxs return an amount of unconfirmed transactions ready to be added to a block
+func (bc *Blockchain) RetrieveMempoolTxs(numTxs uint) ([]*kernel.Transaction, uint) {
+	return bc.mempool.RetrieveTransactions(numTxs)
+}
+
 // ID returns the observer id
 func (bc *Blockchain) ID() string {
 	return BlockchainObserver
@@ -290,8 +300,9 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	}()
 }
 
-func (bc *Blockchain) OnUnconfirmedTxReceived(_ kernel.Transaction) {
-	// do nothing, only miner cares about uncommitted transactions
+func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
+	// todo() figure how to retrieve fee
+	bc.mempool.AppendTransaction(&tx, 0)
 }
 
 // GetLastBlockHash returns the latest block hash

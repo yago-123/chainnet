@@ -28,7 +28,6 @@ const (
 const MiningTarget = 8
 
 type Miner struct {
-	mempool *MemPool
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
@@ -82,7 +81,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	// retrieve transactions that are going to be placed inside the block
-	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(kernel.MaxNumberTxsPerBlock)
+	collectedTxs, collectedFee := m.chain.RetrieveMempoolTxs(kernel.MaxNumberTxsPerBlock)
 
 	// generate the coinbase transaction and add to the list of transactions
 	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.chain.GetLastHeight())

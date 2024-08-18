@@ -9,6 +9,7 @@ import (
 	"chainnet/pkg/p2p/pubsub"
 	"context"
 	"fmt"
+
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"

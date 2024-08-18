@@ -9,6 +9,7 @@ import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/mempool"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
 
@@ -43,6 +44,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
+		mempool.NewMemPool(),
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),

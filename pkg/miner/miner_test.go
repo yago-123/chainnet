@@ -7,6 +7,7 @@ import (
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/mempool"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
@@ -21,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var txFeePair1 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
+var txFeePair1 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id1"),
 		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")},
@@ -30,7 +31,7 @@ var txFeePair1 = txFeePair{ //nolint: gochecknoglobals // no need to lint this g
 	Fee: 10,
 }
 
-var txFeePair2 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
+var txFeePair2 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id2"),
 		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, "scriptSig", "pubKey")},
@@ -39,7 +40,7 @@ var txFeePair2 = txFeePair{ //nolint: gochecknoglobals // no need to lint this g
 	Fee: 2,
 }
 
-var txFeePair3 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
+var txFeePair3 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id3"),
 		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid3"), 2, "scriptSig", "pubKey")},
@@ -47,7 +48,7 @@ var txFeePair3 = txFeePair{ //nolint: gochecknoglobals // no need to lint this g
 	},
 }
 
-var txFeePair4 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
+var txFeePair4 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id4"),
 		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid4"), 3, "scriptSig", "pubKey")},
@@ -56,7 +57,7 @@ var txFeePair4 = txFeePair{ //nolint: gochecknoglobals // no need to lint this g
 	Fee: 1,
 }
 
-var txFeePair5 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
+var txFeePair5 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id5"),
 		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid5"), 4, "scriptSig", "pubKey")},
@@ -65,7 +66,7 @@ var txFeePair5 = txFeePair{ //nolint: gochecknoglobals // no need to lint this g
 	Fee: 9,
 }
 
-var txFeePair6 = txFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
+var txFeePair6 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id6"),
 		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid6"), 5, "scriptSig", "pubKey")},
@@ -74,10 +75,10 @@ var txFeePair6 = txFeePair{ //nolint: gochecknoglobals // no need to lint this g
 	Fee: 6,
 }
 
-var txs = []txFeePair{txFeePair1, txFeePair2, txFeePair3, txFeePair4, txFeePair5, txFeePair6} //nolint: gochecknoglobals // no need to lint this global variable
+var txs = []mempool.TxFeePair{txFeePair1, txFeePair2, txFeePair3, txFeePair4, txFeePair5, txFeePair6} //nolint: gochecknoglobals // no need to lint this global variable
 
 func TestMiner_MineBlock(t *testing.T) {
-	mempool := NewMemPool()
+	mempool := mempool.NewMemPool()
 	for _, v := range txs {
 		txID, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
 		require.NoError(t, err)
@@ -94,11 +95,10 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
-		mempool:      mempool,
 		hasherType:   hash.SHA256,
 		minerAddress: []byte("minerAddress"),
 		target:       16,
@@ -134,9 +134,9 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	cfg := config.NewConfig()
 	cfg.SetP2PStatus(false)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
-	miner := NewMiner(cfg, []byte("minerAddress"), chain, NewMemPool(), hash.SHA256)
+	miner := NewMiner(cfg, []byte("minerAddress"), chain, hash.SHA256)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)
 	require.NoError(t, err)

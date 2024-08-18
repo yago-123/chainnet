@@ -10,6 +10,7 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/mempool"
 	"chainnet/pkg/miner"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
@@ -18,8 +19,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
-
-const MiningInterval = 15 * time.Second
 
 var cfg *config.Config
 
@@ -61,8 +60,8 @@ func main() {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
-	// create new mempool
-	mempool := miner.NewMemPool()
+	// create mempool instance
+	mempool := mempool.NewMemPool()
 
 	// create new observer
 	subjectObserver := observer.NewBlockSubject()
@@ -71,6 +70,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
+		mempool,
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
@@ -88,17 +88,16 @@ func main() {
 	}
 
 	// create new miner
-	mine := miner.NewMiner(cfg, w.PublicKey, chain, mempool, hash.SHA256)
+	mine := miner.NewMiner(cfg, w.PublicKey, chain, hash.SHA256)
 
 	// register chain observers
 	subjectObserver.Register(mine)
 	subjectObserver.Register(boltdb)
 	subjectObserver.Register(mempool)
 
-	// create net subject and register chain and miner
+	// create net subject and register the chain
 	subjectNet := observer.NewNetSubject()
 	subjectNet.Register(chain)
-	subjectNet.Register(mine)
 
 	if err = chain.InitNetwork(subjectNet); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
