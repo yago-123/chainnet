@@ -1,7 +1,9 @@
 package wallet //nolint:testpackage // don't create separate package for tests
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/consensus/validator"
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
@@ -29,7 +31,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(&mockHash.FakeHashing{}), &signer, &mockHash.FakeHashing{}, &mockHash.FakeHashing{})
+	wallet, err := NewWallet(config.NewConfig(), []byte("0.0.1"), validator.NewLightValidator(&mockHash.FakeHashing{}), &signer, &mockHash.FakeHashing{}, &mockHash.FakeHashing{}, encoding.NewProtobufEncoder())
 	require.NoError(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
@@ -66,7 +68,7 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet([]byte("0.0.1"), validator.NewLightValidator(hasher), &signer, hasher, hasher)
+	wallet, err := NewWallet(config.NewConfig(), []byte("0.0.1"), validator.NewLightValidator(hasher), &signer, hasher, hasher, encoding.NewProtobufEncoder())
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.SendTransaction("pubkey-1", 10, 0, utxos)

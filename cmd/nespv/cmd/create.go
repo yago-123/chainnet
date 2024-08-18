@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/consensus/validator"
 	"chainnet/pkg/crypto"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/wallet"
 
 	"github.com/spf13/cobra"
@@ -26,11 +28,13 @@ var createCmd = &cobra.Command{
 		ecdsaSha256Signer := crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256())
 
 		w, err := wallet.NewWallet(
+			config.NewConfig(), // todo() change this to a real config
 			[]byte("0.0.1"),
 			validator.NewLightValidator(hash.NewSHA256()),
 			ecdsaSha256Signer,
 			sha256Ripemd160Hasher,
 			hash.NewSHA256(),
+			encoding.NewProtobufEncoder(),
 		)
 
 		if err != nil {
