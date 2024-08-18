@@ -46,7 +46,9 @@ func NewGossipPubSub(ctx context.Context, host host.Host, encoder encoding.Encod
 			return nil, fmt.Errorf("error joining pubsub topic %s: %w", topicName, errJoin)
 		}
 
-		//
+		// if subscribe is enabled, subscribe to the topic and initialize the handler. Otherwise, just join the
+		// topic. Subscribe is not enabled for the cases in which we only want to publish to the topic (like wallets)
+		// but not listen
 		if enableSubscribe {
 			// subscribe to the topic to listen
 			sub, errSub := topic.Subscribe()
