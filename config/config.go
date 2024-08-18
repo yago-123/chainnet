@@ -14,6 +14,7 @@ const (
 	KeyConfigFile      = "config"
 	KeyNodeSeeds       = "node-seeds"
 	KeyStorageFile     = "storage-file"
+	KeyPubKey          = "pub-key"
 	KeyMiningInterval  = "mining-interval"
 	KeyP2PEnabled      = "p2p-enabled"
 	KeyP2PMinNumConn   = "p2p-min-conn"
@@ -33,6 +34,7 @@ const (
 	DefaultNodeSeed3 = "seed-3.chainnet.yago.ninja"
 
 	DefaultChainnetStorage = "chainnet-storage"
+	DefaultPubKey          = ""
 	DefaultMiningInterval  = 1 * time.Minute
 	DefaultP2PEnabled      = true
 	DefaultP2PMinNumConn   = 1
@@ -47,6 +49,7 @@ type Config struct {
 	Logger          *logrus.Logger
 	NodeSeeds       []string      `mapstructure:"node-seeds"`
 	StorageFile     string        `mapstructure:"storage-file"`
+	PubKey          string        `mapstructure:"pub-key"`
 	MiningInterval  time.Duration `mapstructure:"mining-interval"`
 	P2PEnabled      bool          `mapstructure:"p2p-enabled"`
 	P2PMinNumConn   uint          `mapstructure:"p2p-min-conn"`
@@ -62,6 +65,7 @@ func NewConfig() *Config {
 		Logger:          logrus.New(),
 		NodeSeeds:       []string{DefaultNodeSeed1, DefaultNodeSeed2, DefaultNodeSeed3},
 		StorageFile:     DefaultChainnetStorage,
+		PubKey:          DefaultPubKey,
 		MiningInterval:  DefaultMiningInterval,
 		P2PEnabled:      DefaultP2PEnabled,
 		P2PMinNumConn:   DefaultP2PMinNumConn,
@@ -118,6 +122,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().StringArray(KeyNodeSeeds, []string{DefaultNodeSeed1, DefaultNodeSeed2, DefaultNodeSeed3}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
+	cmd.Flags().String(KeyPubKey, DefaultPubKey, "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
@@ -128,7 +133,9 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint(KeyP2PBufferSize, DefaultP2PBufferSize, "P2P buffer size for reading from stream")
 
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
+	_ = viper.BindPFlag(KeyNodeSeeds, cmd.Flags().Lookup(KeyNodeSeeds))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
+	_ = viper.BindPFlag(KeyPubKey, cmd.Flags().Lookup(KeyPubKey))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
@@ -155,6 +162,9 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyStorageFile) {
 		cfg.StorageFile = viper.GetString(KeyStorageFile)
+	}
+	if cmd.Flags().Changed(KeyPubKey) {
+		cfg.PubKey = viper.GetString(KeyPubKey)
 	}
 	if cmd.Flags().Changed(KeyMiningInterval) {
 		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)

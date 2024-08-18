@@ -99,10 +99,10 @@ func TestMiner_MineBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	miner := Miner{
-		hasherType:   hash.SHA256,
-		minerAddress: []byte("minerAddress"),
-		target:       16,
-		chain:        chain,
+		hasherType:  hash.SHA256,
+		minerPubKey: []byte("minerPubKey"),
+		target:      16,
+		chain:       chain,
 	}
 
 	// simple block mining with hash difficulty 16
@@ -111,7 +111,7 @@ func TestMiner_MineBlock(t *testing.T) {
 	assert.Len(t, block.Transactions, len(txs)+1)
 	assert.True(t, block.Transactions[0].IsCoinbase())
 	assert.Positive(t, block.Header.Nonce)
-	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerAddress")), block.Transactions[0].Vout[0].ScriptPubKey)
+	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerPubKey")), block.Transactions[0].Vout[0].ScriptPubKey)
 	assert.Equal(t, []byte{0x0, 0x0}, block.Hash[:2])
 
 	// cancel block in the middle of mining aborting the process
@@ -136,7 +136,9 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 
 	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
-	miner := NewMiner(cfg, []byte("minerAddress"), chain, hash.SHA256)
+	cfg.PubKey = "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
+	miner, err := NewMiner(cfg, chain, hash.SHA256)
+	require.NoError(t, err)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)
 	require.NoError(t, err)

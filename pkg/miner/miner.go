@@ -9,6 +9,7 @@ import (
 	"chainnet/pkg/kernel"
 	"context"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"time"
 )
 
@@ -32,8 +33,8 @@ type Miner struct {
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
 
-	minerAddress []byte
-	target       uint
+	minerPubKey []byte
+	target      uint
 
 	isMining bool
 	ctx      context.Context
@@ -42,15 +43,21 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain, hasherType hash.HasherType) *Miner {
-	return &Miner{
-		hasherType:   hasherType,
-		chain:        chain,
-		minerAddress: publicKey,
-		isMining:     false,
-		target:       MiningTarget,
-		cfg:          cfg,
+func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType) (*Miner, error) {
+	if len(cfg.PubKey) == 0 {
+		return nil, fmt.Errorf("public key not provided, check the config file")
 	}
+
+	pubKey := base58.Decode(cfg.PubKey)
+
+	return &Miner{
+		hasherType:  hasherType,
+		chain:       chain,
+		minerPubKey: pubKey,
+		isMining:    false,
+		target:      MiningTarget,
+		cfg:         cfg,
+	}, nil
 }
 
 func (m *Miner) AdjustMiningDifficulty() uint {
@@ -154,7 +161,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	}
 
 	// creates transaction and calculate hash
-	tx := kernel.NewCoinbaseTransaction(string(m.minerAddress), reward, collectedFee)
+	tx := kernel.NewCoinbaseTransaction(string(m.minerPubKey), reward, collectedFee)
 	txHash, err := util.CalculateTxHash(tx, hash.GetHasher(m.hasherType))
 	if err != nil {
 		return nil, fmt.Errorf("unable to calculate transaction hash: %w", err)

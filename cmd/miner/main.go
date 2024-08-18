@@ -14,7 +14,6 @@ import (
 	"chainnet/pkg/miner"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
-	"chainnet/pkg/wallet"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -35,24 +34,6 @@ func main() {
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
 	// todo(): add consensusSignatureType
-
-	// create wallet address hasher
-	walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-	if err != nil {
-		cfg.Logger.Fatalf("Error creating multi-hash configuration: %s", err)
-	}
-
-	// create new wallet for storing mining rewards
-	w, err := wallet.NewWallet(
-		[]byte("1"),
-		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-		crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()),
-		walletSha256Ripemd160Hasher,
-		hash.GetHasher(consensusHasherType),
-	)
-	if err != nil {
-		cfg.Logger.Fatalf("Error creating new wallet: %s", err)
-	}
 
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
@@ -88,7 +69,10 @@ func main() {
 	}
 
 	// create new miner
-	mine := miner.NewMiner(cfg, w.PublicKey, chain, hash.SHA256)
+	mine, err := miner.NewMiner(cfg, chain, hash.SHA256)
+	if err != nil {
+		cfg.Logger.Fatalf("error initializing miner: %s", err)
+	}
 
 	// register chain observers
 	subjectObserver.Register(mine)

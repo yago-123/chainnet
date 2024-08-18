@@ -31,7 +31,9 @@ node-seeds: [                       # List of seed nodes
   "seed-3.chainnet.yago.ninja",
 ]
 storage-file: "bin/miner-storage"   # File used for persisting the chain status
-mining-interval: "30s"               # Interval between block creation
+pub-key:                            # Public key in hex format, used for receiving mining rewards
+  "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQ...eXF22QHk2JA"
+mining-interval: "30s"              # Interval between block creation
 p2p-enabled: true                   # Enable or disable network communication
 p2p-min-conn: 5                     # Minimum number of connections
 p2p-max-conn: 100                   # Maximum number of connections
@@ -39,6 +41,7 @@ p2p-conn-timeout: "60s"             # Maximum duration of a connection
 p2p-write-timeout: "20s"            # Maximum duration of a write stream
 p2p-read-timeout: "20s"             # Maximum duration of a read stream
 p2p-buffer-size: 4096               # Read buffer over the network
+
 ```
 
 ## Deploy seed node with Ansible 
