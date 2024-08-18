@@ -53,15 +53,6 @@
             src: "{{ go_tar }}"
             dest: "/usr/local"
             remote_src: yes
-
-        - name: Set up Go environment variables
-          lineinfile:
-            path: /home/go/.bash_profile
-            line: "{{ item }}"
-            create: yes
-          loop:
-            - 'export GOROOT=/usr/local/go'
-            - 'export PATH=$PATH:/usr/local/go/bin'
       tags:
         - go
 
@@ -84,6 +75,6 @@
       args:
         chdir: "{{ app_dir }}"
       environment:
-        PATH: "{{ go_bin_path }}:/usr/bin:{{ ansible_env.HOME }}/go/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ ansible_env.PATH }}:{{ go_bin_path }}:/usr/bin:{{ ansible_env.HOME }}/go/bin"
       tags:
         - build
