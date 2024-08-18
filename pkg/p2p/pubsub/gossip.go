@@ -1,11 +1,13 @@
 package pubsub
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/observer"
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	pubSubP2P "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -17,25 +19,72 @@ const (
 	BlockAddedPubSubTopic = "blockAddedTopic"
 )
 
-var topicHandlers = map[string]func(ctx context.Context, sub *pubSubP2P.Subscription, netSubject observer.NetSubject){ //nolint:gochecknoglobals // this can be global var
-	TxMempoolPubSubTopic:  listenForTxMempool,
-	BlockAddedPubSubTopic: listenForBlocksAdded,
+type gossipHandler struct {
+	ctx        context.Context
+	logger     *logrus.Logger
+	encoder    encoding.Encoding
+	netSubject observer.NetSubject
 }
 
-type Gossip struct {
+func NewGossipHandler(ctx context.Context, logger *logrus.Logger, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
+	return &gossipHandler{
+		ctx:        ctx,
+		logger:     logger,
+		encoder:    encoder,
+		netSubject: netSubject,
+	}
+}
+
+func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
+	for {
+		_, err := sub.Next(h.ctx)
+		if err != nil {
+			return
+		}
+	}
+
+	//
+}
+
+func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
+	for {
+		msg, err := sub.Next(h.ctx)
+		if err != nil {
+			return
+		}
+
+		tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
+		if err != nil {
+			h.logger.Errorf("failed deserializing transaction: %s", err)
+		}
+
+		h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+	}
+}
+
+type GossipPubSub struct {
 	ctx    context.Context
 	pubsub *pubSubP2P.PubSub
 
 	encoder encoding.Encoding
 
-	netSubject observer.NetSubject
-	topicStore map[string]*pubSubP2P.Topic
+	netSubject    observer.NetSubject
+	topicStore    map[string]*pubSubP2P.Topic
+	topicHandlers map[string]func()
 }
 
-func NewGossipPubSub(ctx context.Context, host host.Host, encoder encoding.Encoding, netSubject observer.NetSubject, topics []string, enableSubscribe bool) (*Gossip, error) {
+func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, encoder encoding.Encoding, netSubject observer.NetSubject, topics []string, enableSubscribe bool) (*GossipPubSub, error) {
 	pubsub, err := pubSubP2P.NewGossipSub(ctx, host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
+	}
+
+	handler := NewGossipHandler(ctx, cfg.Logger, encoder, netSubject)
+
+	// initialize handlers for the topics available
+	topicHandlers := map[string]func(sub *pubSubP2P.Subscription){
+		TxMempoolPubSubTopic:  handler.listenForTxMempool,
+		BlockAddedPubSubTopic: handler.listenForBlocksAdded,
 	}
 
 	topicStore := make(map[string]*pubSubP2P.Topic)
@@ -57,10 +106,10 @@ func NewGossipPubSub(ctx context.Context, host host.Host, encoder encoding.Encod
 			}
 
 			// initialize handler
-			if handler, ok := topicHandlers[topicName]; !ok {
+			if handlerFunc, ok := topicHandlers[topicName]; !ok {
 				return nil, fmt.Errorf("unable to initialize handler for topic %s", topicName)
 			} else if ok {
-				go handler(ctx, sub, netSubject)
+				go handlerFunc(sub)
 			}
 		}
 
@@ -68,7 +117,7 @@ func NewGossipPubSub(ctx context.Context, host host.Host, encoder encoding.Encod
 		topicStore[topicName] = topic
 	}
 
-	return &Gossip{
+	return &GossipPubSub{
 		ctx:        ctx,
 		pubsub:     pubsub,
 		encoder:    encoder,
@@ -77,33 +126,11 @@ func NewGossipPubSub(ctx context.Context, host host.Host, encoder encoding.Encod
 	}, nil
 }
 
-func listenForBlocksAdded(ctx context.Context, sub *pubSubP2P.Subscription, _ observer.NetSubject) {
-	for {
-		_, err := sub.Next(ctx)
-		if err != nil {
-			return
-		}
-	}
-
-	//
-}
-
-func listenForTxMempool(ctx context.Context, sub *pubSubP2P.Subscription, netSubject observer.NetSubject) {
-	for {
-		_, err := sub.Next(ctx)
-		if err != nil {
-			return
-		}
-
-		netSubject.NotifyUnconfirmedTxReceived(kernel.Transaction{})
-	}
-}
-
-func (g *Gossip) NotifyBlockAdded(_ kernel.Block) error {
+func (g *GossipPubSub) NotifyBlockAdded(_ kernel.Block) error {
 	return nil
 }
 
-func (g *Gossip) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+func (g *GossipPubSub) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	topic, ok := g.topicStore[TxMempoolPubSubTopic]
 	if !ok {
 		return fmt.Errorf("topic %s not registered", TxMempoolPubSubTopic)
