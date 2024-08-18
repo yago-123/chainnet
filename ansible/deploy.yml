@@ -7,17 +7,21 @@
     app_dir: /var/chainnet
     repo_url: 'https://github.com/yago-123/chainnet.git'
     branch: 'master'
-    go_version: '1.23'
-    go_bin_path: "{{ ansible_env.HOME }}/go/bin"  # Default GOPATH bin directory
-
+    go_version: '1.23.0'
+    go_bin_path: "{{ ansible_env.HOME }}/go/bin"
   tasks:
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+      tags:
+        - update
+
     - name: Ensure necessary packages are installed
       apt:
         name: "{{ item }}"
         state: present
       loop:
         - make
-        - snapd
         - protobuf-compiler
       tags:
         - packages
@@ -40,39 +44,45 @@
       tags:
         - git
 
-    - name: Install Go using snap
-      snap:
-        name: "go"
-        state: present
-        channel: "{{ go_version }}/stable"
-      tags:
-        - go
+    - name: Download Go binary
+      get_url:
+        url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
+        dest: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
+
+    - name: Extract Go binary
+      unarchive:
+        src: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
+        dest: "/usr/local"
+        remote_src: yes
+
+    - name: Set up Go environment variables
+      lineinfile:
+        path: /home/go/.bash_profile
+        line: "{{ item }}"
+        create: yes
+      with_items:
+        - 'export GOROOT=/usr/local/go'
+        - 'export PATH=$PATH:/usr/local/go/bin'
 
     - name: Install protoc-gen-go
       command: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
       environment:
-        GOPATH: "{{ ansible_env.HOME }}/go"
+        PATH: "$PATH:/usr/local/go/bin"
       tags:
         - go-tools
 
     - name: Install protoc-gen-go-grpc
       command: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
       environment:
-        GOPATH: "{{ ansible_env.HOME }}/go"
+        PATH: "$PATH:/usr/local/go/bin"
       tags:
         - go-tools
-
-    - name: Update PATH to include Go binaries
-      lineinfile:
-        path: /etc/environment
-        line: 'PATH="{{ ansible_env.PATH }}:{{ go_bin_path }}"'
-        create: yes
-      tags:
-        - environment
 
     - name: Build the application with make
       command: make node
       args:
         chdir: "{{ app_dir }}"
+      environment:
+        PATH: "$PATH:/usr/local/go/bin:/usr/bin:{{ ansible_env.HOME }}/go/bin"
       tags:
         - build
