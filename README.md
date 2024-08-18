@@ -16,14 +16,8 @@ Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buff
 $ sysctl -w net.core.rmem_max=7500000
 $ sysctl -w net.core.wmem_max=7500000
 ```
-## Build
-Running the `chainnet-miner` node:
-```bash
-$ make
-```
-
 ## Configuration
-Default configuration: 
+Default configuration:
 ```yaml
 node-seeds: [                       # List of seed nodes
   "seed-1.chainnet.yago.ninja",
@@ -41,43 +35,58 @@ p2p-conn-timeout: "60s"             # Maximum duration of a connection
 p2p-write-timeout: "20s"            # Maximum duration of a write stream
 p2p-read-timeout: "20s"             # Maximum duration of a read stream
 p2p-buffer-size: 4096               # Read buffer over the network
+```
+## Build
+Building the `chainnet-node`: 
+```bash
+$ make node
+```
+
+Building the `chainnet-miner` node:
+```bash
+$ make miner
+```
+
+Building a `chainnet-nespv` wallet:
+```bash
+$ make nespv 
+````
+
+## Running
+### Local 
+Running the `chainnet-node`: 
+```bash
+$ ./bin/chainnet-node --config default-config.yaml
+```
+
+Running the `chainnet-miner`: 
+```bash 
+$ ./bin/chainnet-miner --config default-config.yaml
+```
+
+Running the `chainnet-nespv` wallet: 
+```bash
 
 ```
 
-## Deploy seed node with Ansible 
-Deploy seed node: 
+### Remote nodes with Ansible
+Running the `chainnet-node` on a remote node:
 ```bash
 $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node config=../default-config.yaml"
 ```
 
-Deploy seed node as miner: 
+Running the `chainnet-miner` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../default-config.yaml"
+ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../default-config.yaml"
 ```
 
-## Run
-Running the miner:
-```bash
-$ ./bin/chainnet-miner 
-```
-
-Running the node:
-```bash
-
-```
-
-Running `nespv` wallet:
-```bash
-
-```
-
-## Run in Kubernetes 
-Deploy the helm chart: 
+### Run in Kubernetes 
+Deploy the helm chart:
 ```bash
 $ helm install chainnet ./helm
 ```
 
-Uninstall the helm chart: 
+Uninstall the helm chart:
 ```bash
 $ helm uninstall chainnet
 ```
