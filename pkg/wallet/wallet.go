@@ -8,7 +8,6 @@ import (
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
-	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p"
 	"chainnet/pkg/script"
 	rpnInter "chainnet/pkg/script/interpreter"
@@ -83,7 +82,7 @@ func NewWallet(
 	}, nil
 }
 
-func (w *Wallet) InitNetwork(_ observer.NetSubject) error {
+func (w *Wallet) InitNetwork() error {
 	var p2pNet *p2p.WalletP2P
 
 	// check if the network is supposed to be enabled
