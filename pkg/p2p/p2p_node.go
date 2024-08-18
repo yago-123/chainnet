@@ -51,7 +51,7 @@ type NodeP2P struct {
 	logger *logrus.Logger
 }
 
-func NewP2PNode(
+func NewNodeP2P(
 	ctx context.Context,
 	cfg *config.Config,
 	netSubject observer.NetSubject,
