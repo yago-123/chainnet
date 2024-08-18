@@ -9,8 +9,9 @@ import (
 	"chainnet/pkg/kernel"
 	"context"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"time"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 const (

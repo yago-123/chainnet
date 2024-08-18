@@ -50,7 +50,7 @@ func (w *Wallet) ID() string {
 }
 
 func NewWallet(
-	config *config.Config,
+	cfg *config.Config,
 	version []byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
@@ -75,13 +75,15 @@ func NewWallet(
 		validator:       validator,
 		id:              id,
 		signer:          signer,
+		p2pEncoder:      p2pEncoder,
 		walletHasher:    walletHasher,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
+		cfg:             cfg,
 	}, nil
 }
 
-func (w *Wallet) InitNetwork(netSubject observer.NetSubject) error {
+func (w *Wallet) InitNetwork(_ observer.NetSubject) error {
 	var p2pNet *p2p.WalletP2P
 
 	// check if the network is supposed to be enabled
