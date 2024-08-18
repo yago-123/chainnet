@@ -49,8 +49,7 @@ type Blockchain struct {
 	p2pNet       *p2p.NodeP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
-
-	p2pEncoder encoding.Encoding
+	p2pEncoder   encoding.Encoding
 
 	logger *logrus.Logger
 	cfg    *config.Config

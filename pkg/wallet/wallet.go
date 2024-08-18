@@ -1,13 +1,18 @@
 package wallet
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/observer"
+	"chainnet/pkg/p2p"
 	"chainnet/pkg/script"
 	rpnInter "chainnet/pkg/script/interpreter"
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,19 +27,37 @@ type Wallet struct {
 	id []byte
 
 	validator consensus.LightValidator
-	signer    sign.Signature
+	// signer used for signing transactions and creating pub and private keys
+	signer sign.Signature
+
+	p2pActive    bool
+	p2pNet       *p2p.WalletP2P
+	p2pCtx       context.Context
+	p2pCancelCtx context.CancelFunc
+	p2pEncoder   encoding.Encoding
+
 	// hasher used for deriving wallet related values
 	walletHasher hash.Hashing
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
 	interpreter     *rpnInter.RPNInterpreter
+
+	cfg *config.Config
 }
 
 func (w *Wallet) ID() string {
 	return string(w.id)
 }
 
-func NewWallet(version []byte, validator consensus.LightValidator, signer sign.Signature, walletHasher hash.Hashing, consensusHasher hash.Hashing) (*Wallet, error) {
+func NewWallet(
+	config *config.Config,
+	version []byte,
+	validator consensus.LightValidator,
+	signer sign.Signature,
+	walletHasher hash.Hashing,
+	consensusHasher hash.Hashing,
+	p2pEncoder encoding.Encoding,
+) (*Wallet, error) {
 	publicKey, privateKey, err := signer.NewKeyPair()
 	if err != nil {
 		return nil, err
@@ -56,6 +79,37 @@ func NewWallet(version []byte, validator consensus.LightValidator, signer sign.S
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
 	}, nil
+}
+
+func (w *Wallet) InitNetwork(netSubject observer.NetSubject) error {
+	var p2pNet *p2p.WalletP2P
+
+	// check if the network is supposed to be enabled
+	if !w.cfg.P2PEnabled {
+		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+	}
+
+	// check if the network has been initialized before
+	if w.p2pActive {
+		return fmt.Errorf("p2p network is already active")
+	}
+
+	// create new P2P node
+	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
+	p2pNet, err := p2p.NewWalletP2P(w.p2pCtx, w.cfg, w.p2pEncoder)
+	if err != nil {
+		return fmt.Errorf("could not create wallet p2p network: %w", err)
+	}
+
+	// start the p2p node
+	if err = p2pNet.Start(); err != nil {
+		return fmt.Errorf("error starting p2p node: %w", err)
+	}
+
+	w.p2pNet = p2pNet
+	w.p2pActive = true
+
+	return nil
 }
 
 // GetAddress returns one wallet address
