@@ -43,7 +43,7 @@ p2p-buffer-size: 4096               # Read buffer over the network
 
 ## Deploy seed node with Ansible 
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "config=default-config.yaml"
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml  -e "config=../default-config.yaml"
 ```
 
 ## Run

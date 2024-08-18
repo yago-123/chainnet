@@ -81,7 +81,7 @@
     - name: Copy the configuration file
       copy:
         src: "{{ config }}"
-        dest: "{{ app_dir }}/{{ config }}"
+        dest: "{{ app_dir }}/config.yaml"
         mode: '0644'
 
     - name: Template systemd service file
