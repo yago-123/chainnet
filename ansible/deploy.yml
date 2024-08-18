@@ -9,7 +9,8 @@
     branch: 'master'
     go_version: '1.23.0'
     go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
-    go_bin_path: /usr/local/go/bin
+    go_code: /usr/local
+    go_bin_path: "{{ go_code }}/go/bin"
 
   tasks:
     - name: Ensure apt is up to date and install necessary packages
@@ -51,22 +52,19 @@
         - name: Extract Go binary
           unarchive:
             src: "{{ go_tar }}"
-            dest: "/usr/local"
+            dest: "{{ go_code }}"
             remote_src: yes
       tags:
         - go
 
     - name: Install Go tools
       block:
-        - name: Install protoc-gen-go
-          shell: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        - name: Install protoc-gen-go and protoc-gen-go-grpc
+          shell: |
+            go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+            go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
           environment:
-            PATH: "{{ go_bin_path }}:{{ ansible_env.PATH }}"
-
-        - name: Install protoc-gen-go-grpc
-          shell: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-          environment:
-            PATH: "{{ go_bin_path }}:{{ ansible_env.PATH }}"
+            PATH: "{{ go_bin_path }}"
       tags:
         - go-tools
 
@@ -75,6 +73,6 @@
       args:
         chdir: "{{ app_dir }}"
       environment:
-        PATH: "{{ ansible_env.PATH }}:{{ go_bin_path }}:/usr/bin:{{ ansible_env.HOME }}/go/bin"
+        PATH: "/usr/bin:{{ ansible_env.PATH }}:{{ go_bin_path }}:{{ ansible_env.HOME }}/go/bin"
       tags:
         - build
