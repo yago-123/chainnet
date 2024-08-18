@@ -44,12 +44,12 @@ p2p-buffer-size: 4096               # Read buffer over the network
 ## Deploy seed node with Ansible 
 Deploy seed node: 
 ```bash
-$ ansible-playbook deploy.yml -e "build_target=node service_name=node service_file=node.service config=../default-config.yml"
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "build_target=node service_name=node service_file=node.service config=../default-config.yml"
 ```
 
 Deploy seed node as miner: 
 ```bash
-$ ansible-playbook deploy.yml -e "build_target=miner service_name=miner service_file=miner.service config=../default-config.yml"
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "build_target=miner service_name=miner service_file=miner.service config=../default-config.yml"
 ```
 
 ## Run
