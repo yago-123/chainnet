@@ -3,6 +3,7 @@ package p2p
 import (
 	"chainnet/config"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/kernel"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p/discovery"
 	"chainnet/pkg/p2p/pubsub"
@@ -61,7 +62,7 @@ func NewWalletP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, host, observer.NewNetSubject(), []string{})
+	pubsub, err := pubsub.NewGossipPubSub(ctx, host, encoder, observer.NewNetSubject(), []string{}, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
@@ -87,4 +88,8 @@ func (n *WalletP2P) Stop() error {
 	}
 
 	return n.host.Close()
+}
+
+func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+	return n.pubsub.SendTransaction(ctx, tx)
 }

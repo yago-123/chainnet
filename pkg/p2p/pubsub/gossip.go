@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/observer"
 	"context"
@@ -25,35 +26,40 @@ type Gossip struct {
 	ctx    context.Context
 	pubsub *pubSubP2P.PubSub
 
+	encoder encoding.Encoding
+
 	netSubject observer.NetSubject
 	topicStore map[string]*pubSubP2P.Topic
 }
 
-func NewGossipPubSub(ctx context.Context, host host.Host, netSubject observer.NetSubject, topics []string) (*Gossip, error) {
-	pubsub, errGossip := pubSubP2P.NewGossipSub(ctx, host)
-	if errGossip != nil {
-		return nil, fmt.Errorf("failed to create pubsub module: %w", errGossip)
+func NewGossipPubSub(ctx context.Context, host host.Host, encoder encoding.Encoding, netSubject observer.NetSubject, topics []string, enableSubscribe bool) (*Gossip, error) {
+	pubsub, err := pubSubP2P.NewGossipSub(ctx, host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
 	topicStore := make(map[string]*pubSubP2P.Topic)
-	// join the topics and subscribe
+	// join the topics and subscribe/initialize handler if required
 	for _, topicName := range topics {
-		topic, err := pubsub.Join(topicName)
-		if err != nil {
-			return nil, fmt.Errorf("error joining pubsub topic %s: %w", topicName, err)
+		topic, errJoin := pubsub.Join(topicName)
+		if errJoin != nil {
+			return nil, fmt.Errorf("error joining pubsub topic %s: %w", topicName, errJoin)
 		}
 
-		// subscribe to the topic to listen
-		sub, err := topic.Subscribe()
-		if err != nil {
-			return nil, fmt.Errorf("error subscribing to pubsub topic %s: %w", topicName, err)
-		}
+		//
+		if enableSubscribe {
+			// subscribe to the topic to listen
+			sub, errSub := topic.Subscribe()
+			if errSub != nil {
+				return nil, fmt.Errorf("error subscribing to pubsub topic %s: %w", topicName, errSub)
+			}
 
-		// initialize handler
-		if handler, ok := topicHandlers[topicName]; !ok {
-			return nil, fmt.Errorf("unable to initialize handler for topic %s", topicName)
-		} else if ok {
-			go handler(ctx, sub, netSubject)
+			// initialize handler
+			if handler, ok := topicHandlers[topicName]; !ok {
+				return nil, fmt.Errorf("unable to initialize handler for topic %s", topicName)
+			} else if ok {
+				go handler(ctx, sub, netSubject)
+			}
 		}
 
 		// save the topics
@@ -63,6 +69,7 @@ func NewGossipPubSub(ctx context.Context, host host.Host, netSubject observer.Ne
 	return &Gossip{
 		ctx:        ctx,
 		pubsub:     pubsub,
+		encoder:    encoder,
 		netSubject: netSubject,
 		topicStore: topicStore,
 	}, nil
@@ -92,4 +99,18 @@ func listenForTxMempool(ctx context.Context, sub *pubSubP2P.Subscription, netSub
 
 func (g *Gossip) NotifyBlockAdded(_ kernel.Block) error {
 	return nil
+}
+
+func (g *Gossip) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+	topic, ok := g.topicStore[TxMempoolPubSubTopic]
+	if !ok {
+		return fmt.Errorf("topic %s not registered", TxMempoolPubSubTopic)
+	}
+
+	data, err := g.encoder.SerializeTransaction(tx)
+	if err != nil {
+		return fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	return topic.Publish(ctx, data)
 }
