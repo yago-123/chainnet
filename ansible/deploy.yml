@@ -12,6 +12,9 @@
     go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
     go_code: /usr/local
     go_bin_path: "{{ go_code }}/go/bin"
+    build_target: "{{ build_target | default('node') }}"
+    service_name: "{{ service_name | default('node') }}"
+    service_file: "{{ service_file | default('node.service') }}"
 
   tasks:
     - name: Ensure apt is up to date and install necessary packages
@@ -70,7 +73,7 @@
         - go-tools
 
     - name: Build the application with make
-      shell: make node
+      shell: make {{ build_target }}
       args:
         chdir: "{{ app_dir }}"
       environment:
@@ -86,20 +89,20 @@
 
     - name: Template systemd service file
       template:
-        src: node.service
-        dest: /etc/systemd/system/node.service
+        src: "{{ service_file }}"
+        dest: "/etc/systemd/system/{{ service_name }}.service"
         mode: '0644'
 
     - name: Reload systemd daemon
       command: systemctl daemon-reload
 
-    - name: Enable node service
+    - name: Enable service
       systemd:
-        name: node
+        name: "{{ service_name }}"
         enabled: yes
 
-    - name: Start node service
+    - name: Start service
       systemd:
-        name: node
+        name: "{{ service_name }}"
         state: started
 
