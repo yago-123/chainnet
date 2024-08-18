@@ -8,22 +8,19 @@
     repo_url: 'https://github.com/yago-123/chainnet.git'
     branch: 'master'
     go_version: '1.23.0'
-    go_bin_path: "{{ ansible_env.HOME }}/go/bin"
+    go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
+    go_bin_path: /usr/local/go/bin
+
   tasks:
-    - name: Update apt package index
+    - name: Ensure apt is up to date and install necessary packages
       apt:
         update_cache: yes
+        name:
+          - make
+          - protobuf-compiler
+        state: present
       tags:
         - update
-
-    - name: Ensure necessary packages are installed
-      apt:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - make
-        - protobuf-compiler
-      tags:
         - packages
 
     - name: Create application directory
@@ -44,45 +41,49 @@
       tags:
         - git
 
-    - name: Download Go binary
-      get_url:
-        url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
-        dest: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
+    - name: Download and install Go binary
+      block:
+        - name: Download Go binary
+          get_url:
+            url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
+            dest: "{{ go_tar }}"
 
-    - name: Extract Go binary
-      unarchive:
-        src: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
-        dest: "/usr/local"
-        remote_src: yes
+        - name: Extract Go binary
+          unarchive:
+            src: "{{ go_tar }}"
+            dest: "/usr/local"
+            remote_src: yes
 
-    - name: Set up Go environment variables
-      lineinfile:
-        path: /home/go/.bash_profile
-        line: "{{ item }}"
-        create: yes
-      with_items:
-        - 'export GOROOT=/usr/local/go'
-        - 'export PATH=$PATH:/usr/local/go/bin'
-
-    - name: Install protoc-gen-go
-      command: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-      environment:
-        PATH: "$PATH:/usr/local/go/bin"
+        - name: Set up Go environment variables
+          lineinfile:
+            path: /home/go/.bash_profile
+            line: "{{ item }}"
+            create: yes
+          loop:
+            - 'export GOROOT=/usr/local/go'
+            - 'export PATH=$PATH:/usr/local/go/bin'
       tags:
-        - go-tools
+        - go
 
-    - name: Install protoc-gen-go-grpc
-      command: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-      environment:
-        PATH: "$PATH:/usr/local/go/bin"
+    - name: Install Go tools
+      block:
+        - name: Install protoc-gen-go
+          shell: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          environment:
+            PATH: "{{ go_bin_path }}:{{ ansible_env.PATH }}"
+
+        - name: Install protoc-gen-go-grpc
+          shell: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          environment:
+            PATH: "{{ go_bin_path }}:{{ ansible_env.PATH }}"
       tags:
         - go-tools
 
     - name: Build the application with make
-      command: make node
+      shell: make node
       args:
         chdir: "{{ app_dir }}"
       environment:
-        PATH: "$PATH:/usr/local/go/bin:/usr/bin:{{ ansible_env.HOME }}/go/bin"
+        PATH: "{{ go_bin_path }}:/usr/bin:{{ ansible_env.HOME }}/go/bin:{{ ansible_env.PATH }}"
       tags:
         - build
