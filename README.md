@@ -13,8 +13,8 @@ $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
 Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes) P2P communication:  
 ```bash
-$ sysctl -w net.core.rmem_max=7500000
-$ sysctl -w net.core.wmem_max=7500000
+$ sudo sysctl -w net.core.rmem_max=7500000
+$ sudo sysctl -w net.core.wmem_max=7500000
 ```
 ## Configuration
 Default configuration:
@@ -77,7 +77,7 @@ $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node confi
 
 Running the `chainnet-miner` on a remote node:
 ```bash
-ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../default-config.yaml"
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../default-config.yaml"
 ```
 
 ### Run in Kubernetes 

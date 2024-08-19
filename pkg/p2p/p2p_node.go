@@ -190,7 +190,11 @@ func NewNodeP2P(
 	// create host
 	host, err := libp2p.New(
 		libp2p.ConnectionManager(connMgr),
+		libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0"),
+		libp2p.NATPortMap(),
+		libp2p.EnableRelay(),
 	)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
