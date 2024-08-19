@@ -1,8 +1,13 @@
-node-seeds: [                       # List of seed nodes
-  "seed-1.chainnet.yago.ninja",
-  "seed-2.chainnet.yago.ninja",
-  "seed-3.chainnet.yago.ninja",
-]
+node-seeds:                         # List of seed nodes
+  - address: "seed-1.chainnet.yago.ninja"
+    peerID: "peerID-1"
+    port: 8080
+  - address: "seed-2.chainnet.yago.ninja"
+    peerID: "peerID-2"
+    port: 8081
+  - address: "seed-3.chainnet.yago.ninja"
+    peerID: "peerID-3"
+    port: 8082
 storage-file: "bin/miner-storage"   # File used for persisting the chain status
 pub-key:                            # Public key used for receiving mining rewards
   "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"

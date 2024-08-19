@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -29,10 +31,6 @@ const (
 const (
 	DefaultConfigFile = ""
 
-	DefaultNodeSeed1 = "seed-1.chainnet.yago.ninja"
-	DefaultNodeSeed2 = "seed-2.chainnet.yago.ninja"
-	DefaultNodeSeed3 = "seed-3.chainnet.yago.ninja"
-
 	DefaultChainnetStorage = "chainnet-storage"
 	DefaultPubKey          = ""
 	DefaultMiningInterval  = 1 * time.Minute
@@ -45,9 +43,21 @@ const (
 	DefaultP2PBufferSize   = 8192
 )
 
+const (
+	SeedNodeNumberArguments = 3
+)
+
+// SeedNode represents a node in the configuration with address, peerID, and port.
+type SeedNode struct {
+	Address string `mapstructure:"address"`
+	PeerID  string `mapstructure:"peerID"`
+	Port    int    `mapstructure:"port"`
+}
+
+// Config holds the configuration for the application.
 type Config struct {
 	Logger          *logrus.Logger
-	NodeSeeds       []string      `mapstructure:"node-seeds"`
+	NodeSeeds       []SeedNode    `mapstructure:"node-seeds"`
 	StorageFile     string        `mapstructure:"storage-file"`
 	PubKey          string        `mapstructure:"pub-key"`
 	MiningInterval  time.Duration `mapstructure:"mining-interval"`
@@ -60,10 +70,11 @@ type Config struct {
 	P2PBufferSize   uint          `mapstructure:"p2p-buffer-size"`
 }
 
+// NewConfig creates a new Config with default values.
 func NewConfig() *Config {
 	return &Config{
 		Logger:          logrus.New(),
-		NodeSeeds:       []string{DefaultNodeSeed1, DefaultNodeSeed2, DefaultNodeSeed3},
+		NodeSeeds:       []SeedNode{},
 		StorageFile:     DefaultChainnetStorage,
 		PubKey:          DefaultPubKey,
 		MiningInterval:  DefaultMiningInterval,
@@ -77,10 +88,7 @@ func NewConfig() *Config {
 	}
 }
 
-func (c *Config) SetP2PStatus(enable bool) {
-	c.P2PEnabled = enable
-}
-
+// LoadConfig loads configuration from the specified file.
 func LoadConfig(cfgFile string) (*Config, error) {
 	var cfg Config
 
@@ -104,13 +112,14 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	return &cfg, nil
 }
 
+// InitConfig initializes configuration, loading from file and applying flags.
 func InitConfig(cmd *cobra.Command) *Config {
 	cfg, err := LoadConfig(GetConfigFilePath(cmd))
 	if err != nil {
 		cfg = NewConfig()
 
 		cfg.Logger.Infof("unable to load config file: %v", err)
-		cfg.Logger.Infof("relying in default configuration")
+		cfg.Logger.Infof("relying on default configuration")
 	}
 
 	ApplyFlagsToConfig(cmd, cfg)
@@ -118,9 +127,10 @@ func InitConfig(cmd *cobra.Command) *Config {
 	return cfg
 }
 
+// AddConfigFlags adds flags for configuration options to the command.
 func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
-	cmd.Flags().StringArray(KeyNodeSeeds, []string{DefaultNodeSeed1, DefaultNodeSeed2, DefaultNodeSeed3}, "Node seeds used to synchronize during startup")
+	cmd.Flags().StringArray(KeyNodeSeeds, []string{}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().String(KeyPubKey, DefaultPubKey, "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
@@ -146,11 +156,11 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyP2PBufferSize, cmd.Flags().Lookup(KeyP2PBufferSize))
 }
 
+// GetConfigFilePath retrieves the configuration file path from command flags.
 func GetConfigFilePath(cmd *cobra.Command) string {
 	if cmd.Flags().Changed(KeyConfigFile) {
 		return viper.GetString(KeyConfigFile)
 	}
-
 	return ""
 }
 
@@ -158,7 +168,13 @@ func GetConfigFilePath(cmd *cobra.Command) string {
 func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	// todo(): use flag-to-config mapping function
 	if cmd.Flags().Changed(KeyNodeSeeds) {
-		cfg.NodeSeeds = viper.GetStringSlice(KeyNodeSeeds)
+		nodeSeeds := viper.GetStringSlice(KeyNodeSeeds)
+		seeds, err := parseSeedNodes(nodeSeeds)
+		if err != nil {
+			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
+		} else {
+			cfg.NodeSeeds = seeds
+		}
 	}
 	if cmd.Flags().Changed(KeyStorageFile) {
 		cfg.StorageFile = viper.GetString(KeyStorageFile)
@@ -190,4 +206,24 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyP2PBufferSize) {
 		cfg.P2PBufferSize = viper.GetUint(KeyP2PBufferSize)
 	}
+}
+
+// parseSeedNodes parses seed nodes from a slice of strings and returns a slice of SeedNode structs
+func parseSeedNodes(seedNodes []string) ([]SeedNode, error) {
+	var seeds []SeedNode
+	for _, nodeSeed := range seedNodes {
+		parts := strings.SplitN(nodeSeed, ":", SeedNodeNumberArguments)
+		if len(parts) == SeedNodeNumberArguments {
+			// make sure that seed nodes have all the fields required
+			port, err := strconv.Atoi(parts[2])
+			if err != nil {
+				return nil, err
+			}
+			seeds = append(seeds, SeedNode{Address: parts[0], PeerID: parts[1], Port: port})
+		} else if len(parts) != SeedNodeNumberArguments {
+			// otherwise return an error
+			return nil, fmt.Errorf("invalid seed node format: %s", nodeSeed)
+		}
+	}
+	return seeds, nil
 }

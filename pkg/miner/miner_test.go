@@ -132,11 +132,10 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 		Return([]byte{}, storage.ErrNotFound)
 
 	cfg := config.NewConfig()
-	cfg.SetP2PStatus(false)
-
 	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
-	cfg.PubKey = "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
+
+	cfg.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"
 	miner, err := NewMiner(cfg, chain, hash.SHA256)
 	require.NoError(t, err)
 
