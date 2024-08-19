@@ -12,7 +12,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -231,6 +230,23 @@ func NewNodeP2P(
 }
 
 func (n *NodeP2P) Start() error {
+	// todo(): not the correct place for connecting to seeds
+	for _, seed := range n.cfg.NodeSeeds {
+		addr, err := peer.AddrInfoFromString(
+			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to parse multiaddress: %v", err)
+		}
+
+		err = n.host.Connect(n.ctx, *addr)
+		if err != nil {
+			n.cfg.Logger.Errorf("failed to connect to seed node %s: %v", addr, err)
+		} else if err == nil {
+			n.cfg.Logger.Debugf("connected to seed node %s", addr)
+		}
+	}
+
 	return n.disco.Start()
 }
 

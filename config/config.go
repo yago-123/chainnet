@@ -47,14 +47,14 @@ const (
 	SeedNodeNumberArguments = 3
 )
 
-// SeedNode represents a node in the configuration with address, peerID, and port.
+// SeedNode represents a node in the configuration with address, peerID, and port
 type SeedNode struct {
 	Address string `mapstructure:"address"`
 	PeerID  string `mapstructure:"peerID"`
 	Port    int    `mapstructure:"port"`
 }
 
-// Config holds the configuration for the application.
+// Config holds the configuration for the application
 type Config struct {
 	Logger          *logrus.Logger
 	NodeSeeds       []SeedNode    `mapstructure:"node-seeds"`
@@ -70,7 +70,7 @@ type Config struct {
 	P2PBufferSize   uint          `mapstructure:"p2p-buffer-size"`
 }
 
-// NewConfig creates a new Config with default values.
+// NewConfig creates a new Config with default values
 func NewConfig() *Config {
 	return &Config{
 		Logger:          logrus.New(),
@@ -88,7 +88,7 @@ func NewConfig() *Config {
 	}
 }
 
-// LoadConfig loads configuration from the specified file.
+// LoadConfig loads configuration from the specified file
 func LoadConfig(cfgFile string) (*Config, error) {
 	var cfg Config
 
@@ -112,7 +112,7 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	return &cfg, nil
 }
 
-// InitConfig initializes configuration, loading from file and applying flags.
+// InitConfig initializes configuration, loading from file and applying flags
 func InitConfig(cmd *cobra.Command) *Config {
 	cfg, err := LoadConfig(GetConfigFilePath(cmd))
 	if err != nil {
@@ -127,8 +127,9 @@ func InitConfig(cmd *cobra.Command) *Config {
 	return cfg
 }
 
-// AddConfigFlags adds flags for configuration options to the command.
+// AddConfigFlags adds flags for configuration options to the command
 func AddConfigFlags(cmd *cobra.Command) {
+	// define flags
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().StringArray(KeyNodeSeeds, []string{}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
@@ -142,6 +143,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Duration(KeyP2PReadTimeout, DefaultP2PReadTimeout, "P2P read timeout")
 	cmd.Flags().Uint(KeyP2PBufferSize, DefaultP2PBufferSize, "P2P buffer size for reading from stream")
 
+	// bind flags to viper
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyNodeSeeds, cmd.Flags().Lookup(KeyNodeSeeds))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
@@ -156,7 +158,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyP2PBufferSize, cmd.Flags().Lookup(KeyP2PBufferSize))
 }
 
-// GetConfigFilePath retrieves the configuration file path from command flags.
+// GetConfigFilePath retrieves the configuration file path from command flags
 func GetConfigFilePath(cmd *cobra.Command) string {
 	if cmd.Flags().Changed(KeyConfigFile) {
 		return viper.GetString(KeyConfigFile)
