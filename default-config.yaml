@@ -1,6 +1,6 @@
 node-seeds:                         # List of seed nodes
   - address: "seed-1.chainnet.yago.ninja"
-    peer-id: "12D3KooWAcv3PD6otWzm2rjquUEVfsp4jmjVVyrFvX1dBowpwBQs"
+    peer-id: "12D3KooWDzS83A8AXBVBo8pMkFvog1cqgLE2uWfrv57hAuX3bcaQ"
     port: 9100
 #  - address: "seed-2.chainnet.yago.ninja"
 #    peerID: "peerID-2"
@@ -11,7 +11,7 @@ node-seeds:                         # List of seed nodes
 storage-file: "bin/miner-storage"   # File used for persisting the chain status
 pub-key:                            # Public key used for receiving mining rewards
   "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
-mining-interval: "10s"              # Interval between block creation
+mining-interval: "1000s"              # Interval between block creation
 p2p-enabled: true                   # Enable or disable network communication
 p2p-peer-pub-key: "miner"           # Peer identity (leave empty to generate a random one)
 p2p-peer-port: 9100                 # Port used for network communication with other peers

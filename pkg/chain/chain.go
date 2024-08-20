@@ -148,6 +148,12 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 	bc.p2pNet = p2pNet
 	bc.p2pActive = true
 
+	// todo() relocate this, in general this InitNetwork method seems OFF
+	// connect to node seeds
+	if err = p2pNet.ConnectToSeeds(); err != nil {
+		return fmt.Errorf("error connecting to seeds: %w", err)
+	}
+
 	return nil
 }
 
@@ -164,7 +170,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 
 	// STARTING FROM HERE: the code can fail without becoming an issue, the header has been already commited
 	// no need to store the block itself, will be commited to store as part of the observer call
-	bc.logger.Debugf("block %x added to the chain", block.Hash)
+	bc.logger.Debugf("added to the chain block %x with height %d", block.Hash, block.Header.Height)
 
 	// update the last block and save the block header
 	bc.lastHeight++

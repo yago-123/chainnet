@@ -232,7 +232,18 @@ func NewNodeP2P(
 }
 
 func (n *NodeP2P) Start() error {
-	// todo(): not the correct place for connecting to seeds
+	return n.disco.Start()
+}
+
+func (n *NodeP2P) Stop() error {
+	if err := n.disco.Stop(); err != nil {
+		return err
+	}
+
+	return n.host.Close()
+}
+
+func (n *NodeP2P) ConnectToSeeds() error {
 	for _, seed := range n.cfg.NodeSeeds {
 		addr, err := peer.AddrInfoFromString(
 			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
@@ -244,20 +255,14 @@ func (n *NodeP2P) Start() error {
 		err = n.host.Connect(n.ctx, *addr)
 		if err != nil {
 			n.cfg.Logger.Errorf("failed to connect to seed node %s: %v", addr, err)
-		} else if err == nil {
-			n.cfg.Logger.Debugf("connected to seed node %s", addr)
+			continue
 		}
+
+		n.cfg.Logger.Infof("connected to seed node %s", addr.ID.String())
+		n.netSubject.NotifyNodeDiscovered(addr.ID)
 	}
 
-	return n.disco.Start()
-}
-
-func (n *NodeP2P) Stop() error {
-	if err := n.disco.Stop(); err != nil {
-		return err
-	}
-
-	return n.host.Close()
+	return nil
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
