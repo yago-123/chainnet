@@ -2,4 +2,5 @@ __debug_bin*
 .idea
 bin/
 *.pb.go
+*.pem
 _fixture/

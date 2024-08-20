@@ -3,6 +3,7 @@ package p2p
 import (
 	"chainnet/config"
 	"chainnet/pkg/chain/explorer"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/observer"
@@ -12,8 +13,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/libp2p/go-libp2p"
+	p2pConfig "github.com/libp2p/go-libp2p/config"
+	p2pCrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -179,6 +181,9 @@ func NewNodeP2P(
 	encoder encoding.Encoding,
 	explorer *explorer.Explorer,
 ) (*NodeP2P, error) {
+	// options represent the configuration options for the libp2p host
+	options := []p2pConfig.Option{}
+
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2P.MinNumConn),
@@ -188,12 +193,35 @@ func NewNodeP2P(
 		return nil, fmt.Errorf("failed to create connection manager during peer discovery: %w", err)
 	}
 
+	// add connection manager and listening address to options
+	options = append(options, libp2p.ConnectionManager(connMgr))
+	options = append(options, libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2P.PeerPort)))
+
+	// add identity if the keys exists
+	if cfg.P2P.Identity.PrivKeyPath != "" {
+		privKeyBytes, errKey := util.ReadECDSAPemPrivateKey(cfg.P2P.Identity.PrivKeyPath)
+		if errKey != nil {
+			return nil, fmt.Errorf("error reading private key: %w", errKey)
+		}
+
+		priv, errKey := util.ConvertBytesToECDSAPriv(privKeyBytes)
+		if errKey != nil {
+			return nil, fmt.Errorf("error converting private key: %w", errKey)
+		}
+
+		p2pKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
+		if errKey != nil {
+			return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
+		}
+
+		// add peer identity to options
+		options = append(options, libp2p.Identity(p2pKey))
+	}
+
 	// create host
 	host, err := libp2p.New(
-		libp2p.ConnectionManager(connMgr),
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2P.PeerPort)),
+		options...,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
