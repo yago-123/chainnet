@@ -86,7 +86,7 @@ func (w *Wallet) InitNetwork() error {
 	var p2pNet *p2p.WalletP2P
 
 	// check if the network is supposed to be enabled
-	if !w.cfg.P2PEnabled {
+	if !w.cfg.P2P.Enabled {
 		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
 	}
 

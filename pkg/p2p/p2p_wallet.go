@@ -39,8 +39,8 @@ func NewWalletP2P(
 ) (*WalletP2P, error) {
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
-		int(cfg.P2PMinNumConn),
-		int(cfg.P2PMaxNumConn),
+		int(cfg.P2P.MinNumConn),
+		int(cfg.P2P.MaxNumConn),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection manager during peer discovery: %w", err)

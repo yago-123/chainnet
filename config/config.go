@@ -18,15 +18,16 @@ const (
 	KeyStorageFile     = "storage-file"
 	KeyPubKey          = "pub-key"
 	KeyMiningInterval  = "mining-interval"
-	KeyP2PEnabled      = "p2p-enabled"
-	KeyP2PPeerPubKey   = "p2p-peer-pub-key"
-	KeyP2PPeerPort     = "p2p-peer-port"
-	KeyP2PMinNumConn   = "p2p-min-conn"
-	KeyP2PMaxNumConn   = "p2p-max-conn"
-	KeyP2PConnTimeout  = "p2p-conn-timeout"
-	KeyP2PWriteTimeout = "p2p-write-timeout" //nolint:gosec // no hardcoded credential
-	KeyP2PReadTimeout  = "p2p-read-timeout"
-	KeyP2PBufferSize   = "p2p-buffer-size"
+	KeyP2PEnabled      = "enabled"
+	KeyP2PPeerPubKey   = "pub-key-path"
+	KeyP2PPeerPrivKey  = "priv-key-path"
+	KeyP2PPeerPort     = "peer-port"
+	KeyP2PMinNumConn   = "min-conn"
+	KeyP2PMaxNumConn   = "max-conn"
+	KeyP2PConnTimeout  = "conn-timeout"
+	KeyP2PWriteTimeout = "write-timeout"
+	KeyP2PReadTimeout  = "read-timeout"
+	KeyP2PBufferSize   = "buffer-size"
 )
 
 // default config values
@@ -34,10 +35,8 @@ const (
 	DefaultConfigFile = ""
 
 	DefaultChainnetStorage = "chainnet-storage"
-	DefaultPubKey          = ""
 	DefaultMiningInterval  = 1 * time.Minute
 	DefaultP2PEnabled      = true
-	DefaultP2PPeerPubKey   = ""
 	DefaultP2PPeerPort     = 9100
 	DefaultP2PMinNumConn   = 1
 	DefaultP2PMaxNumConn   = 100
@@ -58,39 +57,56 @@ type SeedNode struct {
 	Port    int    `mapstructure:"port"`
 }
 
+// IdentityConfig holds the identity-specific configuration
+type IdentityConfig struct {
+	PubKeyPath  string `mapstructure:"pub-key-path"`
+	PrivKeyPath string `mapstructure:"priv-key-path"`
+}
+
+// P2PConfig holds P2P-specific configuration
+type P2PConfig struct {
+	Enabled      bool           `mapstructure:"enabled"`
+	Identity     IdentityConfig `mapstructure:"identity"`
+	PeerPort     uint           `mapstructure:"peer-port"`
+	MinNumConn   uint           `mapstructure:"min-conn"`
+	MaxNumConn   uint           `mapstructure:"max-conn"`
+	ConnTimeout  time.Duration  `mapstructure:"conn-timeout"`
+	WriteTimeout time.Duration  `mapstructure:"write-timeout"`
+	ReadTimeout  time.Duration  `mapstructure:"read-timeout"`
+	BufferSize   uint           `mapstructure:"buffer-size"`
+}
+
 // Config holds the configuration for the application
 type Config struct {
-	Logger          *logrus.Logger
-	NodeSeeds       []SeedNode    `mapstructure:"node-seeds"`
-	StorageFile     string        `mapstructure:"storage-file"`
-	PubKey          string        `mapstructure:"pub-key"`
-	MiningInterval  time.Duration `mapstructure:"mining-interval"`
-	P2PEnabled      bool          `mapstructure:"p2p-enabled"`
-	P2PPeerPubKey   string        `mapstructure:"p2p-peer-pub-key"`
-	P2PPeerPort     uint          `mapstructure:"p2p-peer-port"`
-	P2PMinNumConn   uint          `mapstructure:"p2p-min-conn"`
-	P2PMaxNumConn   uint          `mapstructure:"p2p-max-conn"`
-	P2PConnTimeout  time.Duration `mapstructure:"p2p-conn-timeout"`
-	P2PWriteTimeout time.Duration `mapstructure:"p2p-write-timeout"`
-	P2PReadTimeout  time.Duration `mapstructure:"p2p-read-timeout"`
-	P2PBufferSize   uint          `mapstructure:"p2p-buffer-size"`
+	Logger         *logrus.Logger
+	SeedNodes      []SeedNode    `mapstructure:"seed-nodes"`
+	StorageFile    string        `mapstructure:"storage-file"`
+	PubKey         string        `mapstructure:"pub-key"`
+	MiningInterval time.Duration `mapstructure:"mining-interval"`
+	P2P            P2PConfig     `mapstructure:"p2p"`
 }
 
 // NewConfig creates a new Config with default values
 func NewConfig() *Config {
 	return &Config{
-		Logger:          logrus.New(),
-		NodeSeeds:       []SeedNode{},
-		StorageFile:     DefaultChainnetStorage,
-		PubKey:          DefaultPubKey,
-		MiningInterval:  DefaultMiningInterval,
-		P2PEnabled:      DefaultP2PEnabled,
-		P2PMinNumConn:   DefaultP2PMinNumConn,
-		P2PMaxNumConn:   DefaultP2PMaxNumConn,
-		P2PConnTimeout:  DefaultP2PConnTimeout,
-		P2PWriteTimeout: DefaultP2PWriteTimeout,
-		P2PReadTimeout:  DefaultP2PReadTimeout,
-		P2PBufferSize:   DefaultP2PBufferSize,
+		Logger:         logrus.New(),
+		SeedNodes:      []SeedNode{},
+		StorageFile:    DefaultChainnetStorage,
+		PubKey:         "",
+		MiningInterval: DefaultMiningInterval,
+		P2P: P2PConfig{
+			Enabled: DefaultP2PEnabled,
+			Identity: IdentityConfig{
+				PubKeyPath:  "",
+				PrivKeyPath: "",
+			},
+			MinNumConn:   DefaultP2PMinNumConn,
+			MaxNumConn:   DefaultP2PMaxNumConn,
+			ConnTimeout:  DefaultP2PConnTimeout,
+			WriteTimeout: DefaultP2PWriteTimeout,
+			ReadTimeout:  DefaultP2PReadTimeout,
+			BufferSize:   DefaultP2PBufferSize,
+		},
 	}
 }
 
@@ -139,10 +155,11 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().StringArray(KeyNodeSeeds, []string{}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
-	cmd.Flags().String(KeyPubKey, DefaultPubKey, "Public key used for receiving mining rewards")
+	cmd.Flags().String(KeyPubKey, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
-	cmd.Flags().String(KeyP2PPeerPubKey, DefaultP2PPeerPubKey, "Peer public key")
+	cmd.Flags().String(KeyP2PPeerPubKey, "", "ECDSA peer public key path in PEM format")
+	cmd.Flags().String(KeyP2PPeerPrivKey, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
@@ -158,6 +175,8 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyPubKey, cmd.Flags().Lookup(KeyPubKey))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
+	_ = viper.BindPFlag(KeyP2PPeerPubKey, cmd.Flags().Lookup(KeyP2PPeerPubKey))
+	_ = viper.BindPFlag(KeyP2PPeerPrivKey, cmd.Flags().Lookup(KeyP2PPeerPrivKey))
 	_ = viper.BindPFlag(KeyP2PPeerPubKey, cmd.Flags().Lookup(KeyP2PPeerPubKey))
 	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
@@ -185,7 +204,7 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 		if err != nil {
 			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
 		} else {
-			cfg.NodeSeeds = seeds
+			cfg.SeedNodes = seeds
 		}
 	}
 	if cmd.Flags().Changed(KeyStorageFile) {
@@ -198,31 +217,34 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
 	}
 	if cmd.Flags().Changed(KeyP2PEnabled) {
-		cfg.P2PEnabled = viper.GetBool(KeyP2PEnabled)
+		cfg.P2P.Enabled = viper.GetBool(KeyP2PEnabled)
 	}
 	if cmd.Flags().Changed(KeyP2PPeerPubKey) {
-		cfg.P2PPeerPubKey = viper.GetString(KeyP2PPeerPubKey)
+		cfg.P2P.Identity.PubKeyPath = viper.GetString(KeyP2PPeerPubKey)
+	}
+	if cmd.Flags().Changed(KeyP2PPeerPrivKey) {
+		cfg.P2P.Identity.PrivKeyPath = viper.GetString(KeyP2PPeerPrivKey)
 	}
 	if cmd.Flags().Changed(KeyP2PPeerPort) {
-		cfg.P2PPeerPort = viper.GetUint(KeyP2PPeerPort)
+		cfg.P2P.PeerPort = viper.GetUint(KeyP2PPeerPort)
 	}
 	if cmd.Flags().Changed(KeyP2PMinNumConn) {
-		cfg.P2PMinNumConn = viper.GetUint(KeyP2PMinNumConn)
+		cfg.P2P.MinNumConn = viper.GetUint(KeyP2PMinNumConn)
 	}
 	if cmd.Flags().Changed(KeyP2PMaxNumConn) {
-		cfg.P2PMaxNumConn = viper.GetUint(KeyP2PMaxNumConn)
+		cfg.P2P.MaxNumConn = viper.GetUint(KeyP2PMaxNumConn)
 	}
 	if cmd.Flags().Changed(KeyP2PConnTimeout) {
-		cfg.P2PConnTimeout = viper.GetDuration(KeyP2PConnTimeout)
+		cfg.P2P.ConnTimeout = viper.GetDuration(KeyP2PConnTimeout)
 	}
 	if cmd.Flags().Changed(KeyP2PWriteTimeout) {
-		cfg.P2PWriteTimeout = viper.GetDuration(KeyP2PWriteTimeout)
+		cfg.P2P.WriteTimeout = viper.GetDuration(KeyP2PWriteTimeout)
 	}
 	if cmd.Flags().Changed(KeyP2PReadTimeout) {
-		cfg.P2PReadTimeout = viper.GetDuration(KeyP2PReadTimeout)
+		cfg.P2P.ReadTimeout = viper.GetDuration(KeyP2PReadTimeout)
 	}
 	if cmd.Flags().Changed(KeyP2PBufferSize) {
-		cfg.P2PBufferSize = viper.GetUint(KeyP2PBufferSize)
+		cfg.P2P.BufferSize = viper.GetUint(KeyP2PBufferSize)
 	}
 }
 

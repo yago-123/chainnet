@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -180,8 +181,8 @@ func NewNodeP2P(
 ) (*NodeP2P, error) {
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
-		int(cfg.P2PMinNumConn),
-		int(cfg.P2PMaxNumConn),
+		int(cfg.P2P.MinNumConn),
+		int(cfg.P2P.MaxNumConn),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection manager during peer discovery: %w", err)
@@ -190,7 +191,7 @@ func NewNodeP2P(
 	// create host
 	host, err := libp2p.New(
 		libp2p.ConnectionManager(connMgr),
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2PPeerPort)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2P.PeerPort)),
 	)
 
 	if err != nil {
@@ -226,7 +227,7 @@ func NewNodeP2P(
 		pubsub:     pubsub,
 		encoder:    encoder,
 		explorer:   explorer,
-		bufferSize: cfg.P2PBufferSize,
+		bufferSize: cfg.P2P.BufferSize,
 		logger:     cfg.Logger,
 	}, nil
 }
@@ -244,12 +245,12 @@ func (n *NodeP2P) Stop() error {
 }
 
 func (n *NodeP2P) ConnectToSeeds() error {
-	for _, seed := range n.cfg.NodeSeeds {
+	for _, seed := range n.cfg.SeedNodes {
 		addr, err := peer.AddrInfoFromString(
 			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to parse multiaddress: %v", err)
+			return fmt.Errorf("failed to parse multiaddress: %w", err)
 		}
 
 		err = n.host.Connect(n.ctx, *addr)

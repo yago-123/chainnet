@@ -124,7 +124,7 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 	var p2pNet *p2p.NodeP2P
 
 	// check if the network is supposed to be enabled
-	if !bc.cfg.P2PEnabled {
+	if !bc.cfg.P2P.Enabled {
 		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
 	}
 
@@ -290,7 +290,7 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2PConnTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
 		defer cancel()
 
 		// todo(): revisit this, not sure if makes sense at all this lock type
