@@ -8,7 +8,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"os"
 )
 
 const (
@@ -132,7 +133,7 @@ func ConvertBytesToECDSAPub(pubKey []byte) (*ecdsa.PublicKey, error) {
 
 // ReadECDSAPemPrivateKey reads an ECDSA private key from a PEM file
 func ReadECDSAPemPrivateKey(path string) ([]byte, error) {
-	privateKeyBytes, err := ioutil.ReadFile(path)
+	privateKeyBytes, err := readFile(path)
 	if err != nil {
 		return []byte{}, fmt.Errorf("error reading private key file: %w", err)
 	}
@@ -148,10 +149,9 @@ func ReadECDSAPemPrivateKey(path string) ([]byte, error) {
 
 // ReadECDSAPemPublicKeyBytes reads an ECDSA public key from a PEM file and returns the raw DER encoded bytes.
 func ReadECDSAPemPublicKeyBytes(path string) ([]byte, error) {
-	// read the PEM file containing the public key
-	publicKeyBytes, err := ioutil.ReadFile(path)
+	publicKeyBytes, err := readFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("error reading public key file: %w", err)
+		return []byte{}, fmt.Errorf("error reading private key file: %w", err)
 	}
 
 	// decode the PEM block
@@ -162,4 +162,19 @@ func ReadECDSAPemPublicKeyBytes(path string) ([]byte, error) {
 
 	// return the raw DER encoded public key bytes
 	return block.Bytes, nil
+}
+
+func readFile(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error opening file: %w", err)
+	}
+	defer file.Close()
+
+	privateKeyBytes, err := io.ReadAll(file)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error reading file: %w", err)
+	}
+
+	return privateKeyBytes, nil
 }

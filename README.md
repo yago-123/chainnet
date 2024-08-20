@@ -21,14 +21,14 @@ Default configuration:
 ```yaml
 seed-nodes:                               # List of seed nodes
   - address: "seed-1.chainnet.yago.ninja"
-    peer-id: "12D3KooWDzS83A8AXBVBo8pMkFvog1cqgLE2uWfrv57hAuX3bcaQ"
+    peer-id: "12D3KooWSQ5pAJW8mq5RpZjQLzyD5ikgyLoXWjJz8HfteW7jiyks"
     port: 9100
-#  - address: "seed-2.chainnet.yago.ninja"
-#    peer-id: "peerID-2"
-#    port: 8081
-#  - address: "seed-3.chainnet.yago.ninja"
-#    peer-id: "peerID-3"
-#    port: 8082
+  - address: "seed-2.chainnet.yago.ninja"
+    peer-id: "peerID-2"
+    port: 8081
+  - address: "seed-3.chainnet.yago.ninja"
+    peer-id: "peerID-3"
+    port: 8082
 
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 pub-key:                                  # Public wallet key encoded in base58, used for receiving mining rewards
@@ -38,8 +38,7 @@ mining-interval: "10m"                    # Interval between block creation
 p2p:
   enabled: true                           # Enable or disable network communication
   identity:
-    pub-key-path: ""                      # ECDSA peer public key path in PEM format (leave empty to generate a random identity)
-    priv-key-path: ""                     # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
+    priv-key-path: "ecdsa-priv-key.pem"   # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
 
   peer-port: 9100                         # Port used for network communication with other peers
   min-conn: 5                             # Minimum number of connections
