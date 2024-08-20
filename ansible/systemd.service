@@ -1,0 +1,10 @@
+[Unit]
+Description=Chainnet {{ target }} service
+After=network.target
+
+[Service]
+ExecStart={{ app_dir }}/bin/chainnet-{{ target }} --config {{ app_dir }}/config.yaml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

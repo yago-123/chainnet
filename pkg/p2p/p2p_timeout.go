@@ -36,9 +36,9 @@ func NewTimeoutStream(ctx context.Context, cfg *config.Config, host host.Host, p
 func AddTimeoutToStream(s network.Stream, cfg *config.Config) *TimeoutStream {
 	return &TimeoutStream{
 		stream:       s,
-		readTimeout:  cfg.P2PReadTimeout,
-		writeTimeout: cfg.P2PWriteTimeout,
-		bufferSize:   cfg.P2PBufferSize,
+		readTimeout:  cfg.P2P.ReadTimeout,
+		writeTimeout: cfg.P2P.WriteTimeout,
+		bufferSize:   cfg.P2P.BufferSize,
 	}
 }
 

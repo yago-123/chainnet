@@ -3,9 +3,9 @@ package validator //nolint:testpackage // don't create separate package for test
 import (
 	expl "chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
-	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/miner"
 	"chainnet/pkg/script"
 	mockHash "chainnet/tests/mocks/crypto/hash"
 	mockSign "chainnet/tests/mocks/crypto/sign"

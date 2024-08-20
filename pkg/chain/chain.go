@@ -3,13 +3,14 @@ package blockchain
 import (
 	"chainnet/config"
 	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/chain/observer"
-	"chainnet/pkg/chain/p2p"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/mempool"
+	"chainnet/pkg/observer"
+	"chainnet/pkg/p2p"
 	"chainnet/pkg/storage"
 	"chainnet/pkg/util/mutex"
 	"context"
@@ -36,8 +37,10 @@ type Blockchain struct {
 	// this avoids collisions when multiple nodes are trying to sync with the local node
 	syncMutex *mutex.CtxMutex
 
-	hasher    hash.Hashing
-	store     storage.Storage
+	hasher  hash.Hashing
+	store   storage.Storage
+	mempool *mempool.MemPool
+
 	validator consensus.HeavyValidator
 
 	blockSubject observer.BlockSubject
@@ -46,8 +49,7 @@ type Blockchain struct {
 	p2pNet       *p2p.NodeP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
-
-	p2pEncoder encoding.Encoding
+	p2pEncoder   encoding.Encoding
 
 	logger *logrus.Logger
 	cfg    *config.Config
@@ -56,6 +58,7 @@ type Blockchain struct {
 func NewBlockchain(
 	cfg *config.Config,
 	store storage.Storage,
+	mempool *mempool.MemPool,
 	hasher hash.Hashing,
 	validator consensus.HeavyValidator,
 	subject observer.BlockSubject,
@@ -106,6 +109,7 @@ func NewBlockchain(
 		headers:       headers,
 		syncMutex:     mutex.NewCtxMutex(MaxConcurrentSyncs),
 		hasher:        hasher,
+		mempool:       mempool,
 		store:         store,
 		validator:     validator,
 		blockSubject:  subject,
@@ -116,11 +120,11 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork() error {
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 	var p2pNet *p2p.NodeP2P
 
 	// check if the network is supposed to be enabled
-	if !bc.cfg.P2PEnabled {
+	if !bc.cfg.P2P.Enabled {
 		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
 	}
 
@@ -129,19 +133,12 @@ func (bc *Blockchain) InitNetwork() error {
 		return fmt.Errorf("p2p network already active")
 	}
 
-	// create a new blockchain observer that will react to network events
-	netSubject := observer.NewNetSubject()
-	netSubject.Register(bc)
-
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewP2PNode(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store))
+	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store))
 	if err != nil {
 		return fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
-
-	// initialize network handlers
-	p2pNet.InitHandlers()
 
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {
@@ -150,6 +147,12 @@ func (bc *Blockchain) InitNetwork() error {
 
 	bc.p2pNet = p2pNet
 	bc.p2pActive = true
+
+	// todo() relocate this, in general this InitNetwork method seems OFF
+	// connect to node seeds
+	if err = p2pNet.ConnectToSeeds(); err != nil {
+		return fmt.Errorf("error connecting to seeds: %w", err)
+	}
 
 	return nil
 }
@@ -167,7 +170,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 
 	// STARTING FROM HERE: the code can fail without becoming an issue, the header has been already commited
 	// no need to store the block itself, will be commited to store as part of the observer call
-	bc.logger.Debugf("block %x added to the chain", block.Hash)
+	bc.logger.Debugf("added to the chain block %x with height %d", block.Hash, block.Header.Height)
 
 	// update the last block and save the block header
 	bc.lastHeight++
@@ -273,6 +276,11 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 	return nil
 }
 
+// RetrieveMempoolTxs return an amount of unconfirmed transactions ready to be added to a block
+func (bc *Blockchain) RetrieveMempoolTxs(numTxs uint) ([]*kernel.Transaction, uint) {
+	return bc.mempool.RetrieveTransactions(numTxs)
+}
+
 // ID returns the observer id
 func (bc *Blockchain) ID() string {
 	return BlockchainObserver
@@ -282,7 +290,7 @@ func (bc *Blockchain) ID() string {
 func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	bc.logger.Infof("discovered new peer %s", peerID)
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2PConnTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
 		defer cancel()
 
 		// todo(): revisit this, not sure if makes sense at all this lock type
@@ -292,6 +300,11 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
 		}
 	}()
+}
+
+func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
+	// todo() figure how to retrieve fee
+	bc.mempool.AppendTransaction(&tx, 0)
 }
 
 // GetLastBlockHash returns the latest block hash

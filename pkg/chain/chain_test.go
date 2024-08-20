@@ -1,9 +1,10 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/config"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/mempool"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
 	"chainnet/tests/mocks/consensus"
 	mockHash "chainnet/tests/mocks/crypto/hash"
@@ -91,6 +92,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
 		store,
+		mempool.NewMemPool(),
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewBlockSubject(),
@@ -124,6 +126,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
 		boltdb,
+		mempool.NewMemPool(),
 		mockHashing,
 		&consensus.MockHeavyValidator{},
 		observer.NewBlockSubject(),

@@ -4,22 +4,20 @@ import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/chain/observer"
-	"chainnet/pkg/consensus/miner"
 	"chainnet/pkg/consensus/validator"
 	"chainnet/pkg/crypto"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
 	"chainnet/pkg/kernel"
+	"chainnet/pkg/mempool"
+	"chainnet/pkg/miner"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
-	"chainnet/pkg/wallet"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
-
-const MiningInterval = 15 * time.Second
 
 var cfg *config.Config
 
@@ -37,32 +35,14 @@ func main() {
 	consensusHasherType := hash.SHA256
 	// todo(): add consensusSignatureType
 
-	// create wallet address hasher
-	walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-	if err != nil {
-		cfg.Logger.Fatalf("Error creating multi-hash configuration: %s", err)
-	}
-
-	// create new wallet for storing mining rewards
-	w, err := wallet.NewWallet(
-		[]byte("1"),
-		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-		crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()),
-		walletSha256Ripemd160Hasher,
-		hash.GetHasher(consensusHasherType),
-	)
-	if err != nil {
-		cfg.Logger.Fatalf("Error creating new wallet: %s", err)
-	}
-
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
-	// create new mempool
-	mempool := miner.NewMemPool()
+	// create mempool instance
+	mempool := mempool.NewMemPool()
 
 	// create new observer
 	subjectObserver := observer.NewBlockSubject()
@@ -71,6 +51,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
+		mempool,
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
@@ -88,14 +69,21 @@ func main() {
 	}
 
 	// create new miner
-	mine := miner.NewMiner(cfg, w.PublicKey, chain, mempool, hash.SHA256)
+	mine, err := miner.NewMiner(cfg, chain, hash.SHA256)
+	if err != nil {
+		cfg.Logger.Fatalf("error initializing miner: %s", err)
+	}
 
 	// register chain observers
 	subjectObserver.Register(mine)
 	subjectObserver.Register(boltdb)
 	subjectObserver.Register(mempool)
 
-	if err = chain.InitNetwork(); err != nil {
+	// create net subject and register the chain
+	subjectNet := observer.NewNetSubject()
+	subjectNet.Register(chain)
+
+	if err = chain.InitNetwork(subjectNet); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 

@@ -2,7 +2,7 @@ package discovery
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/chain/observer"
+	"chainnet/pkg/observer"
 	"fmt"
 
 	"github.com/libp2p/go-libp2p/core/host"

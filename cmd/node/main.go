@@ -4,12 +4,13 @@ import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
 	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/chain/observer"
 	"chainnet/pkg/consensus/validator"
 	"chainnet/pkg/crypto"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/crypto/sign"
 	"chainnet/pkg/encoding"
+	"chainnet/pkg/mempool"
+	"chainnet/pkg/observer"
 	"chainnet/pkg/storage"
 
 	"github.com/sirupsen/logrus"
@@ -43,6 +44,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
+		mempool.NewMemPool(),
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
@@ -61,7 +63,11 @@ func main() {
 
 	subjectObserver.Register(boltdb)
 
-	if err = chain.InitNetwork(); err != nil {
+	// create net subject and register chain
+	netSubject := observer.NewNetSubject()
+	netSubject.Register(chain)
+
+	if err = chain.InitNetwork(netSubject); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 

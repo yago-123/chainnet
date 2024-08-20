@@ -10,6 +10,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 const (
@@ -28,13 +30,12 @@ const (
 const MiningTarget = 8
 
 type Miner struct {
-	mempool *MemPool
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
 
-	minerAddress []byte
-	target       uint
+	minerPubKey []byte
+	target      uint
 
 	isMining bool
 	ctx      context.Context
@@ -43,16 +44,21 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, publicKey []byte, chain *blockchain.Blockchain, mempool *MemPool, hasherType hash.HasherType) *Miner {
-	return &Miner{
-		mempool:      mempool,
-		hasherType:   hasherType,
-		chain:        chain,
-		minerAddress: publicKey,
-		isMining:     false,
-		target:       MiningTarget,
-		cfg:          cfg,
+func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType) (*Miner, error) {
+	if len(cfg.PubKey) == 0 {
+		return nil, fmt.Errorf("public key not provided, check the config file")
 	}
+
+	pubKey := base58.Decode(cfg.PubKey)
+
+	return &Miner{
+		hasherType:  hasherType,
+		chain:       chain,
+		minerPubKey: pubKey,
+		isMining:    false,
+		target:      MiningTarget,
+		cfg:         cfg,
+	}, nil
 }
 
 func (m *Miner) AdjustMiningDifficulty() uint {
@@ -83,7 +89,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	// retrieve transactions that are going to be placed inside the block
-	collectedTxs, collectedFee := m.mempool.RetrieveTransactions(kernel.MaxNumberTxsPerBlock)
+	collectedTxs, collectedFee := m.chain.RetrieveMempoolTxs(kernel.MaxNumberTxsPerBlock)
 
 	// generate the coinbase transaction and add to the list of transactions
 	coinbaseTx, err := m.createCoinbaseTransaction(collectedFee, m.chain.GetLastHeight())
@@ -134,7 +140,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	}
 }
 
-// ID returns the observer id
+// NetObserverID returns the observer id
 func (m *Miner) ID() string {
 	return MinerObserverID
 }
@@ -156,7 +162,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	}
 
 	// creates transaction and calculate hash
-	tx := kernel.NewCoinbaseTransaction(string(m.minerAddress), reward, collectedFee)
+	tx := kernel.NewCoinbaseTransaction(string(m.minerPubKey), reward, collectedFee)
 	txHash, err := util.CalculateTxHash(tx, hash.GetHasher(m.hasherType))
 	if err != nil {
 		return nil, fmt.Errorf("unable to calculate transaction hash: %w", err)
