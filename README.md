@@ -19,22 +19,35 @@ $ sudo sysctl -w net.core.wmem_max=7500000
 ## Configuration
 Default configuration:
 ```yaml
-node-seeds: [                       # List of seed nodes
-  "seed-1.chainnet.yago.ninja",
-  "seed-2.chainnet.yago.ninja",
-  "seed-3.chainnet.yago.ninja",
-]
-storage-file: "bin/miner-storage"   # File used for persisting the chain status
-pub-key:                            # Public key in hex format, used for receiving mining rewards
-  "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQ...eXF22QHk2JA"
-mining-interval: "30s"              # Interval between block creation
-p2p-enabled: true                   # Enable or disable network communication
-p2p-min-conn: 5                     # Minimum number of connections
-p2p-max-conn: 100                   # Maximum number of connections
-p2p-conn-timeout: "60s"             # Maximum duration of a connection
-p2p-write-timeout: "20s"            # Maximum duration of a write stream
-p2p-read-timeout: "20s"             # Maximum duration of a read stream
-p2p-buffer-size: 4096               # Read buffer over the network
+seed-nodes:                               # List of seed nodes
+  - address: "seed-1.chainnet.yago.ninja"
+    peer-id: "12D3KooWDzS83A8AXBVBo8pMkFvog1cqgLE2uWfrv57hAuX3bcaQ"
+    port: 9100
+#  - address: "seed-2.chainnet.yago.ninja"
+#    peer-id: "peerID-2"
+#    port: 8081
+#  - address: "seed-3.chainnet.yago.ninja"
+#    peer-id: "peerID-3"
+#    port: 8082
+
+storage-file: "bin/miner-storage"         # File used for persisting the chain status
+pub-key:                                  # Public wallet key encoded in base58, used for receiving mining rewards
+  "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
+mining-interval: "10m"                    # Interval between block creation
+
+p2p:
+  enabled: true                           # Enable or disable network communication
+  identity:
+    pub-key-path: ""                      # ECDSA peer public key path in PEM format (leave empty to generate a random identity)
+    priv-key-path: ""                     # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
+
+  peer-port: 9100                         # Port used for network communication with other peers
+  min-conn: 5                             # Minimum number of connections
+  max-conn: 100                           # Maximum number of connections
+  conn-timeout: "60s"                     # Maximum duration of a connection
+  write-timeout: "20s"                    # Maximum duration of a write stream
+  read-timeout: "20s"                     # Maximum duration of a read stream
+  buffer-size: 4096                       # Read buffer size over the network
 ```
 ## Build
 Building the `chainnet-node`: 
@@ -89,6 +102,16 @@ $ helm install chainnet ./helm
 Uninstall the helm chart:
 ```bash
 $ helm uninstall chainnet
+```
+
+## Generating node identities
+Generate a ECDSA `secp256r1` private key in PEM format: 
+```bash
+$ openssl ecparam -name prime256v1 -genkey -noout -out peer_private_key.pem
+```
+Derive a public key from the private key in PEM format:
+```bash
+$ openssl ec -in peer_private_key.pem -pubout -out peer_public_key.pem
 ```
 
 ## Architecture

@@ -1,11 +1,10 @@
 package sign
 
 import (
+	"chainnet/pkg/consensus/util"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/x509"
-	"errors"
 	"math/big"
 )
 
@@ -23,7 +22,7 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 		return []byte{}, []byte{}, err
 	}
 
-	return convertToBytes(&private.PublicKey, private)
+	return util.ConvertECDSAKeysToBytes(&private.PublicKey, private)
 }
 
 func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
@@ -31,7 +30,7 @@ func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, erro
 		return []byte{}, err
 	}
 
-	privateKey, err := convertBytesToPrivateKey(privKey)
+	privateKey, err := util.ConvertBytesToECDSAPriv(privKey)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -53,7 +52,7 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 		return false, err
 	}
 
-	publicKey, err := convertBytesToPublicKey(pubKey)
+	publicKey, err := util.ConvertBytesToECDSAPub(pubKey)
 	if err != nil {
 		return false, err
 	}
@@ -66,40 +65,4 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 	s := new(big.Int).SetBytes(sBytes)
 
 	return ecdsa.Verify(publicKey, payload, r, s), nil
-}
-
-func convertToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
-	// convert the public key to ASN.1/DER encoded form
-	publicKey, err := x509.MarshalPKIXPublicKey(pubKey)
-	if err != nil {
-		return []byte{}, []byte{}, err
-	}
-
-	// convert the private key to ASN.1/DER encoded form
-	privateKey, err := x509.MarshalECPrivateKey(privKey)
-	if err != nil {
-		return []byte{}, []byte{}, err
-	}
-
-	return publicKey, privateKey, nil
-}
-
-func convertBytesToPrivateKey(privKey []byte) (*ecdsa.PrivateKey, error) {
-	// parse the DER encoded private key to get ecdsa.PrivateKey
-	return x509.ParseECPrivateKey(privKey)
-}
-
-func convertBytesToPublicKey(pubKey []byte) (*ecdsa.PublicKey, error) {
-	// parse the DER encoded public key to get ecdsa.PublicKey
-	pub, err := x509.ParsePKIXPublicKey(pubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	publicKey, ok := pub.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, errors.New("error deserializing ECDSA public key")
-	}
-
-	return publicKey, nil
 }
