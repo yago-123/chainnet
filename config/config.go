@@ -19,7 +19,6 @@ const (
 	KeyPubKey          = "pub-key"
 	KeyMiningInterval  = "mining-interval"
 	KeyP2PEnabled      = "enabled"
-	KeyP2PPeerPubKey   = "pub-key-path"
 	KeyP2PPeerPrivKey  = "priv-key-path"
 	KeyP2PPeerPort     = "peer-port"
 	KeyP2PMinNumConn   = "min-conn"
@@ -59,7 +58,6 @@ type SeedNode struct {
 
 // IdentityConfig holds the identity-specific configuration
 type IdentityConfig struct {
-	PubKeyPath  string `mapstructure:"pub-key-path"`
 	PrivKeyPath string `mapstructure:"priv-key-path"`
 }
 
@@ -97,7 +95,6 @@ func NewConfig() *Config {
 		P2P: P2PConfig{
 			Enabled: DefaultP2PEnabled,
 			Identity: IdentityConfig{
-				PubKeyPath:  "",
 				PrivKeyPath: "",
 			},
 			MinNumConn:   DefaultP2PMinNumConn,
@@ -158,7 +155,6 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyPubKey, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
-	cmd.Flags().String(KeyP2PPeerPubKey, "", "ECDSA peer public key path in PEM format")
 	cmd.Flags().String(KeyP2PPeerPrivKey, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
@@ -175,9 +171,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyPubKey, cmd.Flags().Lookup(KeyPubKey))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
-	_ = viper.BindPFlag(KeyP2PPeerPubKey, cmd.Flags().Lookup(KeyP2PPeerPubKey))
 	_ = viper.BindPFlag(KeyP2PPeerPrivKey, cmd.Flags().Lookup(KeyP2PPeerPrivKey))
-	_ = viper.BindPFlag(KeyP2PPeerPubKey, cmd.Flags().Lookup(KeyP2PPeerPubKey))
 	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
@@ -218,9 +212,6 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyP2PEnabled) {
 		cfg.P2P.Enabled = viper.GetBool(KeyP2PEnabled)
-	}
-	if cmd.Flags().Changed(KeyP2PPeerPubKey) {
-		cfg.P2P.Identity.PubKeyPath = viper.GetString(KeyP2PPeerPubKey)
 	}
 	if cmd.Flags().Changed(KeyP2PPeerPrivKey) {
 		cfg.P2P.Identity.PrivKeyPath = viper.GetString(KeyP2PPeerPrivKey)

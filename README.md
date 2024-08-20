@@ -107,12 +107,9 @@ $ helm uninstall chainnet
 ## Generating node identities
 Generate a ECDSA `secp256r1` private key in PEM format: 
 ```bash
-$ openssl ecparam -name prime256v1 -genkey -noout -out peer_private_key.pem
+$ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
 ```
-Derive a public key from the private key in PEM format:
-```bash
-$ openssl ec -in peer_private_key.pem -pubout -out peer_public_key.pem
-```
+
 
 ## Architecture
 ```ascii
