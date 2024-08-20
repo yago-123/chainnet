@@ -19,6 +19,8 @@ const (
 	KeyPubKey          = "pub-key"
 	KeyMiningInterval  = "mining-interval"
 	KeyP2PEnabled      = "p2p-enabled"
+	KeyP2PPeerPubKey   = "p2p-peer-pub-key"
+	KeyP2PPeerPort     = "p2p-peer-port"
 	KeyP2PMinNumConn   = "p2p-min-conn"
 	KeyP2PMaxNumConn   = "p2p-max-conn"
 	KeyP2PConnTimeout  = "p2p-conn-timeout"
@@ -35,6 +37,8 @@ const (
 	DefaultPubKey          = ""
 	DefaultMiningInterval  = 1 * time.Minute
 	DefaultP2PEnabled      = true
+	DefaultP2PPeerPubKey   = ""
+	DefaultP2PPeerPort     = 9100
 	DefaultP2PMinNumConn   = 1
 	DefaultP2PMaxNumConn   = 100
 	DefaultP2PConnTimeout  = 20 * time.Second
@@ -50,7 +54,7 @@ const (
 // SeedNode represents a node in the configuration with address, peerID, and port
 type SeedNode struct {
 	Address string `mapstructure:"address"`
-	PeerID  string `mapstructure:"peerID"`
+	PeerID  string `mapstructure:"peer-id"`
 	Port    int    `mapstructure:"port"`
 }
 
@@ -62,6 +66,8 @@ type Config struct {
 	PubKey          string        `mapstructure:"pub-key"`
 	MiningInterval  time.Duration `mapstructure:"mining-interval"`
 	P2PEnabled      bool          `mapstructure:"p2p-enabled"`
+	P2PPeerPubKey   string        `mapstructure:"p2p-peer-pub-key"`
+	P2PPeerPort     uint          `mapstructure:"p2p-peer-port"`
 	P2PMinNumConn   uint          `mapstructure:"p2p-min-conn"`
 	P2PMaxNumConn   uint          `mapstructure:"p2p-max-conn"`
 	P2PConnTimeout  time.Duration `mapstructure:"p2p-conn-timeout"`
@@ -136,6 +142,8 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyPubKey, DefaultPubKey, "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
+	cmd.Flags().String(KeyP2PPeerPubKey, DefaultP2PPeerPubKey, "Peer public key")
+	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 	cmd.Flags().Duration(KeyP2PConnTimeout, DefaultP2PConnTimeout, "P2P connection timeout")
@@ -150,6 +158,8 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyPubKey, cmd.Flags().Lookup(KeyPubKey))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
+	_ = viper.BindPFlag(KeyP2PPeerPubKey, cmd.Flags().Lookup(KeyP2PPeerPubKey))
+	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
 	_ = viper.BindPFlag(KeyP2PConnTimeout, cmd.Flags().Lookup(KeyP2PConnTimeout))
@@ -189,6 +199,12 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyP2PEnabled) {
 		cfg.P2PEnabled = viper.GetBool(KeyP2PEnabled)
+	}
+	if cmd.Flags().Changed(KeyP2PPeerPubKey) {
+		cfg.P2PPeerPubKey = viper.GetString(KeyP2PPeerPubKey)
+	}
+	if cmd.Flags().Changed(KeyP2PPeerPort) {
+		cfg.P2PPeerPort = viper.GetUint(KeyP2PPeerPort)
 	}
 	if cmd.Flags().Changed(KeyP2PMinNumConn) {
 		cfg.P2PMinNumConn = viper.GetUint(KeyP2PMinNumConn)

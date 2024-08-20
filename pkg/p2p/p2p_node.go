@@ -190,9 +190,7 @@ func NewNodeP2P(
 	// create host
 	host, err := libp2p.New(
 		libp2p.ConnectionManager(connMgr),
-		libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0"),
-		libp2p.NATPortMap(),
-		libp2p.EnableRelay(),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2PPeerPort)),
 	)
 
 	if err != nil {

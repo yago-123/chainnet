@@ -1,7 +1,7 @@
 node-seeds:                         # List of seed nodes
-#  - address: "seed-1.chainnet.yago.ninja"
-#    peerID: "12D3KooWPbJN7Sbh9eN1gu4uTpVVGPx9shS9RS6rFckRY8QuX2ri"
-#    port: 8080
+  - address: "seed-1.chainnet.yago.ninja"
+    peer-id: "12D3KooWAcv3PD6otWzm2rjquUEVfsp4jmjVVyrFvX1dBowpwBQs"
+    port: 9100
 #  - address: "seed-2.chainnet.yago.ninja"
 #    peerID: "peerID-2"
 #    port: 8081
@@ -11,8 +11,10 @@ node-seeds:                         # List of seed nodes
 storage-file: "bin/miner-storage"   # File used for persisting the chain status
 pub-key:                            # Public key used for receiving mining rewards
   "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
-mining-interval: "30s"              # Interval between block creation
+mining-interval: "10s"              # Interval between block creation
 p2p-enabled: true                   # Enable or disable network communication
+p2p-peer-pub-key: "miner"           # Peer identity (leave empty to generate a random one)
+p2p-peer-port: 9100                 # Port used for network communication with other peers
 p2p-min-conn: 5                     # Minimum number of connections
 p2p-max-conn: 100                   # Maximum number of connections
 p2p-conn-timeout: "60s"             # Maximum duration of a connection
