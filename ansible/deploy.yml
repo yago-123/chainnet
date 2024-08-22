@@ -6,8 +6,9 @@
   vars:
     app_dir: /var/chainnet
     config: 'default-config.yaml'
+    identity: ''
     repo_url: 'https://github.com/yago-123/chainnet.git'
-    branch: 'transaction-propagation-p2p'
+    branch: 'master'
     go_version: '1.23.0'
     go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
     go_code: /usr/local
@@ -85,6 +86,13 @@
         dest: "{{ app_dir }}/config.yaml"
         mode: '0644'
 
+    - name: Copy the ECDSA PEM key for identifying the peer
+      copy:
+        src: "{{ identity }}"
+        dest: "{{ app_dir }}/identity.pem"
+        mode: '0644'
+     # when: identity != ''
+
     - name: Template systemd service file
       template:
         src: "systemd.service"
@@ -99,8 +107,8 @@
         name: "{{ target }}"
         enabled: yes
 
-    - name: Start service
+    - name: Restart service
       systemd:
         name: "{{ target }}"
-        state: started
+        state: restarted
 
