@@ -69,14 +69,14 @@ $ make nespv
 Running the `chainnet-node`: 
 ```bash 
 $ mkdir /path/to/data
-$ cp default-config.yaml /path/to/data/config.yaml
-$ docker run -v /path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-node:latest
+$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
+$ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-node:latest
 ```
 Running the `chainnet-miner`: 
 ```bash 
 $ mkdir /path/to/data
-$ cp default-config.yaml /path/to/data/config.yaml
-$ docker run -v /path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-miner:latest
+$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
+$ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-miner:latest
 ```
 
 Running the `chainnet-nespv` wallet: 
