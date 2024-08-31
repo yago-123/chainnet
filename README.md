@@ -65,7 +65,17 @@ $ make nespv
 ````
 
 ## Running
-### Local 
+### Local
+Running the `chainnet-node`: 
+```bash
+$ ./bin/chainnet-node --config default-config.yaml 
+```
+
+Running the `chainnet-miner`: 
+```bash
+$ ./bin/chainnet-miner --config default-config.yaml 
+```
+### Docker
 Running the `chainnet-node`: 
 ```bash 
 $ mkdir /path/to/data

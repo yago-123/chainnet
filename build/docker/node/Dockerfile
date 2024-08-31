@@ -27,7 +27,7 @@ RUN chmod +x /app/entrypoint.sh
 EXPOSE 8080
 
 # Set a default value for the CONFIG_FILE environment variable
-ENV CONFIG_FILE=/data/config
+# ENV CONFIG_FILE=/data/config
 
 # Set the entrypoint to the script
 ENTRYPOINT ["/app/entrypoint.sh"]
