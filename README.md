@@ -65,15 +65,28 @@ $ make nespv
 ````
 
 ## Running
-### Local 
+### Bare metal
 Running the `chainnet-node`: 
 ```bash
-$ ./bin/chainnet-node --config default-config.yaml
+$ ./bin/chainnet-node --config default-config.yaml 
 ```
 
 Running the `chainnet-miner`: 
+```bash
+$ ./bin/chainnet-miner --config default-config.yaml 
+```
+### Docker
+Running the `chainnet-node`: 
 ```bash 
-$ ./bin/chainnet-miner --config default-config.yaml
+$ mkdir /path/to/data
+$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
+$ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-node:latest
+```
+Running the `chainnet-miner`: 
+```bash 
+$ mkdir /path/to/data
+$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
+$ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-miner:latest
 ```
 
 Running the `chainnet-nespv` wallet: 
@@ -95,7 +108,7 @@ $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner conf
 ### Run in Kubernetes 
 Deploy the helm chart:
 ```bash
-$ helm install chainnet ./helm
+$ helm install chainnet-release ./helm --set-file configFile=config/examples/kubernetes-config.yaml
 ```
 
 Uninstall the helm chart:

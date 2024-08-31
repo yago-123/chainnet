@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chainnet-miner
+  labels:
+    app: chainnet
+spec:
+  serviceName: "chainnet-miner"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chainnet-miner
+  template:
+    metadata:
+      labels:
+        app: chainnet-miner
+    spec:
+      containers:
+        - name: chainnet-miner
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: chainnet-miner-storage
+              mountPath: /data
+            - name: config-volume
+              mountPath: /etc/chainnet/config.yaml
+              subPath: config.yaml
+          env:
+            - name: CONFIG_FILE
+              value: /etc/chainnet/config.yaml
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: chainnet-miner-storage
+          persistentVolumeClaim:
+            claimName: chainnet-miner-pvc
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}-config
+            items:
+                - key: config.yaml
+                  path: config.yaml

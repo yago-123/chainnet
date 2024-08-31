@@ -67,7 +67,7 @@ lint: protobuf
 .PHONY: test
 test: protobuf
 	@echo "Running tests..."
-	@go test -v -cover ./...
+	@go test -v -cover ./... -tags '!e2e'
 
 .PHONY: clean
 clean:

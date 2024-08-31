@@ -8,18 +8,18 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl
 
-# Create a directory for the persistence of data
-RUN mkdir -p /data
+# Copy the miner binary into the container
+COPY bin/chainnet-node /app/chainnet-node
 
-# Set the database directory as a volume
-VOLUME /data
+# Copy the entrypoint script into the container
+COPY build/docker/node/entrypoint.sh /app/entrypoint.sh
 
-# Expose the port the node service runs on
+# Ensure the entrypoint script is executable
+RUN chmod +x /app/entrypoint.sh
+
+# Expose the port the miner service runs on
 EXPOSE 8080
 
-# Copy the node binary into the container
-COPY bin/chainnet-node /app/chainnet
+# Set the entrypoint to the script
+ENTRYPOINT ["/app/entrypoint.sh"]
 
-# Run the miner application
-# todo: configure the node to use the /data path
-CMD ["/app/chainnet-node"]

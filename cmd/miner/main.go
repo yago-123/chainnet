@@ -36,7 +36,7 @@ func main() {
 	// todo(): add consensusSignatureType
 
 	// create instance for persisting data
-	boltdb, err := storage.NewBoltDB("bin/miner-storage", "block-bucket", "header-bucket", encoding.NewGobEncoder())
+	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}

@@ -22,6 +22,8 @@ serviceNode:
   port: 80
   targetPort: 80
 
+configFile: ""
+
 persistence:
   enabled: true
   storageClass: "standard"
