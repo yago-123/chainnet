@@ -26,11 +26,11 @@ spec:
             - name: chainnet-miner-storage
               mountPath: /data
             - name: config-volume
-              mountPath: /data/
+              mountPath: /etc/config.yaml
               subPath: config.yaml
           env:
             - name: CONFIG_FILE
-              value: /data/config.yaml
+              value: /etc/config.yaml
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:

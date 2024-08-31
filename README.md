@@ -108,7 +108,7 @@ $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner conf
 ### Run in Kubernetes 
 Deploy the helm chart:
 ```bash
-$ helm install chainnet-release ./helm --set-file configFile=default-config.yaml
+$ helm install chainnet-release ./helm --set-file configFile=config/examples/kubernetes-config.yaml
 ```
 
 Uninstall the helm chart:
