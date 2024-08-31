@@ -65,7 +65,7 @@ $ make nespv
 ````
 
 ## Running
-### Local
+### Bare metal
 Running the `chainnet-node`: 
 ```bash
 $ ./bin/chainnet-node --config default-config.yaml 
@@ -108,7 +108,7 @@ $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner conf
 ### Run in Kubernetes 
 Deploy the helm chart:
 ```bash
-$ helm install chainnet ./helm
+$ helm install chainnet-release ./helm --set-file configFile=default-config.yaml
 ```
 
 Uninstall the helm chart:

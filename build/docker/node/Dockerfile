@@ -8,12 +8,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl
 
-# Create a directory for the database and configuration
-RUN mkdir -p /data
-
-# Set the /data directory as a volume
-VOLUME /data
-
 # Copy the miner binary into the container
 COPY bin/chainnet-node /app/chainnet-node
 
@@ -25,9 +19,6 @@ RUN chmod +x /app/entrypoint.sh
 
 # Expose the port the miner service runs on
 EXPOSE 8080
-
-# Set a default value for the CONFIG_FILE environment variable
-# ENV CONFIG_FILE=/data/config
 
 # Set the entrypoint to the script
 ENTRYPOINT ["/app/entrypoint.sh"]
