@@ -7,7 +7,7 @@
     app_dir: /var/chainnet
     config: 'default-config.yaml'
     repo_url: 'https://github.com/yago-123/chainnet.git'
-    branch: 'transaction-propagation-p2p'
+    branch: 'master'
     go_version: '1.23.0'
     go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
     go_code: /usr/local
@@ -85,6 +85,18 @@
         dest: "{{ app_dir }}/config.yaml"
         mode: '0644'
 
+    - name: Check if identity file path is defined
+      debug:
+        msg: "The identity file path is not defined for this host."
+      when: identity_path is not defined
+
+    - name: Copy identity file to the target machine
+      copy:
+        src: "{{ identity_path }}"
+        dest: "{{ app_dir }}/identity.pem"
+        mode: '0600'
+      when: identity_path is defined
+
     - name: Template systemd service file
       template:
         src: "systemd.service"
@@ -99,8 +111,8 @@
         name: "{{ target }}"
         enabled: yes
 
-    - name: Start service
+    - name: Restart service
       systemd:
         name: "{{ target }}"
-        state: started
+        state: restarted
 

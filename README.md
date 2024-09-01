@@ -97,12 +97,13 @@ Running the `chainnet-nespv` wallet:
 ### Remote nodes with Ansible
 Running the `chainnet-node` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node config=../default-config.yaml"
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node config=../config/examples/seed-node-config.yaml"
 ```
 
 Running the `chainnet-miner` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../default-config.yaml"
+$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../config/examples/seed-node-config.yaml"
+"
 ```
 
 ### Run in Kubernetes 
