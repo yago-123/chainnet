@@ -262,6 +262,16 @@ func NewNodeP2P(
 }
 
 func (n *NodeP2P) Start() error {
+	dhtDisco, err := discovery.NewDHTDiscovery(n.cfg, n.host, n.netSubject)
+	if err != nil {
+		n.logger.Errorf("failed to create DHT discovery: %v", err)
+	}
+
+	err = dhtDisco.Start()
+	if err != nil {
+		n.logger.Errorf("failed to start DHT discovery: %v", err)
+	}
+
 	return n.disco.Start()
 }
 

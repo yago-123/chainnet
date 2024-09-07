@@ -50,6 +50,5 @@ func (m *MdnsDiscovery) Stop() error {
 	}
 
 	m.isActive = false
-
 	return nil
 }
