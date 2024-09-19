@@ -103,7 +103,6 @@ $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node confi
 Running the `chainnet-miner` on a remote node:
 ```bash
 $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../config/examples/seed-node-config.yaml"
-"
 ```
 
 ### Run in Kubernetes 

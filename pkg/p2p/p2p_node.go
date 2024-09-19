@@ -230,7 +230,8 @@ func NewNodeP2P(
 	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
 	// initialize discovery module
-	disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
+	disco, err := discovery.NewDHTDiscovery(cfg, host, netSubject)
+	// disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery module: %w", err)
 	}
@@ -262,17 +263,12 @@ func NewNodeP2P(
 }
 
 func (n *NodeP2P) Start() error {
-	dhtDisco, err := discovery.NewDHTDiscovery(n.cfg, n.host, n.netSubject)
+	err := n.disco.Start()
 	if err != nil {
-		n.logger.Errorf("failed to create DHT discovery: %v", err)
+		return fmt.Errorf("failed to start DHT discovery: %v", err)
 	}
 
-	err = dhtDisco.Start()
-	if err != nil {
-		n.logger.Errorf("failed to start DHT discovery: %v", err)
-	}
-
-	return n.disco.Start()
+	return nil
 }
 
 func (n *NodeP2P) Stop() error {
