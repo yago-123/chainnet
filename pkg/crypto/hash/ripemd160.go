@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"hash"
 
-	"golang.org/x/crypto/ripemd160" //nolint:staticcheck // need this lib as part of the specification
+	"golang.org/x/crypto/ripemd160" //nolint:staticcheck,gosec // need this lib as part of the specification
 )
 
 type Ripemd160 struct {
@@ -12,7 +12,7 @@ type Ripemd160 struct {
 }
 
 func NewRipemd160() *Ripemd160 {
-	return &Ripemd160{ripe: ripemd160.New()}
+	return &Ripemd160{ripe: ripemd160.New()} //nolint:gosec // need this lib as part of the specification
 }
 
 func (r *Ripemd160) Hash(payload []byte) ([]byte, error) {

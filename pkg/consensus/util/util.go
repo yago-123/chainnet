@@ -56,28 +56,42 @@ func VerifyBlockHash(bh *kernel.BlockHeader, hash []byte, hasher hash.Hashing) e
 	return nil
 }
 
+// SafeUintToInt converts uint to int safely, returning an error if it would overflow
+func SafeUintToInt(u uint) (int, error) {
+	if u > uint(int(^uint(0)>>1)) { // Check if u exceeds the maximum int value
+		return 0, errors.New("uint value exceeds int range")
+	}
+
+	return int(u), nil //nolint:gosec // This has been already checked
+}
+
 // IsFirstNBitsZero checks if the first n bits of the array are zero
 func IsFirstNBitsZero(arr []byte, n uint) bool {
-	// calculate the number of full bytes and remaining bits
-	fullBytes := n / NumBitsInByte
+	if n == 0 {
+		return true // if n is 0, trivially true
+	}
+
+	fullBytes, err := SafeUintToInt(n / NumBitsInByte)
+	if err != nil {
+		return false
+	}
 	remainingBits := n % NumBitsInByte
 
-	// check if the array is long enough to contain n bits
-	if len(arr) < int(fullBytes) {
+	arrLen := len(arr)
+	if arrLen < fullBytes || (arrLen == fullBytes && remainingBits > 0) {
 		return false
 	}
 
 	// check full bytes
-	for _, b := range arr[:int(fullBytes)] {
-		if b != 0 {
+	for i := range make([]struct{}, fullBytes) {
+		if arr[i] != 0 {
 			return false
 		}
 	}
 
 	// check remaining bits in the next byte if there are any
 	if remainingBits > 0 {
-		nextByte := arr[int(fullBytes)]
-		// create a mask to isolate the remaining bits
+		nextByte := arr[fullBytes]
 		mask := byte(BiggestByteMask << (NumBitsInByte - remainingBits))
 		if nextByte&mask != 0 {
 			return false

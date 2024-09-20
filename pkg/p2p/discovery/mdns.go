@@ -76,13 +76,15 @@ func newMDNSNotifee(host host.Host, logger *logrus.Logger) notifee {
 }
 
 func (n notifee) HandlePeerFound(pi peer.AddrInfo) {
+	ctx, cancel := context.WithTimeout(context.Background(), DiscoveryTimeout)
+	defer cancel()
+
 	// try to connect to the peer and add the peer to the peerstore given that MDNs does not do that by default.
 	// This way we can the host event bus will emit the peer found event. This addition to the peer store is done
 	// by default in the case of other discovery types (like DHT)
-	ctx, _ := context.WithTimeout(context.Background(), DiscoveryTimeout)
 	err := n.host.Connect(ctx, pi)
 	if err != nil {
-
+		n.logger.Errorf("failed to connect to peer %s after mDNS discovery: %s", pi.ID, err)
 		return
 	}
 }
