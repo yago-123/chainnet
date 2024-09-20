@@ -57,7 +57,7 @@ func NewWalletP2P(
 	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
 	// initialize discovery module
-	disco, err := discovery.NewMdnsDiscovery(cfg, host, observer.NewNetSubject())
+	disco, err := discovery.NewMdnsDiscovery(cfg, host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery module: %w", err)
 	}

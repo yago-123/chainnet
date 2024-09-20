@@ -21,7 +21,7 @@ Default configuration:
 ```yaml
 seed-nodes:                               # List of seed nodes
   - address: "seed-1.chainnet.yago.ninja"
-    peer-id: "12D3KooWSQ5pAJW8mq5RpZjQLzyD5ikgyLoXWjJz8HfteW7jiyks"
+    peer-id: "QmNXM4W7om3FdYDutuPjYCgTsazRNWhNn6fNyimf7SUHhR"
     port: 9100
   - address: "seed-2.chainnet.yago.ninja"
     peer-id: "peerID-2"
@@ -103,7 +103,6 @@ $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node confi
 Running the `chainnet-miner` on a remote node:
 ```bash
 $ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../config/examples/seed-node-config.yaml"
-"
 ```
 
 ### Run in Kubernetes 

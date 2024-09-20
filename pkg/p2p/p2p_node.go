@@ -8,6 +8,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p/discovery"
+	"chainnet/pkg/p2p/events"
 	"chainnet/pkg/p2p/pubsub"
 	"chainnet/pkg/storage"
 	"context"
@@ -161,8 +162,10 @@ type NodeP2P struct {
 	netSubject observer.NetSubject
 	ctx        context.Context
 
-	// disco is in charge of setting up the logic for node discovery
-	disco discovery.Discovery
+	// discoDHT is in charge of setting up the logic for remote node discovery
+	discoDHT discovery.Discovery
+	// discoMDNS is in charge of setting up the logic for local node discovery
+	discoMDNS discovery.Discovery
 	// pubsub is in charge of setting up the logic for data propagation
 	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
@@ -229,10 +232,22 @@ func NewNodeP2P(
 
 	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
-	// initialize discovery module
-	disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
+	// create listener for host events
+	err = events.InitializeHostEventsSubscription(ctx, cfg.Logger, host, netSubject)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create discovery module: %w", err)
+		return nil, fmt.Errorf("failed to initialize subscription for host events: %w", err)
+	}
+
+	// initialize DHT discovery module remote discovery
+	discoDHT, err := discovery.NewDHTDiscovery(cfg, host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create DHT discovery module: %w", err)
+	}
+
+	// initialize MDNS discovery module for local discovery
+	discoMDNS, err := discovery.NewMdnsDiscovery(cfg, host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create mDNS discovery module: %w", err)
 	}
 
 	// initialize pubsub module
@@ -252,7 +267,8 @@ func NewNodeP2P(
 		host:       host,
 		netSubject: netSubject,
 		ctx:        ctx,
-		disco:      disco,
+		discoDHT:   discoDHT,
+		discoMDNS:  discoMDNS,
 		pubsub:     pubsub,
 		encoder:    encoder,
 		explorer:   explorer,
@@ -262,12 +278,24 @@ func NewNodeP2P(
 }
 
 func (n *NodeP2P) Start() error {
-	return n.disco.Start()
+	if err := n.discoDHT.Start(); err != nil {
+		return fmt.Errorf("failed to start DHT discovery: %v", err)
+	}
+
+	if err := n.discoMDNS.Start(); err != nil {
+		return fmt.Errorf("failed to start mDNS discovery: %v", err)
+	}
+
+	return nil
 }
 
 func (n *NodeP2P) Stop() error {
-	if err := n.disco.Stop(); err != nil {
-		return err
+	if err := n.discoDHT.Stop(); err != nil {
+		return fmt.Errorf("error stopping DHT discovery: %v", err)
+	}
+
+	if err := n.discoMDNS.Stop(); err != nil {
+		return fmt.Errorf("error stopping mDNS discovery: %v", err)
 	}
 
 	return n.host.Close()
@@ -289,7 +317,6 @@ func (n *NodeP2P) ConnectToSeeds() error {
 		}
 
 		n.cfg.Logger.Infof("connected to seed node %s", addr.ID.String())
-		n.netSubject.NotifyNodeDiscovered(addr.ID)
 	}
 
 	return nil

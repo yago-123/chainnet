@@ -1,15 +1,7 @@
 package discovery
 
 import (
-	"chainnet/config"
-	"chainnet/pkg/observer"
-	"context"
 	"time"
-
-	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/peerstore"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -21,36 +13,5 @@ const (
 type Discovery interface {
 	Start() error
 	Stop() error
-}
-
-// discoveryNotifee handles peer discovery logic at application level
-type discoveryNotifee struct {
-	host       host.Host
-	netSubject observer.NetSubject
-	logger     *logrus.Logger
-}
-
-func newDiscoNotifee(cfg *config.Config, host host.Host, netSubject observer.NetSubject) *discoveryNotifee {
-	return &discoveryNotifee{
-		host:       host,
-		netSubject: netSubject,
-		logger:     cfg.Logger,
-	}
-}
-
-// HandlePeerFound connects to newly discovered peers
-func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
-	n.host.Peerstore().AddAddrs(pi.ID, pi.Addrs, peerstore.PermanentAddrTTL)
-
-	ctx, cancel := context.WithTimeout(context.Background(), DiscoveryTimeout)
-	defer cancel()
-
-	if err := n.host.Connect(ctx, pi); err != nil {
-		n.logger.Debugf("failed to connect to peer %s: %s", pi.ID, err)
-		return
-	}
-
-	n.logger.Debugf("successfully connected to peer %s", pi.ID)
-
-	n.netSubject.NotifyNodeDiscovered(pi.ID)
+	Type() string
 }
