@@ -30,7 +30,6 @@ func listenForHostEvents(ctx context.Context, logger *logrus.Logger, sub event.S
 			switch e := evt.(type) {
 			case event.EvtPeerIdentificationCompleted:
 				subject.NotifyNodeDiscovered(e.Peer)
-				break
 			default:
 				logger.Errorf("unhandled event type: %T", evt)
 			}

@@ -239,7 +239,7 @@ func NewNodeP2P(
 	}
 
 	// initialize DHT discovery module remote discovery
-	discoDHT, err := discovery.NewDHTDiscovery(cfg, host)
+	discoDHT, err := discovery.NewDHTDiscovery(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create DHT discovery module: %w", err)
 	}

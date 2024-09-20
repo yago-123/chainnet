@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"chainnet/config"
 	"context"
 	"fmt"
 
@@ -19,7 +18,7 @@ type DHTDiscovery struct {
 	isActive bool
 }
 
-func NewDHTDiscovery(cfg *config.Config, host host.Host) (*DHTDiscovery, error) {
+func NewDHTDiscovery(host host.Host) (*DHTDiscovery, error) {
 	// todo(): consider adding persistent data store
 	// todo(): roam around the options available for the DHT initialization
 	// todo(): add seed nodes to the DHT via options too
