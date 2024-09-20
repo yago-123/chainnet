@@ -17,6 +17,8 @@ type DHTDiscovery struct {
 
 func NewDHTDiscovery(cfg *config.Config, host host.Host, netSubject observer.NetSubject) (*DHTDiscovery, error) {
 	// todo(): consider adding persistent data store
+	// todo(): roam around the options available for the DHT initialization
+	// todo(): add seed nodes to the DHT via options too
 	d := dht.NewDHT(context.Background(), host, ds.NewMapDatastore())
 
 	return &DHTDiscovery{

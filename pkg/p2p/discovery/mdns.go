@@ -57,5 +57,5 @@ func (m *MdnsDiscovery) Stop() error {
 type emptyNotifee struct{}
 
 func (e emptyNotifee) HandlePeerFound(_ peer.AddrInfo) {
-	// Do nothing
+	// do nothing, this is already handled by the host event bus
 }

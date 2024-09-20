@@ -8,6 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// todo(): turn this into a struct with administration methods if we rely more on this event bus system from host
+// InitializeHostEventsSubscription creates the subscription and the listener for host events
 func InitializeHostEventsSubscription(ctx context.Context, logger *logrus.Logger, host host.Host, subject observer.NetSubject) error {
 	sub, err := host.EventBus().Subscribe(new(event.EvtPeerIdentificationCompleted))
 	if err != nil {
@@ -19,6 +21,7 @@ func InitializeHostEventsSubscription(ctx context.Context, logger *logrus.Logger
 	return nil
 }
 
+// listenForHostEvents represents the event listener that reacts to events emitter by the host event bus
 func listenForHostEvents(ctx context.Context, logger *logrus.Logger, sub event.Subscription, subject observer.NetSubject) {
 	for {
 		select {
