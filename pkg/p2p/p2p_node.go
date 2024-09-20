@@ -190,8 +190,8 @@ func NewNodeP2P(
 
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
-		int(cfg.P2P.MinNumConn),
-		int(cfg.P2P.MaxNumConn),
+		int(cfg.P2P.MinNumConn), //nolint:gosec // this overflowing is OK
+		int(cfg.P2P.MaxNumConn), //nolint:gosec // this overflowing is OK
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection manager during peer discovery: %w", err)

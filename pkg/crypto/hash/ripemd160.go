@@ -12,7 +12,7 @@ type Ripemd160 struct {
 }
 
 func NewRipemd160() *Ripemd160 {
-	return &Ripemd160{ripe: ripemd160.New()} // //nolint:gosec // need this lib as part of the specification
+	return &Ripemd160{ripe: ripemd160.New()} //nolint:gosec // need this lib as part of the specification
 }
 
 func (r *Ripemd160) Hash(payload []byte) ([]byte, error) {
