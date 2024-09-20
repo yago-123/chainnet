@@ -8,6 +8,7 @@ import (
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/observer"
 	"chainnet/pkg/p2p/discovery"
+	"chainnet/pkg/p2p/events"
 	"chainnet/pkg/p2p/pubsub"
 	"chainnet/pkg/storage"
 	"context"
@@ -229,8 +230,15 @@ func NewNodeP2P(
 
 	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
 
+	// create listener for host events
+	err = events.InitializeHostEventsSubscription(ctx, cfg.Logger, host, netSubject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize subscription for host events: %w", err)
+	}
+
 	// initialize discovery module
 	disco, err := discovery.NewDHTDiscovery(cfg, host, netSubject)
+
 	// disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery module: %w", err)
