@@ -237,7 +237,7 @@ func NewNodeP2P(
 	}
 
 	// initialize discovery module
-	disco, err := discovery.NewDHTDiscovery(cfg, host, netSubject)
+	disco, err := discovery.NewDHTDiscovery(cfg, host)
 
 	// disco, err := discovery.NewMdnsDiscovery(cfg, host, netSubject)
 	if err != nil {

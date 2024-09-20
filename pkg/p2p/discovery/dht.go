@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/observer"
 	"context"
 	"fmt"
 	ds "github.com/ipfs/go-datastore"
@@ -10,12 +9,16 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 )
 
+const (
+	DHTDiscoveryType = "dht"
+)
+
 type DHTDiscovery struct {
 	dht      *dht.IpfsDHT
 	isActive bool
 }
 
-func NewDHTDiscovery(cfg *config.Config, host host.Host, netSubject observer.NetSubject) (*DHTDiscovery, error) {
+func NewDHTDiscovery(cfg *config.Config, host host.Host) (*DHTDiscovery, error) {
 	// todo(): consider adding persistent data store
 	// todo(): roam around the options available for the DHT initialization
 	// todo(): add seed nodes to the DHT via options too
@@ -53,4 +56,8 @@ func (d *DHTDiscovery) Stop() error {
 
 	d.isActive = false
 	return nil
+}
+
+func (d *DHTDiscovery) Type() string {
+	return DHTDiscoveryType
 }

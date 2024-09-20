@@ -2,11 +2,14 @@ package discovery
 
 import (
 	"chainnet/config"
-	"chainnet/pkg/observer"
 	"fmt"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
+)
+
+const (
+	MDNSDiscoveryType = "mdns"
 )
 
 type MdnsDiscovery struct {
@@ -15,7 +18,7 @@ type MdnsDiscovery struct {
 }
 
 // NewMDNSDiscovery creates a new mDNS discovery service
-func NewMdnsDiscovery(cfg *config.Config, host host.Host, netSubject observer.NetSubject) (*MdnsDiscovery, error) {
+func NewMdnsDiscovery(cfg *config.Config, host host.Host) (*MdnsDiscovery, error) {
 	// inject the disco notifee logic into the Mdns algorithm
 	// todo(): check if we really need a notifier if we already subscribe to the event bus
 	mdnsService := mdns.NewMdnsService(host, DiscoveryServiceTag, emptyNotifee{})
@@ -52,6 +55,10 @@ func (m *MdnsDiscovery) Stop() error {
 
 	m.isActive = false
 	return nil
+}
+
+func (m *MdnsDiscovery) Type() string {
+	return MDNSDiscoveryType
 }
 
 type emptyNotifee struct{}

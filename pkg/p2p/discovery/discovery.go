@@ -13,4 +13,5 @@ const (
 type Discovery interface {
 	Start() error
 	Stop() error
+	Type() string
 }
