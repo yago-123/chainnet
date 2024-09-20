@@ -3,6 +3,7 @@ package events
 import (
 	"chainnet/pkg/observer"
 	"context"
+
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/sirupsen/logrus"
@@ -29,8 +30,8 @@ func listenForHostEvents(ctx context.Context, logger *logrus.Logger, sub event.S
 			switch e := evt.(type) {
 			case event.EvtPeerIdentificationCompleted:
 				subject.NotifyNodeDiscovered(e.Peer)
+				break
 			default:
-				// log error message for unknown event types
 				logger.Errorf("unhandled event type: %T", evt)
 			}
 		case <-ctx.Done():

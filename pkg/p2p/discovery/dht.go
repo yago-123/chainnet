@@ -4,13 +4,14 @@ import (
 	"chainnet/config"
 	"context"
 	"fmt"
+
 	ds "github.com/ipfs/go-datastore"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/host"
 )
 
 const (
-	DHTDiscoveryType = "dht"
+	DHTDiscoveryType = "DHT"
 )
 
 type DHTDiscovery struct {

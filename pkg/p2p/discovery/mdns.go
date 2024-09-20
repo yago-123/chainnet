@@ -2,14 +2,17 @@ package discovery
 
 import (
 	"chainnet/config"
+	"context"
 	"fmt"
+
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	MDNSDiscoveryType = "mdns"
+	MDNSDiscoveryType = "mDNS"
 )
 
 type MdnsDiscovery struct {
@@ -17,11 +20,10 @@ type MdnsDiscovery struct {
 	mdns     mdns.Service
 }
 
-// NewMDNSDiscovery creates a new mDNS discovery service
+// NewMdnsDiscovery creates a new mDNS discovery service
 func NewMdnsDiscovery(cfg *config.Config, host host.Host) (*MdnsDiscovery, error) {
-	// inject the disco notifee logic into the Mdns algorithm
-	// todo(): check if we really need a notifier if we already subscribe to the event bus
-	mdnsService := mdns.NewMdnsService(host, DiscoveryServiceTag, emptyNotifee{})
+	// inject the disco notifee logic into the MDNs algorithm
+	mdnsService := mdns.NewMdnsService(host, DiscoveryServiceTag, newMDNSNotifee(host, cfg.Logger))
 
 	return &MdnsDiscovery{
 		mdns:     mdnsService,
@@ -61,8 +63,26 @@ func (m *MdnsDiscovery) Type() string {
 	return MDNSDiscoveryType
 }
 
-type emptyNotifee struct{}
+type notifee struct {
+	host   host.Host
+	logger *logrus.Logger
+}
 
-func (e emptyNotifee) HandlePeerFound(_ peer.AddrInfo) {
-	// do nothing, this is already handled by the host event bus
+func newMDNSNotifee(host host.Host, logger *logrus.Logger) notifee {
+	return notifee{
+		host:   host,
+		logger: logger,
+	}
+}
+
+func (n notifee) HandlePeerFound(pi peer.AddrInfo) {
+	// try to connect to the peer and add the peer to the peerstore given that MDNs does not do that by default.
+	// This way we can the host event bus will emit the peer found event. This addition to the peer store is done
+	// by default in the case of other discovery types (like DHT)
+	ctx, _ := context.WithTimeout(context.Background(), DiscoveryTimeout)
+	err := n.host.Connect(ctx, pi)
+	if err != nil {
+
+		return
+	}
 }

@@ -4,9 +4,10 @@
 package e2e
 
 import (
-	"github.com/yago-123/minikube-testing/pkg/orchestrator"
 	"os"
 	"testing"
+
+	"github.com/yago-123/minikube-testing/pkg/orchestrator"
 )
 
 func TestNodeSyncDuringStartup(t *testing.T) {

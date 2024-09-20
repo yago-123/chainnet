@@ -317,7 +317,6 @@ func (n *NodeP2P) ConnectToSeeds() error {
 		}
 
 		n.cfg.Logger.Infof("connected to seed node %s", addr.ID.String())
-		n.netSubject.NotifyNodeDiscovered(addr.ID)
 	}
 
 	return nil
