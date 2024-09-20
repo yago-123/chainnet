@@ -82,7 +82,7 @@ func (n notifee) HandlePeerFound(pi peer.AddrInfo) {
 	ctx, _ := context.WithTimeout(context.Background(), DiscoveryTimeout)
 	err := n.host.Connect(ctx, pi)
 	if err != nil {
-
+		n.logger.Errorf("failed to connect to peer %s after mDNS discovery: %s", pi.ID, err)
 		return
 	}
 }

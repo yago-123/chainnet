@@ -279,11 +279,11 @@ func NewNodeP2P(
 
 func (n *NodeP2P) Start() error {
 	if err := n.discoDHT.Start(); err != nil {
-		return fmt.Errorf("failed to start DHT discovery: %v", err)
+		return fmt.Errorf("failed to start DHT discovery: %w", err)
 	}
 
 	if err := n.discoMDNS.Start(); err != nil {
-		return fmt.Errorf("failed to start mDNS discovery: %v", err)
+		return fmt.Errorf("failed to start mDNS discovery: %w", err)
 	}
 
 	return nil
@@ -291,11 +291,11 @@ func (n *NodeP2P) Start() error {
 
 func (n *NodeP2P) Stop() error {
 	if err := n.discoDHT.Stop(); err != nil {
-		return fmt.Errorf("error stopping DHT discovery: %v", err)
+		return fmt.Errorf("error stopping DHT discovery: %w", err)
 	}
 
 	if err := n.discoMDNS.Stop(); err != nil {
-		return fmt.Errorf("error stopping mDNS discovery: %v", err)
+		return fmt.Errorf("error stopping mDNS discovery: %w", err)
 	}
 
 	return n.host.Close()
