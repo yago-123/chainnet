@@ -69,6 +69,11 @@ test: protobuf
 	@echo "Running tests..."
 	@go test -v -cover ./... -tags '!e2e'
 
+.PHONY: e2e
+e2e:
+	@echo "Running end-to-end tests..."
+	@go test -v -cover ./e2e/... -tags 'e2e'
+
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
