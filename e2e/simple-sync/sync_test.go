@@ -5,21 +5,26 @@ package simple_sync
 
 import (
 	"context"
+	"github.com/yago-123/minikube-testing/pkg/orchestrator"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/yago-123/minikube-testing/pkg/runtime"
-
-	"github.com/yago-123/minikube-testing/pkg/orchestrator"
 )
 
 const (
-	ctxTimeout = 1 * time.Minute
+	ctxTimeout = 5 * time.Minute
 )
 
 func TestNodeSyncDuringStartup(t *testing.T) {
+	// set working directory to root of the project
+	if err := os.Chdir(filepath.Join("..", "..")); err != nil {
+		panic(err)
+	}
+
 	// create minikube machine
 	minikube := orchestrator.NewMinikube(os.Stdout, os.Stderr)
 	defer minikube.Delete()
@@ -39,11 +44,11 @@ func TestNodeSyncDuringStartup(t *testing.T) {
 		t.Fatalf("unable to create docker controller: %v", err)
 	}
 
-	dockerfile, err := os.ReadFile("./../../build/docker/miner/Dockerfile")
+	dockerfile, err := os.ReadFile("./build/docker/miner/Dockerfile")
 	if err != nil {
 		t.Fatalf("unable to read dockerfile: %v", err)
 	}
-	if err = dock.BuildImageWithContextPath(ctx, "yagoninja/chainnet-miner", imageTag, dockerfile, "./../.."); err != nil {
+	if err = dock.BuildImage(ctx, "yagoninja/chainnet-miner", imageTag, dockerfile, []string{"./bin/chainnet-miner"}); err != nil {
 		t.Fatalf("unable to build image: %v", err)
 	}
 
