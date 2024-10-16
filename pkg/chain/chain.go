@@ -120,7 +120,7 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject, blockSubject observer.BlockSubject) error {
 	var p2pNet *p2p.NodeP2P
 
 	// check if the network is supposed to be enabled
@@ -139,6 +139,10 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 	if err != nil {
 		return fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
+
+	// register the block subject to the network
+	// todo() consider moving this in other part
+	blockSubject.Register(p2pNet)
 
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {

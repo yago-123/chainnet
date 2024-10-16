@@ -394,7 +394,7 @@ func (n *NodeP2P) ID() string {
 
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
-func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
-	// use n.pubsub to notify about new block addition
-	// go n.NotifyBlockAddition(b)
+func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
+	// notify all peers about the new block added
+	n.pubsub.NotifyBlockAdded(context.Background(), *block)
 }

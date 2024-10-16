@@ -45,6 +45,7 @@ func main() {
 	mempool := mempool.NewMemPool()
 
 	// create new observer
+	// todo(): consider renaming to blockSubject?
 	subjectObserver := observer.NewBlockSubject()
 
 	// create new chain
@@ -83,7 +84,7 @@ func main() {
 	subjectNet := observer.NewNetSubject()
 	subjectNet.Register(chain)
 
-	if err = chain.InitNetwork(subjectNet); err != nil {
+	if err = chain.InitNetwork(subjectNet, subjectObserver); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 

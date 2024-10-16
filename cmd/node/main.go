@@ -38,6 +38,7 @@ func main() {
 	}
 
 	// create new observer
+	// todo(): consider renaming to blockSubject?
 	subjectObserver := observer.NewBlockSubject()
 
 	// create new chain
@@ -67,7 +68,7 @@ func main() {
 	netSubject := observer.NewNetSubject()
 	netSubject.Register(chain)
 
-	if err = chain.InitNetwork(netSubject); err != nil {
+	if err = chain.InitNetwork(netSubject, subjectObserver); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 

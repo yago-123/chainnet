@@ -139,9 +139,20 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 }
 
 // NotifyBlockAdded used for notifying the pubsub network that a local block has been added to the blockchain
-func (g *GossipPubSub) NotifyBlockAdded(_ kernel.Block) error {
+func (g *GossipPubSub) NotifyBlockAdded(ctx context.Context, block kernel.Block) error {
 	// todo(): should we control which blocks are sent to the pub sub net? (e.g. only blocks that are mined locally?)
-	return nil
+
+	topic, ok := g.topicStore[BlockAddedPubSubTopic]
+	if !ok {
+		return fmt.Errorf("topic %s not registered", BlockAddedPubSubTopic)
+	}
+
+	data, err := g.encoder.SerializeBlock(block)
+	if err != nil {
+		return fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	return topic.Publish(ctx, data)
 }
 
 func (g *GossipPubSub) NotifyTransactionAdded(ctx context.Context, tx kernel.Transaction) error {

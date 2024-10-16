@@ -6,6 +6,6 @@ import (
 )
 
 type PubSub interface {
-	NotifyBlockAdded(block kernel.Block) error
+	NotifyBlockAdded(ctx context.Context, block kernel.Block) error
 	NotifyTransactionAdded(ctx context.Context, tx kernel.Transaction) error
 }
