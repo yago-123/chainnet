@@ -36,30 +36,41 @@ func newGossipHandler(ctx context.Context, logger *logrus.Logger, encoder encodi
 	}
 }
 
+// listenForBlocksAdded represents the handler for the block added topic
 func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
-	for {
-		_, err := sub.Next(h.ctx)
-		if err != nil {
-			return
-		}
-	}
-
-	//
-}
-
-func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
 	for {
 		msg, err := sub.Next(h.ctx)
 		if err != nil {
 			return
 		}
 
-		tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
+		// todo(): should we send the block or the block header?
+
+		block, err := h.encoder.DeserializeBlock([]byte(msg.String()))
 		if err != nil {
-			h.logger.Errorf("failed deserializing transaction: %s", err)
+			h.logger.Errorf("failed deserializing block from %s: %s", msg.ReceivedFrom, err)
 		}
 
-		h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+		h.logger.Debugf("received block from %s with block ID %x", msg.ReceivedFrom, block.Hash)
+
+		h.netSubject.NotifyUnconfirmedBlockReceived(*block)
+	}
+}
+
+// listenForTxMempool represents the handler for the tx mempool topic
+func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
+	for {
+		_, err := sub.Next(h.ctx)
+		if err != nil {
+			return
+		}
+
+		// tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
+		// if err != nil {
+		//	h.logger.Errorf("failed deserializing transaction: %s", err)
+		// }
+
+		// h.netSubject.NotifyUnconfirmedTxReceived(*tx)
 	}
 }
 
@@ -98,6 +109,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 		// if subscribe is enabled, subscribe to the topic and initialize the handler. Otherwise, just join the
 		// topic. Subscribe is not enabled for the cases in which we only want to publish to the topic (like wallets)
 		// but not listen
+		// todo: put enableSubscribe as flag
 		if enableSubscribe {
 			// subscribe to the topic to listen
 			sub, errSub := topic.Subscribe()
@@ -126,11 +138,13 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 	}, nil
 }
 
+// NotifyBlockAdded used for notifying the pubsub network that a local block has been added to the blockchain
 func (g *GossipPubSub) NotifyBlockAdded(_ kernel.Block) error {
+	// todo(): should we control which blocks are sent to the pub sub net? (e.g. only blocks that are mined locally?)
 	return nil
 }
 
-func (g *GossipPubSub) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+func (g *GossipPubSub) NotifyTransactionAdded(ctx context.Context, tx kernel.Transaction) error {
 	topic, ok := g.topicStore[TxMempoolPubSubTopic]
 	if !ok {
 		return fmt.Errorf("topic %s not registered", TxMempoolPubSubTopic)

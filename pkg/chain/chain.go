@@ -302,6 +302,10 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	}()
 }
 
+func (bc *Blockchain) OnUnconfirmedBlockReceived(block kernel.Block) {
+	bc.AddBlock(&block)
+}
+
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 	// todo() figure how to retrieve fee
 	bc.mempool.AppendTransaction(&tx, 0)

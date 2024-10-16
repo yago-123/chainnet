@@ -11,6 +11,7 @@ import (
 type NetObserver interface {
 	ID() string
 	OnNodeDiscovered(peerID peer.ID)
+	OnUnconfirmedBlockReceived(block kernel.Block)
 	OnUnconfirmedTxReceived(tx kernel.Transaction)
 }
 
@@ -19,6 +20,7 @@ type NetSubject interface {
 	Register(observer NetObserver)
 	Unregister(observer NetObserver)
 	NotifyNodeDiscovered(peerID peer.ID)
+	NotifyUnconfirmedBlockReceived(block kernel.Block)
 	NotifyUnconfirmedTxReceived(tx kernel.Transaction)
 }
 
@@ -56,6 +58,16 @@ func (no *NetSubjectController) NotifyNodeDiscovered(peerID peer.ID) {
 	}
 }
 
+// NotifyUnconfirmedBlockReceived notifies all observers that a new block has been added
+func (no *NetSubjectController) NotifyUnconfirmedBlockReceived(block kernel.Block) {
+	no.mu.Lock()
+	defer no.mu.Unlock()
+	for _, observer := range no.observers {
+		observer.OnUnconfirmedBlockReceived(block)
+	}
+}
+
+// NotifyUnconfirmedTxReceived notifies all observers that a new unconfirmed transaction has been received
 func (no *NetSubjectController) NotifyUnconfirmedTxReceived(tx kernel.Transaction) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
