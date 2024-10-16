@@ -23,14 +23,16 @@ const (
 type gossipHandler struct {
 	ctx        context.Context
 	logger     *logrus.Logger
+	host       host.Host
 	encoder    encoding.Encoding
 	netSubject observer.NetSubject
 }
 
-func newGossipHandler(ctx context.Context, logger *logrus.Logger, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
+func newGossipHandler(ctx context.Context, cfg *config.Config, host host.Host, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
 	return &gossipHandler{
 		ctx:        ctx,
-		logger:     logger,
+		logger:     cfg.Logger,
+		host:       host,
 		encoder:    encoder,
 		netSubject: netSubject,
 	}
@@ -45,10 +47,15 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 		}
 
 		// todo(): should we send the block or the block header?
+		// ignore those messages that come from the same node
+		if h.host.ID() == msg.ReceivedFrom {
+			continue
+		}
 
-		block, err := h.encoder.DeserializeBlock([]byte(msg.String()))
+		block, err := h.encoder.DeserializeBlock(msg.Data)
 		if err != nil {
 			h.logger.Errorf("failed deserializing block from %s: %s", msg.ReceivedFrom, err)
+			continue
 		}
 
 		h.logger.Debugf("received block from %s with block ID %x", msg.ReceivedFrom, block.Hash)
@@ -68,6 +75,7 @@ func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
 		// tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
 		// if err != nil {
 		//	h.logger.Errorf("failed deserializing transaction: %s", err)
+		//  continue
 		// }
 
 		// h.netSubject.NotifyUnconfirmedTxReceived(*tx)
@@ -90,7 +98,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
-	handler := newGossipHandler(ctx, cfg.Logger, encoder, netSubject)
+	handler := newGossipHandler(ctx, cfg, host, encoder, netSubject)
 
 	// initialize handlers for the topics available
 	topicHandlers := map[string]func(sub *pubSubP2P.Subscription){

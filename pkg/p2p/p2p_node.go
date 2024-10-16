@@ -251,7 +251,7 @@ func NewNodeP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, []string{}, true)
+	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, []string{pubsub.BlockAddedPubSubTopic, pubsub.TxMempoolPubSubTopic}, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
@@ -396,5 +396,7 @@ func (n *NodeP2P) ID() string {
 // executed when a new block is added into the chain
 func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
 	// notify all peers about the new block added
-	n.pubsub.NotifyBlockAdded(context.Background(), *block)
+	if err := n.pubsub.NotifyBlockAdded(context.Background(), *block); err != nil {
+		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
+	}
 }
