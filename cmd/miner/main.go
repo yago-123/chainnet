@@ -92,8 +92,6 @@ func main() {
 	subjectChain.Register(network)
 
 	for {
-		time.Sleep(cfg.MiningInterval)
-
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
