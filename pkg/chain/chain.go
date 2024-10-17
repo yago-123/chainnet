@@ -323,7 +323,10 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 	}
 
 	// ask the peer for the block
-	block, err := bc.p2pNet.AskSpecificBlock(context.Background(), peer, hash)
+	ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	block, err := bc.p2pNet.AskSpecificBlock(ctx, peer, hash)
 	if err != nil {
 		bc.logger.Errorf("error asking for block %x to %s: %s", hash, peer.String(), err)
 		return
