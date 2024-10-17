@@ -5,46 +5,46 @@ import (
 	"sync"
 )
 
-// BlockObserver interface that defines the methods that a block observer should implement
-type BlockObserver interface {
+// ChainObserver interface that defines the methods that a block observer should implement
+type ChainObserver interface {
 	ID() string
 	OnBlockAddition(block *kernel.Block)
 }
 
 // BlockSubject controller that manages the block observers
 type BlockSubject interface {
-	Register(observer BlockObserver)
-	Unregister(observer BlockObserver)
+	Register(observer ChainObserver)
+	Unregister(observer ChainObserver)
 	NotifyBlockAdded(block *kernel.Block)
 }
 
-type BlockSubjectController struct {
-	observers map[string]BlockObserver
+type ChainSubjectController struct {
+	observers map[string]ChainObserver
 	mu        sync.Mutex
 }
 
-func NewBlockSubject() *BlockSubjectController {
-	return &BlockSubjectController{
-		observers: make(map[string]BlockObserver),
+func NewChainSubject() *ChainSubjectController {
+	return &ChainSubjectController{
+		observers: make(map[string]ChainObserver),
 	}
 }
 
 // Register adds an observer to the list of observers
-func (so *BlockSubjectController) Register(observer BlockObserver) {
+func (so *ChainSubjectController) Register(observer ChainObserver) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
 	so.observers[observer.ID()] = observer
 }
 
 // Unregister removes an observer from the list of observers
-func (so *BlockSubjectController) Unregister(observer BlockObserver) {
+func (so *ChainSubjectController) Unregister(observer ChainObserver) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
 	delete(so.observers, observer.ID())
 }
 
 // NotifyBlockAdded notifies all observers that a new block has been added
-func (so *BlockSubjectController) NotifyBlockAdded(block *kernel.Block) {
+func (so *ChainSubjectController) NotifyBlockAdded(block *kernel.Block) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
 	for _, observer := range so.observers {

@@ -95,7 +95,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -132,7 +132,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 		Return([]byte{}, storage.ErrNotFound)
 
 	cfg := config.NewConfig()
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewBlockSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	cfg.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"

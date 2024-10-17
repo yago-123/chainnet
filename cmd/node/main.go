@@ -33,7 +33,7 @@ func main() {
 
 	// create new observer
 	netSubject := observer.NewNetSubject()
-	subjectChain := observer.NewBlockSubject()
+	subjectChain := observer.NewChainSubject()
 
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
