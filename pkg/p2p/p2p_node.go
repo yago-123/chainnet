@@ -395,8 +395,11 @@ func (n *NodeP2P) ID() string {
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
 func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
+	ctx, cancel := context.WithTimeout(context.Background(), n.cfg.P2P.ConnTimeout)
+	defer cancel()
+
 	// notify all peers about the new block added
-	if err := n.pubsub.NotifyBlockHeaderAdded(context.Background(), *block.Header); err != nil {
+	if err := n.pubsub.NotifyBlockHeaderAdded(ctx, *block.Header); err != nil {
 		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
 	}
 }
