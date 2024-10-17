@@ -307,7 +307,9 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 }
 
 func (bc *Blockchain) OnUnconfirmedBlockReceived(block kernel.Block) {
-	bc.AddBlock(&block)
+	if err := bc.AddBlock(&block); err != nil {
+		bc.logger.Errorf("error adding block %x to the chain: %s", block.Hash, err)
+	}
 }
 
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
