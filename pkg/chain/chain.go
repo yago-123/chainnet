@@ -307,6 +307,9 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	}()
 }
 
+// OnUnconfirmedHeaderReceived is called when a remote node publishes that has added a new
+// block to the (remote node) chain. Once the header is received, this function is executed
+// and (the local chain) tries to add the block
 func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader) {
 	// make sure that the header is compatible with the local chain
 	if err := bc.validator.ValidateHeader(&header); err != nil {
