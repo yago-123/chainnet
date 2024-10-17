@@ -46,7 +46,6 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 			return
 		}
 
-		// todo(): should we send the block or the block header?
 		// ignore those messages that come from the same node
 		if h.host.ID() == msg.ReceivedFrom {
 			continue
