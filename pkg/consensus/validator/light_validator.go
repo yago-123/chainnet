@@ -76,7 +76,7 @@ func (lv *LValidator) validateHeaderFieldsWithinLimits(bh *kernel.BlockHeader) e
 	return nil
 }
 
-// validateBlockTarget checks that the block hash corresponds to the target
+// validateHeaderTarget checks that the block hash corresponds to the target
 func (lv *LValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
 	hash, err := util.CalculateBlockHash(bh, lv.hasher)
 	if err != nil {
