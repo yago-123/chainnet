@@ -60,7 +60,7 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 
 		h.logger.Tracef("received block from %s with block ID %v", msg.ReceivedFrom, header)
 
-		h.netSubject.NotifyUnconfirmedBlockReceived(msg.ReceivedFrom, *header)
+		h.netSubject.NotifyUnconfirmedHeaderReceived(msg.ReceivedFrom, *header)
 	}
 }
 
@@ -148,8 +148,6 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 
 // NotifyBlockHeaderAdded used for notifying the pubsub network that a local block has been added to the blockchain
 func (g *GossipPubSub) NotifyBlockHeaderAdded(ctx context.Context, header kernel.BlockHeader) error {
-	// todo(): should we control which blocks are sent to the pub sub net? (e.g. only blocks that are mined locally?)
-
 	topic, ok := g.topicStore[BlockAddedPubSubTopic]
 	if !ok {
 		return fmt.Errorf("topic %s not registered", BlockAddedPubSubTopic)
