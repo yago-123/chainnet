@@ -12,6 +12,7 @@ import (
 )
 
 type TxFunc func(tx *kernel.Transaction) error
+type HeaderFunc func(bh *kernel.BlockHeader) error
 type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
@@ -47,6 +48,20 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 	}
 
 	return nil
+}
+
+func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
+	validations := []HeaderFunc{
+		hv.lv.ValidateHeader,
+	}
+
+	for _, validate := range validations {
+		if err := validate(bh); err != nil {
+			return err
+		}
+	}
+
+	return hv.lv.ValidateHeader(bh)
 }
 
 func (hv *HValidator) ValidateBlock(b *kernel.Block) error {

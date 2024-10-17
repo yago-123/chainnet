@@ -18,6 +18,10 @@ func (m *MockHeavyValidator) ValidateTx(_ *kernel.Transaction) error {
 	return nil
 }
 
+func (m *MockHeavyValidator) ValidateHeader(_ *kernel.BlockHeader) error {
+	return nil
+}
+
 func (m *MockHeavyValidator) ValidateBlock(_ *kernel.Block) error {
 	return nil
 }
