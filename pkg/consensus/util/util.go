@@ -1,6 +1,7 @@
 package util
 
 import (
+	"chainnet/config"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"crypto/ecdsa"
@@ -9,12 +10,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
+	"time"
 )
 
 const (
-	NumBitsInByte   = 8
-	BiggestByteMask = 0xFF
+	NumBitsInByte         = 8
+	BiggestByteMask       = 0xFF
+	TargetAjustmentFactor = 4
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -99,6 +103,65 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	}
 
 	return true
+}
+
+// CalculateMiningDifficulty calculates the new mining difficulty based on the actual time span
+// and the target time span
+func CalculateMiningDifficulty(cfg *config.Config, currentDifficulty float64, actualTimeSpan int64) float64 {
+	targetTimeSpan := cfg.MiningInterval * time.Duration(cfg.DifficultyInterval)
+
+	// calculate the adjustment factor
+	adjustmentFactor := float64(actualTimeSpan) / float64(targetTimeSpan)
+
+	// apply adjustment factor to the current difficulty
+	newDifficulty := currentDifficulty * adjustmentFactor
+
+	// limit difficulty adjustment by factor of 4x or 1/4x
+	if newDifficulty > currentDifficulty*TargetAjustmentFactor {
+		newDifficulty = currentDifficulty * TargetAjustmentFactor
+	} else if newDifficulty < currentDifficulty/TargetAjustmentFactor {
+		newDifficulty = currentDifficulty / TargetAjustmentFactor
+	}
+
+	return newDifficulty
+}
+
+// CalculateTargetFromDifficulty calculates the number of leading zeros based on difficulty. The target
+// is inversely proportional to the difficulty. If difficulty is 2^n, target is 2^(256-n)
+func CalculateTargetFromDifficulty(difficulty float64) uint {
+	bigDifficulty := big.NewInt(int64(difficulty))
+	target := big.NewInt(1)
+	// set the target to 2^256
+	target.Lsh(target, 256)
+	// calculate target based on difficulty
+	target.Div(target, bigDifficulty)
+
+	// count number of leading zeros in target
+	leadingZeros := uint(0)
+	for target.Cmp(big.NewInt(0)) > 0 {
+		if target.Bit(255) == 0 {
+			leadingZeros++
+			// shift right to count leading zeros
+			target.Rsh(target, 1)
+		} else {
+			break
+		}
+	}
+
+	return leadingZeros
+}
+
+// CalculateDifficultyFromTarget calculates difficulty based on leading zeros (target = 2^(256 - leadingZeros))
+func CalculateDifficultyFromTarget(leadingZeros uint) float64 {
+	target := big.NewInt(1).Lsh(big.NewInt(1), 256-leadingZeros)
+
+	// calculate difficulty = 2^256 / target
+	difficulty := big.NewInt(1).Lsh(big.NewInt(1), 256)
+	difficulty.Div(difficulty, target)
+
+	difficultyFloat, _ := difficulty.Float64()
+
+	return difficultyFloat
 }
 
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {

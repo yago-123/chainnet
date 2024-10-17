@@ -26,9 +26,6 @@ const (
 	MinerObserverID = "miner-observer"
 )
 
-// MiningTarget will be eventually replaced with variable mining difficulty
-const MiningTarget = 8
-
 type Miner struct {
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
