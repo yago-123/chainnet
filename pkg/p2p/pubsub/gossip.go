@@ -58,7 +58,7 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 			continue
 		}
 
-		h.logger.Debugf("received block from %s with block ID %x", msg.ReceivedFrom, block.Hash)
+		h.logger.Tracef("received block from %s with block ID %x", msg.ReceivedFrom, block.Hash)
 
 		h.netSubject.NotifyUnconfirmedBlockReceived(*block)
 	}
