@@ -51,6 +51,7 @@ func (lv *LValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 	validations := []HeaderFunc{
 		lv.validateHeaderFieldsWithinLimits,
 		lv.validateVersion,
+		lv.validateHeaderTarget,
 	}
 
 	for _, validate := range validations {
@@ -70,6 +71,20 @@ func (lv *LValidator) validateHeaderFieldsWithinLimits(bh *kernel.BlockHeader) e
 
 	if len(bh.MerkleRoot) == 0 {
 		return fmt.Errorf("merkle root is empty")
+	}
+
+	return nil
+}
+
+// validateBlockTarget checks that the block hash corresponds to the target
+func (lv *LValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
+	hash, err := util.CalculateBlockHash(bh, lv.hasher)
+	if err != nil {
+		return fmt.Errorf("error calculating header hash: %w", err)
+	}
+
+	if !util.IsFirstNBitsZero(hash, bh.Target) {
+		return fmt.Errorf("block %x has invalid target %d", hash, bh.Target)
 	}
 
 	return nil
