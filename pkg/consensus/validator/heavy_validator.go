@@ -53,6 +53,7 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 	validations := []HeaderFunc{
 		hv.lv.ValidateHeader,
+		hv.validateHeaderHeight,
 	}
 
 	for _, validate := range validations {
@@ -65,6 +66,10 @@ func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 }
 
 func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
+	if err := hv.ValidateHeader(b.Header); err != nil {
+		return fmt.Errorf("error validating block header: %w", err)
+	}
+
 	validations := []BlockFunc{
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
@@ -73,7 +78,6 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validatePreviousBlockMatchCurrentLatest,
 		hv.validateBlockHeight,
 		hv.validateMerkleTree,
-		hv.validateBlockTarget,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
 		// todo(): validate block timestamp
@@ -204,10 +208,8 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 	return nil
 }
 
-// validateBlockHeight checks that the block height matches the current chain height
-func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
-	// if genesis block, don't validate block height
-	if b.IsGenesisBlock() {
+func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
+	if bh.Height == 0 {
 		return nil
 	}
 
@@ -217,8 +219,22 @@ func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
 		return fmt.Errorf("unable to retrieve last block: %w", err)
 	}
 
-	if !(b.Header.Height == (lastChainBlock.Header.Height + 1)) {
-		return fmt.Errorf("new block %x with height %d does not match current chain height %d", b.Hash, b.Header.Height, lastChainBlock.Header.Height)
+	if !(bh.Height == (lastChainBlock.Header.Height + 1)) {
+		return fmt.Errorf("header does not match local height")
+	}
+
+	return nil
+}
+
+// validateBlockHeight checks that the block height matches the current chain height
+func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
+	// if genesis block, don't validate block height
+	if b.IsGenesisBlock() {
+		return nil
+	}
+
+	if err := hv.validateHeaderHeight(b.Header); err != nil {
+		return fmt.Errorf("new block %x with height %d does not match current chain height", b.Hash, b.Header.Height)
 	}
 
 	return nil
@@ -233,15 +249,6 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 
 	if !bytes.Equal(merkletree.RootHash(), b.Header.MerkleRoot) {
 		return fmt.Errorf("block %x has invalid Merkle root", b.Hash)
-	}
-
-	return nil
-}
-
-// validateBlockTarget checks that the block hash corresponds to the target
-func (hv *HValidator) validateBlockTarget(b *kernel.Block) error {
-	if !util.IsFirstNBitsZero(b.Hash, b.Header.Target) {
-		return fmt.Errorf("block %x has invalid target %d", b.Hash, b.Header.Target)
 	}
 
 	return nil
