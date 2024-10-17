@@ -11,8 +11,8 @@ type ChainObserver interface {
 	OnBlockAddition(block *kernel.Block)
 }
 
-// BlockSubject controller that manages the block observers
-type BlockSubject interface {
+// ChainSubject controller that manages the block observers
+type ChainSubject interface {
 	Register(observer ChainObserver)
 	Unregister(observer ChainObserver)
 	NotifyBlockAdded(block *kernel.Block)
