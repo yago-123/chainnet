@@ -302,9 +302,23 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 	}()
 }
 
-func (bc *Blockchain) OnUnconfirmedBlockReceived(block kernel.Block) {
-	if err := bc.AddBlock(&block); err != nil {
-		bc.logger.Errorf("error adding block %x to the chain: %s", block.Hash, err)
+func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader) {
+	// calculate the block hash
+	hash, err := util.CalculateBlockHash(&header, bc.hasher)
+	if err != nil {
+		bc.logger.Errorf("error calculating block hash: %s", err)
+	}
+
+	// ask the peer for the block
+	block, err := bc.p2pNet.AskSpecificBlock(context.Background(), peer, hash)
+	if err != nil {
+		bc.logger.Errorf("error asking for block %x to %s: %s", hash, peer.String(), err)
+		return
+	}
+
+	// try to add the block to the chain
+	if err = bc.AddBlock(block); err != nil {
+		bc.logger.Tracef("error adding block %x to the chain: %s", block.Hash, err)
 	}
 }
 

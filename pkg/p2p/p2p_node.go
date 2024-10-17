@@ -396,7 +396,7 @@ func (n *NodeP2P) ID() string {
 // executed when a new block is added into the chain
 func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
 	// notify all peers about the new block added
-	if err := n.pubsub.NotifyBlockAdded(context.Background(), *block); err != nil {
+	if err := n.pubsub.NotifyBlockHeaderAdded(context.Background(), *block.Header); err != nil {
 		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
 	}
 }

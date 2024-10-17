@@ -52,15 +52,15 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 			continue
 		}
 
-		block, err := h.encoder.DeserializeBlock(msg.Data)
+		header, err := h.encoder.DeserializeHeader(msg.Data)
 		if err != nil {
 			h.logger.Errorf("failed deserializing block from %s: %s", msg.ReceivedFrom, err)
 			continue
 		}
 
-		h.logger.Tracef("received block from %s with block ID %x", msg.ReceivedFrom, block.Hash)
+		h.logger.Tracef("received block from %s with block ID %v", msg.ReceivedFrom, header)
 
-		h.netSubject.NotifyUnconfirmedBlockReceived(*block)
+		h.netSubject.NotifyUnconfirmedBlockReceived(msg.ReceivedFrom, *header)
 	}
 }
 
@@ -146,8 +146,8 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 	}, nil
 }
 
-// NotifyBlockAdded used for notifying the pubsub network that a local block has been added to the blockchain
-func (g *GossipPubSub) NotifyBlockAdded(ctx context.Context, block kernel.Block) error {
+// NotifyBlockHeaderAdded used for notifying the pubsub network that a local block has been added to the blockchain
+func (g *GossipPubSub) NotifyBlockHeaderAdded(ctx context.Context, header kernel.BlockHeader) error {
 	// todo(): should we control which blocks are sent to the pub sub net? (e.g. only blocks that are mined locally?)
 
 	topic, ok := g.topicStore[BlockAddedPubSubTopic]
@@ -155,7 +155,7 @@ func (g *GossipPubSub) NotifyBlockAdded(ctx context.Context, block kernel.Block)
 		return fmt.Errorf("topic %s not registered", BlockAddedPubSubTopic)
 	}
 
-	data, err := g.encoder.SerializeBlock(block)
+	data, err := g.encoder.SerializeHeader(header)
 	if err != nil {
 		return fmt.Errorf("failed to serialize transaction: %w", err)
 	}
