@@ -46,7 +46,7 @@ func main() {
 
 	// create new observer
 	// todo(): consider renaming to blockSubject?
-	subjectObserver := observer.NewBlockSubject()
+	subjectChain := observer.NewBlockSubject()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -62,7 +62,7 @@ func main() {
 			),
 			hash.GetHasher(consensusHasherType),
 		),
-		subjectObserver,
+		subjectChain,
 		encoding.NewProtobufEncoder(),
 	)
 	if err != nil {
@@ -76,15 +76,15 @@ func main() {
 	}
 
 	// register chain observers
-	subjectObserver.Register(mine)
-	subjectObserver.Register(boltdb)
-	subjectObserver.Register(mempool)
+	subjectChain.Register(mine)
+	subjectChain.Register(boltdb)
+	subjectChain.Register(mempool)
 
 	// create net subject and register the chain
 	subjectNet := observer.NewNetSubject()
 	subjectNet.Register(chain)
 
-	if err = chain.InitNetwork(subjectNet, subjectObserver); err != nil {
+	if err = chain.InitNetwork(subjectNet, subjectChain); err != nil {
 		cfg.Logger.Errorf("Error initializing network: %s", err)
 	}
 
