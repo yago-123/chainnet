@@ -35,6 +35,10 @@ func main() {
 	consensusHasherType := hash.SHA256
 	// todo(): add consensusSignatureType
 
+	// create observer controllers
+	subjectChain := observer.NewBlockSubject()
+	subjectNet := observer.NewNetSubject()
+
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
@@ -43,10 +47,6 @@ func main() {
 
 	// create mempool instance
 	mempool := mempool.NewMemPool()
-
-	// create new observer
-	// todo(): consider renaming to blockSubject?
-	subjectChain := observer.NewBlockSubject()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -75,18 +75,21 @@ func main() {
 		cfg.Logger.Fatalf("error initializing miner: %s", err)
 	}
 
+	// register network observers
+	subjectNet.Register(chain)
+
 	// register chain observers
 	subjectChain.Register(mine)
 	subjectChain.Register(boltdb)
 	subjectChain.Register(mempool)
 
-	// create net subject and register the chain
-	subjectNet := observer.NewNetSubject()
-	subjectNet.Register(chain)
-
-	if err = chain.InitNetwork(subjectNet, subjectChain); err != nil {
-		cfg.Logger.Errorf("Error initializing network: %s", err)
+	network, err := chain.InitNetwork(subjectNet)
+	if err != nil {
+		cfg.Logger.Fatalf("Error initializing network: %s", err)
 	}
+
+	// register the block subject to the network
+	subjectChain.Register(network)
 
 	for {
 		time.Sleep(cfg.MiningInterval)

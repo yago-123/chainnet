@@ -120,33 +120,29 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject, blockSubject observer.BlockSubject) error {
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P, error) {
 	var p2pNet *p2p.NodeP2P
 
 	// check if the network is supposed to be enabled
 	if !bc.cfg.P2P.Enabled {
-		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+		return nil, fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
 	}
 
 	// check if the network has been initialized before
 	if bc.p2pActive {
-		return fmt.Errorf("p2p network already active")
+		return nil, fmt.Errorf("p2p network already active")
 	}
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
 	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store))
 	if err != nil {
-		return fmt.Errorf("error creating p2p node discovery: %w", err)
+		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
-
-	// register the block subject to the network
-	// todo() consider moving this in other part
-	blockSubject.Register(p2pNet)
 
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {
-		return fmt.Errorf("error starting p2p node: %w", err)
+		return nil, fmt.Errorf("error starting p2p node: %w", err)
 	}
 
 	bc.p2pNet = p2pNet
@@ -155,10 +151,10 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject, blockSubject o
 	// todo() relocate this, in general this InitNetwork method seems OFF
 	// connect to node seeds
 	if err = p2pNet.ConnectToSeeds(); err != nil {
-		return fmt.Errorf("error connecting to seeds: %w", err)
+		return nil, fmt.Errorf("error connecting to seeds: %w", err)
 	}
 
-	return nil
+	return p2pNet, nil
 }
 
 // AddBlock adds a new block to the blockchain. The block is validated before being added to the chain
