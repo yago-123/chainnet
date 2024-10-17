@@ -36,7 +36,7 @@ func main() {
 	// todo(): add consensusSignatureType
 
 	// create observer controllers
-	subjectChain := observer.NewBlockSubject()
+	subjectChain := observer.NewChainSubject()
 	subjectNet := observer.NewNetSubject()
 
 	// create instance for persisting data

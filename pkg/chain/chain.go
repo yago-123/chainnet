@@ -43,7 +43,7 @@ type Blockchain struct {
 
 	validator consensus.HeavyValidator
 
-	blockSubject observer.BlockSubject
+	blockSubject observer.ChainSubject
 
 	p2pActive    bool
 	p2pNet       *p2p.NodeP2P
@@ -61,7 +61,7 @@ func NewBlockchain(
 	mempool *mempool.MemPool,
 	hasher hash.Hashing,
 	validator consensus.HeavyValidator,
-	subject observer.BlockSubject,
+	subject observer.ChainSubject,
 	p2pEncoder encoding.Encoding,
 ) (*Blockchain, error) {
 	var err error
