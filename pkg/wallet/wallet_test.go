@@ -55,7 +55,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 	// require.NoError(t, err)
 
 	// todo(): add script signature validator? probably depends on type of wallet: nespv, spv, full node wallet...
-	// _, err = wallet2.SendTransaction("pubkey-1", 10, 1, utxos)
+	// _, err = wallet2.NotifyTransactionAdded("pubkey-1", 10, 1, utxos)
 	// require.Error(t, err)
 }
 

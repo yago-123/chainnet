@@ -16,5 +16,6 @@ type LightValidator interface {
 // by nodes and miners
 type HeavyValidator interface {
 	ValidateTx(tx *kernel.Transaction) error
+	ValidateHeader(bh *kernel.BlockHeader) error
 	ValidateBlock(b *kernel.Block) error
 }

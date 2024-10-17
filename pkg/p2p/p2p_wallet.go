@@ -92,5 +92,5 @@ func (n *WalletP2P) Stop() error {
 }
 
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
-	return n.pubsub.SendTransaction(ctx, tx)
+	return n.pubsub.NotifyTransactionAdded(ctx, tx)
 }

@@ -31,14 +31,17 @@ func main() {
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
 
+	// create new observer
+	netSubject := observer.NewNetSubject()
+	subjectChain := observer.NewBlockSubject()
+
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
-	// create new observer
-	subjectObserver := observer.NewBlockSubject()
+	subjectChain.Register(boltdb)
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -54,22 +57,23 @@ func main() {
 			),
 			hash.GetHasher(consensusHasherType),
 		),
-		subjectObserver,
+		subjectChain,
 		encoding.NewProtobufEncoder(),
 	)
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
 	}
 
-	subjectObserver.Register(boltdb)
-
 	// create net subject and register chain
-	netSubject := observer.NewNetSubject()
 	netSubject.Register(chain)
 
-	if err = chain.InitNetwork(netSubject); err != nil {
-		cfg.Logger.Errorf("Error initializing network: %s", err)
+	network, err := chain.InitNetwork(netSubject)
+	if err != nil {
+		cfg.Logger.Fatalf("Error initializing network: %s", err)
 	}
+
+	// register the block subject to the network
+	subjectChain.Register(network)
 
 	select {}
 }

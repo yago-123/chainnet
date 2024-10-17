@@ -23,43 +23,61 @@ const (
 type gossipHandler struct {
 	ctx        context.Context
 	logger     *logrus.Logger
+	host       host.Host
 	encoder    encoding.Encoding
 	netSubject observer.NetSubject
 }
 
-func newGossipHandler(ctx context.Context, logger *logrus.Logger, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
+func newGossipHandler(ctx context.Context, cfg *config.Config, host host.Host, encoder encoding.Encoding, netSubject observer.NetSubject) *gossipHandler {
 	return &gossipHandler{
 		ctx:        ctx,
-		logger:     logger,
+		logger:     cfg.Logger,
+		host:       host,
 		encoder:    encoder,
 		netSubject: netSubject,
 	}
 }
 
+// listenForBlocksAdded represents the handler for the block added topic
 func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
-	for {
-		_, err := sub.Next(h.ctx)
-		if err != nil {
-			return
-		}
-	}
-
-	//
-}
-
-func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
 	for {
 		msg, err := sub.Next(h.ctx)
 		if err != nil {
 			return
 		}
 
-		tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
-		if err != nil {
-			h.logger.Errorf("failed deserializing transaction: %s", err)
+		// ignore those messages that come from the same node
+		if h.host.ID() == msg.ReceivedFrom {
+			continue
 		}
 
-		h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+		header, err := h.encoder.DeserializeHeader(msg.Data)
+		if err != nil {
+			h.logger.Errorf("failed deserializing block from %s: %s", msg.ReceivedFrom, err)
+			continue
+		}
+
+		h.logger.Tracef("received block from %s with block ID %v", msg.ReceivedFrom, header)
+
+		h.netSubject.NotifyUnconfirmedHeaderReceived(msg.ReceivedFrom, *header)
+	}
+}
+
+// listenForTxMempool represents the handler for the tx mempool topic
+func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
+	for {
+		_, err := sub.Next(h.ctx)
+		if err != nil {
+			return
+		}
+
+		// tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
+		// if err != nil {
+		//	h.logger.Errorf("failed deserializing transaction: %s", err)
+		//  continue
+		// }
+
+		// h.netSubject.NotifyUnconfirmedTxReceived(*tx)
 	}
 }
 
@@ -79,7 +97,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
-	handler := newGossipHandler(ctx, cfg.Logger, encoder, netSubject)
+	handler := newGossipHandler(ctx, cfg, host, encoder, netSubject)
 
 	// initialize handlers for the topics available
 	topicHandlers := map[string]func(sub *pubSubP2P.Subscription){
@@ -98,6 +116,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 		// if subscribe is enabled, subscribe to the topic and initialize the handler. Otherwise, just join the
 		// topic. Subscribe is not enabled for the cases in which we only want to publish to the topic (like wallets)
 		// but not listen
+		// todo: put enableSubscribe as flag
 		if enableSubscribe {
 			// subscribe to the topic to listen
 			sub, errSub := topic.Subscribe()
@@ -126,11 +145,22 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 	}, nil
 }
 
-func (g *GossipPubSub) NotifyBlockAdded(_ kernel.Block) error {
-	return nil
+// NotifyBlockHeaderAdded used for notifying the pubsub network that a local block has been added to the blockchain
+func (g *GossipPubSub) NotifyBlockHeaderAdded(ctx context.Context, header kernel.BlockHeader) error {
+	topic, ok := g.topicStore[BlockAddedPubSubTopic]
+	if !ok {
+		return fmt.Errorf("topic %s not registered", BlockAddedPubSubTopic)
+	}
+
+	data, err := g.encoder.SerializeHeader(header)
+	if err != nil {
+		return fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	return topic.Publish(ctx, data)
 }
 
-func (g *GossipPubSub) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+func (g *GossipPubSub) NotifyTransactionAdded(ctx context.Context, tx kernel.Transaction) error {
 	topic, ok := g.topicStore[TxMempoolPubSubTopic]
 	if !ok {
 		return fmt.Errorf("topic %s not registered", TxMempoolPubSubTopic)

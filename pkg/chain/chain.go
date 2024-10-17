@@ -120,29 +120,29 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P, error) {
 	var p2pNet *p2p.NodeP2P
 
 	// check if the network is supposed to be enabled
 	if !bc.cfg.P2P.Enabled {
-		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+		return nil, fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
 	}
 
 	// check if the network has been initialized before
 	if bc.p2pActive {
-		return fmt.Errorf("p2p network already active")
+		return nil, fmt.Errorf("p2p network already active")
 	}
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
 	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store))
 	if err != nil {
-		return fmt.Errorf("error creating p2p node discovery: %w", err)
+		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
 
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {
-		return fmt.Errorf("error starting p2p node: %w", err)
+		return nil, fmt.Errorf("error starting p2p node: %w", err)
 	}
 
 	bc.p2pNet = p2pNet
@@ -151,10 +151,10 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) error {
 	// todo() relocate this, in general this InitNetwork method seems OFF
 	// connect to node seeds
 	if err = p2pNet.ConnectToSeeds(); err != nil {
-		return fmt.Errorf("error connecting to seeds: %w", err)
+		return nil, fmt.Errorf("error connecting to seeds: %w", err)
 	}
 
-	return nil
+	return p2pNet, nil
 }
 
 // AddBlock adds a new block to the blockchain. The block is validated before being added to the chain
@@ -255,6 +255,11 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 			continue
 		}
 
+		// validate the header compatibility with the local chain (prevent downloading block if is incompatible)
+		if err = bc.validator.ValidateHeader(header); err != nil {
+			return fmt.Errorf("error validating header %v: %w", header, err)
+		}
+
 		remoteBlockHash, err = util.CalculateBlockHash(header, bc.hasher)
 		if err != nil {
 			return fmt.Errorf("error calculating block hash from header: %w", err)
@@ -300,6 +305,37 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 			bc.logger.Errorf("error syncing with %s: %s", peerID.String(), err)
 		}
 	}()
+}
+
+// OnUnconfirmedHeaderReceived is called when a remote node publishes that has added a new
+// block to the (remote node) chain. Once the header is received, this function is executed
+// and (the local chain) tries to add the block
+func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader) {
+	// make sure that the header is compatible with the local chain
+	if err := bc.validator.ValidateHeader(&header); err != nil {
+		bc.logger.Tracef("error validating header %v sent by %s: %s", header, peer.String(), err)
+	}
+
+	// calculate the block hash
+	hash, err := util.CalculateBlockHash(&header, bc.hasher)
+	if err != nil {
+		bc.logger.Errorf("error calculating block hash: %s", err)
+	}
+
+	// ask the peer for the block
+	ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	block, err := bc.p2pNet.AskSpecificBlock(ctx, peer, hash)
+	if err != nil {
+		bc.logger.Errorf("error asking for block %x to %s: %s", hash, peer.String(), err)
+		return
+	}
+
+	// try to add the block to the chain
+	if err = bc.AddBlock(block); err != nil {
+		bc.logger.Tracef("error adding block %x to the chain: %s", block.Hash, err)
+	}
 }
 
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {

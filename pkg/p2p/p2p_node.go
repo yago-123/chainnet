@@ -251,7 +251,7 @@ func NewNodeP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, []string{}, true)
+	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, []string{pubsub.BlockAddedPubSubTopic, pubsub.TxMempoolPubSubTopic}, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
@@ -394,7 +394,12 @@ func (n *NodeP2P) ID() string {
 
 // OnBlockAddition is triggered as part of the chain controller, this function is
 // executed when a new block is added into the chain
-func (n *NodeP2P) OnBlockAddition(_ *kernel.Block) {
-	// use n.pubsub to notify about new block addition
-	// go n.NotifyBlockAddition(b)
+func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
+	ctx, cancel := context.WithTimeout(context.Background(), n.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	// notify all peers about the new block added
+	if err := n.pubsub.NotifyBlockHeaderAdded(ctx, *block.Header); err != nil {
+		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
+	}
 }
