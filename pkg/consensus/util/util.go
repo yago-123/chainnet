@@ -1,7 +1,6 @@
 package util
 
 import (
-	"chainnet/config"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"crypto/ecdsa"
@@ -12,13 +11,12 @@ import (
 	"io"
 	"math/big"
 	"os"
-	"time"
 )
 
 const (
-	NumBitsInByte         = 8
-	BiggestByteMask       = 0xFF
-	TargetAjustmentFactor = 4
+	NumBitsInByte            = 8
+	BiggestByteMask          = 0xFF
+	MaxTargetAjustmentFactor = 4
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -107,9 +105,7 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 
 // CalculateMiningDifficulty calculates the new mining difficulty based on the actual time span
 // and the target time span
-func CalculateMiningDifficulty(cfg *config.Config, currentDifficulty float64, actualTimeSpan int64) float64 {
-	targetTimeSpan := cfg.MiningInterval * time.Duration(cfg.DifficultyInterval)
-
+func CalculateMiningDifficulty(currentDifficulty, targetTimeSpan float64, actualTimeSpan int64) float64 {
 	// calculate the adjustment factor
 	adjustmentFactor := float64(actualTimeSpan) / float64(targetTimeSpan)
 
@@ -117,10 +113,10 @@ func CalculateMiningDifficulty(cfg *config.Config, currentDifficulty float64, ac
 	newDifficulty := currentDifficulty * adjustmentFactor
 
 	// limit difficulty adjustment by factor of 4x or 1/4x
-	if newDifficulty > currentDifficulty*TargetAjustmentFactor {
-		newDifficulty = currentDifficulty * TargetAjustmentFactor
-	} else if newDifficulty < currentDifficulty/TargetAjustmentFactor {
-		newDifficulty = currentDifficulty / TargetAjustmentFactor
+	if newDifficulty > (currentDifficulty * MaxTargetAjustmentFactor) {
+		newDifficulty = currentDifficulty * MaxTargetAjustmentFactor
+	} else if newDifficulty < currentDifficulty/MaxTargetAjustmentFactor {
+		newDifficulty = currentDifficulty / MaxTargetAjustmentFactor
 	}
 
 	return newDifficulty
