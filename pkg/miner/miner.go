@@ -19,7 +19,9 @@ const (
 	HalvingInterval       = 210000
 	MaxNumberHalvings     = 64
 	// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
-	AdjustDifficultyHeight = 2016
+	// AdjustDifficultyHeight = 2016
+
+	InitialMiningDifficulty = 2
 
 	BlockVersion = "1"
 
@@ -53,14 +55,9 @@ func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.
 		chain:       chain,
 		minerPubKey: pubKey,
 		isMining:    false,
-		target:      MiningTarget,
+		target:      util.CalculateTargetFromDifficulty(InitialMiningDifficulty),
 		cfg:         cfg,
 	}, nil
-}
-
-func (m *Miner) AdjustMiningDifficulty() uint {
-	// todo(): implement mining difficulty adjustment
-	return AdjustDifficultyHeight
 }
 
 func (m *Miner) CancelMining() {

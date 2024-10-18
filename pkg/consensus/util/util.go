@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"os"
 )
 
@@ -17,6 +16,9 @@ const (
 	NumBitsInByte            = 8
 	BiggestByteMask          = 0xFF
 	MaxTargetAjustmentFactor = 4
+
+	MaxHashZeros      = 256
+	InitialDifficulty = (MaxHashZeros - 1) / MaxHashZeros
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -105,59 +107,79 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 
 // CalculateMiningDifficulty calculates the new mining difficulty based on the actual time span
 // and the target time span
+//
+// Difficulty = (256 - target) / 256
 func CalculateMiningDifficulty(currentDifficulty, targetTimeSpan float64, actualTimeSpan int64) float64 {
+	// handle edge cases
+	if currentDifficulty <= 0 {
+		// return a very low value for non-positive difficulty
+		return InitialDifficulty
+	}
+	if targetTimeSpan <= 0 {
+		// return adjusted difficulty if targetTimeSpan is non-positive
+		return currentDifficulty * MaxTargetAjustmentFactor
+	}
+	if actualTimeSpan <= 0 {
+		// return reduced difficulty if no actual time has passed
+		return currentDifficulty / MaxTargetAjustmentFactor
+	}
+
 	// calculate the adjustment factor
-	adjustmentFactor := float64(actualTimeSpan) / float64(targetTimeSpan)
+	adjustmentFactor := float64(actualTimeSpan) / targetTimeSpan
 
 	// apply adjustment factor to the current difficulty
 	newDifficulty := currentDifficulty * adjustmentFactor
 
-	// limit difficulty adjustment by factor of 4x or 1/4x
+	// limit difficulty adjustment by a factor of 4x or 1/4x
 	if newDifficulty > (currentDifficulty * MaxTargetAjustmentFactor) {
 		newDifficulty = currentDifficulty * MaxTargetAjustmentFactor
-	} else if newDifficulty < currentDifficulty/MaxTargetAjustmentFactor {
+	} else if newDifficulty < (currentDifficulty / MaxTargetAjustmentFactor) {
 		newDifficulty = currentDifficulty / MaxTargetAjustmentFactor
 	}
 
 	return newDifficulty
 }
 
-// CalculateTargetFromDifficulty calculates the number of leading zeros based on difficulty. The target
-// is inversely proportional to the difficulty. If difficulty is 2^n, target is 2^(256-n)
+// CalculateTargetFromDifficulty calculates the target number of leading zeros based on the difficulty. Higher
+// difficulty results in more leading zeros
+//
+//	Target = 256 * (1 - difficulty)
 func CalculateTargetFromDifficulty(difficulty float64) uint {
-	bigDifficulty := big.NewInt(int64(difficulty))
-	target := big.NewInt(1)
-	// set the target to 2^256
-	target.Lsh(target, 256)
-	// calculate target based on difficulty
-	target.Div(target, bigDifficulty)
+	// determine the target number of leading zeros directly based on difficulty.
+	maxZeros := uint(MaxHashZeros)
 
-	// count number of leading zeros in target
-	leadingZeros := uint(0)
-	for target.Cmp(big.NewInt(0)) > 0 {
-		if target.Bit(255) == 0 {
-			leadingZeros++
-			// shift right to count leading zeros
-			target.Rsh(target, 1)
-		} else {
-			break
-		}
+	if difficulty <= 0 {
+		// if difficulty is 0 or negative, return the minimum target
+		return InitialDifficulty
 	}
 
-	return leadingZeros
+	// calculate the leading zeros as proportional to difficulty
+	target := uint(difficulty * float64(maxZeros))
+
+	// ensure the leading zeros don't exceed the max zeros
+	if target > maxZeros {
+		target = maxZeros
+	}
+
+	return target
 }
 
-// CalculateDifficultyFromTarget calculates difficulty based on leading zeros (target = 2^(256 - leadingZeros))
-func CalculateDifficultyFromTarget(leadingZeros uint) float64 {
-	target := big.NewInt(1).Lsh(big.NewInt(1), 256-leadingZeros)
+// CalculateDifficultyFromTarget calculates the difficulty based on the number of leading zeros
+//
+//	Difficulty = (256 - target) / 256
+func CalculateDifficultyFromTarget(target uint) float64 {
+	maxZeros := uint(MaxHashZeros)
 
-	// calculate difficulty = 2^256 / target
-	difficulty := big.NewInt(1).Lsh(big.NewInt(1), 256)
-	difficulty.Div(difficulty, target)
+	// ensure target doesn't exceed maxZeros
+	if target > maxZeros {
+		target = maxZeros
+	}
 
-	difficultyFloat, _ := difficulty.Float64()
+	// difficulty is inversely proportional to the number of leading zeros.
+	// difficulty could be proportional to the fraction of non-zero bits.
+	difficulty := float64(maxZeros-target) / float64(maxZeros)
 
-	return difficultyFloat
+	return difficulty
 }
 
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
