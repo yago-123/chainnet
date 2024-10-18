@@ -33,6 +33,9 @@ type Blockchain struct {
 	headers       map[string]kernel.BlockHeader
 	// blockTxsBloomFilter map[string]string
 
+	// todo() may be smarter to have the target as a field of the blockchain (saving the previous header interval
+	// todo() too), but generalSync must be implemented before that to ensure consistency
+
 	// syncMutex is used to lock the chain while performing syncs with other nodes
 	// this avoids collisions when multiple nodes are trying to sync with the local node
 	syncMutex *mutex.CtxMutex
