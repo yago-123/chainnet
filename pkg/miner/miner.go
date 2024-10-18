@@ -18,10 +18,6 @@ const (
 	InitialCoinbaseReward = 50
 	HalvingInterval       = 210000
 	MaxNumberHalvings     = 64
-	// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
-	// AdjustDifficultyHeight = 2016
-
-	InitialMiningDifficulty = 2
 
 	BlockVersion = "1"
 
@@ -55,7 +51,7 @@ func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.
 		chain:       chain,
 		minerPubKey: pubKey,
 		isMining:    false,
-		target:      util.CalculateTargetFromDifficulty(InitialMiningDifficulty),
+		target:      util.CalculateTargetFromDifficulty(util.InitialDifficulty),
 		cfg:         cfg,
 	}, nil
 }
@@ -92,9 +88,13 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	}
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
-	// todo(): handle prevBlockHash and block height
+	// if the block height is a multiple of the difficulty interval, calculate the new target
+	if m.chain.GetLastHeight()%m.cfg.DifficultyInterval == 0 {
+		m.target = m.calculateNewBlockTarget()
+	}
+
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash(), m.target)
+	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash())
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
@@ -166,7 +166,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	return tx, nil
 }
 
-func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {
+func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte) (*kernel.BlockHeader, error) {
 	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, hash.GetHasher(m.hasherType))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %w", err)
@@ -178,7 +178,18 @@ func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBl
 		merkleTree.RootHash(),
 		height,
 		prevBlockHash,
-		target,
+		m.target,
 		0,
 	), nil
+}
+
+func (m *Miner) calculateNewBlockTarget() uint {
+	m.chain.GetLastBlockHash()
+	newDifficulty := util.CalculateMiningDifficulty(
+		util.CalculateDifficultyFromTarget(m.target),
+		(time.Duration(m.cfg.DifficultyInterval) * m.cfg.MiningInterval).Seconds(),
+		1,
+	)
+
+	return util.CalculateTargetFromDifficulty(newDifficulty)
 }
