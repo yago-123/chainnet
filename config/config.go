@@ -36,7 +36,7 @@ const (
 
 	DefaultChainnetStorage    = "chainnet-storage"
 	DefaultMiningInterval     = 10 * time.Minute
-	DefaultDifficultyInterval = 24
+	DefaultDifficultyInterval = uint(24)
 	DefaultP2PEnabled         = true
 	DefaultP2PPeerPort        = 9100
 	DefaultP2PMinNumConn      = 1
@@ -78,24 +78,24 @@ type P2PConfig struct {
 
 // Config holds the configuration for the application
 type Config struct {
-	Logger             *logrus.Logger
-	SeedNodes          []SeedNode    `mapstructure:"seed-nodes"`
-	StorageFile        string        `mapstructure:"storage-file"`
-	PubKey             string        `mapstructure:"pub-key"`
-	MiningInterval     time.Duration `mapstructure:"mining-interval"`
-	DifficultyInterval uint          `mapstructure:"block-interval-adjustment"`
-	P2P                P2PConfig     `mapstructure:"p2p"`
+	Logger                   *logrus.Logger
+	SeedNodes                []SeedNode    `mapstructure:"seed-nodes"`
+	StorageFile              string        `mapstructure:"storage-file"`
+	PubKey                   string        `mapstructure:"pub-key"`
+	MiningInterval           time.Duration `mapstructure:"mining-interval"`
+	AdjustmentTargetInterval uint          `mapstructure:"block-interval-adjustment"`
+	P2P                      P2PConfig     `mapstructure:"p2p"`
 }
 
 // NewConfig creates a new Config with default values
 func NewConfig() *Config {
 	return &Config{
-		Logger:             logrus.New(),
-		SeedNodes:          []SeedNode{},
-		StorageFile:        DefaultChainnetStorage,
-		PubKey:             "",
-		MiningInterval:     DefaultMiningInterval,
-		DifficultyInterval: DefaultDifficultyInterval,
+		Logger:                   logrus.New(),
+		SeedNodes:                []SeedNode{},
+		StorageFile:              DefaultChainnetStorage,
+		PubKey:                   "",
+		MiningInterval:           DefaultMiningInterval,
+		AdjustmentTargetInterval: DefaultDifficultyInterval,
 		P2P: P2PConfig{
 			Enabled: DefaultP2PEnabled,
 			Identity: IdentityConfig{
@@ -158,7 +158,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().String(KeyPubKey, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
-	cmd.Flags().Duration(KeyBlockAdjustment, DefaultDifficultyInterval, "Number of blocks for adjusting difficulty")
+	cmd.Flags().Uint(KeyBlockAdjustment, DefaultDifficultyInterval, "Number of blocks for adjusting difficulty")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().String(KeyP2PPeerPrivKey, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
@@ -217,7 +217,7 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
 	}
 	if cmd.Flags().Changed(KeyBlockAdjustment) {
-		cfg.DifficultyInterval = viper.GetUint(KeyBlockAdjustment)
+		cfg.AdjustmentTargetInterval = viper.GetUint(KeyBlockAdjustment)
 	}
 	if cmd.Flags().Changed(KeyP2PEnabled) {
 		cfg.P2P.Enabled = viper.GetBool(KeyP2PEnabled)

@@ -80,7 +80,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	// calculate mining target (leading zeroes in block hash) for the block that is going to be mined
-	target, err := m.explorer.GetMiningTarget(m.chain.GetLastHeight(), m.cfg.DifficultyInterval, m.cfg.MiningInterval)
+	target, err := m.explorer.GetMiningTarget(m.chain.GetLastHeight(), m.cfg.AdjustmentTargetInterval, m.cfg.MiningInterval)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get mining target: %w", err)
 	}
