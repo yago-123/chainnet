@@ -3,6 +3,7 @@ package miner //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
+	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
@@ -142,7 +143,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"
-	miner, err := NewMiner(cfg, chain, hash.SHA256)
+	miner, err := NewMiner(cfg, chain, hash.SHA256, explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)))
 	require.NoError(t, err)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)

@@ -70,7 +70,7 @@ func main() {
 	}
 
 	// create new miner
-	mine, err := miner.NewMiner(cfg, chain, hash.SHA256)
+	mine, err := miner.NewMiner(cfg, chain, consensusHasherType, explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)))
 	if err != nil {
 		cfg.Logger.Fatalf("error initializing miner: %s", err)
 	}
