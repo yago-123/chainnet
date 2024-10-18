@@ -18,7 +18,8 @@ const (
 	MaxTargetAjustmentFactor = 4
 
 	MaxHashZeros      = 256
-	InitialDifficulty = (MaxHashZeros - 1) / MaxHashZeros
+	MinimumTarget     = 1
+	InitialDifficulty = (MaxHashZeros - MinimumTarget) / MaxHashZeros
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -159,9 +160,9 @@ func CalculateTargetFromDifficulty(difficulty float64) uint {
 	// determine the target number of leading zeros directly based on difficulty.
 	maxZeros := uint(MaxHashZeros)
 
-	if difficulty <= 0 {
+	if difficulty <= 0.0 {
 		// if difficulty is 0 or negative, return the minimum target
-		return InitialDifficulty
+		return MinimumTarget
 	}
 
 	// calculate the leading zeros as proportional to difficulty

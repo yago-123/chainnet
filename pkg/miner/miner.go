@@ -142,7 +142,7 @@ func (m *Miner) ID() string {
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *Miner) OnBlockAddition(block *kernel.Block) {
+func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
 }

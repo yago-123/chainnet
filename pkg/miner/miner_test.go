@@ -103,7 +103,6 @@ func TestMiner_MineBlock(t *testing.T) {
 	miner := Miner{
 		hasherType:  hash.SHA256,
 		minerPubKey: []byte("minerPubKey"),
-		target:      16,
 		chain:       chain,
 		cfg:         cfg,
 	}
@@ -115,7 +114,7 @@ func TestMiner_MineBlock(t *testing.T) {
 	assert.True(t, block.Transactions[0].IsCoinbase())
 	assert.Positive(t, block.Header.Nonce)
 	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerPubKey")), block.Transactions[0].Vout[0].ScriptPubKey)
-	assert.Equal(t, []byte{0x0, 0x0}, block.Hash[:2])
+	assert.Equal(t, byte(0), block.Hash[0]&0x80)
 
 	// cancel block in the middle of mining aborting the process
 	miner.ctx, miner.cancel = context.WithCancel(context.Background())
