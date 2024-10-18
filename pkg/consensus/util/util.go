@@ -105,6 +105,17 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	return true
 }
 
+// CalculateMiningTarget represents a wrapper around CalculateMiningDifficulty to avoid boilerplate code
+func CalculateMiningTarget(currentTarget uint, targetTimeSpan float64, actualTimeSpan int64) uint {
+	newDifficulty := CalculateMiningDifficulty(
+		CalculateDifficultyFromTarget(currentTarget),
+		targetTimeSpan,
+		actualTimeSpan,
+	)
+
+	return CalculateTargetFromDifficulty(newDifficulty)
+}
+
 // CalculateMiningDifficulty calculates the new mining difficulty based on the actual time span
 // and the target time span
 //

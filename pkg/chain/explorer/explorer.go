@@ -2,11 +2,13 @@ package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
+	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"encoding/hex"
 	"fmt"
+	"time"
 )
 
 type Explorer struct {
@@ -82,6 +84,54 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	}
 
 	return header, nil
+}
+
+// GetMiningTarget returns the mining target that corresponds to the block height provided. The height should be +1,
+// EQUAL or SMALLER than the latest block height in the chain (don't confuse with the block height argument).
+// This function is used for determining the mining target of the block that is going to be mined or added
+// to the chain. For example when the chain is synchronizing from the ground (needs to validate target) or when
+// the miner needs to know the next mining difficulty
+func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error) {
+	// if height remains smaller than difficulty interval, return initial difficulty
+	if height < difficultyAdjustmentInterval {
+		return util.CalculateTargetFromDifficulty(util.InitialDifficulty), nil
+	}
+
+	// retrieve the previous block
+	previousBlock, err := explorer.GetHeaderByHeight(height - 1)
+	if err != nil {
+		return 0, err
+	}
+
+	// control that the target being calculated is not for a block further than 2 blocks respect the last block,
+	// in other words, that the blocks between the target and the latest block in the chain exist (there is only
+	// a margin of 1 non-existent block (the one that is going to be mined or added)
+	if height > previousBlock.Height+1 {
+		return 0, fmt.Errorf("height mining target is ")
+	}
+
+	// if height is difficulty adjustment interval height, calculate new target
+	if (height % difficultyAdjustmentInterval) == 0 {
+		// get previous interval header
+		previousIntervalHeader, err := explorer.GetHeaderByHeight(height - difficultyAdjustmentInterval)
+		if err != nil {
+			return 0, err
+		}
+
+		// calculate mining difficulty
+		realBlockDifference := previousBlock.Timestamp - previousIntervalHeader.Timestamp
+		expectedBlockDifference := float64(difficultyAdjustmentInterval) * expectedMiningInterval.Seconds()
+
+		// calculate and return new target
+		return util.CalculateMiningTarget(
+			previousBlock.Target,
+			expectedBlockDifference,
+			realBlockDifference,
+		), nil
+	}
+
+	// if block is not an interval block (height % difficultyAdjustmentInterval) > 0, return the previous target
+	return previousBlock.Target, nil
 }
 
 // GetAllHeaders returns all the block headers added to the chain. This implementation is not efficient, headers should

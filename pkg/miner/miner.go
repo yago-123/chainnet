@@ -32,7 +32,6 @@ type Miner struct {
 	explorer   *explorer.Explorer
 
 	minerPubKey []byte
-	target      uint
 
 	isMining bool
 	ctx      context.Context
@@ -54,7 +53,6 @@ func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.
 		explorer:    explorer,
 		minerPubKey: pubKey,
 		isMining:    false,
-		target:      util.CalculateTargetFromDifficulty(util.InitialDifficulty),
 		cfg:         cfg,
 	}, nil
 }
@@ -81,6 +79,12 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	m.isMining = true
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
+	// calculate mining target (leading zeroes in block hash) for the block that is going to be mined
+	target, err := m.explorer.GetMiningTarget(m.chain.GetLastHeight(), m.cfg.DifficultyInterval, m.cfg.MiningInterval)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get mining target: %w", err)
+	}
+
 	// retrieve transactions that are going to be placed inside the block
 	collectedTxs, collectedFee := m.chain.RetrieveMempoolTxs(kernel.MaxNumberTxsPerBlock)
 
@@ -92,7 +96,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash())
+	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash(), target)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
@@ -139,29 +143,6 @@ func (m *Miner) ID() string {
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
 func (m *Miner) OnBlockAddition(block *kernel.Block) {
-	// check if block is interval block for calculating mining difficulty
-	nextHeight := block.Header.Height + 1
-	if (nextHeight % m.cfg.DifficultyInterval) == 0 {
-		// get previous interval header
-		previousIntervalHeader, err := m.explorer.GetHeaderByHeight(nextHeight - m.cfg.DifficultyInterval)
-		if err != nil {
-			m.cfg.Logger.Errorf("unable to calculate retrieve previous interval header: %v", err)
-			return
-		}
-
-		// calculate mining difficulty
-		newDifficulty := util.CalculateMiningDifficulty(
-			util.CalculateDifficultyFromTarget(m.target),
-			(time.Duration(m.cfg.DifficultyInterval) * m.cfg.MiningInterval).Seconds(),
-			block.Header.Timestamp-previousIntervalHeader.Timestamp,
-		)
-
-		// assign the new target
-		m.target = util.CalculateTargetFromDifficulty(newDifficulty)
-	}
-
-	// todo() how is the target calculated when the chain is started with an existing chain
-	// todo() notice the race condition regarding target and mining process
 	// cancel previous mining
 	m.CancelMining()
 }
@@ -187,7 +168,7 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	return tx, nil
 }
 
-func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte) (*kernel.BlockHeader, error) {
+func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBlockHash []byte, target uint) (*kernel.BlockHeader, error) {
 	merkleTree, err := consensus.NewMerkleTreeFromTxs(txs, hash.GetHasher(m.hasherType))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create Merkle tree from transactions: %w", err)
@@ -199,7 +180,7 @@ func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBl
 		merkleTree.RootHash(),
 		height,
 		prevBlockHash,
-		m.target,
+		target,
 		0,
 	), nil
 }
