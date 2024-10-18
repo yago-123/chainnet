@@ -3,6 +3,7 @@ package miner
 import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
+	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
@@ -28,6 +29,7 @@ type Miner struct {
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
+	explorer   *explorer.Explorer
 
 	minerPubKey []byte
 	target      uint
@@ -39,7 +41,7 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType) (*Miner, error) {
+func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.Explorer) (*Miner, error) {
 	if len(cfg.PubKey) == 0 {
 		return nil, fmt.Errorf("public key not provided, check the config file")
 	}
@@ -49,6 +51,7 @@ func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.
 	return &Miner{
 		hasherType:  hasherType,
 		chain:       chain,
+		explorer:    explorer,
 		minerPubKey: pubKey,
 		isMining:    false,
 		target:      util.CalculateTargetFromDifficulty(util.InitialDifficulty),
@@ -135,12 +138,30 @@ func (m *Miner) ID() string {
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *Miner) OnBlockAddition(_ *kernel.Block) {
-	// todo(): recalculate mining difficulty if applies
-	// if m.chain.GetLastHeight()%m.cfg.DifficultyInterval == 0 {
-	//      m.target = m.calculateNewBlockTarget()
-	// }
+func (m *Miner) OnBlockAddition(block *kernel.Block) {
+	// check if block is interval block for calculating mining difficulty
+	nextHeight := block.Header.Height + 1
+	if (nextHeight % m.cfg.DifficultyInterval) == 0 {
+		// get previous interval header
+		previousIntervalHeader, err := m.explorer.GetHeaderByHeight(nextHeight - m.cfg.DifficultyInterval)
+		if err != nil {
+			m.cfg.Logger.Errorf("unable to calculate retrieve previous interval header: %v", err)
+			return
+		}
 
+		// calculate mining difficulty
+		newDifficulty := util.CalculateMiningDifficulty(
+			util.CalculateDifficultyFromTarget(m.target),
+			(time.Duration(m.cfg.DifficultyInterval) * m.cfg.MiningInterval).Seconds(),
+			block.Header.Timestamp-previousIntervalHeader.Timestamp,
+		)
+
+		// assign the new target
+		m.target = util.CalculateTargetFromDifficulty(newDifficulty)
+	}
+
+	// todo() how is the target calculated when the chain is started with an existing chain
+	// todo() notice the race condition regarding target and mining process
 	// cancel previous mining
 	m.CancelMining()
 }
@@ -181,15 +202,4 @@ func (m *Miner) createBlockHeader(txs []*kernel.Transaction, height uint, prevBl
 		m.target,
 		0,
 	), nil
-}
-
-func (m *Miner) calculateNewBlockTarget() uint {
-	m.chain.GetLastBlockHash()
-	newDifficulty := util.CalculateMiningDifficulty(
-		util.CalculateDifficultyFromTarget(m.target),
-		(time.Duration(m.cfg.DifficultyInterval) * m.cfg.MiningInterval).Seconds(),
-		1,
-	)
-
-	return util.CalculateTargetFromDifficulty(newDifficulty)
 }

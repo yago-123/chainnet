@@ -125,7 +125,7 @@ func CalculateMiningDifficulty(currentDifficulty, targetTimeSpan float64, actual
 	}
 
 	// calculate the adjustment factor
-	adjustmentFactor := float64(actualTimeSpan) / targetTimeSpan
+	adjustmentFactor := float64(actualTimeSpan) / float64(targetTimeSpan)
 
 	// apply adjustment factor to the current difficulty
 	newDifficulty := currentDifficulty * adjustmentFactor

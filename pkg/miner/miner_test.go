@@ -124,6 +124,10 @@ func TestMiner_MineBlock(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestMiner_MineBlockWithTargetChange(t *testing.T) {
+
+}
+
 func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	store := &mockStorage.MockStorage{}
 	store.
