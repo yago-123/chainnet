@@ -2,18 +2,22 @@ package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"encoding/hex"
+	"fmt"
 )
 
 type Explorer struct {
-	store storage.Storage
+	store  storage.Storage
+	hasher hash.Hashing
 }
 
-func NewExplorer(store storage.Storage) *Explorer {
+func NewExplorer(store storage.Storage, hasher hash.Hashing) *Explorer {
 	return &Explorer{
-		store: store,
+		store:  store,
+		hasher: hasher,
 	}
 }
 
@@ -36,6 +40,37 @@ func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 	}
 
 	return block, nil
+}
+
+// GetBlockByHeight returns the block corresponding to the height provided
+func (explorer *Explorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, error) {
+	lastHeaderHash, err := explorer.store.GetLastBlockHash()
+	if err != nil {
+		return nil, err
+	}
+
+	// iterate through the headers to find the block with the given height
+	it := iterator.NewReverseHeaderIterator(explorer.store)
+	err = it.Initialize(lastHeaderHash)
+	if err != nil {
+		return nil, err
+	}
+
+	for it.HasNext() {
+		header, err := it.GetNextHeader()
+		if err != nil {
+			return nil, err
+		}
+
+		// if header matches, retrieve block
+		if header.Height == height {
+			return header, nil
+		}
+
+	}
+
+	// in case not found, return error
+	return nil, fmt.Errorf("header with height %d not found", height)
 }
 
 // GetLastHeader returns the last block header in the chain persisted
