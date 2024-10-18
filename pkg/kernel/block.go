@@ -15,8 +15,9 @@ type BlockHeader struct {
 	// todo(): use timestamp to determine the difficulty, in a 2 weeks period, if the number of blocks was
 	// todo(): created too quick, it means that the difficult must be increased
 	Timestamp int64
-	Target    uint
-	Nonce     uint
+	// todo(): target could be removed now, mining difficulty can already be determined dynamically
+	Target uint
+	Nonce  uint
 }
 
 func NewBlockHeader(version []byte, timestamp int64, merkleRoot []byte, height uint, prevBlockHash []byte, target, nonce uint) *BlockHeader {
