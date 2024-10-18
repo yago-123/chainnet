@@ -88,11 +88,6 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	}
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
-	// if the block height is a multiple of the difficulty interval, calculate the new target
-	if m.chain.GetLastHeight()%m.cfg.DifficultyInterval == 0 {
-		m.target = m.calculateNewBlockTarget()
-	}
-
 	// create block header
 	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash())
 	if err != nil {
@@ -141,6 +136,11 @@ func (m *Miner) ID() string {
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
 func (m *Miner) OnBlockAddition(_ *kernel.Block) {
+	// todo(): recalculate mining difficulty if applies
+	// if m.chain.GetLastHeight()%m.cfg.DifficultyInterval == 0 {
+	//      m.target = m.calculateNewBlockTarget()
+	// }
+
 	// cancel previous mining
 	m.CancelMining()
 }

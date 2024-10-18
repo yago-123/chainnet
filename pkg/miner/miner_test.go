@@ -95,7 +95,8 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	cfg := config.NewConfig()
+	chain, err := blockchain.NewBlockchain(cfg, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -103,6 +104,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		minerPubKey: []byte("minerPubKey"),
 		target:      16,
 		chain:       chain,
+		cfg:         cfg,
 	}
 
 	// simple block mining with hash difficulty 16
