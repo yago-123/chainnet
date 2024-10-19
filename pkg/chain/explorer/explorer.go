@@ -112,8 +112,14 @@ func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInter
 
 	// if height is difficulty adjustment interval height, calculate new target
 	if (height % difficultyAdjustmentInterval) == 0 {
+		// get previous interval header
+		previousIntervalHeader, errHeader := explorer.GetHeaderByHeight(height - difficultyAdjustmentInterval)
+		if errHeader != nil {
+			return 0, errHeader
+		}
+
 		// calculate the time spent and expected time spent in the last interval
-		realBlockDifference := previousBlock.Timestamp - previousBlock.Timestamp
+		realBlockDifference := previousBlock.Timestamp - previousIntervalHeader.Timestamp
 		expectedBlockDifference := float64(difficultyAdjustmentInterval) * expectedMiningInterval.Seconds()
 
 		// calculate and return new target
