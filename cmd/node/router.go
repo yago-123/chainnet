@@ -1,8 +1,8 @@
 package main
 
 import (
-	blockchain "chainnet/pkg/chain/explorer"
 	"encoding/json"
+	blockchain "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"

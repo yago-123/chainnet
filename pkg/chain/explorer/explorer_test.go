@@ -17,8 +17,8 @@ import (
 
 const (
 	BoltDBStorageFile = "bolt-db-tmp-store"
-	BoltBlockBucket   = "github.com/yago-123/chainnet-block"
-	BoltHeaderBucket  = "github.com/yago-123/chainnet-header"
+	BoltBlockBucket   = "chainnet-block"
+	BoltHeaderBucket  = "chainnet-header"
 
 	InitialCoinbaseReward = 50
 )

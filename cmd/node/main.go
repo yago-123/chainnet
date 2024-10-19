@@ -1,17 +1,17 @@
 package main
 
 import (
-	"chainnet/config"
-	blockchain "chainnet/pkg/chain"
-	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/consensus/validator"
-	"chainnet/pkg/crypto"
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/crypto/sign"
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/mempool"
-	"chainnet/pkg/observer"
-	"chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/config"
+	blockchain "github.com/yago-123/chainnet/pkg/chain"
+	"github.com/yago-123/chainnet/pkg/chain/explorer"
+	"github.com/yago-123/chainnet/pkg/consensus/validator"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/mempool"
+	"github.com/yago-123/chainnet/pkg/observer"
+	"github.com/yago-123/chainnet/pkg/storage"
 
 	"github.com/sirupsen/logrus"
 )

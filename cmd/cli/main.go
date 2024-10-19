@@ -1,7 +1,7 @@
 package main
 
 import (
-	"chainnet/cmd/cli/cmd"
+	"github.com/yago-123/chainnet/cmd/cli/cmd"
 
 	"github.com/sirupsen/logrus"
 )

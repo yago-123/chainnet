@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"chainnet/config"
-	"chainnet/pkg/consensus/validator"
-	"chainnet/pkg/crypto"
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/crypto/sign"
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/wallet"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/consensus/validator"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/wallet"
 
 	"github.com/spf13/cobra"
 )
