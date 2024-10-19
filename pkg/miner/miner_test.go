@@ -3,6 +3,7 @@ package miner //nolint:testpackage // don't create separate package for tests
 import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
+	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/encoding"
@@ -95,14 +96,15 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(config.NewConfig(), store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
 		hasherType:  hash.SHA256,
 		minerPubKey: []byte("minerPubKey"),
-		target:      16,
 		chain:       chain,
+		explorer:    explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)),
+		cfg:         config.NewConfig(),
 	}
 
 	// simple block mining with hash difficulty 16
@@ -110,9 +112,8 @@ func TestMiner_MineBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, block.Transactions, len(txs)+1)
 	assert.True(t, block.Transactions[0].IsCoinbase())
-	assert.Positive(t, block.Header.Nonce)
 	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerPubKey")), block.Transactions[0].Vout[0].ScriptPubKey)
-	assert.Equal(t, []byte{0x0, 0x0}, block.Hash[:2])
+	assert.Equal(t, byte(0), block.Hash[0]&0x80)
 
 	// cancel block in the middle of mining aborting the process
 	miner.ctx, miner.cancel = context.WithCancel(context.Background())
@@ -136,7 +137,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"
-	miner, err := NewMiner(cfg, chain, hash.SHA256)
+	miner, err := NewMiner(cfg, chain, hash.SHA256, explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)))
 	require.NoError(t, err)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)

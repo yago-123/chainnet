@@ -9,12 +9,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 )
 
 const (
 	NumBitsInByte   = 8
 	BiggestByteMask = 0xFF
+
+	TargetAdjustmentUnit = uint(1)
+	InitialBlockTarget   = uint(1)
+	MinimumTarget        = uint(1)
+	MaximumTarget        = uint(255)
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -99,6 +105,33 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	}
 
 	return true
+}
+
+// CalculateMiningTarget calculates the new mining target based on the time required for mining the blocks
+// vs. the time expected to mine the blocks:
+//   - if required > expected -> decrease the target by 1 unit
+//   - if required < expected -> increase the target by 1 unit
+//   - if required = expected -> do not change the target
+//
+// The mechanism used is simplified to prevent high fluctuations.
+func CalculateMiningTarget(currentTarget uint, targetTimeSpan float64, actualTimeSpan int64) uint {
+	// determine the adjustment factor based on the actual and expected time spans
+	timeAdjustmentFactor := float64(actualTimeSpan) / targetTimeSpan
+
+	newTarget := currentTarget
+
+	if timeAdjustmentFactor > 1.0 {
+		// actual mining time is longer than expected, make it harder to mine
+		newTarget = currentTarget - TargetAdjustmentUnit
+	}
+
+	if timeAdjustmentFactor < 1.0 {
+		// actual mining time is shorter than expected, make it harder to mine
+		newTarget = currentTarget + TargetAdjustmentUnit
+	}
+
+	// ensure the new target is within the valid range (there is no Min and Max for uint...)
+	return uint(math.Min(math.Max(float64(newTarget), float64(MinimumTarget)), float64(MaximumTarget)))
 }
 
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {

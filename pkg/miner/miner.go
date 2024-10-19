@@ -3,6 +3,7 @@ package miner
 import (
 	"chainnet/config"
 	blockchain "chainnet/pkg/chain"
+	"chainnet/pkg/chain/explorer"
 	"chainnet/pkg/consensus"
 	"chainnet/pkg/consensus/util"
 	"chainnet/pkg/crypto/hash"
@@ -18,24 +19,19 @@ const (
 	InitialCoinbaseReward = 50
 	HalvingInterval       = 210000
 	MaxNumberHalvings     = 64
-	// AdjustDifficultyHeight adjusts difficulty every 2016 blocks (~2 weeks)
-	AdjustDifficultyHeight = 2016
 
 	BlockVersion = "1"
 
 	MinerObserverID = "miner-observer"
 )
 
-// MiningTarget will be eventually replaced with variable mining difficulty
-const MiningTarget = 8
-
 type Miner struct {
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
+	explorer   *explorer.Explorer
 
 	minerPubKey []byte
-	target      uint
 
 	isMining bool
 	ctx      context.Context
@@ -44,7 +40,7 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType) (*Miner, error) {
+func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.Explorer) (*Miner, error) {
 	if len(cfg.PubKey) == 0 {
 		return nil, fmt.Errorf("public key not provided, check the config file")
 	}
@@ -54,16 +50,11 @@ func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.
 	return &Miner{
 		hasherType:  hasherType,
 		chain:       chain,
+		explorer:    explorer,
 		minerPubKey: pubKey,
 		isMining:    false,
-		target:      MiningTarget,
 		cfg:         cfg,
 	}, nil
-}
-
-func (m *Miner) AdjustMiningDifficulty() uint {
-	// todo(): implement mining difficulty adjustment
-	return AdjustDifficultyHeight
 }
 
 func (m *Miner) CancelMining() {
@@ -88,6 +79,12 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	m.isMining = true
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
+	// calculate mining target (leading zeroes in block hash) for the block that is going to be mined
+	target, err := m.explorer.GetMiningTarget(m.chain.GetLastHeight(), m.cfg.AdjustmentTargetInterval, m.cfg.MiningInterval)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get mining target: %w", err)
+	}
+
 	// retrieve transactions that are going to be placed inside the block
 	collectedTxs, collectedFee := m.chain.RetrieveMempoolTxs(kernel.MaxNumberTxsPerBlock)
 
@@ -98,9 +95,8 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	}
 	txs := append([]*kernel.Transaction{coinbaseTx}, collectedTxs...)
 
-	// todo(): handle prevBlockHash and block height
 	// create block header
-	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash(), m.target)
+	blockHeader, err := m.createBlockHeader(txs, m.chain.GetLastHeight(), m.chain.GetLastBlockHash(), target)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}

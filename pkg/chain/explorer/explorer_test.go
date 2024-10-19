@@ -5,6 +5,7 @@ import (
 	. "chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
+	mockHash "chainnet/tests/mocks/crypto/hash"
 	"os"
 	"testing"
 
@@ -185,7 +186,7 @@ func TestExplorer_FindUnspentTransactions(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 
-	explorer := NewExplorer(storageInstance)
+	explorer := NewExplorer(storageInstance, &mockHash.FakeHashing{})
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	txs, err := explorer.FindUnspentTransactions("pubKey-1")
@@ -230,7 +231,7 @@ func TestExplorer_findUnspentOutputs(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 
-	explorer := NewExplorer(storageInstance)
+	explorer := NewExplorer(storageInstance, &mockHash.FakeHashing{})
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	// todo(): add additional checks for the other fields in the TxOutput struct
@@ -320,4 +321,8 @@ func initializeStorage(t *testing.T, blocks []Block) storage.Storage {
 	}
 
 	return boltdb
+}
+
+func TestExplorer_GetMiningTarget(_ *testing.T) {
+
 }

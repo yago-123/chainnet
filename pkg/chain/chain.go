@@ -33,6 +33,9 @@ type Blockchain struct {
 	headers       map[string]kernel.BlockHeader
 	// blockTxsBloomFilter map[string]string
 
+	// todo() may be smarter to have the target as a field of the blockchain (saving the previous header interval
+	// todo() too), but generalSync must be implemented before that to ensure consistency
+
 	// syncMutex is used to lock the chain while performing syncs with other nodes
 	// this avoids collisions when multiple nodes are trying to sync with the local node
 	syncMutex *mutex.CtxMutex
@@ -135,7 +138,7 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P,
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store))
+	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store, bc.hasher))
 	if err != nil {
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}

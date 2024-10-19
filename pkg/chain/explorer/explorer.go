@@ -2,18 +2,24 @@ package explorer
 
 import (
 	"chainnet/pkg/chain/iterator"
+	"chainnet/pkg/consensus/util"
+	"chainnet/pkg/crypto/hash"
 	"chainnet/pkg/kernel"
 	"chainnet/pkg/storage"
 	"encoding/hex"
+	"fmt"
+	"time"
 )
 
 type Explorer struct {
-	store storage.Storage
+	store  storage.Storage
+	hasher hash.Hashing
 }
 
-func NewExplorer(store storage.Storage) *Explorer {
+func NewExplorer(store storage.Storage, hasher hash.Hashing) *Explorer {
 	return &Explorer{
-		store: store,
+		store:  store,
+		hasher: hasher,
 	}
 }
 
@@ -38,6 +44,36 @@ func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 	return block, nil
 }
 
+// GetBlockByHeight returns the block corresponding to the height provided
+func (explorer *Explorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, error) {
+	lastHeaderHash, err := explorer.store.GetLastBlockHash()
+	if err != nil {
+		return nil, err
+	}
+
+	// iterate through the headers to find the block with the given height
+	it := iterator.NewReverseHeaderIterator(explorer.store)
+	err = it.Initialize(lastHeaderHash)
+	if err != nil {
+		return nil, err
+	}
+
+	for it.HasNext() {
+		header, errHeader := it.GetNextHeader()
+		if errHeader != nil {
+			return nil, errHeader
+		}
+
+		// if header matches, retrieve block
+		if header.Height == height {
+			return header, nil
+		}
+	}
+
+	// in case not found, return error
+	return nil, fmt.Errorf("header with height %d not found", height)
+}
+
 // GetLastHeader returns the last block header in the chain persisted
 // todo() handle the case when there is no last header yet
 func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
@@ -47,6 +83,54 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	}
 
 	return header, nil
+}
+
+// GetMiningTarget returns the mining target that corresponds to the block height provided. The height should be +1,
+// EQUAL or SMALLER than the latest block height in the chain (don't confuse with the block height argument).
+// This function is used for determining the mining target of the block that is going to be mined or added
+// to the chain. For example when the chain is synchronizing (needs to validate target) or when
+// the miner needs to know the next mining difficulty
+func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error) {
+	// if height remains smaller than difficulty interval, return initial difficulty
+	if height < difficultyAdjustmentInterval {
+		return util.InitialBlockTarget, nil
+	}
+
+	// retrieve the previous block
+	previousBlock, err := explorer.GetHeaderByHeight(height - 1)
+	if err != nil {
+		return 0, err
+	}
+
+	// control that the target being calculated is not for a block further than 2 blocks respect the last block,
+	// in other words, that the blocks between the target and the latest block in the chain exist (there is only
+	// a margin of 1 non-existent block (the one that is going to be mined or added)
+	if height > previousBlock.Height+1 {
+		return 0, fmt.Errorf("height mining target is too far from the last block in the chain")
+	}
+
+	// if height is difficulty adjustment interval height, calculate new target
+	if (height % difficultyAdjustmentInterval) == 0 {
+		// get previous interval header
+		previousIntervalHeader, errHeader := explorer.GetHeaderByHeight(height - difficultyAdjustmentInterval)
+		if errHeader != nil {
+			return 0, errHeader
+		}
+
+		// calculate the time spent and expected time spent in the last interval
+		realBlockDifference := previousBlock.Timestamp - previousIntervalHeader.Timestamp
+		expectedBlockDifference := float64(difficultyAdjustmentInterval) * expectedMiningInterval.Seconds()
+
+		// calculate and return new target
+		return util.CalculateMiningTarget(
+			previousBlock.Target,
+			expectedBlockDifference,
+			realBlockDifference,
+		), nil
+	}
+
+	// if block is not an interval block (height % difficultyAdjustmentInterval) > 0, return the previous target
+	return previousBlock.Target, nil
 }
 
 // GetAllHeaders returns all the block headers added to the chain. This implementation is not efficient, headers should

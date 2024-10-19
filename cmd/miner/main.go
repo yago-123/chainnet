@@ -56,7 +56,7 @@ func main() {
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			explorer.NewExplorer(boltdb),
+			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
 			crypto.NewHashedSignature(
 				sign.NewECDSASignature(), hash.NewSHA256(),
 			),
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	// create new miner
-	mine, err := miner.NewMiner(cfg, chain, hash.SHA256)
+	mine, err := miner.NewMiner(cfg, chain, consensusHasherType, explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)))
 	if err != nil {
 		cfg.Logger.Fatalf("error initializing miner: %s", err)
 	}
@@ -92,8 +92,6 @@ func main() {
 	subjectChain.Register(network)
 
 	for {
-		time.Sleep(cfg.MiningInterval)
-
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
