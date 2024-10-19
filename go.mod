@@ -1,4 +1,4 @@
-module chainnet
+module "github.com/yago-123/chainnet"
 
 go 1.23
 
