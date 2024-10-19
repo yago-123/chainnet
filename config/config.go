@@ -13,38 +13,38 @@ import (
 
 // default config keys
 const (
-	KeyConfigFile      = "config"
-	KeyNodeSeeds       = "node-seeds"
-	KeyStorageFile     = "storage-file"
-	KeyPubKey          = "pub-key"
-	KeyMiningInterval  = "mining-interval"
-	KeyBlockAdjustment = "block-interval-adjustment"
-	KeyP2PEnabled      = "enabled"
-	KeyP2PPeerPrivKey  = "priv-key-path"
-	KeyP2PPeerPort     = "peer-port"
-	KeyP2PMinNumConn   = "min-conn"
-	KeyP2PMaxNumConn   = "max-conn"
-	KeyP2PConnTimeout  = "conn-timeout"
-	KeyP2PWriteTimeout = "write-timeout"
-	KeyP2PReadTimeout  = "read-timeout"
-	KeyP2PBufferSize   = "buffer-size"
+	KeyConfigFile               = "config"
+	KeyNodeSeeds                = "node-seeds"
+	KeyStorageFile              = "storage-file"
+	KeyPubKey                   = "pub-key"
+	KeyMiningInterval           = "mining-interval"
+	KeyTargetIntervalAdjustment = "block-interval-adjustment"
+	KeyP2PEnabled               = "enabled"
+	KeyP2PPeerPrivKey           = "priv-key-path"
+	KeyP2PPeerPort              = "peer-port"
+	KeyP2PMinNumConn            = "min-conn"
+	KeyP2PMaxNumConn            = "max-conn"
+	KeyP2PConnTimeout           = "conn-timeout"
+	KeyP2PWriteTimeout          = "write-timeout"
+	KeyP2PReadTimeout           = "read-timeout"
+	KeyP2PBufferSize            = "buffer-size"
 )
 
 // default config values
 const (
 	DefaultConfigFile = ""
 
-	DefaultChainnetStorage    = "chainnet-storage"
-	DefaultMiningInterval     = 10 * time.Minute
-	DefaultDifficultyInterval = uint(6)
-	DefaultP2PEnabled         = true
-	DefaultP2PPeerPort        = 9100
-	DefaultP2PMinNumConn      = 1
-	DefaultP2PMaxNumConn      = 100
-	DefaultP2PConnTimeout     = 20 * time.Second
-	DefaultP2PWriteTimeout    = 10 * time.Second
-	DefaultP2PReadTimeout     = 10 * time.Second
-	DefaultP2PBufferSize      = 8192
+	DefaultChainnetStorage          = "chainnet-storage"
+	DefaultMiningInterval           = 10 * time.Minute
+	DefaultTargetIntervalAdjustment = uint(6)
+	DefaultP2PEnabled               = true
+	DefaultP2PPeerPort              = 9100
+	DefaultP2PMinNumConn            = 1
+	DefaultP2PMaxNumConn            = 100
+	DefaultP2PConnTimeout           = 20 * time.Second
+	DefaultP2PWriteTimeout          = 10 * time.Second
+	DefaultP2PReadTimeout           = 10 * time.Second
+	DefaultP2PBufferSize            = 8192
 )
 
 const (
@@ -95,7 +95,7 @@ func NewConfig() *Config {
 		StorageFile:              DefaultChainnetStorage,
 		PubKey:                   "",
 		MiningInterval:           DefaultMiningInterval,
-		AdjustmentTargetInterval: DefaultDifficultyInterval,
+		AdjustmentTargetInterval: DefaultTargetIntervalAdjustment,
 		P2P: P2PConfig{
 			Enabled: DefaultP2PEnabled,
 			Identity: IdentityConfig{
@@ -158,7 +158,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().String(KeyPubKey, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
-	cmd.Flags().Uint(KeyBlockAdjustment, DefaultDifficultyInterval, "Number of blocks for adjusting difficulty")
+	cmd.Flags().Uint(KeyTargetIntervalAdjustment, DefaultTargetIntervalAdjustment, "Number of blocks for adjusting difficulty")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().String(KeyP2PPeerPrivKey, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
@@ -175,7 +175,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
 	_ = viper.BindPFlag(KeyPubKey, cmd.Flags().Lookup(KeyPubKey))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
-	_ = viper.BindPFlag(KeyBlockAdjustment, cmd.Flags().Lookup(KeyBlockAdjustment))
+	_ = viper.BindPFlag(KeyTargetIntervalAdjustment, cmd.Flags().Lookup(KeyTargetIntervalAdjustment))
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PPeerPrivKey, cmd.Flags().Lookup(KeyP2PPeerPrivKey))
 	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
@@ -216,8 +216,8 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyMiningInterval) {
 		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
 	}
-	if cmd.Flags().Changed(KeyBlockAdjustment) {
-		cfg.AdjustmentTargetInterval = viper.GetUint(KeyBlockAdjustment)
+	if cmd.Flags().Changed(KeyTargetIntervalAdjustment) {
+		cfg.AdjustmentTargetInterval = viper.GetUint(KeyTargetIntervalAdjustment)
 	}
 	if cmd.Flags().Changed(KeyP2PEnabled) {
 		cfg.P2P.Enabled = viper.GetBool(KeyP2PEnabled)
