@@ -1,12 +1,12 @@
 package p2p
 
 import (
-	"chainnet/config"
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/observer"
-	"chainnet/pkg/p2p/discovery"
-	"chainnet/pkg/p2p/pubsub"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/observer"
+	"github.com/yago-123/chainnet/pkg/p2p/discovery"
+	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
 	"context"
 	"fmt"
 

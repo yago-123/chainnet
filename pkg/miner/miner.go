@@ -1,13 +1,13 @@
 package miner
 
 import (
-	"chainnet/config"
-	blockchain "chainnet/pkg/chain"
-	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/consensus"
-	"chainnet/pkg/consensus/util"
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/config"
+	blockchain "github.com/yago-123/chainnet/pkg/chain"
+	"github.com/yago-123/chainnet/pkg/chain/explorer"
+	"github.com/yago-123/chainnet/pkg/consensus"
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"context"
 	"fmt"
 	"time"

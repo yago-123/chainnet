@@ -1,7 +1,7 @@
 package discovery
 
 import (
-	"chainnet/config"
+	"github.com/yago-123/chainnet/config"
 	"context"
 	"fmt"
 

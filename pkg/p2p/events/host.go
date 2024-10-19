@@ -1,7 +1,7 @@
 package events
 
 import (
-	"chainnet/pkg/observer"
+	"github.com/yago-123/chainnet/pkg/observer"
 	"context"
 
 	"github.com/libp2p/go-libp2p/core/event"

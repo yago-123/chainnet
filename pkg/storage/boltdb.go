@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"fmt"
 	"time"
 

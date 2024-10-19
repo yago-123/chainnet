@@ -1,15 +1,15 @@
 package validator //nolint:testpackage // don't create separate package for tests
 
 import (
-	expl "chainnet/pkg/chain/explorer"
-	"chainnet/pkg/consensus"
-	"chainnet/pkg/consensus/util"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/miner"
-	"chainnet/pkg/script"
-	mockHash "chainnet/tests/mocks/crypto/hash"
-	mockSign "chainnet/tests/mocks/crypto/sign"
-	mockStorage "chainnet/tests/mocks/storage"
+	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
+	"github.com/yago-123/chainnet/pkg/consensus"
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/miner"
+	"github.com/yago-123/chainnet/pkg/script"
+	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
+	mockSign "github.com/yago-123/chainnet/tests/mocks/crypto/sign"
+	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
 	"testing"
 
 	"github.com/stretchr/testify/require"

@@ -1,11 +1,11 @@
 package explorer
 
 import (
-	"chainnet/pkg/chain/iterator"
-	"chainnet/pkg/consensus/util"
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/chain/iterator"
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/storage"
 	"encoding/hex"
 	"fmt"
 	"time"

@@ -1,8 +1,8 @@
 package util
 
 import (
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"

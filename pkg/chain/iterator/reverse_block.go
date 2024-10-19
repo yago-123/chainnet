@@ -1,8 +1,8 @@
 package iterator
 
 import (
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/storage"
 )
 
 // ReverseBlockIterator

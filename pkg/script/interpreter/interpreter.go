@@ -1,10 +1,10 @@
 package interpreter
 
 import (
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/crypto/sign"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/script"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/script"
 	"fmt"
 	"strconv"
 	"strings"

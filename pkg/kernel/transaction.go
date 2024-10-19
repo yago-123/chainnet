@@ -2,7 +2,7 @@ package kernel
 
 import (
 	"bytes"
-	"chainnet/pkg/script"
+	"github.com/yago-123/chainnet/pkg/script"
 	"fmt"
 )
 

@@ -1,13 +1,13 @@
 package interpreter //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/crypto"
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/crypto/sign"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/script"
-	mockHash "chainnet/tests/mocks/crypto/hash"
-	mockSign "chainnet/tests/mocks/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/script"
+	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
+	mockSign "github.com/yago-123/chainnet/tests/mocks/crypto/sign"
 	"fmt"
 	"testing"
 

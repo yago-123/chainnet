@@ -1,7 +1,7 @@
 package script //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"fmt"
 	"reflect"
 	"testing"

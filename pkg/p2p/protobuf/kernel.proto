@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "chainnet/pkg/chain/p2p";
+option go_package = "github.com/yago-123/chainnet/pkg/chain/p2p";
 
 message Transaction {
   bytes id = 1;

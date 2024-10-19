@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	"chainnet/config"
+	"github.com/yago-123/chainnet/config"
 	"context"
 	"errors"
 	"fmt"

@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 // LightValidator represents a validator that does not require having the whole chain downloaded locally

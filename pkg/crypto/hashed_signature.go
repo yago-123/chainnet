@@ -1,8 +1,8 @@
 package crypto
 
 import (
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
 )
 
 type HashedSignature struct {

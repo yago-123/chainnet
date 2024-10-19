@@ -2,8 +2,8 @@ package encoding_test
 
 import (
 	"bytes"
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"encoding/gob"
 	"testing"
 

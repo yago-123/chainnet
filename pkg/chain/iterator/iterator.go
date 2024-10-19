@@ -1,7 +1,7 @@
 package iterator
 
 import (
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 type BlockIterator interface {

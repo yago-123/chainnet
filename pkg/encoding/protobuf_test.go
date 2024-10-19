@@ -1,9 +1,9 @@
 package encoding //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/crypto/sign"
-	"chainnet/pkg/kernel"
-	pb "chainnet/pkg/p2p/protobuf"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	pb "github.com/yago-123/chainnet/pkg/p2p/protobuf"
 	"testing"
 
 	"github.com/stretchr/testify/require"

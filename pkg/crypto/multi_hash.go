@@ -2,7 +2,7 @@ package crypto
 
 import (
 	"bytes"
-	"chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"errors"
 )
 

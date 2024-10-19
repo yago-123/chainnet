@@ -1,14 +1,14 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 import (
-	"chainnet/config"
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/mempool"
-	"chainnet/pkg/observer"
-	"chainnet/pkg/storage"
-	"chainnet/tests/mocks/consensus"
-	mockHash "chainnet/tests/mocks/crypto/hash"
-	mockStorage "chainnet/tests/mocks/storage"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/mempool"
+	"github.com/yago-123/chainnet/pkg/observer"
+	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/tests/mocks/consensus"
+	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
+	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
 	"os"
 	"testing"
 

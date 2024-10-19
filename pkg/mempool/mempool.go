@@ -1,7 +1,7 @@
 package mempool
 
 import (
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"sort"
 	"sync"
 )

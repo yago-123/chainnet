@@ -1,7 +1,7 @@
 package bloom
 
 import (
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"encoding/binary"
 	"fmt"
 )

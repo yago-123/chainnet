@@ -1,8 +1,8 @@
 package iterator //nolint:testpackage // don't create separate package for tests
 
 import (
-	"chainnet/pkg/kernel"
-	mockStorage "chainnet/tests/mocks/storage"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

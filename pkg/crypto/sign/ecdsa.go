@@ -1,7 +1,7 @@
 package sign
 
 import (
-	"chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"

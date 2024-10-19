@@ -1,10 +1,10 @@
 package pubsub
 
 import (
-	"chainnet/config"
-	"chainnet/pkg/encoding"
-	"chainnet/pkg/kernel"
-	"chainnet/pkg/observer"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/observer"
 	"context"
 	"fmt"
 

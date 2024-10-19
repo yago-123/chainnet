@@ -1,7 +1,7 @@
 package script
 
 import (
-	"chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"fmt"
 	"strings"
 

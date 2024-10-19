@@ -1,8 +1,8 @@
 package encoding
 
 import (
-	"chainnet/pkg/kernel"
-	pb "chainnet/pkg/p2p/protobuf"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	pb "github.com/yago-123/chainnet/pkg/p2p/protobuf"
 	"encoding/hex"
 	"fmt"
 

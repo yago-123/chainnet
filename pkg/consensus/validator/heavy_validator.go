@@ -2,12 +2,12 @@ package validator
 
 import (
 	"bytes"
-	"chainnet/pkg/chain/explorer"
-	"chainnet/pkg/consensus"
-	"chainnet/pkg/consensus/util"
-	"chainnet/pkg/crypto/hash"
-	"chainnet/pkg/crypto/sign"
-	"chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/chain/explorer"
+	"github.com/yago-123/chainnet/pkg/consensus"
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	"fmt"
 )
 
