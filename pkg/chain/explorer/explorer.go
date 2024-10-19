@@ -59,16 +59,15 @@ func (explorer *Explorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, e
 	}
 
 	for it.HasNext() {
-		header, err := it.GetNextHeader()
-		if err != nil {
-			return nil, err
+		header, errHeader := it.GetNextHeader()
+		if errHeader != nil {
+			return nil, errHeader
 		}
 
 		// if header matches, retrieve block
 		if header.Height == height {
 			return header, nil
 		}
-
 	}
 
 	// in case not found, return error
@@ -94,7 +93,7 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error) {
 	// if height remains smaller than difficulty interval, return initial difficulty
 	if height < difficultyAdjustmentInterval {
-		return util.CalculateTargetFromDifficulty(util.InitialDifficulty), nil
+		return util.InitialBlockTarget, nil
 	}
 
 	// retrieve the previous block
@@ -107,15 +106,15 @@ func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInter
 	// in other words, that the blocks between the target and the latest block in the chain exist (there is only
 	// a margin of 1 non-existent block (the one that is going to be mined or added)
 	if height > previousBlock.Height+1 {
-		return 0, fmt.Errorf("height mining target is ")
+		return 0, fmt.Errorf("height mining target is too far from the last block in the chain")
 	}
 
 	// if height is difficulty adjustment interval height, calculate new target
 	if (height % difficultyAdjustmentInterval) == 0 {
 		// get previous interval header
-		previousIntervalHeader, err := explorer.GetHeaderByHeight(height - difficultyAdjustmentInterval)
-		if err != nil {
-			return 0, err
+		previousIntervalHeader, errHeader := explorer.GetHeaderByHeight(height - difficultyAdjustmentInterval)
+		if errHeader != nil {
+			return 0, errHeader
 		}
 
 		// calculate mining difficulty

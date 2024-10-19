@@ -6,9 +6,10 @@ import (
 	"chainnet/pkg/script"
 	"chainnet/pkg/storage"
 	mockHash "chainnet/tests/mocks/crypto/hash"
-	"github.com/sirupsen/logrus"
 	"os"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -322,6 +323,6 @@ func initializeStorage(t *testing.T, blocks []Block) storage.Storage {
 	return boltdb
 }
 
-func TestExplorer_GetMiningTarget(t *testing.T) {
+func TestExplorer_GetMiningTarget(_ *testing.T) {
 
 }

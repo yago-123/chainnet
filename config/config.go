@@ -36,7 +36,7 @@ const (
 
 	DefaultChainnetStorage    = "chainnet-storage"
 	DefaultMiningInterval     = 10 * time.Minute
-	DefaultDifficultyInterval = uint(24)
+	DefaultDifficultyInterval = uint(6)
 	DefaultP2PEnabled         = true
 	DefaultP2PPeerPort        = 9100
 	DefaultP2PMinNumConn      = 1

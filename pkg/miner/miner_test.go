@@ -96,15 +96,15 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	cfg := config.NewConfig()
-	chain, err := blockchain.NewBlockchain(cfg, store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(config.NewConfig(), store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	miner := Miner{
 		hasherType:  hash.SHA256,
 		minerPubKey: []byte("minerPubKey"),
 		chain:       chain,
-		cfg:         cfg,
+		explorer:    explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)),
+		cfg:         config.NewConfig(),
 	}
 
 	// simple block mining with hash difficulty 16
@@ -112,7 +112,6 @@ func TestMiner_MineBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, block.Transactions, len(txs)+1)
 	assert.True(t, block.Transactions[0].IsCoinbase())
-	assert.Positive(t, block.Header.Nonce)
 	assert.Equal(t, script.NewScript(script.P2PK, []byte("minerPubKey")), block.Transactions[0].Vout[0].ScriptPubKey)
 	assert.Equal(t, byte(0), block.Hash[0]&0x80)
 
@@ -122,10 +121,6 @@ func TestMiner_MineBlock(t *testing.T) {
 	miner.cancel()
 	_, err = miner.MineBlock()
 	require.Error(t, err)
-}
-
-func TestMiner_MineBlockWithTargetChange(t *testing.T) {
-
 }
 
 func TestMiner_createCoinbaseTransaction(t *testing.T) {

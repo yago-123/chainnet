@@ -9,17 +9,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 )
 
 const (
-	NumBitsInByte            = 8
-	BiggestByteMask          = 0xFF
-	MaxTargetAjustmentFactor = 4
+	NumBitsInByte   = 8
+	BiggestByteMask = 0xFF
 
-	MaxHashZeros      = 256
-	MinimumTarget     = 1
-	InitialDifficulty = (MaxHashZeros - MinimumTarget) / MaxHashZeros
+	TargetAdjustmentUnit = uint(1)
+	InitialBlockTarget   = uint(1)
+	MinimumTarget        = uint(1)
+	MaximumTarget        = uint(255)
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -106,92 +107,31 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	return true
 }
 
-// CalculateMiningTarget represents a wrapper around CalculateMiningDifficulty to avoid boilerplate code
+// CalculateMiningTarget calculates the new mining target based on the time required for mining the blocks
+// vs. the time expected to mine the blocks:
+//   - if required > expected -> decrease the target by 1 unit
+//   - if required < expected -> increase the target by 1 unit
+//   - if required = expected -> do not change the target
+//
+// The mechanism used is simplified to prevent high fluctuations.
 func CalculateMiningTarget(currentTarget uint, targetTimeSpan float64, actualTimeSpan int64) uint {
-	newDifficulty := CalculateMiningDifficulty(
-		CalculateDifficultyFromTarget(currentTarget),
-		targetTimeSpan,
-		actualTimeSpan,
-	)
+	// determine the adjustment factor based on the actual and expected time spans
+	timeAdjustmentFactor := float64(actualTimeSpan) / targetTimeSpan
 
-	return CalculateTargetFromDifficulty(newDifficulty)
-}
+	newTarget := currentTarget
 
-// CalculateMiningDifficulty calculates the new mining difficulty based on the actual time span
-// and the target time span
-//
-// Difficulty = (256 - target) / 256
-func CalculateMiningDifficulty(currentDifficulty, targetTimeSpan float64, actualTimeSpan int64) float64 {
-	// handle edge cases
-	if currentDifficulty <= 0 {
-		// return a very low value for non-positive difficulty
-		return InitialDifficulty
-	}
-	if targetTimeSpan <= 0 {
-		// return adjusted difficulty if targetTimeSpan is non-positive
-		return currentDifficulty * MaxTargetAjustmentFactor
-	}
-	if actualTimeSpan <= 0 {
-		// return reduced difficulty if no actual time has passed
-		return currentDifficulty / MaxTargetAjustmentFactor
+	if timeAdjustmentFactor > 1.0 {
+		// actual mining time is longer than expected, make it harder to mine
+		newTarget = currentTarget - TargetAdjustmentUnit
 	}
 
-	// calculate the adjustment factor
-	adjustmentFactor := float64(actualTimeSpan) / float64(targetTimeSpan)
-
-	// apply adjustment factor to the current difficulty
-	newDifficulty := currentDifficulty * adjustmentFactor
-
-	// limit difficulty adjustment by a factor of 4x or 1/4x
-	if newDifficulty > (currentDifficulty * MaxTargetAjustmentFactor) {
-		newDifficulty = currentDifficulty * MaxTargetAjustmentFactor
-	} else if newDifficulty < (currentDifficulty / MaxTargetAjustmentFactor) {
-		newDifficulty = currentDifficulty / MaxTargetAjustmentFactor
+	if timeAdjustmentFactor < 1.0 {
+		// actual mining time is shorter than expected, make it harder to mine
+		newTarget = currentTarget + TargetAdjustmentUnit
 	}
 
-	return newDifficulty
-}
-
-// CalculateTargetFromDifficulty calculates the target number of leading zeros based on the difficulty. Higher
-// difficulty results in more leading zeros
-//
-//	Target = 256 * (1 - difficulty)
-func CalculateTargetFromDifficulty(difficulty float64) uint {
-	// determine the target number of leading zeros directly based on difficulty.
-	maxZeros := uint(MaxHashZeros)
-
-	if difficulty <= 0.0 {
-		// if difficulty is 0 or negative, return the minimum target
-		return MinimumTarget
-	}
-
-	// calculate the leading zeros as proportional to difficulty
-	target := uint(difficulty * float64(maxZeros))
-
-	// ensure the leading zeros don't exceed the max zeros
-	if target > maxZeros {
-		target = maxZeros
-	}
-
-	return target
-}
-
-// CalculateDifficultyFromTarget calculates the difficulty based on the number of leading zeros
-//
-//	Difficulty = (256 - target) / 256
-func CalculateDifficultyFromTarget(target uint) float64 {
-	maxZeros := uint(MaxHashZeros)
-
-	// ensure target doesn't exceed maxZeros
-	if target > maxZeros {
-		target = maxZeros
-	}
-
-	// difficulty is inversely proportional to the number of leading zeros.
-	// difficulty could be proportional to the fraction of non-zero bits.
-	difficulty := float64(maxZeros-target) / float64(maxZeros)
-
-	return difficulty
+	// ensure the new target is within the valid range (there is no Min and Max for uint...)
+	return uint(math.Min(math.Max(float64(newTarget), float64(MinimumTarget)), float64(MaximumTarget)))
 }
 
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
