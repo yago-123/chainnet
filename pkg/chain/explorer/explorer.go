@@ -117,7 +117,7 @@ func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInter
 			return 0, errHeader
 		}
 
-		// calculate mining difficulty
+		// calculate the time spent and expected time spent in the last interval
 		realBlockDifference := previousBlock.Timestamp - previousIntervalHeader.Timestamp
 		expectedBlockDifference := float64(difficultyAdjustmentInterval) * expectedMiningInterval.Seconds()
 
