@@ -1,6 +1,7 @@
 package validator //nolint:testpackage // don't create separate package for tests
 
 import (
+	"github.com/yago-123/chainnet/config"
 	"testing"
 
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -43,7 +44,7 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 		},
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
 
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithoutCoinbase))
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithTwoCoinbase))
@@ -68,7 +69,7 @@ func TestHValidator_validateNoDoubleSpendingInsideBlock(t *testing.T) {
 	}
 
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(NewLightValidator(fakeHashing), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 	require.Error(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithDoubleSpending))
 	require.NoError(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithoutDoubleSpending))
 }
@@ -93,7 +94,7 @@ func TestHValidator_validateBlockHash(t *testing.T) {
 	}
 
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(NewLightValidator(fakeHashing), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the block hash corresponds to the target
 	require.NoError(t, hvalidator.validateBlockHash(block))
@@ -109,19 +110,19 @@ func TestHValidator_validatePreviousBlockMatchCurrentLatest(t *testing.T) {
 		On("GetLastBlock").
 		Return(&kernel.Block{Hash: []byte("block-1")}, nil)
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the previous block hash of the block matches the latest block
-	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 1}}))
+	require.NoError(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 1}))
 
 	// check that the previous block hash of the block does not match the latest block
-	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-2"), Height: 1}}))
+	require.Error(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte("block-2"), Height: 1}))
 
 	// check that genesis block does not validate the previous block hash
-	require.NoError(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte{}, Height: 0}}))
+	require.NoError(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte{}, Height: 0}))
 
 	// check that genesis block requires empty previous block hash
-	require.Error(t, hvalidator.validatePreviousBlockMatchCurrentLatest(&kernel.Block{Header: &kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 0}}))
+	require.Error(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 0}))
 }
 
 func TestHValidator_validateBlockHeight(t *testing.T) {
@@ -131,14 +132,14 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 		Return(&kernel.Block{Header: &kernel.BlockHeader{Height: 10}}, nil)
 
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the block height matches the current chain height
-	require.NoError(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 11}}))
+	require.NoError(t, hvalidator.validateHeaderHeight(&kernel.BlockHeader{Height: 11}))
 
 	// check that the block height does not match the current chain height
-	require.Error(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 10}}))
-	require.Error(t, hvalidator.validateBlockHeight(&kernel.Block{Header: &kernel.BlockHeader{Height: 12}}))
+	require.Error(t, hvalidator.validateHeaderHeight(&kernel.BlockHeader{Height: 10}))
+	require.Error(t, hvalidator.validateHeaderHeight(&kernel.BlockHeader{Height: 12}))
 }
 
 func TestHValidator_validateMerkleTree(t *testing.T) {
@@ -181,7 +182,7 @@ func TestHValidator_validateMerkleTree(t *testing.T) {
 		Transactions: txs,
 	}
 
-	hvalidator := NewHeavyValidator(NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
 
 	// verify correct merkle root does not generate error
 	require.NoError(t, hvalidator.validateMerkleTree(block))

@@ -3,6 +3,7 @@ package validator
 import (
 	"bytes"
 	"fmt"
+	"github.com/yago-123/chainnet/config"
 
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -21,14 +22,16 @@ type HValidator struct {
 	explorer *explorer.Explorer
 	signer   sign.Signature
 	hasher   hash.Hashing
+	cfg      *config.Config
 }
 
-func NewHeavyValidator(lv consensus.LightValidator, explorer *explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
+func NewHeavyValidator(cfg *config.Config, lv consensus.LightValidator, explorer *explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
 	return &HValidator{
 		lv:       lv,
 		explorer: explorer,
 		signer:   signer,
 		hasher:   hasher,
+		cfg:      cfg,
 	}
 }
 
@@ -55,6 +58,9 @@ func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 	validations := []HeaderFunc{
 		hv.lv.ValidateHeader,
 		hv.validateHeaderHeight,
+		hv.validateHeaderTarget,
+		hv.validateHeaderPreviousBlock,
+		hv.validateHeaderHeight,
 	}
 
 	for _, validate := range validations {
@@ -75,9 +81,6 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		hv.validateBlockHash,
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
-		// block header validations
-		hv.validatePreviousBlockMatchCurrentLatest,
-		hv.validateBlockHeight,
 		hv.validateMerkleTree,
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
@@ -184,16 +187,16 @@ func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
 	return util.VerifyBlockHash(b.Header, b.Hash, hv.hasher)
 }
 
-// validatePreviousBlockMatchCurrentLatest checks that the previous block hash of the block matches the latest block
-func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) error {
+// validateHeaderPreviousBlock checks that the previous block hash of the block matches the latest block
+func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error {
 	// if is genesis block and does not contain previous block hash, don't check previous block (does not exist)
-	if b.IsGenesisBlock() {
+	if bh.IsGenesisHeader() {
 		return nil
 	}
 
 	// if is height 0 but contains previous block hash, return error
-	if b.Header.Height == 0 && len(b.Header.PrevBlockHash) != 0 {
-		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %x", b.Header.PrevBlockHash)
+	if bh.Height == 0 && len(bh.PrevBlockHash) != 0 {
+		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %x", bh.PrevBlockHash)
 	}
 
 	// if not genesis block, check previous block hash
@@ -202,15 +205,15 @@ func (hv *HValidator) validatePreviousBlockMatchCurrentLatest(b *kernel.Block) e
 		return fmt.Errorf("unable to retrieve last block: %w", err)
 	}
 
-	if !bytes.Equal(b.Header.PrevBlockHash, lastChainBlock.Hash) {
-		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", b.Header.PrevBlockHash, lastChainBlock.Hash)
+	if !bytes.Equal(bh.PrevBlockHash, lastChainBlock.Hash) {
+		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", bh.PrevBlockHash, lastChainBlock.Hash)
 	}
 
 	return nil
 }
 
 func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
-	if bh.Height == 0 {
+	if bh.IsGenesisHeader() {
 		return nil
 	}
 
@@ -227,15 +230,14 @@ func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
 	return nil
 }
 
-// validateBlockHeight checks that the block height matches the current chain height
-func (hv *HValidator) validateBlockHeight(b *kernel.Block) error {
-	// if genesis block, don't validate block height
-	if b.IsGenesisBlock() {
-		return nil
+func (hv *HValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
+	targetExpected, err := hv.explorer.GetMiningTarget(bh.Height, hv.cfg.AdjustmentTargetInterval, hv.cfg.MiningInterval)
+	if err != nil {
+		return fmt.Errorf("error while validating target: %w", err)
 	}
 
-	if err := hv.validateHeaderHeight(b.Header); err != nil {
-		return fmt.Errorf("new block %x with height %d does not match current chain height", b.Hash, b.Header.Height)
+	if targetExpected != bh.Target {
+		return fmt.Errorf("expected %d target, but header had %d", targetExpected, bh.Target)
 	}
 
 	return nil

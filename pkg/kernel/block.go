@@ -40,6 +40,10 @@ func (bh *BlockHeader) SetTimestamp(timestamp int64) {
 	bh.Timestamp = timestamp
 }
 
+func (bh *BlockHeader) IsGenesisHeader() bool {
+	return len(bh.PrevBlockHash) == 0 && bh.Height == 0
+}
+
 func (bh *BlockHeader) Assemble() []byte {
 	data := [][]byte{
 		[]byte(fmt.Sprintf("version %s", bh.Version)),
