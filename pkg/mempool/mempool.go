@@ -1,9 +1,10 @@
 package mempool
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"sort"
 	"sync"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const MemPoolObserverID = "mempool-observer"

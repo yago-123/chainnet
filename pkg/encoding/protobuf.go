@@ -1,10 +1,11 @@
 package encoding
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
-	pb "github.com/yago-123/chainnet/pkg/p2p/protobuf"
 	"encoding/hex"
 	"fmt"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
+	pb "github.com/yago-123/chainnet/pkg/p2p/protobuf"
 
 	"google.golang.org/protobuf/proto"
 )

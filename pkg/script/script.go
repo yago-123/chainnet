@@ -1,9 +1,10 @@
 package script
 
 import (
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"fmt"
 	"strings"
+
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
 
 	"github.com/btcsuite/btcutil/base58"
 )

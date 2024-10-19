@@ -2,8 +2,9 @@ package crypto
 
 import (
 	"bytes"
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"errors"
+
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
 )
 
 type MultiHash struct {

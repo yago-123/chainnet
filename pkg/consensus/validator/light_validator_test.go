@@ -1,10 +1,11 @@
 package validator //nolint:testpackage // don't create separate package for tests
 
 import (
+	"testing"
+
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
 	"github.com/yago-123/chainnet/tests/mocks/crypto/hash"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 )

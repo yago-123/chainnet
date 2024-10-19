@@ -1,10 +1,11 @@
 package script //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"

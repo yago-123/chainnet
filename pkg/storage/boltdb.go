@@ -1,10 +1,11 @@
 package storage
 
 import (
-	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"fmt"
 	"time"
+
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	boltdb "github.com/boltdb/bolt"
 )

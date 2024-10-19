@@ -1,8 +1,9 @@
 package observer
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"sync"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 // ChainObserver interface that defines the methods that a block observer should implement

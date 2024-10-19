@@ -1,14 +1,15 @@
 package p2p
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/p2p/discovery"
 	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
-	"context"
-	"fmt"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"

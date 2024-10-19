@@ -1,10 +1,11 @@
 package miner //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"context"
 	"testing"
+
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

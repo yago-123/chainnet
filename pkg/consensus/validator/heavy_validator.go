@@ -2,13 +2,14 @@ package validator
 
 import (
 	"bytes"
+	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"fmt"
 )
 
 type TxFunc func(tx *kernel.Transaction) error

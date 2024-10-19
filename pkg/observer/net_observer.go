@@ -1,8 +1,9 @@
 package observer
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"sync"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 )

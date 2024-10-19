@@ -1,8 +1,9 @@
 package pubsub
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"context"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 type PubSub interface {

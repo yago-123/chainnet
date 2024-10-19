@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"errors"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const (

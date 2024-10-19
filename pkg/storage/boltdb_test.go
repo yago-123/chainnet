@@ -1,9 +1,10 @@
 package storage //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/yago-123/chainnet/pkg/encoding"
 	"os"
 	"testing"
+
+	"github.com/yago-123/chainnet/pkg/encoding"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

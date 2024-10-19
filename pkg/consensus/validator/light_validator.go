@@ -1,11 +1,12 @@
 package validator
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"errors"
-	"fmt"
 )
 
 type LValidator struct {

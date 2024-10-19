@@ -1,6 +1,10 @@
 package wallet
 
 import (
+	"context"
+	"errors"
+	"fmt"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
@@ -11,9 +15,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/p2p"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
-	"context"
-	"errors"
-	"fmt"
 
 	base58 "github.com/btcsuite/btcutil/base58"
 )

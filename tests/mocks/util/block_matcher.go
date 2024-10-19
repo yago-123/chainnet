@@ -1,8 +1,9 @@
 package util
 
 import (
-	"chainnet/pkg/kernel"
 	"reflect"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/stretchr/testify/mock"
 )

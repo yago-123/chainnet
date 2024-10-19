@@ -1,9 +1,10 @@
 package bloom
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"encoding/binary"
 	"fmt"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const (

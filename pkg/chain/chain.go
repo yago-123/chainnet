@@ -1,6 +1,11 @@
 package blockchain
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"sort"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -13,10 +18,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/p2p"
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util/mutex"
-	"context"
-	"errors"
-	"fmt"
-	"sort"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/sirupsen/logrus"

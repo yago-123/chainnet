@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -14,7 +16,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/miner"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/storage"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )

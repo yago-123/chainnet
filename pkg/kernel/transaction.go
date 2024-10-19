@@ -2,8 +2,9 @@ package kernel
 
 import (
 	"bytes"
-	"github.com/yago-123/chainnet/pkg/script"
 	"fmt"
+
+	"github.com/yago-123/chainnet/pkg/script"
 )
 
 // SignatureType represents the different signatures that can be performed over a transaction

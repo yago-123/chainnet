@@ -1,6 +1,10 @@
 package miner
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -8,9 +12,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"context"
-	"fmt"
-	"time"
 
 	"github.com/btcsuite/btcutil/base58"
 )

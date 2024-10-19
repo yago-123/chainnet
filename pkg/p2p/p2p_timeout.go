@@ -1,12 +1,13 @@
 package p2p
 
 import (
-	"github.com/yago-123/chainnet/config"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/yago-123/chainnet/config"
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"

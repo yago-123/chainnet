@@ -2,9 +2,10 @@ package encoding
 
 import (
 	"bytes"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"encoding/gob"
 	"fmt"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 type GobEncoder struct {

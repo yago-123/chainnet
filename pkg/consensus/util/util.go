@@ -1,8 +1,6 @@
 package util
 
 import (
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
@@ -11,6 +9,9 @@ import (
 	"io"
 	"math"
 	"os"
+
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const (

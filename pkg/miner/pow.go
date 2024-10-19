@@ -1,15 +1,16 @@
 package miner
 
 import (
-	"github.com/yago-123/chainnet/pkg/consensus/util"
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"context"
 	"errors"
 	"fmt"
 	"math/big"
 	"runtime"
 	"sync"
+
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const (

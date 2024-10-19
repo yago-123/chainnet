@@ -1,5 +1,8 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 import (
+	"os"
+	"testing"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -9,8 +12,6 @@ import (
 	"github.com/yago-123/chainnet/tests/mocks/consensus"
 	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
 	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
-	"os"
-	"testing"
 
 	"github.com/sirupsen/logrus"
 

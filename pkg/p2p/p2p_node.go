@@ -1,6 +1,10 @@
 package p2p
 
 import (
+	"context"
+	"errors"
+	"fmt"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
@@ -11,9 +15,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/p2p/events"
 	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
 	"github.com/yago-123/chainnet/pkg/storage"
-	"context"
-	"errors"
-	"fmt"
 
 	"github.com/libp2p/go-libp2p"
 	p2pConfig "github.com/libp2p/go-libp2p/config"

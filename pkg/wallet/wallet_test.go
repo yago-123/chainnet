@@ -1,6 +1,8 @@
 package wallet //nolint:testpackage // don't create separate package for tests
 
 import (
+	"testing"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/encoding"
@@ -8,7 +10,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/script"
 	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
 	mockSign "github.com/yago-123/chainnet/tests/mocks/crypto/sign"
-	"testing"
 
 	"github.com/btcsuite/btcutil/base58"
 

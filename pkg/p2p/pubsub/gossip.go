@@ -1,12 +1,13 @@
 package pubsub
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/observer"
-	"context"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
 

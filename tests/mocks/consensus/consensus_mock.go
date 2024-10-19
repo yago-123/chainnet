@@ -1,8 +1,9 @@
 package consensus
 
 import (
-	"chainnet/pkg/kernel"
 	"context"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/stretchr/testify/mock"
 )

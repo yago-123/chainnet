@@ -1,6 +1,9 @@
 package miner //nolint:testpackage // don't create separate package for tests
 
 import (
+	"context"
+	"testing"
+
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -14,8 +17,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/tests/mocks/consensus"
 	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
-	"context"
-	"testing"
 
 	"github.com/sirupsen/logrus"
 

@@ -2,10 +2,11 @@ package encoding_test
 
 import (
 	"bytes"
-	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"encoding/gob"
 	"testing"
+
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -1,9 +1,10 @@
 package blockchain
 
 import (
-	"github.com/yago-123/chainnet/pkg/kernel"
 	"fmt"
 	"sync"
+
+	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const UTXOSObserverID = "utxos-observer"

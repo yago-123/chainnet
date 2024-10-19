@@ -1,13 +1,14 @@
 package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
+	"os"
+	"testing"
+
 	"github.com/yago-123/chainnet/pkg/encoding"
 	. "github.com/yago-123/chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"github.com/yago-123/chainnet/pkg/script"
 	"github.com/yago-123/chainnet/pkg/storage"
 	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
-	"os"
-	"testing"
 
 	"github.com/sirupsen/logrus"
 

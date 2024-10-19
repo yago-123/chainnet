@@ -1,11 +1,12 @@
 package sign
 
 import (
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"math/big"
+
+	"github.com/yago-123/chainnet/pkg/consensus/util"
 )
 
 type ECDSASigner struct {
