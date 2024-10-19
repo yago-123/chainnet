@@ -88,7 +88,7 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 // GetMiningTarget returns the mining target that corresponds to the block height provided. The height should be +1,
 // EQUAL or SMALLER than the latest block height in the chain (don't confuse with the block height argument).
 // This function is used for determining the mining target of the block that is going to be mined or added
-// to the chain. For example when the chain is synchronizing from the ground (needs to validate target) or when
+// to the chain. For example when the chain is synchronizing (needs to validate target) or when
 // the miner needs to know the next mining difficulty
 func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error) {
 	// if height remains smaller than difficulty interval, return initial difficulty
