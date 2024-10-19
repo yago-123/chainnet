@@ -3,6 +3,7 @@ package validator
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/yago-123/chainnet/config"
 
 	"github.com/yago-123/chainnet/pkg/chain/explorer"

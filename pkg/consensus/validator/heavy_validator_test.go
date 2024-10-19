@@ -1,8 +1,9 @@
 package validator //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/yago-123/chainnet/config"
 	"testing"
+
+	"github.com/yago-123/chainnet/config"
 
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
