@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+
 	"github.com/spf13/cobra"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -10,6 +12,8 @@ import (
 	"github.com/yago-123/chainnet/pkg/kernel"
 	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
+
+var err error
 
 var sendCmd = &cobra.Command{
 	Use:   "send",
@@ -19,28 +23,33 @@ var sendCmd = &cobra.Command{
 		address, _ := cmd.Flags().GetString("address")
 		amount, _ := cmd.Flags().GetUint("amount")
 		fee, _ := cmd.Flags().GetUint("fee")
+		privKeyCont, _ := cmd.Flags().GetString("priv-key")
 		privKeyPath, _ := cmd.Flags().GetString("priv-key-path")
-		privKey, _ := cmd.Flags().GetString("priv-key")
 
-		if privKey == "" && privKeyPath == "" {
-			logger.Fatalf("specify at least one containing private key: --priv-key or --priv-key-path")
+		// check if only one private key is provided
+		if (privKeyCont == "") != (privKeyPath == "") {
+			logger.Fatalf("specify one argument containing the private key: --priv-key or --priv-key-path")
 		}
 
-		if privKey != "" {
-
+		// process key from path or from content
+		privKey := []byte{}
+		if privKeyCont != "" {
+			privKey = []byte(privKeyCont)
 		}
 
 		if privKeyPath != "" {
-
+			privKey, err = util.ReadECDSAPemPrivateKey(cfg.P2P.Identity.PrivKeyPath)
+			if err != nil {
+				logger.Fatalf("error reading private key: %v", err)
+			}
 		}
 
-		logger.Infof(
-			"Sending tx with priv.key = %s, priv. key path = %s, address = %s, amount = %d, fee = %d",
-			privKey,
-			privKeyPath,
+		logger.Debugf(
+			"Sending tx with address = %s, amount = %d, fee = %d, privKey = %x",
 			address,
 			amount,
 			fee,
+			privKey,
 		)
 
 		wallet, err := wallt.NewWallet(
@@ -76,8 +85,8 @@ func init() {
 	sendCmd.Flags().String("address", "", "Destination address to send coins")
 	sendCmd.Flags().Uint("amount", 0, "Amount of coins to send")
 	sendCmd.Flags().Uint("fee", 0, "Amount of fee to send")
-	sendCmd.Flags().String("priv-key-path", "", "Path to private key")
 	sendCmd.Flags().String("priv-key", "", "Private key")
+	sendCmd.Flags().String("priv-key-path", "", "Path to private key")
 
 	// required flags
 	_ = sendCmd.MarkFlagRequired("address")
