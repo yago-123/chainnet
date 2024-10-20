@@ -107,7 +107,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 		select {
 		case <-m.ctx.Done():
 			// abort mining if the context is cancelled
-			return nil, fmt.Errorf("mining cancelled by context")
+			return nil, fmt.Errorf("cancelled by context (height = %d)", blockHeader.Height)
 		default:
 			// start mining the block (proof of work)
 			pow, errPow := NewProofOfWork(m.ctx, blockHeader, m.hasherType)

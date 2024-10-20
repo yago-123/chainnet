@@ -97,7 +97,7 @@ func main() {
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
-			cfg.Logger.Errorf("Error mining block: %s", err)
+			cfg.Logger.Errorf("Stopped mining block: %s", err)
 			continue
 		}
 
