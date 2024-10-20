@@ -16,7 +16,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
 
-	base58 "github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcutil/base58"
 )
 
 type Wallet struct {
@@ -83,35 +83,39 @@ func NewWallet(
 	}, nil
 }
 
-func (w *Wallet) InitNetwork() error {
+func (w *Wallet) InitNetwork() (*p2p.WalletP2P, error) {
 	var p2pNet *p2p.WalletP2P
 
 	// check if the network is supposed to be enabled
 	if !w.cfg.P2P.Enabled {
-		return fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
+		return nil, fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
 	}
 
 	// check if the network has been initialized before
 	if w.p2pActive {
-		return fmt.Errorf("p2p network is already active")
+		return nil, fmt.Errorf("p2p network is already active")
 	}
 
 	// create new P2P node
 	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
 	p2pNet, err := p2p.NewWalletP2P(w.p2pCtx, w.cfg, w.p2pEncoder)
 	if err != nil {
-		return fmt.Errorf("could not create wallet p2p network: %w", err)
+		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
 	}
 
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {
-		return fmt.Errorf("error starting p2p node: %w", err)
+		return nil, fmt.Errorf("error starting p2p node: %w", err)
 	}
 
 	w.p2pNet = p2pNet
 	w.p2pActive = true
 
-	return nil
+	if err = p2pNet.ConnectToSeeds(); err != nil {
+		return nil, fmt.Errorf("error connecting to seeds: %w", err)
+	}
+
+	return p2pNet, nil
 }
 
 // GetAddress returns one wallet address
