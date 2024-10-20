@@ -105,16 +105,18 @@ func TestHValidator_validateBlockHash(t *testing.T) {
 	require.Error(t, hvalidator.validateBlockHash(block))
 }
 
-func TestHValidator_validatePreviousBlockMatchCurrentLatest(t *testing.T) {
+func TestHValidator_validateHeaderPreviousBlock(t *testing.T) {
 	mockStore := &mockStorage.MockStorage{}
+
+	mockHeader := &kernel.BlockHeader{MerkleRoot: []byte("merkle root")}
 	mockStore.
-		On("GetLastBlock").
-		Return(&kernel.Block{Hash: []byte("block-1")}, nil)
+		On("GetLastHeader").
+		Return(mockHeader, nil)
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, fakeHashing), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the previous block hash of the block matches the latest block
-	require.NoError(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 1}))
+	require.NoError(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: append(mockHeader.Assemble(), []byte("-hashed")...), Height: 1}))
 
 	// check that the previous block hash of the block does not match the latest block
 	require.Error(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte("block-2"), Height: 1}))
@@ -126,11 +128,25 @@ func TestHValidator_validatePreviousBlockMatchCurrentLatest(t *testing.T) {
 	require.Error(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: []byte("block-1"), Height: 0}))
 }
 
+func TestHValidator_validateGenesisHeader(t *testing.T) {
+	mockStore := &mockStorage.MockStorage{}
+
+	mockHeader := &kernel.BlockHeader{MerkleRoot: []byte("merkle root")}
+	mockStore.
+		On("GetLastHeader").
+		Return(mockHeader, nil)
+	fakeHashing := &mockHash.FakeHashing{}
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, fakeHashing), &mockSign.MockSign{}, fakeHashing)
+
+	// check that can be a single genesis block
+	require.Error(t, hvalidator.validateGenesisHeader(&kernel.BlockHeader{Height: 0, PrevBlockHash: []byte{}}))
+}
+
 func TestHValidator_validateBlockHeight(t *testing.T) {
 	mockStore := &mockStorage.MockStorage{}
 	mockStore.
-		On("GetLastBlock").
-		Return(&kernel.Block{Header: &kernel.BlockHeader{Height: 10}}, nil)
+		On("GetLastHeader").
+		Return(&kernel.BlockHeader{Height: 10}, nil)
 
 	fakeHashing := &mockHash.FakeHashing{}
 	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)

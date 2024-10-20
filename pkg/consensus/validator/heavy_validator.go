@@ -2,7 +2,9 @@ package validator
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/storage"
 
 	"github.com/yago-123/chainnet/config"
@@ -161,13 +163,13 @@ func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error 
 		return fmt.Errorf("unable to retrieve last block: %w", err)
 	}
 
-	headerHash, err := util.CalculateBlockHash(lastChainHeader, hv.hasher)
+	lastHeaderHash, err := util.CalculateBlockHash(lastChainHeader, hv.hasher)
 	if err != nil {
 		return fmt.Errorf("error while calculating hash of last header: %s", lastChainHeader.String())
 	}
 
-	if !bytes.Equal(bh.PrevBlockHash, headerHash) {
-		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", bh.PrevBlockHash, headerHash)
+	if !bytes.Equal(bh.PrevBlockHash, lastHeaderHash) {
+		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", bh.PrevBlockHash, lastHeaderHash)
 	}
 
 	return nil
@@ -181,7 +183,7 @@ func (hv *HValidator) validateGenesisHeader(bh *kernel.BlockHeader) error {
 
 	// if is genesis block, check that there is not any existent header
 	_, err := hv.explorer.GetLastHeader()
-	if err != storage.ErrNotFound {
+	if !errors.Is(err, storage.ErrNotFound) {
 		return fmt.Errorf("genesis block already exists")
 	}
 
