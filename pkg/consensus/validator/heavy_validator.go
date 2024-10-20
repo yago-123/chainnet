@@ -160,7 +160,7 @@ func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error 
 	// if not genesis block, check previous block hash
 	lastChainHeader, err := hv.explorer.GetLastHeader()
 	if err != nil {
-		return fmt.Errorf("unable to retrieve last block: %w", err)
+		return fmt.Errorf("unable to retrieve last header: %w", err)
 	}
 
 	lastHeaderHash, err := util.CalculateBlockHash(lastChainHeader, hv.hasher)
