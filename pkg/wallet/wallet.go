@@ -24,8 +24,6 @@ type Wallet struct {
 	PrivateKey []byte
 	PublicKey  []byte
 
-	id []byte
-
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
 	signer sign.Signature
@@ -45,10 +43,6 @@ type Wallet struct {
 	cfg *config.Config
 }
 
-func (w *Wallet) ID() string {
-	return string(w.id)
-}
-
 func NewWallet(
 	cfg *config.Config,
 	version []byte,
@@ -63,17 +57,35 @@ func NewWallet(
 		return nil, err
 	}
 
-	id, err := walletHasher.Hash(publicKey)
-	if err != nil {
-		return nil, fmt.Errorf("could not hash the public key: %w", err)
-	}
+	return NewWalletWithKeys(
+		cfg,
+		version,
+		validator,
+		signer,
+		walletHasher,
+		consensusHasher,
+		p2pEncoder,
+		privateKey,
+		publicKey,
+	)
+}
 
+func NewWalletWithKeys(
+	cfg *config.Config,
+	version []byte,
+	validator consensus.LightValidator,
+	signer sign.Signature,
+	walletHasher hash.Hashing,
+	consensusHasher hash.Hashing,
+	p2pEncoder encoding.Encoding,
+	privateKey []byte,
+	publicKey []byte,
+) (*Wallet, error) {
 	return &Wallet{
 		version:         version,
 		PrivateKey:      privateKey,
 		PublicKey:       publicKey,
 		validator:       validator,
-		id:              id,
 		signer:          signer,
 		p2pEncoder:      p2pEncoder,
 		walletHasher:    walletHasher,
@@ -85,11 +97,6 @@ func NewWallet(
 
 func (w *Wallet) InitNetwork() (*p2p.WalletP2P, error) {
 	var p2pNet *p2p.WalletP2P
-
-	// check if the network is supposed to be enabled
-	if !w.cfg.P2P.Enabled {
-		return nil, fmt.Errorf("p2p network is not supposed to be enabled, check configuration")
-	}
 
 	// check if the network has been initialized before
 	if w.p2pActive {
@@ -180,8 +187,8 @@ func (w *Wallet) GenerateNewTransaction(to string, targetAmount uint, txFee uint
 }
 
 // SendTransaction propagates a transaction to the network
-func (w *Wallet) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
-	if err := w.p2pNet.SendTransaction(ctx, tx); err != nil {
+func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
+	if err := w.p2pNet.SendTransaction(ctx, *tx); err != nil {
 		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
 	}
 
