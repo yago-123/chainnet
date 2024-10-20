@@ -49,6 +49,11 @@ p2p:
   buffer-size: 4096                       # Read buffer size over the network
 ```
 ## Build
+Building the `chainnet-nespv` wallet:
+```bash
+$ make nespv 
+```
+
 Building the `chainnet-node`: 
 ```bash
 $ make node
@@ -64,7 +69,36 @@ Building a `chainnet-nespv` wallet:
 $ make nespv 
 ````
 
-## Running
+## Creating and running wallets 
+First create a wallet key pair: 
+```bash 
+$ openssl ecparam -name prime256v1 -genkey -noout -out priv-key.pem
+```
+
+Then derive the public key from the private key:
+```bash 
+$ openssl ec -in priv-key.pem -pubout -out pub-key.pem
+```
+
+After the private and public keys have been created, you can start using the wallet. For example you can check your 
+balance: 
+```bash 
+$
+```
+
+You can also send a transaction to another wallet: 
+```bash
+$
+```
+
+In order to receive some coins you can paste your public key into the miner file configuration and mine with your 
+computer: 
+``` 
+...
+```
+
+
+## Creating and running nodes and miners 
 ### Bare metal
 Running the `chainnet-node`: 
 ```bash
