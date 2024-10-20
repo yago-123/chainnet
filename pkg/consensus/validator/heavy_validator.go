@@ -216,11 +216,8 @@ func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error 
 func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
 	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
-	if err != nil {
-		return fmt.Errorf("unable to retrieve last block: %w", err)
-	}
 
-	// todo() add comment on why we need this
+	// todo() add comment on why we need this (maybe add different function)
 	if bh.IsGenesisHeader() && err == storage.ErrNotFound {
 		return nil
 	}
