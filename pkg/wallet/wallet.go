@@ -139,8 +139,8 @@ func (w *Wallet) GetAddress() ([]byte, error) {
 	return []byte(base58.Encode(payload)), nil
 }
 
-// SendTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+// GenerateNewTransaction creates a transaction and broadcasts it to the network
+func (w *Wallet) GenerateNewTransaction(to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
 	inputs, totalBalance, err := generateInputs(utxos, targetAmount+txFee)
 	if err != nil {
@@ -168,13 +168,19 @@ func (w *Wallet) SendTransaction(to string, targetAmount uint, txFee uint, utxos
 		return &kernel.Transaction{}, err
 	}
 
+	// assign the tx hash
 	tx.SetID(txHash)
+
 	// perform simple validations (light validator) before broadcasting the transaction
 	if err = w.validator.ValidateTxLight(tx); err != nil {
 		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
 	}
 
-	return broadcastTransaction(tx)
+	// if err = w.p2pNet.SendTransaction(w.p2pCtx, *tx); err != nil {
+	// 	return &kernel.Transaction{}, fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
+	// }
+
+	return tx, nil
 }
 
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
@@ -244,10 +250,4 @@ func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeRec
 	}
 
 	return txOutput
-}
-
-// broadcastTransaction sends the transaction to the network
-func broadcastTransaction(tx *kernel.Transaction) (*kernel.Transaction, error) {
-	// todo() implement the logic to broadcast the transaction to the network
-	return tx, nil
 }
