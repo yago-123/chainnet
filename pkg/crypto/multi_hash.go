@@ -2,7 +2,6 @@ package crypto
 
 import (
 	"bytes"
-	"errors"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 )
@@ -11,14 +10,10 @@ type MultiHash struct {
 	hashers []hash.Hashing
 }
 
-func NewMultiHash(hashers []hash.Hashing) (*MultiHash, error) {
-	if len(hashers) < 1 {
-		return nil, errors.New("unable to start a multihasher with 0 or 1 hashers")
-	}
-
+func NewMultiHash(hashers []hash.Hashing) *MultiHash {
 	return &MultiHash{
 		hashers: hashers,
-	}, nil
+	}
 }
 
 func (m *MultiHash) Hash(payload []byte) ([]byte, error) {

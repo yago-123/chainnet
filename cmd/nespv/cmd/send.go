@@ -10,6 +10,8 @@ var sendCmd = &cobra.Command{
 	Long:  `Send transactions from wallets.`,
 	Run: func(_ *cobra.Command, _ []string) {
 		logger.Infof("Sending transactions...")
+
+		// need: address, balance, amount, fee (optional)
 	},
 }
 

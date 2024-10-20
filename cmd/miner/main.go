@@ -34,7 +34,12 @@ func main() {
 
 	// general consensus hasher (tx, block hashes...)
 	consensusHasherType := hash.SHA256
-	// todo(): add consensusSignatureType
+
+	// general consensus signer (tx)
+	consensusSigner := crypto.NewHashedSignature(
+		sign.NewECDSASignature(),
+		hash.NewSHA256(),
+	)
 
 	// create observer controllers
 	subjectChain := observer.NewChainSubject()
@@ -59,9 +64,7 @@ func main() {
 			cfg,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
-			crypto.NewHashedSignature(
-				sign.NewECDSASignature(), hash.NewSHA256(),
-			),
+			consensusSigner,
 			hash.GetHasher(consensusHasherType),
 		),
 		subjectChain,

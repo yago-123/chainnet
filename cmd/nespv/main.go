@@ -1,36 +1,51 @@
 package main
 
 import (
-	"github.com/yago-123/chainnet/cmd/nespv/cmd"
-
 	"github.com/sirupsen/logrus"
+	"github.com/yago-123/chainnet/cmd/nespv/cmd"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/consensus/validator"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/wallet"
 )
 
-var logger = logrus.New()
+var cfg *config.Config
 
 func main() {
-	cmd.Execute(logger)
+	cmd.Execute(logrus.New())
 
-	// initialize network for sending transactions to the miners
-	// p2p.NewP2PNode(context.Background(), &config.Config{})
+	cfg.Logger.SetLevel(logrus.DebugLevel)
 
-	/*
-		// create wallet address hasher
-		walletSha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-		if err != nil {
-			cfg.Logger.Fatalf("Error creating multi-hash configuration: %s", err)
-		}
+	cfg.Logger.Infof("starting wallet with config %v", cfg)
 
-		// create new wallet for storing mining rewards
-		w, err := wallet.NewWallet(
-			[]byte("1"),
-			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256()),
-			walletSha256Ripemd160Hasher,
-			hash.GetHasher(consensusHasherType),
-		)
-		if err != nil {
-			cfg.Logger.Fatalf("Error creating new wallet: %s", err)
-		}
-	*/
+	// general consensus hasher (tx, block hashes...)
+	consensusHasherType := hash.SHA256
+
+	// general consensus signer (tx)
+	consensusSigner := crypto.NewHashedSignature(
+		sign.NewECDSASignature(),
+		hash.NewSHA256(),
+	)
+
+	// algorithm required for wallet hashing
+	walletHasher := crypto.NewMultiHash(
+		[]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()},
+	)
+
+	// create new wallet for storing mining rewards
+	_, err := wallet.NewWallet(
+		cfg,
+		[]byte("1"),
+		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+		consensusSigner,
+		walletHasher,
+		hash.GetHasher(consensusHasherType),
+		encoding.NewProtobufEncoder(),
+	)
+	if err != nil {
+		cfg.Logger.Fatalf("Error creating new wallet: %s", err)
+	}
 }

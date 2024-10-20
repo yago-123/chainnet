@@ -176,11 +176,16 @@ func (w *Wallet) GenerateNewTransaction(to string, targetAmount uint, txFee uint
 		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
 	}
 
-	// if err = w.p2pNet.SendTransaction(w.p2pCtx, *tx); err != nil {
-	// 	return &kernel.Transaction{}, fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
-	// }
-
 	return tx, nil
+}
+
+// SendTransaction propagates a transaction to the network
+func (w *Wallet) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+	if err := w.p2pNet.SendTransaction(ctx, tx); err != nil {
+		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
+	}
+
+	return nil
 }
 
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to

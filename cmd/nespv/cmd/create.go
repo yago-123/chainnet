@@ -20,19 +20,16 @@ var createCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		logger.Infof("Creating new nespv...")
 
-		sha256Ripemd160Hasher, err := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-		if err != nil {
-			logger.Infof("Error creating new nespv: %s", err)
-		}
+		walletHasher := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 
-		ecdsaSha256Signer := crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256())
+		consensusSigner := crypto.NewHashedSignature(sign.NewECDSASignature(), hash.NewSHA256())
 
 		w, err := wallet.NewWallet(
 			config.NewConfig(), // todo() change this to a real config
 			[]byte("0.0.1"),
 			validator.NewLightValidator(hash.NewSHA256()),
-			ecdsaSha256Signer,
-			sha256Ripemd160Hasher,
+			consensusSigner,
+			walletHasher,
 			hash.NewSHA256(),
 			encoding.NewProtobufEncoder(),
 		)
