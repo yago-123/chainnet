@@ -44,6 +44,7 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 	for {
 		msg, err := sub.Next(h.ctx)
 		if err != nil {
+			h.logger.Errorf("stopping listening for blocks added: %w", err)
 			return
 		}
 
@@ -54,7 +55,7 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 
 		header, err := h.encoder.DeserializeHeader(msg.Data)
 		if err != nil {
-			h.logger.Errorf("failed deserializing block from %s: %s", msg.ReceivedFrom, err)
+			h.logger.Errorf("failed deserializing header from %s: %s", msg.ReceivedFrom, err)
 			continue
 		}
 
@@ -65,19 +66,26 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 }
 
 // listenForTxMempool represents the handler for the tx mempool topic
-func (h *gossipHandler) listenForTxMempool(sub *pubSubP2P.Subscription) {
+func (h *gossipHandler) listenForTxAdded(sub *pubSubP2P.Subscription) {
 	for {
-		_, err := sub.Next(h.ctx)
+		msg, err := sub.Next(h.ctx)
 		if err != nil {
+			h.logger.Errorf("stopping listening for transactions: %w", err)
 			return
 		}
 
-		// tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
-		// if err != nil {
-		//	h.logger.Errorf("failed deserializing transaction: %s", err)
-		//  continue
-		// }
+		// ignore those messages that come from the same node
+		if h.host.ID() == msg.ReceivedFrom {
+			continue
+		}
 
+		tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
+		if err != nil {
+			h.logger.Errorf("failed deserializing transaction from %s: %s", msg.ReceivedFrom, err)
+			continue
+		}
+
+		h.logger.Infof("received transaction from %s with tx ID %s", msg.ReceivedFrom, string(tx.ID()))
 		// h.netSubject.NotifyUnconfirmedTxReceived(*tx)
 	}
 }
