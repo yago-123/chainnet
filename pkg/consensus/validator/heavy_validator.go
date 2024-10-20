@@ -59,6 +59,7 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 	validations := []HeaderFunc{
 		hv.lv.ValidateHeader,
+		hv.validateGenesisHeader,
 		hv.validateHeaderHeight,
 		hv.validateHeaderTarget,
 		hv.validateHeaderPreviousBlock,
@@ -142,6 +143,85 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 	return nil
 }
 
+// validateHeaderPreviousBlock checks that the previous block hash of the block matches the latest block
+func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error {
+	// if is genesis block and does not contain previous block hash, don't check previous block (does not exist)
+	if bh.IsGenesisHeader() {
+		return nil
+	}
+
+	// if is height 0 but contains previous block hash, return error
+	if bh.Height == 0 && len(bh.PrevBlockHash) != 0 {
+		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %x", bh.PrevBlockHash)
+	}
+
+	// if not genesis block, check previous block hash
+	lastChainHeader, err := hv.explorer.GetLastHeader()
+	if err != nil {
+		return fmt.Errorf("unable to retrieve last block: %w", err)
+	}
+
+	headerHash, err := util.CalculateBlockHash(lastChainHeader, hv.hasher)
+	if err != nil {
+		return fmt.Errorf("error while calculating hash of last header: %s", lastChainHeader.String())
+	}
+
+	if !bytes.Equal(bh.PrevBlockHash, headerHash) {
+		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", bh.PrevBlockHash, headerHash)
+	}
+
+	return nil
+}
+
+// validateGenesisHeader checks that the genesis block is valid
+func (hv *HValidator) validateGenesisHeader(bh *kernel.BlockHeader) error {
+	if !bh.IsGenesisHeader() {
+		return nil
+	}
+
+	// if is genesis block, check that there is not any existent header
+	_, err := hv.explorer.GetLastHeader()
+	if err != storage.ErrNotFound {
+		return fmt.Errorf("genesis block already exists")
+	}
+
+	// if the error is storage.ErrNotFound, then the genesis block is valid
+	return nil
+}
+
+// validateHeaderHeight checks that the height of the block is correct
+func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
+	if bh.IsGenesisHeader() {
+		return nil
+	}
+
+	// if not genesis block, check previous block header height
+	lastChainHeader, err := hv.explorer.GetLastHeader()
+	if err != nil {
+		return fmt.Errorf("unable to retrieve last header: %w", err)
+	}
+
+	if !(bh.Height == (lastChainHeader.Height + 1)) {
+		return fmt.Errorf("header does not match local height")
+	}
+
+	return nil
+}
+
+// validateHeaderTarget checks that the target of the header is correct
+func (hv *HValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
+	targetExpected, err := hv.explorer.GetMiningTarget(bh.Height, hv.cfg.AdjustmentTargetInterval, hv.cfg.MiningInterval)
+	if err != nil {
+		return fmt.Errorf("error while validating target: %w", err)
+	}
+
+	if targetExpected != bh.Target {
+		return fmt.Errorf("expected %d target, but header had %d", targetExpected, bh.Target)
+	}
+
+	return nil
+}
+
 // validateNumberOfCoinbaseTxs checks that there is only one coinbase transaction in a block. If there is more than
 // one coinbase transaction it means that there has been an error adding multiple coinbases or that there are
 // transactions with wrong number of inputs todo(): we may want to check this second case as well in the mempool
@@ -186,63 +266,6 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 // validateBlockHash checks that the hash of the block is correct. Merkle tree hash is checked in validateMerkleTree func
 func (hv *HValidator) validateBlockHash(b *kernel.Block) error {
 	return util.VerifyBlockHash(b.Header, b.Hash, hv.hasher)
-}
-
-// validateHeaderPreviousBlock checks that the previous block hash of the block matches the latest block
-func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error {
-	// if is genesis block and does not contain previous block hash, don't check previous block (does not exist)
-	if bh.IsGenesisHeader() {
-		return nil
-	}
-
-	// if is height 0 but contains previous block hash, return error
-	if bh.Height == 0 && len(bh.PrevBlockHash) != 0 {
-		return fmt.Errorf("expected genesis block with height 0, but contains previous block hash %x", bh.PrevBlockHash)
-	}
-
-	// if not genesis block, check previous block hash
-	lastChainBlock, err := hv.explorer.GetLastBlock()
-	if err != nil {
-		return fmt.Errorf("unable to retrieve last block: %w", err)
-	}
-
-	if !bytes.Equal(bh.PrevBlockHash, lastChainBlock.Hash) {
-		return fmt.Errorf("previous hash %x points to block different than latest in the chain %x", bh.PrevBlockHash, lastChainBlock.Hash)
-	}
-
-	return nil
-}
-
-func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
-	// if not genesis block, check previous block hash
-	lastChainBlock, err := hv.explorer.GetLastBlock()
-	if err == storage.ErrNotFound && bh.IsGenesisHeader() {
-		// todo() add comment on why we need this (maybe add different function)
-		return nil
-	}
-
-	if err != nil {
-		return fmt.Errorf("unable to retrieve last block: %w", err)
-	}
-
-	if !(bh.Height == (lastChainBlock.Header.Height + 1)) {
-		return fmt.Errorf("header does not match local height")
-	}
-
-	return nil
-}
-
-func (hv *HValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
-	targetExpected, err := hv.explorer.GetMiningTarget(bh.Height, hv.cfg.AdjustmentTargetInterval, hv.cfg.MiningInterval)
-	if err != nil {
-		return fmt.Errorf("error while validating target: %w", err)
-	}
-
-	if targetExpected != bh.Target {
-		return fmt.Errorf("expected %d target, but header had %d", targetExpected, bh.Target)
-	}
-
-	return nil
 }
 
 // validateMerkleTree checks that the Merkle tree root hash of the block matches the Merkle root hash in the block header
