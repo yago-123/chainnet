@@ -3,6 +3,7 @@ package validator
 import (
 	"bytes"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/storage"
 
 	"github.com/yago-123/chainnet/config"
 
@@ -61,7 +62,6 @@ func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 		hv.validateHeaderHeight,
 		hv.validateHeaderTarget,
 		hv.validateHeaderPreviousBlock,
-		hv.validateHeaderHeight,
 	}
 
 	for _, validate := range validations {
@@ -214,14 +214,15 @@ func (hv *HValidator) validateHeaderPreviousBlock(bh *kernel.BlockHeader) error 
 }
 
 func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
-	if bh.IsGenesisHeader() {
-		return nil
-	}
-
 	// if not genesis block, check previous block hash
 	lastChainBlock, err := hv.explorer.GetLastBlock()
 	if err != nil {
 		return fmt.Errorf("unable to retrieve last block: %w", err)
+	}
+
+	// todo() add comment on why we need this
+	if bh.IsGenesisHeader() && err == storage.ErrNotFound {
+		return nil
 	}
 
 	if !(bh.Height == (lastChainBlock.Header.Height + 1)) {
