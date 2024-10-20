@@ -17,7 +17,7 @@ import (
 
 const (
 	// todo(): BlackListedNodes?
-	TxMempoolPubSubTopic  = "tx-mempool-topic"
+	TxAddedPubSubTopic    = "tx-added-topic"
 	BlockAddedPubSubTopic = "block-added-topic"
 )
 
@@ -44,7 +44,7 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 	for {
 		msg, err := sub.Next(h.ctx)
 		if err != nil {
-			h.logger.Errorf("stopping listening for blocks added: %w", err)
+			h.logger.Errorf("stopping listening for blocks added: %v", err)
 			return
 		}
 
@@ -55,7 +55,7 @@ func (h *gossipHandler) listenForBlocksAdded(sub *pubSubP2P.Subscription) {
 
 		header, err := h.encoder.DeserializeHeader(msg.Data)
 		if err != nil {
-			h.logger.Errorf("failed deserializing header from %s: %s", msg.ReceivedFrom, err)
+			h.logger.Errorf("failed deserializing header from %s: %v", msg.ReceivedFrom, err)
 			continue
 		}
 
@@ -70,7 +70,7 @@ func (h *gossipHandler) listenForTxAdded(sub *pubSubP2P.Subscription) {
 	for {
 		msg, err := sub.Next(h.ctx)
 		if err != nil {
-			h.logger.Errorf("stopping listening for transactions: %w", err)
+			h.logger.Errorf("stopping listening for transactions: %v", err)
 			return
 		}
 
@@ -81,11 +81,11 @@ func (h *gossipHandler) listenForTxAdded(sub *pubSubP2P.Subscription) {
 
 		tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
 		if err != nil {
-			h.logger.Errorf("failed deserializing transaction from %s: %s", msg.ReceivedFrom, err)
+			h.logger.Errorf("failed deserializing transaction from %s: %v", msg.ReceivedFrom, err)
 			continue
 		}
 
-		h.logger.Infof("received transaction from %s with tx ID %s", msg.ReceivedFrom, string(tx.ID()))
+		h.logger.Infof("received transaction from %s with tx ID %s", msg.ReceivedFrom, string(tx.ID))
 		// h.netSubject.NotifyUnconfirmedTxReceived(*tx)
 	}
 }
@@ -110,7 +110,7 @@ func NewGossipPubSub(ctx context.Context, cfg *config.Config, host host.Host, en
 
 	// initialize handlers for the topics available
 	topicHandlers := map[string]func(sub *pubSubP2P.Subscription){
-		TxMempoolPubSubTopic:  handler.listenForTxMempool,
+		TxAddedPubSubTopic:    handler.listenForTxAdded,
 		BlockAddedPubSubTopic: handler.listenForBlocksAdded,
 	}
 
@@ -170,9 +170,9 @@ func (g *GossipPubSub) NotifyBlockHeaderAdded(ctx context.Context, header kernel
 }
 
 func (g *GossipPubSub) NotifyTransactionAdded(ctx context.Context, tx kernel.Transaction) error {
-	topic, ok := g.topicStore[TxMempoolPubSubTopic]
+	topic, ok := g.topicStore[TxAddedPubSubTopic]
 	if !ok {
-		return fmt.Errorf("topic %s not registered", TxMempoolPubSubTopic)
+		return fmt.Errorf("topic %s not registered", TxAddedPubSubTopic)
 	}
 
 	data, err := g.encoder.SerializeTransaction(tx)
