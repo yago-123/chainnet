@@ -52,7 +52,7 @@ func (lv *LValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 	validations := []HeaderFunc{
 		lv.validateHeaderFieldsWithinLimits,
 		lv.validateVersion,
-		lv.validateHeaderTarget,
+		lv.validateHeaderHash,
 	}
 
 	for _, validate := range validations {
@@ -77,15 +77,15 @@ func (lv *LValidator) validateHeaderFieldsWithinLimits(bh *kernel.BlockHeader) e
 	return nil
 }
 
-// validateHeaderTarget checks that the block hash corresponds to the target
-func (lv *LValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
-	hash, err := util.CalculateBlockHash(bh, lv.hasher)
+// validateHeaderHash checks that the block hash corresponds to the target
+func (lv *LValidator) validateHeaderHash(bh *kernel.BlockHeader) error {
+	headerHash, err := util.CalculateBlockHash(bh, lv.hasher)
 	if err != nil {
-		return fmt.Errorf("error calculating header hash: %w", err)
+		return fmt.Errorf("error calculating header headerHash: %w", err)
 	}
 
-	if !util.IsFirstNBitsZero(hash, bh.Target) {
-		return fmt.Errorf("block %x has invalid target %d", hash, bh.Target)
+	if !util.IsFirstNBitsZero(headerHash, bh.Target) {
+		return fmt.Errorf("block %x has invalid target %d", headerHash, bh.Target)
 	}
 
 	return nil
