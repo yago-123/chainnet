@@ -44,6 +44,11 @@ func (bh *BlockHeader) IsGenesisHeader() bool {
 	return len(bh.PrevBlockHash) == 0 && bh.Height == 0
 }
 
+func (bh *BlockHeader) String() string {
+	return fmt.Sprintf("header(version: %s, prev block hash: %x, merkle root: %x, height: %d, timestamp: %d, target: %d, nonce: %d)",
+		bh.Version, bh.PrevBlockHash, bh.MerkleRoot, bh.Height, bh.Timestamp, bh.Target, bh.Nonce)
+}
+
 func (bh *BlockHeader) Assemble() []byte {
 	data := [][]byte{
 		[]byte(fmt.Sprintf("version %s", bh.Version)),

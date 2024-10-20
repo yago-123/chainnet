@@ -261,7 +261,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 
 		// validate the header compatibility with the local chain (prevent downloading block if is incompatible)
 		if err = bc.validator.ValidateHeader(header); err != nil {
-			return fmt.Errorf("error validating header %v: %w", header, err)
+			return fmt.Errorf("error validating header %s: %w", header.String(), err)
 		}
 
 		remoteBlockHash, err = util.CalculateBlockHash(header, bc.hasher)
@@ -317,7 +317,7 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader) {
 	// make sure that the header is compatible with the local chain
 	if err := bc.validator.ValidateHeader(&header); err != nil {
-		bc.logger.Tracef("error validating header %v sent by %s: %s", header, peer.String(), err)
+		bc.logger.Tracef("error validating header %s sent by %s: %s", header.String(), peer.String(), err)
 	}
 
 	// calculate the block hash
