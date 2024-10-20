@@ -50,6 +50,7 @@ func main() {
 		mempool.NewMemPool(),
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
+			cfg,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
 			crypto.NewHashedSignature(

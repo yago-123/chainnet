@@ -45,7 +45,7 @@ func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 	return block, nil
 }
 
-// GetBlockByHeight returns the block corresponding to the height provided
+// GetHeaderByHeight returns the block corresponding to the height provided
 func (explorer *Explorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, error) {
 	lastHeaderHash, err := explorer.store.GetLastBlockHash()
 	if err != nil {

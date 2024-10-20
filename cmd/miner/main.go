@@ -56,6 +56,7 @@ func main() {
 		mempool,
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
+			cfg,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
 			crypto.NewHashedSignature(
@@ -96,7 +97,7 @@ func main() {
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
-			cfg.Logger.Errorf("Error mining block: %s", err)
+			cfg.Logger.Errorf("Stopped mining block: %s", err)
 			continue
 		}
 
