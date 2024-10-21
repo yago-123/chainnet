@@ -129,13 +129,9 @@ func (w *Wallet) GetP2PKAddress() []byte {
 	return w.PublicKey
 }
 
-func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
-	return w.GetAddress()
-}
-
 // GetAddress returns one wallet address
 // todo() implement hierarchically deterministic HD wallet
-func (w *Wallet) GetAddress() ([]byte, error) {
+func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 	// hash the public key
 	pubKeyHash, err := w.walletHasher.Hash(w.PublicKey)
 	if err != nil {

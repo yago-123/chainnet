@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -131,7 +131,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	defer resp.Body.Close()
 
 	// read response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %v", address, err)
 	}

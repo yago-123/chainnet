@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
@@ -13,7 +15,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/mempool"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/storage"
-	"net/http"
 )
 
 var cfg *config.Config

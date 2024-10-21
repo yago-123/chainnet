@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/btcsuite/btcutil/base58"
 	"net/http"
+
+	"github.com/btcsuite/btcutil/base58"
 
 	blockchain "github.com/yago-123/chainnet/pkg/chain/explorer"
 
