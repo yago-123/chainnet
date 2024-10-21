@@ -12,8 +12,6 @@ import (
 	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
 
-var err error
-
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
@@ -30,8 +28,10 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("specify one argument containing the private key: --priv-key or --priv-key-path")
 		}
 
+		var err error
+		var privKey []byte
+
 		// process key from path or from content
-		privKey := []byte{}
 		if privKeyCont != "" {
 			privKey = []byte(privKeyCont)
 		}

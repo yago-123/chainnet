@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -136,10 +135,8 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %w", address, err)
 	}
 
-	// unmarshal response
-	// todo(): make use of n.encoder
-	utxos := []*kernel.UTXO{}
-	err = json.Unmarshal(body, &utxos)
+	// decode UTXOs
+	utxos, err := n.encoder.DeserializeUTXOs(body)
 	if err != nil {
 		return []*kernel.UTXO{}, fmt.Errorf("failed to unmarshal UTXO response for address %s: %w", address, err)
 	}
