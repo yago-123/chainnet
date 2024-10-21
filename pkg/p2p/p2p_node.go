@@ -2,8 +2,12 @@ package p2p
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/julienschmidt/httprouter"
+	"net/http"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -35,18 +39,19 @@ const (
 )
 
 type nodeP2PHandler struct {
-	cfg      *config.Config
 	logger   *logrus.Logger
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+
+	cfg *config.Config
 }
 
 func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *nodeP2PHandler {
 	return &nodeP2PHandler{
-		cfg:      cfg,
 		logger:   cfg.Logger,
 		encoder:  encoder,
 		explorer: explorer,
+		cfg:      cfg,
 	}
 }
 
@@ -155,6 +160,92 @@ func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
 	}
 }
 
+type HTTPRouter struct {
+	r        *httprouter.Router
+	encoder  encoding.Encoding
+	explorer *explorer.Explorer
+
+	cfg *config.Config
+}
+
+func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *HTTPRouter {
+	router := &HTTPRouter{
+		r:        httprouter.New(),
+		encoder:  encoder,
+		explorer: explorer,
+		cfg:      cfg,
+	}
+
+	// todo() move these paths to constants?
+	router.r.GET("/address/:address/transactions", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		router.listTransactions(w, r, ps)
+	})
+	router.r.GET("/address/:address/utxos", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		router.listUTXOs(w, r, ps)
+	})
+	router.r.GET("/address/:address/balance", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		router.getAddressBalance(w, r, ps)
+	})
+
+	return router
+}
+
+// todo(): add cancelling mechanism, improve error handling and use flags to pass port
+func (router *HTTPRouter) Start() error {
+	go http.ListenAndServe(":8080", router.r)
+
+	return nil
+}
+
+// todo(): add functionality
+func (router *HTTPRouter) Stop() error {
+	return nil
+}
+
+func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	// todo() replace this method with all transactions instead of only non-spent ones
+	transactions, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
+	if err != nil {
+		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
+	}
+
+	// todo() replace encoder to use grpc
+	err = json.NewEncoder(w).Encode(transactions) //nolint:musttag // not sure which encoding will use in the future
+	if err != nil {
+		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
+	}
+}
+
+func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	utxos, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
+	if err != nil {
+		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
+	}
+
+	err = json.NewEncoder(w).Encode(utxos) //nolint:musttag // not sure which encoding will use in the future
+	if err != nil {
+		http.Error(w, "Failed to encode UTXOs", http.StatusInternalServerError)
+	}
+}
+
+func (router *HTTPRouter) getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	balanceResponse, err := router.explorer.CalculateAddressBalance(string(base58.Decode(address)))
+	if err != nil {
+		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
+	}
+
+	err = json.NewEncoder(w).Encode(balanceResponse)
+	if err != nil {
+		http.Error(w, "Failed to encode balance", http.StatusInternalServerError)
+	}
+}
+
 type NodeP2P struct {
 	cfg  *config.Config
 	host host.Host
@@ -172,6 +263,8 @@ type NodeP2P struct {
 	// encoder contains the communication data serialization between peers
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+
+	router *HTTPRouter
 
 	// bufferSize represents size of buffer for reading over the network
 	bufferSize uint
@@ -252,10 +345,14 @@ func NewNodeP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, []string{pubsub.BlockAddedPubSubTopic, pubsub.TxAddedPubSubTopic}, true)
+	topics := []string{pubsub.BlockAddedPubSubTopic, pubsub.TxAddedPubSubTopic}
+	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, topics, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
+
+	// initialize HTTP router for handling HTTP requests (wallet, information requests...)
+	router := NewHTTPRouter(cfg, encoder, explorer)
 
 	// initialize handlers
 	handler := newNodeP2PHandler(cfg, encoder, explorer)
@@ -272,6 +369,7 @@ func NewNodeP2P(
 		discoMDNS:  discoMDNS,
 		pubsub:     pubsub,
 		encoder:    encoder,
+		router:     router,
 		explorer:   explorer,
 		bufferSize: cfg.P2P.BufferSize,
 		logger:     cfg.Logger,
@@ -287,6 +385,10 @@ func (n *NodeP2P) Start() error {
 		return fmt.Errorf("failed to start mDNS discovery: %w", err)
 	}
 
+	if err := n.router.Start(); err != nil {
+		return fmt.Errorf("failed to start HTTP router: %w", err)
+	}
+
 	return nil
 }
 
@@ -297,6 +399,10 @@ func (n *NodeP2P) Stop() error {
 
 	if err := n.discoMDNS.Stop(); err != nil {
 		return fmt.Errorf("error stopping mDNS discovery: %w", err)
+	}
+
+	if err := n.router.Stop(); err != nil {
+		return fmt.Errorf("error stopping HTTP router: %w", err)
 	}
 
 	return n.host.Close()

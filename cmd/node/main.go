@@ -1,8 +1,6 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
@@ -80,9 +78,6 @@ func main() {
 
 	// register the block subject to the network
 	subjectChain.Register(network)
-
-	router := NewHTTPRouter(explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)))
-	go http.ListenAndServe(":8080", router)
 
 	select {}
 }

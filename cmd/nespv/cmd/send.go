@@ -78,6 +78,8 @@ var sendCmd = &cobra.Command{
 		if err != nil {
 			logger.Fatalf("error sending transaction: %v", err)
 		}
+
+		logger.Infof("sent tx: %v", tx)
 	},
 }
 
