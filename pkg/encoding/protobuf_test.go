@@ -220,6 +220,275 @@ func TestDeserializeTransaction(t *testing.T) {
 	assert.Equal(t, *testBlock.Transactions[0], *tx)
 }
 
+func TestSerializeTransactions(t *testing.T) {
+	// Reuse testBlock.Transactions for the test data
+	p := NewProtobufEncoder()
+	data, err := p.SerializeTransactions(testBlock.Transactions)
+	require.NoError(t, err)
+
+	expectedPbTransactions := []*pb.Transaction{
+		{
+			Id: []byte("txid1"),
+			Vin: []*pb.TxInput{
+				{
+					Txid:      []byte("txid0"),
+					Vout:      0,
+					ScriptSig: "sig1",
+					PubKey:    "7075626b657931", // Hex encoded to avoid UTF-8 issues
+				},
+			},
+			Vout: []*pb.TxOutput{
+				{
+					Amount:       100,
+					ScriptPubKey: "scriptpubkey1",
+					PubKey:       "7075626b657931", // Hex encoded to avoid UTF-8 issues
+				},
+			},
+		},
+	}
+
+	var pbTransactions pb.Transactions
+	err = proto.Unmarshal(data, &pbTransactions)
+	require.NoError(t, err)
+
+	// Verify the equality using proto.Equal to account for proto internal fields
+	for i := range pbTransactions.Transactions {
+		assert.True(t, proto.Equal(expectedPbTransactions[i], pbTransactions.Transactions[i]))
+	}
+}
+
+func TestDeserializeTransactions(t *testing.T) {
+	p := NewProtobufEncoder()
+
+	// Create the protobuf representation of transactions and marshal it
+	expectedPbTransactions := &pb.Transactions{
+		Transactions: []*pb.Transaction{
+			{
+				Id: []byte("txid1"),
+				Vin: []*pb.TxInput{
+					{
+						Txid:      []byte("txid0"),
+						Vout:      0,
+						ScriptSig: "sig1",
+						PubKey:    "7075626b657931",
+					},
+				},
+				Vout: []*pb.TxOutput{
+					{
+						Amount:       100,
+						ScriptPubKey: "scriptpubkey1",
+						PubKey:       "7075626b657931",
+					},
+				},
+			},
+		},
+	}
+
+	data, err := proto.Marshal(expectedPbTransactions)
+	require.NoError(t, err)
+
+	// Deserialize back into kernel.Transaction struct
+	transactions, err := p.DeserializeTransactions(data)
+	require.NoError(t, err)
+
+	// Assert that the deserialized transactions match the testBlock transactions
+	assert.ElementsMatch(t, testBlock.Transactions, transactions)
+}
+
+func TestSerializeUTXO(t *testing.T) {
+	// Example UTXO
+	utxo := kernel.UTXO{
+		TxID:   []byte("utxoid1"),
+		OutIdx: 0,
+		Output: kernel.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "scriptpubkey1",
+			PubKey:       "pubkey1",
+		},
+	}
+
+	// Serialize the UTXO
+	p := NewProtobufEncoder()
+	data, err := p.SerializeUTXO(utxo)
+	require.NoError(t, err)
+
+	// Expected protobuf representation of the UTXO
+	expectedPbUTXO := &pb.UTXO{
+		Txid: []byte("utxoid1"),
+		Vout: 0,
+		Output: &pb.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "scriptpubkey1",
+			PubKey:       "7075626b657931", // Hex encoded PubKey
+		},
+	}
+
+	var pbUtxo pb.UTXO
+	err = proto.Unmarshal(data, &pbUtxo)
+	require.NoError(t, err)
+
+	// Verify the equality using proto.Equal
+	assert.True(t, proto.Equal(expectedPbUTXO, &pbUtxo))
+}
+
+func TestDeserializeUTXO(t *testing.T) {
+	p := NewProtobufEncoder()
+
+	// Expected protobuf representation of the UTXO
+	expectedPbUTXO := &pb.UTXO{
+		Txid: []byte("utxoid1"),
+		Vout: 0,
+		Output: &pb.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "scriptpubkey1",
+			PubKey:       "7075626b657931", // Hex encoded PubKey
+		},
+	}
+
+	// Serialize the protobuf UTXO for testing deserialization
+	data, err := proto.Marshal(expectedPbUTXO)
+	require.NoError(t, err)
+
+	// Deserialize the protobuf data back to a kernel.UTXO
+	utxo, err := p.DeserializeUTXO(data)
+	require.NoError(t, err)
+
+	// Expected UTXO
+	expectedUTXO := &kernel.UTXO{
+		TxID:   []byte("utxoid1"),
+		OutIdx: 0,
+		Output: kernel.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "scriptpubkey1",
+			PubKey:       "pubkey1",
+		},
+	}
+
+	// Assert that the deserialized UTXO matches the original UTXO
+	assert.Equal(t, expectedUTXO, utxo)
+}
+
+func TestSerializeUTXOs(t *testing.T) {
+	// Create a list of UTXOs for testing
+	utxos := []*kernel.UTXO{
+		{
+			TxID:   []byte("utxoid1"),
+			OutIdx: 0,
+			Output: kernel.TxOutput{
+				Amount:       50,
+				ScriptPubKey: "scriptpubkey1",
+				PubKey:       "pubkey1",
+			},
+		},
+		{
+			TxID:   []byte("utxoid2"),
+			OutIdx: 1,
+			Output: kernel.TxOutput{
+				Amount:       100,
+				ScriptPubKey: "scriptpubkey2",
+				PubKey:       "pubkey2",
+			},
+		},
+	}
+
+	// Serialize the list of UTXOs
+	p := NewProtobufEncoder()
+	data, err := p.SerializeUTXOs(utxos)
+	require.NoError(t, err)
+
+	// Expected protobuf representation of UTXOs
+	expectedPbUTXOs := &pb.UTXOs{
+		Utxos: []*pb.UTXO{
+			{
+				Txid: []byte("utxoid1"),
+				Vout: 0,
+				Output: &pb.TxOutput{
+					Amount:       50,
+					ScriptPubKey: "scriptpubkey1",
+					PubKey:       "7075626b657931", // Hex encoded PubKey
+				},
+			},
+			{
+				Txid: []byte("utxoid2"),
+				Vout: 1,
+				Output: &pb.TxOutput{
+					Amount:       100,
+					ScriptPubKey: "scriptpubkey2",
+					PubKey:       "7075626b657932", // Hex encoded PubKey
+				},
+			},
+		},
+	}
+
+	var pbUtxos pb.UTXOs
+	err = proto.Unmarshal(data, &pbUtxos)
+	require.NoError(t, err)
+
+	// Verify the equality using proto.Equal
+	assert.True(t, proto.Equal(expectedPbUTXOs, &pbUtxos))
+}
+
+func TestDeserializeUTXOs(t *testing.T) {
+	p := NewProtobufEncoder()
+
+	// Expected protobuf representation of UTXOs
+	expectedPbUTXOs := &pb.UTXOs{
+		Utxos: []*pb.UTXO{
+			{
+				Txid: []byte("utxoid1"),
+				Vout: 0,
+				Output: &pb.TxOutput{
+					Amount:       50,
+					ScriptPubKey: "scriptpubkey1",
+					PubKey:       "7075626b657931", // Hex encoded PubKey
+				},
+			},
+			{
+				Txid: []byte("utxoid2"),
+				Vout: 1,
+				Output: &pb.TxOutput{
+					Amount:       100,
+					ScriptPubKey: "scriptpubkey2",
+					PubKey:       "7075626b657932", // Hex encoded PubKey
+				},
+			},
+		},
+	}
+
+	// Serialize the protobuf UTXOs for testing deserialization
+	data, err := proto.Marshal(expectedPbUTXOs)
+	require.NoError(t, err)
+
+	// Deserialize the protobuf data back to a list of kernel.UTXO
+	utxos, err := p.DeserializeUTXOs(data)
+	require.NoError(t, err)
+
+	// Expected UTXO list
+	expectedUTXOs := []*kernel.UTXO{
+		{
+			TxID:   []byte("utxoid1"),
+			OutIdx: 0,
+			Output: kernel.TxOutput{
+				Amount:       50,
+				ScriptPubKey: "scriptpubkey1",
+				PubKey:       "pubkey1",
+			},
+		},
+		{
+			TxID:   []byte("utxoid2"),
+			OutIdx: 1,
+			Output: kernel.TxOutput{
+				Amount:       100,
+				ScriptPubKey: "scriptpubkey2",
+				PubKey:       "pubkey2",
+			},
+		},
+	}
+
+	// Assert that the deserialized UTXOs match the original UTXO list
+	assert.Equal(t, expectedUTXOs, utxos)
+}
+
 func TestConvertTopbBlock(t *testing.T) {
 	expected := expectedPbBlock
 	result, err := convertToProtobufBlock(testBlock)
@@ -384,6 +653,88 @@ func TestConvertFrompbTxOutputs(t *testing.T) {
 	result, err := convertFromProtobufTxOutputs(pbOutputs)
 	require.NoError(t, err)
 	assert.Equal(t, expected, result)
+}
+
+func TestConvertToProtobufUTXO(t *testing.T) {
+	// Create a sample UTXO object
+	utxo := kernel.UTXO{
+		TxID:   []byte("sampletxid"),
+		OutIdx: 0,
+		Output: kernel.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "sampleScriptPubKey",
+			PubKey:       "pubkey1", // hex representation
+		},
+	}
+
+	// Call the function to convert to protobuf UTXO
+	pbUTXO := convertToProtobufUTXO(utxo)
+
+	// Expected protobuf UTXO
+	expectedPbUTXO := &pb.UTXO{
+		Txid: []byte("sampletxid"),
+		Vout: 0,
+		Output: &pb.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "sampleScriptPubKey",
+			PubKey:       "7075626b657931", // hex encoded
+		},
+	}
+
+	// Verify the converted protobuf UTXO matches the expected value
+	assert.True(t, proto.Equal(expectedPbUTXO, pbUTXO))
+}
+
+func TestConvertFromProtobufUTXO(t *testing.T) {
+	// Create a sample protobuf UTXO object
+	pbUTXO := &pb.UTXO{
+		Txid: []byte("sampletxid"),
+		Vout: 0,
+		Output: &pb.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "sampleScriptPubKey",
+			PubKey:       "7075626b657931", // hex encoded
+		},
+	}
+
+	// Call the function to convert from protobuf UTXO
+	utxo, err := convertFromProtobufUTXO(pbUTXO)
+	require.NoError(t, err)
+
+	// Expected kernel UTXO
+	expectedUTXO := kernel.UTXO{
+		TxID:   []byte("sampletxid"),
+		OutIdx: 0,
+		Output: kernel.TxOutput{
+			Amount:       50,
+			ScriptPubKey: "sampleScriptPubKey",
+			PubKey:       "pubkey1", // decoded hex representation
+		},
+	}
+
+	// Verify the converted kernel UTXO matches the expected value
+	assert.Equal(t, expectedUTXO, utxo)
+}
+
+func TestConvertToAndFromProtobufUTXO(t *testing.T) {
+	// Create a sample UTXO object
+	utxo := kernel.UTXO{
+		TxID:   []byte("sampletxid"),
+		OutIdx: 1,
+		Output: kernel.TxOutput{
+			Amount:       100,
+			ScriptPubKey: "anotherScriptPubKey",
+			PubKey:       "7075626b657932", // hex representation
+		},
+	}
+
+	// Convert to protobuf and back to kernel UTXO
+	pbUTXO := convertToProtobufUTXO(utxo)
+	convertedUTXO, err := convertFromProtobufUTXO(pbUTXO)
+	require.NoError(t, err)
+
+	// Verify that the original UTXO matches the UTXO after conversion
+	assert.Equal(t, utxo, convertedUTXO)
 }
 
 func TestUtf8InvalidCharacters(t *testing.T) {
