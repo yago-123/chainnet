@@ -8,8 +8,6 @@ import (
 
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 
-	"github.com/libp2p/go-libp2p/core/peer"
-
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -98,26 +96,9 @@ func (n *WalletP2P) Stop() error {
 	return n.host.Close()
 }
 
-// todo() remove duplication of this method between p2p_wallet and p2p_node
+// ConnectToSeeds creates connection with the seed nodes
 func (n *WalletP2P) ConnectToSeeds() error {
-	for _, seed := range n.cfg.SeedNodes {
-		addr, err := peer.AddrInfoFromString(
-			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
-		)
-		if err != nil {
-			return fmt.Errorf("failed to parse multiaddress: %w", err)
-		}
-
-		err = n.host.Connect(n.ctx, *addr)
-		if err != nil {
-			n.cfg.Logger.Errorf("failed to connect to seed node %s: %v", addr, err)
-			continue
-		}
-
-		n.cfg.Logger.Infof("connected to seed node %s", addr.ID.String())
-	}
-
-	return nil
+	return connectToSeeds(n.cfg, n.host)
 }
 
 // GetWalletUTXOS returns the UTXOs for a given address

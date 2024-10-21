@@ -408,25 +408,9 @@ func (n *NodeP2P) Stop() error {
 	return n.host.Close()
 }
 
+// ConnectToSeeds creates connection with the seed nodes
 func (n *NodeP2P) ConnectToSeeds() error {
-	for _, seed := range n.cfg.SeedNodes {
-		addr, err := peer.AddrInfoFromString(
-			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
-		)
-		if err != nil {
-			return fmt.Errorf("failed to parse multiaddress: %w", err)
-		}
-
-		err = n.host.Connect(n.ctx, *addr)
-		if err != nil {
-			n.cfg.Logger.Errorf("failed to connect to seed node %s: %v", addr, err)
-			continue
-		}
-
-		n.cfg.Logger.Infof("connected to seed node %s", addr.ID.String())
-	}
-
-	return nil
+	return connectToSeeds(n.cfg, n.host)
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header
