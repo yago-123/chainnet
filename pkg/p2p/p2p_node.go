@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
