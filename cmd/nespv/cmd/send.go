@@ -9,7 +9,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
 
@@ -27,7 +26,7 @@ var sendCmd = &cobra.Command{
 		privKeyPath, _ := cmd.Flags().GetString("priv-key-path")
 
 		// check if only one private key is provided
-		if (privKeyCont == "") != (privKeyPath == "") {
+		if (privKeyCont == "") == (privKeyPath == "") {
 			logger.Fatalf("specify one argument containing the private key: --priv-key or --priv-key-path")
 		}
 
@@ -38,7 +37,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		if privKeyPath != "" {
-			privKey, err = util.ReadECDSAPemPrivateKey(cfg.P2P.Identity.PrivKeyPath)
+			privKey, err = util.ReadECDSAPemPrivateKey(privKeyPath)
 			if err != nil {
 				logger.Fatalf("error reading private key: %v", err)
 			}
@@ -65,7 +64,12 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error setting up wallet: %v", err)
 		}
 
-		tx, err := wallet.GenerateNewTransaction(address, amount, fee, []*kernel.UTXO{})
+		utxos, err := wallet.GetWalletUTXOS()
+		if err != nil {
+			logger.Fatalf("error getting wallet UTXOS: %v", err)
+		}
+
+		tx, err := wallet.GenerateNewTransaction(address, amount, fee, utxos)
 		if err != nil {
 			logger.Fatalf("error generating transaction: %v", err)
 		}

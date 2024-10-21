@@ -2,7 +2,10 @@ package p2p
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
@@ -114,6 +117,33 @@ func (n *WalletP2P) ConnectToSeeds() error {
 	}
 
 	return nil
+}
+
+// GetWalletUTXOS returns the UTXOs for a given address
+func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
+	url := fmt.Sprintf("http://localhost:8080/address/%s/utxos", address)
+
+	// send GET request
+	resp, err := http.Get(url)
+	if err != nil {
+		return []*kernel.UTXO{}, fmt.Errorf("failed to make UTXO request for address %s: %v", address, err)
+	}
+	defer resp.Body.Close()
+
+	// read response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %v", address, err)
+	}
+
+	// unmarshal response
+	utxos := []*kernel.UTXO{}
+	err = json.Unmarshal(body, &utxos)
+	if err != nil {
+		return []*kernel.UTXO{}, fmt.Errorf("failed to unmarshal UTXO response for address %s: %v", address, err)
+	}
+
+	return utxos, nil
 }
 
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {

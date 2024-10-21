@@ -125,6 +125,14 @@ func (w *Wallet) InitNetwork() (*p2p.WalletP2P, error) {
 	return p2pNet, nil
 }
 
+func (w *Wallet) GetP2PKAddress() []byte {
+	return w.PublicKey
+}
+
+func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
+	return w.GetAddress()
+}
+
 // GetAddress returns one wallet address
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetAddress() ([]byte, error) {
@@ -144,6 +152,32 @@ func (w *Wallet) GetAddress() ([]byte, error) {
 	// return the base58 of the versioned payload and the checksum
 	payload := append(versionedPayload, checksum...) //nolint:gocritic // we need to append the checksum to the payload
 	return []byte(base58.Encode(payload)), nil
+}
+
+func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
+	utxos := []*kernel.UTXO{}
+
+	address := w.GetP2PKAddress()
+	p2pkUtxos, err := w.p2pNet.GetWalletUTXOS(address)
+	if err != nil {
+		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for P2PK: %w", err)
+	}
+
+	address, err = w.GetP2PKHAddress()
+	if err != nil {
+		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet address for P2PKH: %w", err)
+	}
+	p2pkhUtxos, err := w.p2pNet.GetWalletUTXOS(address)
+	if err != nil {
+		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for P2PKH: %w", err)
+	}
+
+	// todo() add more types of addresses when are ready (multisig, etc)
+
+	utxos = append(utxos, p2pkUtxos...)
+	utxos = append(utxos, p2pkhUtxos...)
+
+	return utxos, nil
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
@@ -186,15 +220,6 @@ func (w *Wallet) GenerateNewTransaction(to string, targetAmount uint, txFee uint
 	return tx, nil
 }
 
-// SendTransaction propagates a transaction to the network
-func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
-	if err := w.p2pNet.SendTransaction(ctx, *tx); err != nil {
-		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
-	}
-
-	return nil
-}
-
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
 // be used
 func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
@@ -229,6 +254,15 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 	}
 
 	return tx, nil
+}
+
+// SendTransaction propagates a transaction to the network
+func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
+	if err := w.p2pNet.SendTransaction(ctx, *tx); err != nil {
+		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
+	}
+
+	return nil
 }
 
 // generateInputs set up the inputs for the transaction and returns the total balance of the UTXOs that are going to be

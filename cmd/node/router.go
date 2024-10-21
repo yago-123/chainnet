@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/btcsuite/btcutil/base58"
 	"net/http"
 
 	blockchain "github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -29,7 +30,7 @@ func listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Para
 	address := ps.ByName("address")
 
 	// todo() replace this method with all transactions instead of only non-spent ones
-	transactions, err := explorer.FindUnspentTransactions(address)
+	transactions, err := explorer.FindUnspentTransactions(string(base58.Decode(address)))
 	if err != nil {
 		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
 	}
@@ -43,7 +44,7 @@ func listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Para
 func listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
-	utxos, err := explorer.FindUnspentTransactions(address)
+	utxos, err := explorer.FindUnspentTransactions(string(base58.Decode(address)))
 	if err != nil {
 		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
 	}
@@ -57,7 +58,7 @@ func listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, exp
 func getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, explorer *blockchain.Explorer) {
 	address := ps.ByName("address")
 
-	balanceResponse, err := explorer.CalculateAddressBalance(address)
+	balanceResponse, err := explorer.CalculateAddressBalance(string(base58.Decode(address)))
 	if err != nil {
 		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
 	}

@@ -100,7 +100,7 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 	block, err := h.explorer.GetBlockByHash(hash)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			h.logger.Infof("unable to retrieve block for stream %s: block not found", stream.ID())
+			h.logger.Infof("unable to retrieve block for stream %s: block %x not found", stream.ID(), hash)
 			return
 		}
 
