@@ -34,8 +34,4 @@ var listBalanceCmd = &cobra.Command{
 func init() {
 	// main command
 	rootCmd.AddCommand(listCmd)
-
-	// sub commands
-	createCmd.AddCommand(listAddressesCmd)
-	createCmd.AddCommand(listBalanceCmd)
 }
