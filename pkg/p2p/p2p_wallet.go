@@ -137,6 +137,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	}
 
 	// unmarshal response
+	// todo(): make use of n.encoder
 	utxos := []*kernel.UTXO{}
 	err = json.Unmarshal(body, &utxos)
 	if err != nil {

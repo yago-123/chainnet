@@ -424,6 +424,15 @@ func TestNoNilPointerExceptionsSerialize(t *testing.T) {
 
 	_, err = p.SerializeTransaction(kernel.Transaction{})
 	require.NoError(t, err)
+
+	_, err = p.SerializeTransactions([]*kernel.Transaction{})
+	require.NoError(t, err)
+
+	_, err = p.SerializeUTXO(kernel.UTXO{})
+	require.NoError(t, err)
+
+	_, err = p.SerializeUTXOs([]*kernel.UTXO{})
+	require.NoError(t, err)
 }
 
 func TestNoNilPointerExceptionsDeserialize(t *testing.T) {
@@ -439,5 +448,17 @@ func TestNoNilPointerExceptionsDeserialize(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = p.DeserializeHeaders([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeTransaction([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeTransactions([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeUTXO([]byte{})
+	require.NoError(t, err)
+
+	_, err = p.DeserializeUTXOs([]byte{})
 	require.NoError(t, err)
 }
