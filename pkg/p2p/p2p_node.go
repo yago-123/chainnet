@@ -177,14 +177,13 @@ func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *expl
 		cfg:      cfg,
 	}
 
-	// todo() move these paths to constants?
-	router.r.GET("/address/:address/transactions", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	router.r.GET(fmt.Sprintf(RouterAddressTxs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		router.listTransactions(w, r, ps)
 	})
-	router.r.GET("/address/:address/utxos", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	router.r.GET(fmt.Sprintf(RouterAddressUTXOs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		router.listUTXOs(w, r, ps)
 	})
-	router.r.GET("/address/:address/balance", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	router.r.GET(fmt.Sprintf(RouterAddressBalance, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		router.getAddressBalance(w, r, ps)
 	})
 

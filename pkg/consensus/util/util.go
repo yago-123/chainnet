@@ -135,6 +135,11 @@ func CalculateMiningTarget(currentTarget uint, targetTimeSpan float64, actualTim
 	return uint(math.Min(math.Max(float64(newTarget), float64(MinimumTarget)), float64(MaximumTarget)))
 }
 
+func IsValidAddress(_ []byte) bool {
+	// todo(): develop a proper address validation mechanism
+	return true
+}
+
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	publicKey, err := ConvertECDSAPubToBytes(pubKey)
 	if err != nil {
