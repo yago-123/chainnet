@@ -127,7 +127,7 @@ var expectedPbBlockHeaders = &pb.BlockHeaders{ //nolint:gochecknoglobals // data
 	},
 }
 
-var expectedPbTransactions = []*pb.Transaction{
+var expectedPbTransactions = []*pb.Transaction{ //nolint:gochecknoglobals // data that is used across all test funcs
 	{
 		Id: []byte("txid1"),
 		Vin: []*pb.TxInput{
@@ -148,7 +148,7 @@ var expectedPbTransactions = []*pb.Transaction{
 	},
 }
 
-var expectedPbUTXO = &pb.UTXO{
+var expectedPbUTXO = &pb.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Txid: []byte("utxoid1"),
 	Vout: 0,
 	Output: &pb.TxOutput{
@@ -158,7 +158,7 @@ var expectedPbUTXO = &pb.UTXO{
 	},
 }
 
-var expectedUTXO = &kernel.UTXO{
+var expectedUTXO = &kernel.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
 	TxID:   []byte("utxoid1"),
 	OutIdx: 0,
 	Output: kernel.TxOutput{
@@ -168,7 +168,7 @@ var expectedUTXO = &kernel.UTXO{
 	},
 }
 
-var expectedUTXO2 = kernel.UTXO{
+var expectedUTXO2 = kernel.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
 	TxID:   []byte("sampletxid"),
 	OutIdx: 0,
 	Output: kernel.TxOutput{
@@ -178,7 +178,7 @@ var expectedUTXO2 = kernel.UTXO{
 	},
 }
 
-var expectedPbUTXOs = &pb.UTXOs{
+var expectedPbUTXOs = &pb.UTXOs{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Utxos: []*pb.UTXO{
 		{
 			Txid: []byte("utxoid1"),
@@ -201,7 +201,7 @@ var expectedPbUTXOs = &pb.UTXOs{
 	},
 }
 
-var expectedPbUTXOs2 = &pb.UTXOs{
+var expectedPbUTXOs2 = &pb.UTXOs{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Utxos: []*pb.UTXO{
 		{
 			Txid: []byte("utxoid1"),
@@ -224,7 +224,7 @@ var expectedPbUTXOs2 = &pb.UTXOs{
 	},
 }
 
-var expectedUTXOs2 = []*kernel.UTXO{
+var expectedUTXOs2 = []*kernel.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
 	{
 		TxID:   []byte("utxoid1"),
 		OutIdx: 0,
@@ -245,7 +245,7 @@ var expectedUTXOs2 = []*kernel.UTXO{
 	},
 }
 
-var expectedPbUTXO2 = &pb.UTXO{
+var expectedPbUTXO2 = &pb.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
 	Txid: []byte("sampletxid"),
 	Vout: 0,
 	Output: &pb.TxOutput{
@@ -359,8 +359,8 @@ func TestSerializeTransactions(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the equality using proto.Equal to account for proto internal fields
-	for i := range pbTransactions.Transactions {
-		assert.True(t, proto.Equal(expectedPbTransactions[i], pbTransactions.Transactions[i]))
+	for i := range pbTransactions.GetTransactions() {
+		assert.True(t, proto.Equal(expectedPbTransactions[i], pbTransactions.GetTransactions()[i]))
 	}
 }
 

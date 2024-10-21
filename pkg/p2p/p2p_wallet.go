@@ -126,14 +126,14 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	// send GET request
 	resp, err := http.Get(url)
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to make UTXO request for address %s: %v", address, err)
+		return []*kernel.UTXO{}, fmt.Errorf("failed to make UTXO request for address %s: %w", address, err)
 	}
 	defer resp.Body.Close()
 
 	// read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %v", address, err)
+		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %w", address, err)
 	}
 
 	// unmarshal response
@@ -141,7 +141,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	utxos := []*kernel.UTXO{}
 	err = json.Unmarshal(body, &utxos)
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to unmarshal UTXO response for address %s: %v", address, err)
+		return []*kernel.UTXO{}, fmt.Errorf("failed to unmarshal UTXO response for address %s: %w", address, err)
 	}
 
 	return utxos, nil
