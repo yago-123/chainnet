@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -37,6 +36,8 @@ const (
 	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
 	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
+
+	ContentTypeHeader = "Content-Type"
 )
 
 type nodeP2PHandler struct {
@@ -165,6 +166,7 @@ type HTTPRouter struct {
 	r        *httprouter.Router
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+	logger   *logrus.Logger
 
 	cfg *config.Config
 }
@@ -174,6 +176,7 @@ func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *expl
 		r:        httprouter.New(),
 		encoder:  encoder,
 		explorer: explorer,
+		logger:   cfg.Logger,
 		cfg:      cfg,
 	}
 
@@ -205,45 +208,53 @@ func (router *HTTPRouter) Stop() error {
 func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	address := ps.ByName("address")
 
-	// todo() replace this method with all transactions instead of only non-spent ones
-	transactions, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
+	txs, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
 	if err != nil {
 		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
 	}
 
-	// todo() replace encoder to use grpc
-	err = json.NewEncoder(w).Encode(transactions) //nolint:musttag // not sure which encoding will use in the future
+	txsEncoded, err := router.encoder.SerializeTransactions(txs)
 	if err != nil {
 		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
+	}
+
+	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
+	if _, err = w.Write(txsEncoded); err != nil {
+		router.logger.Errorf("Failed to write response: %v", err)
 	}
 }
 
 func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	address := ps.ByName("address")
 
-	utxos, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
+	utxos, err := router.explorer.FindUnspentOutputs(string(base58.Decode(address)))
 	if err != nil {
 		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
 	}
 
-	err = json.NewEncoder(w).Encode(utxos) //nolint:musttag // not sure which encoding will use in the future
+	utxosEncoded, err := router.encoder.SerializeUTXOs(utxos)
 	if err != nil {
-		http.Error(w, "Failed to encode UTXOs", http.StatusInternalServerError)
+		http.Error(w, "Failed to encode utxos", http.StatusInternalServerError)
+	}
+
+	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
+	if _, err = w.Write(utxosEncoded); err != nil {
+		router.logger.Errorf("Failed to write response: %v", err)
 	}
 }
 
 func (router *HTTPRouter) getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	address := ps.ByName("address")
 
-	balanceResponse, err := router.explorer.CalculateAddressBalance(string(base58.Decode(address)))
+	_, err := router.explorer.CalculateAddressBalance(string(base58.Decode(address)))
 	if err != nil {
 		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
 	}
 
-	err = json.NewEncoder(w).Encode(balanceResponse)
-	if err != nil {
-		http.Error(w, "Failed to encode balance", http.StatusInternalServerError)
-	}
+	// err = json.NewEncoder(w).Encode(balanceResponse)
+	// if err != nil {
+	//	http.Error(w, "Failed to encode balance", http.StatusInternalServerError)
+	// }
 }
 
 type NodeP2P struct {
@@ -307,13 +318,13 @@ func NewNodeP2P(
 			return nil, fmt.Errorf("error converting private key: %w", errKey)
 		}
 
-		p2pKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
+		p2pPrivKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
 		if errKey != nil {
 			return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
 		}
 
 		// add peer identity to options
-		options = append(options, libp2p.Identity(p2pKey))
+		options = append(options, libp2p.Identity(p2pPrivKey))
 	}
 
 	// create host

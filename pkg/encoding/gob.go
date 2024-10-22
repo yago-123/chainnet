@@ -15,6 +15,10 @@ func NewGobEncoder() *GobEncoder {
 	return &GobEncoder{}
 }
 
+func (gobenc *GobEncoder) Type() string {
+	return GobEncodingType
+}
+
 func (gobenc *GobEncoder) serialize(data interface{}) ([]byte, error) {
 	var result bytes.Buffer
 	encoder := gob.NewEncoder(&result)

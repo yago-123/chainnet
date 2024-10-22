@@ -245,19 +245,19 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 	return unspentTXs, nil
 }
 
-func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]kernel.UTXO, error) {
+func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]*kernel.UTXO, error) {
 	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
 // findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
-func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIterator) ([]kernel.UTXO, error) { //nolint:gocognit // ok for now
+func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIterator) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
-	unspentTXOs := []kernel.UTXO{}
+	unspentTXOs := []*kernel.UTXO{}
 	spentTXOs := make(map[string][]uint)
 
 	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
-		return []kernel.UTXO{}, err
+		return []*kernel.UTXO{}, err
 	}
 
 	// get the blockchain revIterator
@@ -267,7 +267,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIte
 		// get the next block using the revIterator
 		nextBlock, err = it.GetNextBlock()
 		if err != nil {
-			return []kernel.UTXO{}, err
+			return []*kernel.UTXO{}, err
 		}
 
 		// skip the genesis block
@@ -285,7 +285,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIte
 
 				// check if the output can be unlocked with the given pubKey
 				if out.CanBeUnlockedWith(pubKey) {
-					unspentTXOs = append(unspentTXOs, kernel.UTXO{
+					unspentTXOs = append(unspentTXOs, &kernel.UTXO{
 						TxID:   tx.ID,
 						OutIdx: uint(outIdx),
 						Output: out,

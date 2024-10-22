@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"io"
 	"net/http"
 
@@ -107,7 +108,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 		return []*kernel.UTXO{}, fmt.Errorf("invalid address format")
 	}
 
-	url := fmt.Sprintf("http://localhost:8080%s", fmt.Sprintf(RouterAddressUTXOs, address))
+	url := fmt.Sprintf("http://localhost:8080%s", fmt.Sprintf(RouterAddressUTXOs, base58.Encode(address)))
 
 	// send GET request
 	resp, err := http.Get(url)

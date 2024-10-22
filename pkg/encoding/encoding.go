@@ -4,7 +4,14 @@ import (
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
+const (
+	GobEncodingType   = "gob"
+	ProtoEncodingType = "protobuf"
+)
+
 type Encoding interface {
+	Type() string
+
 	SerializeBlock(b kernel.Block) ([]byte, error)
 	SerializeHeader(bh kernel.BlockHeader) ([]byte, error)
 	SerializeHeaders(bhs []*kernel.BlockHeader) ([]byte, error)

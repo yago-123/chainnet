@@ -17,6 +17,10 @@ func NewProtobufEncoder() *Protobuf {
 	return &Protobuf{}
 }
 
+func (p *Protobuf) Type() string {
+	return ProtoEncodingType
+}
+
 // SerializeBlock serializes a kernel.Block into a Protobuf byte array
 func (p *Protobuf) SerializeBlock(b kernel.Block) ([]byte, error) {
 	pbBlock, err := convertToProtobufBlock(b)
@@ -131,6 +135,7 @@ func (p *Protobuf) DeserializeTransaction(data []byte) (*kernel.Transaction, err
 	return &tx, nil
 }
 
+// SerializeTransactions serializes a slice of kernel.Transaction into a Protobuf byte array
 func (p *Protobuf) SerializeTransactions(txs []*kernel.Transaction) ([]byte, error) {
 	var pbTxs []*pb.Transaction
 
@@ -152,6 +157,7 @@ func (p *Protobuf) SerializeTransactions(txs []*kernel.Transaction) ([]byte, err
 	return data, nil
 }
 
+// DeserializeTransactions deserializes a Protobuf byte array into a slice of kernel.Transaction
 func (p *Protobuf) DeserializeTransactions(data []byte) ([]*kernel.Transaction, error) {
 	var pbTxs pb.Transactions
 
@@ -173,6 +179,7 @@ func (p *Protobuf) DeserializeTransactions(data []byte) ([]*kernel.Transaction, 
 	return txs, nil
 }
 
+// SerializeUTXO serializes a kernel.UTXO into a Protobuf byte array
 func (p *Protobuf) SerializeUTXO(utxo kernel.UTXO) ([]byte, error) {
 	pbUTXO := convertToProtobufUTXO(utxo)
 	data, err := proto.Marshal(pbUTXO)
@@ -183,6 +190,7 @@ func (p *Protobuf) SerializeUTXO(utxo kernel.UTXO) ([]byte, error) {
 	return data, nil
 }
 
+// DeserializeUTXO deserializes a Protobuf byte array into a kernel.UTXO
 func (p *Protobuf) DeserializeUTXO(data []byte) (*kernel.UTXO, error) {
 	var pbUTXO pb.UTXO
 	err := proto.Unmarshal(data, &pbUTXO)
@@ -198,6 +206,7 @@ func (p *Protobuf) DeserializeUTXO(data []byte) (*kernel.UTXO, error) {
 	return &utxo, nil
 }
 
+// SerializeUTXOs serializes a slice of kernel.UTXO into a Protobuf byte array
 func (p *Protobuf) SerializeUTXOs(utxos []*kernel.UTXO) ([]byte, error) {
 	var pbUtxos []*pb.UTXO
 
@@ -219,6 +228,7 @@ func (p *Protobuf) SerializeUTXOs(utxos []*kernel.UTXO) ([]byte, error) {
 	return data, nil
 }
 
+// DeserializeUTXOs deserializes a Protobuf byte array into a slice of kernel.UTXO
 func (p *Protobuf) DeserializeUTXOs(data []byte) ([]*kernel.UTXO, error) {
 	var pbUtxos pb.UTXOs
 
