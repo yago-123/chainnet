@@ -14,6 +14,7 @@ miner:
   pub-key-reward:                                  # Public wallet key encoded in base58, used for receiving mining rewards
     "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
   mining-interval: "10m"                    # Interval between block creation
+  adjustment-interval: 6                    # Number of blocks before adjusting the difficulty
 
 p2p:
   enabled: true                           # Enable or disable network communication
