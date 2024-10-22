@@ -22,6 +22,7 @@ const (
 	KeyP2PEnabled               = "enabled"
 	KeyP2PPeerIdentityPath      = "identity-path"
 	KeyP2PPeerPort              = "peer-port"
+	KeyP2PRouterPort            = "http-api-port"
 	KeyP2PMinNumConn            = "min-conn"
 	KeyP2PMaxNumConn            = "max-conn"
 	KeyP2PConnTimeout           = "conn-timeout"
@@ -45,6 +46,7 @@ const (
 
 	DefaultP2PEnabled      = true
 	DefaultP2PPeerPort     = 9100
+	DefaultP2PRouterPort   = 8080
 	DefaultP2PMinNumConn   = 1
 	DefaultP2PMaxNumConn   = 100
 	DefaultP2PConnTimeout  = 20 * time.Second
@@ -181,7 +183,8 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint(KeyMiningIntervalAdjustment, DefaultMiningIntervalAdjustment, "Number of blocks for adjusting difficulty")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().String(KeyP2PPeerIdentityPath, "", "ECDSA peer private key path in PEM format")
-	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
+	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "P2P port for receiving connections")
+	cmd.Flags().Uint(KeyP2PRouterPort, DefaultP2PRouterPort, "HTTP API port for receiving requests")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 	cmd.Flags().Duration(KeyP2PConnTimeout, DefaultP2PConnTimeout, "P2P connection timeout")
@@ -202,6 +205,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PPeerIdentityPath, cmd.Flags().Lookup(KeyP2PPeerIdentityPath))
 	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
+	_ = viper.BindPFlag(KeyP2PRouterPort, cmd.Flags().Lookup(KeyP2PRouterPort))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
 	_ = viper.BindPFlag(KeyP2PConnTimeout, cmd.Flags().Lookup(KeyP2PConnTimeout))
@@ -253,6 +257,9 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyP2PPeerPort) {
 		cfg.P2P.PeerPort = viper.GetUint(KeyP2PPeerPort)
+	}
+	if cmd.Flags().Changed(KeyP2PRouterPort) {
+		cfg.P2P.RouterPort = viper.GetUint(KeyP2PRouterPort)
 	}
 	if cmd.Flags().Changed(KeyP2PMinNumConn) {
 		cfg.P2P.MinNumConn = viper.GetUint(KeyP2PMinNumConn)
