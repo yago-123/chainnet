@@ -25,14 +25,12 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use: "chainnet-nespv",
-	Run: func(cmd *cobra.Command, _ []string) {
-		// cfg = config.InitConfig(cmd)
+	Run: func(_ *cobra.Command, _ []string) {
+
 	},
 }
 
 func Execute(logger *logrus.Logger) {
-	config.AddConfigFlags(rootCmd)
-
 	if err := rootCmd.Execute(); err != nil {
 		logger.Fatalf("error executing command: %v", err)
 	}
