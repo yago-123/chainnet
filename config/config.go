@@ -18,7 +18,7 @@ const (
 	KeyStorageFile              = "storage-file"
 	KeyMiningPubKeyReward       = "pub-key-reward"
 	KeyMiningInterval           = "mining-interval"
-	KeyMiningIntervalAdjustment = "interval-adjustment"
+	KeyMiningIntervalAdjustment = "adjustment-interval"
 	KeyP2PEnabled               = "enabled"
 	KeyP2PPeerIdentityPath      = "identity-path"
 	KeyP2PPeerPort              = "peer-port"
@@ -41,7 +41,7 @@ const (
 	DefaultChainnetStorage = "chainnet-storage"
 
 	DefaultMiningInterval           = 10 * time.Minute
-	DefaultTargetIntervalAdjustment = uint(6)
+	DefaultMiningIntervalAdjustment = uint(6)
 
 	DefaultP2PEnabled      = true
 	DefaultP2PPeerPort     = 9100
@@ -70,7 +70,7 @@ type SeedNode struct {
 type Miner struct {
 	PubKey             string        `mapstructure:"pub-key-reward"`
 	MiningInterval     time.Duration `mapstructure:"mining-interval"`
-	AdjustmentInterval uint          `mapstructure:"interval-adjustment"`
+	AdjustmentInterval uint          `mapstructure:"adjustment-interval"`
 }
 
 // P2PConfig holds P2P-specific configuration
@@ -112,7 +112,7 @@ func NewConfig() *Config {
 		Miner: Miner{
 			PubKey:             "",
 			MiningInterval:     DefaultMiningInterval,
-			AdjustmentInterval: DefaultTargetIntervalAdjustment,
+			AdjustmentInterval: DefaultMiningIntervalAdjustment,
 		},
 		P2P: P2PConfig{
 			Enabled:      DefaultP2PEnabled,
@@ -178,7 +178,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
 	cmd.Flags().String(KeyMiningPubKeyReward, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
-	cmd.Flags().Uint(KeyMiningIntervalAdjustment, DefaultTargetIntervalAdjustment, "Number of blocks for adjusting difficulty")
+	cmd.Flags().Uint(KeyMiningIntervalAdjustment, DefaultMiningIntervalAdjustment, "Number of blocks for adjusting difficulty")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().String(KeyP2PPeerIdentityPath, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
