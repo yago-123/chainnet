@@ -164,6 +164,24 @@ func ConvertECDSAPubToBytes(pubKey *ecdsa.PublicKey) ([]byte, error) {
 	return x509.MarshalPKIXPublicKey(pubKey)
 }
 
+func DeriveECDSAPubFromPrivate(privKey []byte) ([]byte, error) {
+	privateKeyECDSA, err := ConvertBytesToECDSAPriv(privKey)
+	if err != nil {
+		return nil, fmt.Errorf("error converting private key: %w", err)
+	}
+
+	if privateKeyECDSA == nil {
+		return nil, fmt.Errorf("private key is nil")
+	}
+
+	pubkey, err := ConvertECDSAPubToBytes(&privateKeyECDSA.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("error deriving public key: %w", err)
+	}
+
+	return pubkey, nil
+}
+
 func ConvertBytesToECDSAPriv(privKey []byte) (*ecdsa.PrivateKey, error) {
 	// parse the DER encoded private key to get ecdsa.PrivateKey
 	return x509.ParseECPrivateKey(privKey)

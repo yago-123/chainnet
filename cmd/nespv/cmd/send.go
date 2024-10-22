@@ -29,10 +29,11 @@ var sendCmd = &cobra.Command{
 		}
 
 		var err error
-		var privKey []byte
+		var privKey, pubKey []byte
 
 		// process key from path or from content
 		if privKeyCont != "" {
+			// todo(): this is encoded somehow?
 			privKey = []byte(privKeyCont)
 		}
 
@@ -43,15 +44,14 @@ var sendCmd = &cobra.Command{
 			}
 		}
 
-		logger.Debugf(
-			"Sending tx with address = %s, amount = %d, fee = %d, privKey = %x",
-			address,
-			amount,
-			fee,
-			privKey,
-		)
+		// derive public key from private key
+		pubKey, err = util.DeriveECDSAPubFromPrivate(privKey)
+		if err != nil {
+			logger.Fatalf("error deriving public key from private key: %v", err)
+		}
 
-		wallet, err := wallt.NewWallet(
+		// create wallet
+		wallet, err := wallt.NewWalletWithKeys(
 			cfg,
 			[]byte("1"),
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
@@ -59,6 +59,8 @@ var sendCmd = &cobra.Command{
 			walletHasher,
 			hash.GetHasher(consensusHasherType),
 			encoding.NewProtobufEncoder(),
+			privKey,
+			pubKey,
 		)
 		if err != nil {
 			logger.Fatalf("error setting up wallet: %v", err)
@@ -79,7 +81,7 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error sending transaction: %v", err)
 		}
 
-		logger.Infof("sent tx: %v", tx)
+		logger.Infof("Sent transaction: %s", tx.String())
 	},
 }
 
