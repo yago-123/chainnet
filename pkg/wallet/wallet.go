@@ -32,7 +32,8 @@ type Wallet struct {
 	p2pNet       *p2p.WalletP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
-	p2pEncoder   encoding.Encoding
+
+	encoder encoding.Encoding
 
 	// hasher used for deriving wallet related values
 	walletHasher hash.Hashing
@@ -50,7 +51,7 @@ func NewWallet(
 	signer sign.Signature,
 	walletHasher hash.Hashing,
 	consensusHasher hash.Hashing,
-	p2pEncoder encoding.Encoding,
+	encoder encoding.Encoding,
 ) (*Wallet, error) {
 	publicKey, privateKey, err := signer.NewKeyPair()
 	if err != nil {
@@ -64,7 +65,7 @@ func NewWallet(
 		signer,
 		walletHasher,
 		consensusHasher,
-		p2pEncoder,
+		encoder,
 		privateKey,
 		publicKey,
 	)
@@ -77,21 +78,21 @@ func NewWalletWithKeys(
 	signer sign.Signature,
 	walletHasher hash.Hashing,
 	consensusHasher hash.Hashing,
-	p2pEncoder encoding.Encoding,
+	encoder encoding.Encoding,
 	privateKey []byte,
 	publicKey []byte,
 ) (*Wallet, error) {
 	return &Wallet{
+		cfg:             cfg,
 		version:         version,
 		PrivateKey:      privateKey,
 		PublicKey:       publicKey,
 		validator:       validator,
 		signer:          signer,
-		p2pEncoder:      p2pEncoder,
+		encoder:         encoder,
 		walletHasher:    walletHasher,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
-		cfg:             cfg,
 	}, nil
 }
 
@@ -105,7 +106,7 @@ func (w *Wallet) InitNetwork() (*p2p.WalletP2P, error) {
 
 	// create new P2P node
 	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewWalletP2P(w.p2pCtx, w.cfg, w.p2pEncoder)
+	p2pNet, err := p2p.NewWalletP2P(w.p2pCtx, w.cfg, w.encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
 	}

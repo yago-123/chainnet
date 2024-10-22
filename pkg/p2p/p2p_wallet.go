@@ -3,9 +3,10 @@ package p2p
 import (
 	"context"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"io"
 	"net/http"
+
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 

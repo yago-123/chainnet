@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-
+	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 
 	"github.com/spf13/cobra"
@@ -17,6 +17,8 @@ var sendCmd = &cobra.Command{
 	Short: "Send transaction",
 	Long:  `Send transactions from wallets.`,
 	Run: func(cmd *cobra.Command, _ []string) {
+		cfg = config.InitConfig(cmd)
+
 		address, _ := cmd.Flags().GetString("address")
 		amount, _ := cmd.Flags().GetUint("amount")
 		fee, _ := cmd.Flags().GetUint("fee")
@@ -66,6 +68,11 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error setting up wallet: %v", err)
 		}
 
+		_, err = wallet.InitNetwork()
+		if err != nil {
+			logger.Fatalf("error setting up wallet network: %v", err)
+		}
+
 		utxos, err := wallet.GetWalletUTXOS()
 		if err != nil {
 			logger.Fatalf("error getting wallet UTXOS: %v", err)
@@ -87,6 +94,7 @@ var sendCmd = &cobra.Command{
 
 func init() {
 	// main command
+	config.AddConfigFlags(sendCmd)
 	rootCmd.AddCommand(sendCmd)
 
 	// sub commands
@@ -94,7 +102,8 @@ func init() {
 	sendCmd.Flags().Uint("amount", 0, "Amount of coins to send")
 	sendCmd.Flags().Uint("fee", 0, "Amount of fee to send")
 	sendCmd.Flags().String("priv-key", "", "Private key")
-	sendCmd.Flags().String("priv-key-path", "", "Path to private key")
+	// todo(): reestructure this duplication
+	// sendCmd.Flags().String("priv-key-path", "", "Path to private key")
 
 	// required flags
 	_ = sendCmd.MarkFlagRequired("address")

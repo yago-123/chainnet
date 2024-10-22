@@ -26,7 +26,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use: "chainnet-nespv",
 	Run: func(cmd *cobra.Command, _ []string) {
-		cfg = config.InitConfig(cmd)
+		// cfg = config.InitConfig(cmd)
 	},
 }
 
