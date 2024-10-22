@@ -195,7 +195,19 @@ func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *expl
 
 // todo(): add cancelling mechanism, improve error handling and use flags to pass port
 func (router *HTTPRouter) Start() error {
-	go http.ListenAndServe(":8080", router.r)
+	go func() {
+		srv := &http.Server{
+			Addr:         fmt.Sprintf(":%d", router.cfg.P2P.RouterPort),
+			Handler:      router.r,
+			ReadTimeout:  router.cfg.P2P.ReadTimeout,
+			WriteTimeout: router.cfg.P2P.WriteTimeout,
+			IdleTimeout:  router.cfg.P2P.ConnTimeout,
+		}
+
+		if err := srv.ListenAndServe(); err != nil {
+			router.logger.Errorf("Failed to start HTTP server: %v", err)
+		}
+	}()
 
 	return nil
 }

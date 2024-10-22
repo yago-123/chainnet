@@ -68,6 +68,7 @@ type P2PConfig struct {
 	Enabled      bool           `mapstructure:"enabled"`
 	Identity     IdentityConfig `mapstructure:"identity"`
 	PeerPort     uint           `mapstructure:"peer-port"`
+	RouterPort   uint           `mapstructure:"http-api-port"`
 	MinNumConn   uint           `mapstructure:"min-conn"`
 	MaxNumConn   uint           `mapstructure:"max-conn"`
 	ConnTimeout  time.Duration  `mapstructure:"conn-timeout"`

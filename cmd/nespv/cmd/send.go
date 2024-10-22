@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 
