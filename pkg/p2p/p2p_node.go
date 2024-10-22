@@ -319,8 +319,8 @@ func NewNodeP2P(
 	options = append(options, libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2P.PeerPort)))
 
 	// add identity if the keys exists
-	if cfg.P2P.Identity.PrivKeyPath != "" {
-		privKeyBytes, errKey := util.ReadECDSAPemPrivateKey(cfg.P2P.Identity.PrivKeyPath)
+	if cfg.P2P.IdentityPath != "" {
+		privKeyBytes, errKey := util.ReadECDSAPemPrivateKey(cfg.P2P.IdentityPath)
 		if errKey != nil {
 			return nil, fmt.Errorf("error reading private key: %w", errKey)
 		}

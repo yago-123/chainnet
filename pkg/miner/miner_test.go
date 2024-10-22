@@ -137,7 +137,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
-	cfg.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"
+	cfg.Miner.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"
 	miner, err := NewMiner(cfg, chain, hash.SHA256, explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)))
 	require.NoError(t, err)
 

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/btcsuite/btcutil/base58"
 
@@ -23,11 +25,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type WalletP2P struct {
-	cfg  *config.Config
-	host host.Host
+const RequestTimeout = 10 * time.Second
 
-	ctx context.Context
+type WalletP2P struct {
+	cfg *config.Config
+
+	host host.Host
+	ctx  context.Context
 
 	// disco is in charge of setting up the logic for node discovery
 	disco discovery.Discovery
@@ -35,6 +39,8 @@ type WalletP2P struct {
 	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
 	encoder encoding.Encoding
+
+	baseurl string
 
 	logger *logrus.Logger
 }
@@ -75,6 +81,8 @@ func NewWalletP2P(
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
 
+	baseURL := net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort))
+
 	return &WalletP2P{
 		cfg:     cfg,
 		host:    host,
@@ -82,6 +90,7 @@ func NewWalletP2P(
 		disco:   disco,
 		pubsub:  pubsub,
 		encoder: encoder,
+		baseurl: baseURL,
 		logger:  cfg.Logger,
 	}, nil
 }
@@ -109,12 +118,16 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 		return []*kernel.UTXO{}, fmt.Errorf("invalid address format")
 	}
 
-	url := fmt.Sprintf("http://localhost:8080%s", fmt.Sprintf(RouterAddressUTXOs, base58.Encode(address)))
+	url := fmt.Sprintf(
+		"%s%s",
+		n.baseurl,
+		fmt.Sprintf(RouterAddressUTXOs, base58.Encode(address)),
+	)
 
 	// send GET request
-	resp, err := http.Get(url)
+	resp, err := getRequest(url)
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to make UTXO request for address %s: %w", address, err)
+		return []*kernel.UTXO{}, fmt.Errorf("failed to get UTXO response for address %s: %w", base58.Encode(address), err)
 	}
 	defer resp.Body.Close()
 
@@ -135,4 +148,21 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	return n.pubsub.NotifyTransactionAdded(ctx, tx)
+}
+
+func getRequest(url string) (*http.Response, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
+	}
+
+	return resp, nil
 }

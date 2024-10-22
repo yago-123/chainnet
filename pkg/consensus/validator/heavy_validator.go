@@ -212,7 +212,7 @@ func (hv *HValidator) validateHeaderHeight(bh *kernel.BlockHeader) error {
 
 // validateHeaderTarget checks that the target of the header is correct
 func (hv *HValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
-	targetExpected, err := hv.explorer.GetMiningTarget(bh.Height, hv.cfg.AdjustmentTargetInterval, hv.cfg.MiningInterval)
+	targetExpected, err := hv.explorer.GetMiningTarget(bh.Height, hv.cfg.Miner.AdjustmentInterval, hv.cfg.Miner.MiningInterval)
 	if err != nil {
 		return fmt.Errorf("error while validating target: %w", err)
 	}
