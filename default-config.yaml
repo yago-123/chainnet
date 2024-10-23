@@ -29,6 +29,6 @@ p2p:
   buffer-size: 4096                       # Read buffer size over the network
 
 wallet:
-  key-pair-path: priv-key.pem             # ECDSA wallet private key path in PEM format
+  wallet-key-path: priv-key.pem           # ECDSA wallet private key path in PEM format
   server-address: "seed-1.chainnet.yago.ninja"
   server-port: 8080

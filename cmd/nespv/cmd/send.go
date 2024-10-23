@@ -26,11 +26,11 @@ var sendCmd = &cobra.Command{
 		amount, _ := cmd.Flags().GetUint("amount")
 		fee, _ := cmd.Flags().GetUint("fee")
 		privKeyCont, _ := cmd.Flags().GetString("priv-key")
-		privKeyPath, _ := cmd.Flags().GetString("priv-key-path")
+		privKeyPath, _ := cmd.Flags().GetString("wallet-key-path")
 
 		// check if only one private key is provided
 		if (privKeyCont == "") == (privKeyPath == "") {
-			logger.Fatalf("specify one argument containing the private key: --priv-key or --priv-key-path")
+			logger.Fatalf("specify one argument containing the private key: --priv-key or --wallet-key-path")
 		}
 
 		var err error
@@ -106,7 +106,7 @@ func init() {
 	sendCmd.Flags().Uint("fee", 0, "Amount of fee to send")
 	sendCmd.Flags().String("priv-key", "", "Private key")
 	// todo(): reestructure this duplication
-	sendCmd.Flags().String("priv-key-path", "", "Path to private key")
+	sendCmd.Flags().String("wallet-key-path", "", "Path to private key")
 
 	// required flags
 	_ = sendCmd.MarkFlagRequired("address")

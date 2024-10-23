@@ -25,28 +25,34 @@ seed-nodes:                               # List of seed nodes
     port: 9100
   - address: "seed-2.chainnet.yago.ninja"
     peer-id: "peerID-2"
-    port: 8081
+    port: 9100
   - address: "seed-3.chainnet.yago.ninja"
     peer-id: "peerID-3"
-    port: 8082
+    port: 9100
 
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
-pub-key:                                  # Public wallet key encoded in base58, used for receiving mining rewards
-  "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTG7ZBzTqdDQvpbDVh5j5yCpKYU6MVZ35PW9KegkuX1JZDLHdkaTAbKXwfx4Pjy2At82Dda9ujs8d5ReXF22QHk2JA"
-mining-interval: "10m"                    # Interval between block creation
+miner:
+  pub-key-reward:                         # Public wallet key encoded in base58, used for receiving mining rewards
+    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJVEyUnnaMDSRgUZKJzwFAdWKhSv8HTtbQbecee5xew2DPfqm467oef3KEW7bT54WdDWbvEqEhFv1YT3aPZZVqgKc"
+  mining-interval: "10m"                  # Interval between block creation
+  adjustment-interval: 6                  # Number of blocks before adjusting the difficulty
 
 p2p:
   enabled: true                           # Enable or disable network communication
-  identity:
-    priv-key-path: "ecdsa-priv-key.pem"   # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
-
+  identity-path: "identity.pem"           # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
   peer-port: 9100                         # Port used for network communication with other peers
+  http-api-port: 8080                     # Port exposed for the router API (required for nespv wallets)
   min-conn: 5                             # Minimum number of connections
   max-conn: 100                           # Maximum number of connections
   conn-timeout: "60s"                     # Maximum duration of a connection
   write-timeout: "20s"                    # Maximum duration of a write stream
   read-timeout: "20s"                     # Maximum duration of a read stream
   buffer-size: 4096                       # Read buffer size over the network
+
+wallet:
+  wallet-key-path: priv-key.pem           # ECDSA wallet private key path in PEM format
+  server-address: "seed-1.chainnet.yago.ninja"
+  server-port: 8080
 ```
 ## Build
 Building the `chainnet-nespv` wallet:
@@ -69,40 +75,41 @@ Building a `chainnet-nespv` wallet:
 $ make nespv 
 ````
 
-## Creating and running wallets 
-First create a wallet key pair: 
-```bash 
-$ openssl ecparam -name prime256v1 -genkey -noout -out priv-key.pem
-```
+Here's the corrected documentation:
 
-Then derive the public key from the private key:
-```bash 
-$ openssl ec -in priv-key.pem -pubout -out pub-key.pem
-```
+## Creating and Running Wallets
 
-After the private and public keys have been created, you can start using the wallet. For example you can check your 
-balance: 
-```bash 
-$
-```
-
-You can also send a transaction to another wallet: 
+### Step 1: Generate a Private Key
+First, create a wallet by generating a private key with `OpenSSL`:
 ```bash
-$
+$ openssl ecparam -name prime256v1 -genkey -noout -out <wallet.pem>
 ```
+This `wallet.pem` file will contain both the private and public keys.
 
-In order to receive some coins you can paste your public key into the miner file configuration and mine with your 
-computer: 
+### Step 2: Use the Wallet to Send Transactions
+You can use this wallet by running the `chainnet-nespv` wallet to send transactions as follows:
 ```bash
-$ openssl ec -pubin -in pub-key.pem -outform DER 2>/dev/null | base58
+$ ./bin/chainnet-nespv send --config default-config.yaml --address random --amount 1 --fee 10 --wallet-key-path <wallet.pem>
 ```
 
-Can also obtain from private key directly: 
+### Step 3: Extract the Public Key in Base58 Format
+To receive rewards, you'll need to extract the public key from the wallet in `base58` format. This can be done as follows:
 ```bash
-$ openssl ec -in private_key.pem -pubout -outform DER 2>/dev/null | base58
+$ openssl ec -in <wallet.pem> -pubout -outform DER 2>/dev/null | base58
 ```
 
+### Step 4: Configure the Miner for Rewards
+Once you have the public key, paste it into the `config.yaml` file of the miner to receive mining rewards:
 
+```yaml
+miner:
+  pub-key-reward:                         # Public wallet key encoded in base58, used for receiving mining rewards
+    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJVEyUnnaMDSRgUZKJzwFAdWKhSv8HTtbQbecee5xew2DPfqm467oef3KEW7bT54WdDWbvEqEhFv1YT3aPZZVqgKc"
+  mining-interval: "10m"                  # Interval between block creation
+  adjustment-interval: 6                  # Number of blocks before adjusting the difficulty
+```
+
+This ensures your mining rewards will be sent to the public key generated from your wallet.
 ## Creating and running nodes and miners 
 ### Bare metal
 Running the `chainnet-node`: 
@@ -126,11 +133,6 @@ Running the `chainnet-miner`:
 $ mkdir /path/to/data
 $ cp config/examples/docker-config.yaml /path/to/data/config.yaml
 $ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-miner:latest
-```
-
-Running the `chainnet-nespv` wallet: 
-```bash
-
 ```
 
 ### Remote nodes with Ansible
