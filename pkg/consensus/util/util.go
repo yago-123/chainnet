@@ -135,6 +135,11 @@ func CalculateMiningTarget(currentTarget uint, targetTimeSpan float64, actualTim
 	return uint(math.Min(math.Max(float64(newTarget), float64(MinimumTarget)), float64(MaximumTarget)))
 }
 
+func IsValidAddress(_ []byte) bool {
+	// todo(): develop a proper address validation mechanism
+	return true
+}
+
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	publicKey, err := ConvertECDSAPubToBytes(pubKey)
 	if err != nil {
@@ -157,6 +162,24 @@ func ConvertECDSAPrivToBytes(privKey *ecdsa.PrivateKey) ([]byte, error) {
 func ConvertECDSAPubToBytes(pubKey *ecdsa.PublicKey) ([]byte, error) {
 	// convert the public key to ASN.1/DER encoded form
 	return x509.MarshalPKIXPublicKey(pubKey)
+}
+
+func DeriveECDSAPubFromPrivate(privKey []byte) ([]byte, error) {
+	privateKeyECDSA, err := ConvertBytesToECDSAPriv(privKey)
+	if err != nil {
+		return nil, fmt.Errorf("error converting private key: %w", err)
+	}
+
+	if privateKeyECDSA == nil {
+		return nil, fmt.Errorf("private key is nil")
+	}
+
+	pubkey, err := ConvertECDSAPubToBytes(&privateKeyECDSA.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("error deriving public key: %w", err)
+	}
+
+	return pubkey, nil
 }
 
 func ConvertBytesToECDSAPriv(privKey []byte) (*ecdsa.PrivateKey, error) {

@@ -16,35 +16,46 @@ const (
 	KeyConfigFile               = "config"
 	KeyNodeSeeds                = "node-seeds"
 	KeyStorageFile              = "storage-file"
-	KeyPubKey                   = "pub-key"
+	KeyMiningPubKeyReward       = "pub-key-reward"
 	KeyMiningInterval           = "mining-interval"
-	KeyTargetIntervalAdjustment = "block-interval-adjustment"
+	KeyMiningIntervalAdjustment = "adjustment-interval"
 	KeyP2PEnabled               = "enabled"
-	KeyP2PPeerPrivKey           = "priv-key-path"
+	KeyP2PPeerIdentityPath      = "identity-path"
 	KeyP2PPeerPort              = "peer-port"
+	KeyP2PRouterPort            = "http-api-port"
 	KeyP2PMinNumConn            = "min-conn"
 	KeyP2PMaxNumConn            = "max-conn"
 	KeyP2PConnTimeout           = "conn-timeout"
 	KeyP2PWriteTimeout          = "write-timeout"
 	KeyP2PReadTimeout           = "read-timeout"
 	KeyP2PBufferSize            = "buffer-size"
+
+	KeyWalletKeyPairPath   = "key-pair-path"
+	KeyWalletServerAddress = "server-address"
+	KeyWalletServerPort    = "server-port"
 )
 
 // default config values
 const (
 	DefaultConfigFile = ""
 
-	DefaultChainnetStorage          = "chainnet-storage"
+	DefaultChainnetStorage = "chainnet-storage"
+
 	DefaultMiningInterval           = 10 * time.Minute
-	DefaultTargetIntervalAdjustment = uint(6)
-	DefaultP2PEnabled               = true
-	DefaultP2PPeerPort              = 9100
-	DefaultP2PMinNumConn            = 1
-	DefaultP2PMaxNumConn            = 100
-	DefaultP2PConnTimeout           = 20 * time.Second
-	DefaultP2PWriteTimeout          = 10 * time.Second
-	DefaultP2PReadTimeout           = 10 * time.Second
-	DefaultP2PBufferSize            = 8192
+	DefaultMiningIntervalAdjustment = uint(6)
+
+	DefaultP2PEnabled      = true
+	DefaultP2PPeerPort     = 9100
+	DefaultP2PRouterPort   = 8080
+	DefaultP2PMinNumConn   = 1
+	DefaultP2PMaxNumConn   = 100
+	DefaultP2PConnTimeout  = 20 * time.Second
+	DefaultP2PWriteTimeout = 10 * time.Second
+	DefaultP2PReadTimeout  = 10 * time.Second
+	DefaultP2PBufferSize   = 8192
+
+	DefaultServerAddress = "seed-1.chainnet.yago.ninja"
+	DefaultServerPort    = 8080
 )
 
 const (
@@ -58,55 +69,66 @@ type SeedNode struct {
 	Port    int    `mapstructure:"port"`
 }
 
-// IdentityConfig holds the identity-specific configuration
-type IdentityConfig struct {
-	PrivKeyPath string `mapstructure:"priv-key-path"`
+type Miner struct {
+	PubKey             string        `mapstructure:"pub-key-reward"`
+	MiningInterval     time.Duration `mapstructure:"mining-interval"`
+	AdjustmentInterval uint          `mapstructure:"adjustment-interval"`
 }
 
 // P2PConfig holds P2P-specific configuration
 type P2PConfig struct {
-	Enabled      bool           `mapstructure:"enabled"`
-	Identity     IdentityConfig `mapstructure:"identity"`
-	PeerPort     uint           `mapstructure:"peer-port"`
-	MinNumConn   uint           `mapstructure:"min-conn"`
-	MaxNumConn   uint           `mapstructure:"max-conn"`
-	ConnTimeout  time.Duration  `mapstructure:"conn-timeout"`
-	WriteTimeout time.Duration  `mapstructure:"write-timeout"`
-	ReadTimeout  time.Duration  `mapstructure:"read-timeout"`
-	BufferSize   uint           `mapstructure:"buffer-size"`
+	Enabled      bool          `mapstructure:"enabled"`
+	IdentityPath string        `mapstructure:"identity-path"`
+	PeerPort     uint          `mapstructure:"peer-port"`
+	RouterPort   uint          `mapstructure:"http-api-port"`
+	MinNumConn   uint          `mapstructure:"min-conn"`
+	MaxNumConn   uint          `mapstructure:"max-conn"`
+	ConnTimeout  time.Duration `mapstructure:"conn-timeout"`
+	WriteTimeout time.Duration `mapstructure:"write-timeout"`
+	ReadTimeout  time.Duration `mapstructure:"read-timeout"`
+	BufferSize   uint          `mapstructure:"buffer-size"`
+}
+
+type WalletConfig struct {
+	KeyPairPath   string `mapstructure:"key-pair-path"`
+	ServerAddress string `mapstructure:"server-address"`
+	ServerPort    uint   `mapstructure:"server-port"`
 }
 
 // Config holds the configuration for the application
 type Config struct {
-	Logger                   *logrus.Logger
-	SeedNodes                []SeedNode    `mapstructure:"seed-nodes"`
-	StorageFile              string        `mapstructure:"storage-file"`
-	PubKey                   string        `mapstructure:"pub-key"`
-	MiningInterval           time.Duration `mapstructure:"mining-interval"`
-	AdjustmentTargetInterval uint          `mapstructure:"block-interval-adjustment"`
-	P2P                      P2PConfig     `mapstructure:"p2p"`
+	Logger      *logrus.Logger
+	SeedNodes   []SeedNode   `mapstructure:"seed-nodes"`
+	StorageFile string       `mapstructure:"storage-file"`
+	Miner       Miner        `mapstructure:"miner"`
+	P2P         P2PConfig    `mapstructure:"p2p"`
+	Wallet      WalletConfig `mapstructure:"wallet"`
 }
 
 // NewConfig creates a new Config with default values
 func NewConfig() *Config {
 	return &Config{
-		Logger:                   logrus.New(),
-		SeedNodes:                []SeedNode{},
-		StorageFile:              DefaultChainnetStorage,
-		PubKey:                   "",
-		MiningInterval:           DefaultMiningInterval,
-		AdjustmentTargetInterval: DefaultTargetIntervalAdjustment,
+		Logger:      logrus.New(),
+		SeedNodes:   []SeedNode{},
+		StorageFile: DefaultChainnetStorage,
+		Miner: Miner{
+			PubKey:             "",
+			MiningInterval:     DefaultMiningInterval,
+			AdjustmentInterval: DefaultMiningIntervalAdjustment,
+		},
 		P2P: P2PConfig{
-			Enabled: DefaultP2PEnabled,
-			Identity: IdentityConfig{
-				PrivKeyPath: "",
-			},
+			Enabled:      DefaultP2PEnabled,
+			IdentityPath: "",
 			MinNumConn:   DefaultP2PMinNumConn,
 			MaxNumConn:   DefaultP2PMaxNumConn,
 			ConnTimeout:  DefaultP2PConnTimeout,
 			WriteTimeout: DefaultP2PWriteTimeout,
 			ReadTimeout:  DefaultP2PReadTimeout,
 			BufferSize:   DefaultP2PBufferSize,
+		},
+		Wallet: WalletConfig{
+			ServerAddress: DefaultServerAddress,
+			ServerPort:    DefaultServerPort,
 		},
 	}
 }
@@ -156,35 +178,43 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().StringArray(KeyNodeSeeds, []string{}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
-	cmd.Flags().String(KeyPubKey, "", "Public key used for receiving mining rewards")
+	cmd.Flags().String(KeyMiningPubKeyReward, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
-	cmd.Flags().Uint(KeyTargetIntervalAdjustment, DefaultTargetIntervalAdjustment, "Number of blocks for adjusting difficulty")
+	cmd.Flags().Uint(KeyMiningIntervalAdjustment, DefaultMiningIntervalAdjustment, "Number of blocks for adjusting difficulty")
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
-	cmd.Flags().String(KeyP2PPeerPrivKey, "", "ECDSA peer private key path in PEM format")
-	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "Peer port")
+	cmd.Flags().String(KeyP2PPeerIdentityPath, "", "ECDSA peer private key path in PEM format")
+	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "P2P port for receiving connections")
+	cmd.Flags().Uint(KeyP2PRouterPort, DefaultP2PRouterPort, "HTTP API port for receiving requests")
 	cmd.Flags().Uint(KeyP2PMinNumConn, DefaultP2PMinNumConn, "Minimum number of P2P connections")
 	cmd.Flags().Uint(KeyP2PMaxNumConn, DefaultP2PMaxNumConn, "Maximum number of P2P connections")
 	cmd.Flags().Duration(KeyP2PConnTimeout, DefaultP2PConnTimeout, "P2P connection timeout")
 	cmd.Flags().Duration(KeyP2PWriteTimeout, DefaultP2PWriteTimeout, "P2P write timeout")
 	cmd.Flags().Duration(KeyP2PReadTimeout, DefaultP2PReadTimeout, "P2P read timeout")
 	cmd.Flags().Uint(KeyP2PBufferSize, DefaultP2PBufferSize, "P2P buffer size for reading from stream")
+	cmd.Flags().String(KeyWalletKeyPairPath, "", "Path to the key pair file")
+	cmd.Flags().String(KeyWalletServerAddress, DefaultServerAddress, "Server address for wallet API requests")
+	cmd.Flags().Uint(KeyWalletServerPort, DefaultServerPort, "Server port for wallet API requests")
 
 	// bind flags to viper
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyNodeSeeds, cmd.Flags().Lookup(KeyNodeSeeds))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
-	_ = viper.BindPFlag(KeyPubKey, cmd.Flags().Lookup(KeyPubKey))
+	_ = viper.BindPFlag(KeyMiningPubKeyReward, cmd.Flags().Lookup(KeyMiningPubKeyReward))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
-	_ = viper.BindPFlag(KeyTargetIntervalAdjustment, cmd.Flags().Lookup(KeyTargetIntervalAdjustment))
+	_ = viper.BindPFlag(KeyMiningIntervalAdjustment, cmd.Flags().Lookup(KeyMiningIntervalAdjustment))
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
-	_ = viper.BindPFlag(KeyP2PPeerPrivKey, cmd.Flags().Lookup(KeyP2PPeerPrivKey))
+	_ = viper.BindPFlag(KeyP2PPeerIdentityPath, cmd.Flags().Lookup(KeyP2PPeerIdentityPath))
 	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
+	_ = viper.BindPFlag(KeyP2PRouterPort, cmd.Flags().Lookup(KeyP2PRouterPort))
 	_ = viper.BindPFlag(KeyP2PMinNumConn, cmd.Flags().Lookup(KeyP2PMinNumConn))
 	_ = viper.BindPFlag(KeyP2PMaxNumConn, cmd.Flags().Lookup(KeyP2PMaxNumConn))
 	_ = viper.BindPFlag(KeyP2PConnTimeout, cmd.Flags().Lookup(KeyP2PConnTimeout))
 	_ = viper.BindPFlag(KeyP2PWriteTimeout, cmd.Flags().Lookup(KeyP2PWriteTimeout))
 	_ = viper.BindPFlag(KeyP2PReadTimeout, cmd.Flags().Lookup(KeyP2PReadTimeout))
 	_ = viper.BindPFlag(KeyP2PBufferSize, cmd.Flags().Lookup(KeyP2PBufferSize))
+	_ = viper.BindPFlag(KeyWalletKeyPairPath, cmd.Flags().Lookup(KeyWalletKeyPairPath))
+	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
+	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
 }
 
 // GetConfigFilePath retrieves the configuration file path from command flags
@@ -195,38 +225,30 @@ func GetConfigFilePath(cmd *cobra.Command) string {
 	return ""
 }
 
-// ApplyFlagsToConfig updates the config struct with flag values if they have been set
-func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
-	// todo(): use flag-to-config mapping function
-	if cmd.Flags().Changed(KeyNodeSeeds) {
-		nodeSeeds := viper.GetStringSlice(KeyNodeSeeds)
-		seeds, err := parseSeedNodes(nodeSeeds)
-		if err != nil {
-			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
-		} else {
-			cfg.SeedNodes = seeds
-		}
-	}
-	if cmd.Flags().Changed(KeyStorageFile) {
-		cfg.StorageFile = viper.GetString(KeyStorageFile)
-	}
-	if cmd.Flags().Changed(KeyPubKey) {
-		cfg.PubKey = viper.GetString(KeyPubKey)
+func applyMiningFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	if cmd.Flags().Changed(KeyMiningPubKeyReward) {
+		cfg.Miner.PubKey = viper.GetString(KeyMiningPubKeyReward)
 	}
 	if cmd.Flags().Changed(KeyMiningInterval) {
-		cfg.MiningInterval = viper.GetDuration(KeyMiningInterval)
+		cfg.Miner.MiningInterval = viper.GetDuration(KeyMiningInterval)
 	}
-	if cmd.Flags().Changed(KeyTargetIntervalAdjustment) {
-		cfg.AdjustmentTargetInterval = viper.GetUint(KeyTargetIntervalAdjustment)
+	if cmd.Flags().Changed(KeyMiningIntervalAdjustment) {
+		cfg.Miner.AdjustmentInterval = viper.GetUint(KeyMiningIntervalAdjustment)
 	}
+}
+
+func applyP2PFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyP2PEnabled) {
 		cfg.P2P.Enabled = viper.GetBool(KeyP2PEnabled)
 	}
-	if cmd.Flags().Changed(KeyP2PPeerPrivKey) {
-		cfg.P2P.Identity.PrivKeyPath = viper.GetString(KeyP2PPeerPrivKey)
+	if cmd.Flags().Changed(KeyP2PPeerIdentityPath) {
+		cfg.P2P.IdentityPath = viper.GetString(KeyP2PPeerIdentityPath)
 	}
 	if cmd.Flags().Changed(KeyP2PPeerPort) {
 		cfg.P2P.PeerPort = viper.GetUint(KeyP2PPeerPort)
+	}
+	if cmd.Flags().Changed(KeyP2PRouterPort) {
+		cfg.P2P.RouterPort = viper.GetUint(KeyP2PRouterPort)
 	}
 	if cmd.Flags().Changed(KeyP2PMinNumConn) {
 		cfg.P2P.MinNumConn = viper.GetUint(KeyP2PMinNumConn)
@@ -245,6 +267,39 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyP2PBufferSize) {
 		cfg.P2P.BufferSize = viper.GetUint(KeyP2PBufferSize)
+	}
+}
+
+func applyWalletFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	if cmd.Flags().Changed(KeyWalletKeyPairPath) {
+		cfg.Wallet.KeyPairPath = viper.GetString(KeyWalletKeyPairPath)
+	}
+	if cmd.Flags().Changed(KeyWalletServerAddress) {
+		cfg.Wallet.ServerAddress = viper.GetString(KeyWalletServerAddress)
+	}
+	if cmd.Flags().Changed(KeyWalletServerPort) {
+		cfg.Wallet.ServerPort = viper.GetUint(KeyWalletServerPort)
+	}
+}
+
+// ApplyFlagsToConfig updates the config struct with flag values if they have been set
+func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	applyMiningFlagsToConfig(cmd, cfg)
+	applyP2PFlagsToConfig(cmd, cfg)
+	applyWalletFlagsToConfig(cmd, cfg)
+
+	// todo(): use flag-to-config mapping function
+	if cmd.Flags().Changed(KeyNodeSeeds) {
+		nodeSeeds := viper.GetStringSlice(KeyNodeSeeds)
+		seeds, err := parseSeedNodes(nodeSeeds)
+		if err != nil {
+			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
+		} else {
+			cfg.SeedNodes = seeds
+		}
+	}
+	if cmd.Flags().Changed(KeyStorageFile) {
+		cfg.StorageFile = viper.GetString(KeyStorageFile)
 	}
 }
 

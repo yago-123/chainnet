@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/btcsuite/btcutil/base58"
+
 	"github.com/yago-123/chainnet/pkg/script"
 )
 
@@ -135,6 +137,24 @@ func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0
 }
 
+func (tx *Transaction) String() string {
+	inputs := ""
+	for _, in := range tx.Vin {
+		inputs += fmt.Sprintf("- %s\n", in.String())
+	}
+
+	outputs := ""
+	for _, out := range tx.Vout {
+		outputs += fmt.Sprintf("- %s\n", out.String())
+	}
+
+	msg := fmt.Sprintf("ID: %x\n", tx.ID)
+	msg = fmt.Sprintf("%s%s", msg, inputs)
+	msg = fmt.Sprintf("%s%s", msg, outputs)
+
+	return msg
+}
+
 // TxInput represents the source of the transaction balance
 type TxInput struct {
 	// Txid is the transaction from which we are going to unlock the input balance
@@ -191,6 +211,15 @@ func (in *TxInput) EqualInput(input TxInput) bool {
 	return bytes.Equal(in.Txid, input.Txid) && in.Vout == input.Vout
 }
 
+func (in *TxInput) String() string {
+	return fmt.Sprintf(
+		"TxInput: id %x-%d from %s",
+		in.Txid,
+		in.Vout,
+		base58.Encode([]byte(in.PubKey)),
+	)
+}
+
 // TxOutput represents the destination of the transaction balance
 type TxOutput struct {
 	// Amount is the amount of funds that the output holds
@@ -221,4 +250,13 @@ func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutpu
 // canBeUnlockedWith checks if the output can be unlocked with the given public key
 func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
+}
+
+func (out *TxOutput) String() string {
+	return fmt.Sprintf(
+		"TxOutput: %d to %s, unlocking script %s",
+		out.Amount,
+		base58.Encode([]byte(out.PubKey)),
+		out.ScriptPubKey,
+	)
 }

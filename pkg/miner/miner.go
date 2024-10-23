@@ -42,11 +42,11 @@ type Miner struct {
 }
 
 func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.Explorer) (*Miner, error) {
-	if len(cfg.PubKey) == 0 {
+	if len(cfg.Miner.PubKey) == 0 {
 		return nil, fmt.Errorf("public key not provided, check the config file")
 	}
 
-	pubKey := base58.Decode(cfg.PubKey)
+	pubKey := base58.Decode(cfg.Miner.PubKey)
 
 	return &Miner{
 		hasherType:  hasherType,
@@ -81,7 +81,7 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	// calculate mining target (leading zeroes in block hash) for the block that is going to be mined
-	target, err := m.explorer.GetMiningTarget(m.chain.GetLastHeight(), m.cfg.AdjustmentTargetInterval, m.cfg.MiningInterval)
+	target, err := m.explorer.GetMiningTarget(m.chain.GetLastHeight(), m.cfg.Miner.AdjustmentInterval, m.cfg.Miner.MiningInterval)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get mining target: %w", err)
 	}

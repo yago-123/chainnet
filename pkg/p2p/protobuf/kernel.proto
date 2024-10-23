@@ -8,6 +8,10 @@ message Transaction {
   repeated TxOutput vout = 3;
 }
 
+message Transactions {
+  repeated Transaction transactions = 1;
+}
+
 message TxInput {
   bytes txid = 1;
   uint64 vout = 2;
@@ -21,6 +25,15 @@ message TxOutput {
   string pub_key = 3;
 }
 
+message UTXO {
+  bytes txid = 1;
+  uint64 vout = 2;
+  TxOutput Output = 3;
+}
+
+message UTXOs {
+  repeated UTXO utxos = 1;
+}
 
 message BlockHeader {
   bytes version = 1;

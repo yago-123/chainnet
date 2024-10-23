@@ -17,6 +17,10 @@ func NewProtobufEncoder() *Protobuf {
 	return &Protobuf{}
 }
 
+func (p *Protobuf) Type() string {
+	return ProtoEncodingType
+}
+
 // SerializeBlock serializes a kernel.Block into a Protobuf byte array
 func (p *Protobuf) SerializeBlock(b kernel.Block) ([]byte, error) {
 	pbBlock, err := convertToProtobufBlock(b)
@@ -91,7 +95,7 @@ func (p *Protobuf) SerializeHeaders(bhs []*kernel.BlockHeader) ([]byte, error) {
 
 // DeserializeHeaders deserializes a Protobuf byte array into a slice of kernel.BlockHeader.
 func (p *Protobuf) DeserializeHeaders(data []byte) ([]*kernel.BlockHeader, error) {
-	var pbHeaders pb.BlockHeaders // Adjust to your Protobuf message type.
+	var pbHeaders pb.BlockHeaders
 
 	if err := proto.Unmarshal(data, &pbHeaders); err != nil {
 		return nil, fmt.Errorf("error deserializing block headers: %w", err)
@@ -129,6 +133,120 @@ func (p *Protobuf) DeserializeTransaction(data []byte) (*kernel.Transaction, err
 		return nil, fmt.Errorf("error converting transaction from protobuf: %w", err)
 	}
 	return &tx, nil
+}
+
+// SerializeTransactions serializes a slice of kernel.Transaction into a Protobuf byte array
+func (p *Protobuf) SerializeTransactions(txs []*kernel.Transaction) ([]byte, error) {
+	var pbTxs []*pb.Transaction
+
+	for _, tx := range txs {
+		pbTx := convertToProtobufTransaction(*tx)
+		pbTxs = append(pbTxs, pbTx)
+	}
+
+	// create a Protobuf Transactions message and set transactions field
+	container := &pb.Transactions{
+		Transactions: pbTxs,
+	}
+
+	data, err := proto.Marshal(container)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing transactions: %w", err)
+	}
+
+	return data, nil
+}
+
+// DeserializeTransactions deserializes a Protobuf byte array into a slice of kernel.Transaction
+func (p *Protobuf) DeserializeTransactions(data []byte) ([]*kernel.Transaction, error) {
+	var pbTxs pb.Transactions
+
+	if err := proto.Unmarshal(data, &pbTxs); err != nil {
+		return nil, fmt.Errorf("error deserializing transactions: %w", err)
+	}
+
+	// convert each Protobuf Transaction to a kernel.Transaction
+	var txs []*kernel.Transaction
+	for _, pbTx := range pbTxs.GetTransactions() {
+		tx, err := convertFromProtobufTransaction(pbTx)
+		if err != nil {
+			return []*kernel.Transaction{}, fmt.Errorf("error converting transaction from protobuf: %w", err)
+		}
+
+		txs = append(txs, &tx)
+	}
+
+	return txs, nil
+}
+
+// SerializeUTXO serializes a kernel.UTXO into a Protobuf byte array
+func (p *Protobuf) SerializeUTXO(utxo kernel.UTXO) ([]byte, error) {
+	pbUTXO := convertToProtobufUTXO(utxo)
+	data, err := proto.Marshal(pbUTXO)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing UTXO %s-%d: %w", utxo.TxID, utxo.OutIdx, err)
+	}
+
+	return data, nil
+}
+
+// DeserializeUTXO deserializes a Protobuf byte array into a kernel.UTXO
+func (p *Protobuf) DeserializeUTXO(data []byte) (*kernel.UTXO, error) {
+	var pbUTXO pb.UTXO
+	err := proto.Unmarshal(data, &pbUTXO)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing UTXO: %w", err)
+	}
+
+	utxo, err := convertFromProtobufUTXO(&pbUTXO)
+	if err != nil {
+		return nil, fmt.Errorf("error converting UTXO from protobuf: %w", err)
+	}
+
+	return &utxo, nil
+}
+
+// SerializeUTXOs serializes a slice of kernel.UTXO into a Protobuf byte array
+func (p *Protobuf) SerializeUTXOs(utxos []*kernel.UTXO) ([]byte, error) {
+	var pbUtxos []*pb.UTXO
+
+	for _, utxo := range utxos {
+		pbUtxo := convertToProtobufUTXO(*utxo)
+		pbUtxos = append(pbUtxos, pbUtxo)
+	}
+
+	// create a Protobuf UTXOs message and set utxos field
+	container := &pb.UTXOs{
+		Utxos: pbUtxos,
+	}
+
+	data, err := proto.Marshal(container)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing UTXOs: %w", err)
+	}
+
+	return data, nil
+}
+
+// DeserializeUTXOs deserializes a Protobuf byte array into a slice of kernel.UTXO
+func (p *Protobuf) DeserializeUTXOs(data []byte) ([]*kernel.UTXO, error) {
+	var pbUtxos pb.UTXOs
+
+	if err := proto.Unmarshal(data, &pbUtxos); err != nil {
+		return nil, fmt.Errorf("error deserializing UTXOs: %w", err)
+	}
+
+	// convert each Protobuf UTXO to a kernel.UTXO
+	var utxos []*kernel.UTXO
+	for _, pbUtxo := range pbUtxos.GetUtxos() {
+		utxo, err := convertFromProtobufUTXO(pbUtxo)
+		if err != nil {
+			return []*kernel.UTXO{}, fmt.Errorf("error converting UTXO from protobuf: %w", err)
+		}
+		utxos = append(utxos, &utxo)
+	}
+
+	return utxos, nil
 }
 
 func convertToProtobufBlock(b kernel.Block) (*pb.Block, error) {
@@ -309,4 +427,25 @@ func convertFromProtobufTxOutputs(pbs []*pb.TxOutput) ([]kernel.TxOutput, error)
 		outputs = append(outputs, txOutput)
 	}
 	return outputs, nil
+}
+
+func convertToProtobufUTXO(utxo kernel.UTXO) *pb.UTXO {
+	return &pb.UTXO{
+		Txid:   utxo.TxID,
+		Vout:   uint64(utxo.OutIdx),
+		Output: convertToProtobufTxOutput(utxo.Output),
+	}
+}
+
+func convertFromProtobufUTXO(pbUTXO *pb.UTXO) (kernel.UTXO, error) {
+	txOutput, err := convertFromProtobufTxOutput(pbUTXO.GetOutput())
+	if err != nil {
+		return kernel.UTXO{}, err
+	}
+
+	return kernel.UTXO{
+		TxID:   pbUTXO.GetTxid(),
+		OutIdx: uint(pbUTXO.GetVout()),
+		Output: txOutput,
+	}, nil
 }

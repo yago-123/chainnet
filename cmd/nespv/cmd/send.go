@@ -1,19 +1,114 @@
 package cmd
 
 import (
+	"context"
+
+	"github.com/btcsuite/btcutil/base58"
+
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/consensus/util"
+
 	"github.com/spf13/cobra"
+	"github.com/yago-123/chainnet/pkg/consensus/validator"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
 
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
 	Long:  `Send transactions from wallets.`,
-	Run: func(_ *cobra.Command, _ []string) {
-		logger.Infof("Sending transactions...")
+	Run: func(cmd *cobra.Command, _ []string) {
+		cfg = config.InitConfig(cmd)
+
+		address, _ := cmd.Flags().GetString("address")
+		amount, _ := cmd.Flags().GetUint("amount")
+		fee, _ := cmd.Flags().GetUint("fee")
+		privKeyCont, _ := cmd.Flags().GetString("priv-key")
+		privKeyPath, _ := cmd.Flags().GetString("wallet-key-path")
+
+		// check if only one private key is provided
+		if (privKeyCont == "") == (privKeyPath == "") {
+			logger.Fatalf("specify one argument containing the private key: --priv-key or --wallet-key-path")
+		}
+
+		var err error
+		var privKey, pubKey []byte
+
+		// process key from path or from content
+		if privKeyCont != "" {
+			// todo(): this is encoded somehow?
+			privKey = base58.Decode(privKeyCont)
+		}
+
+		if privKeyPath != "" {
+			privKey, err = util.ReadECDSAPemPrivateKey(privKeyPath)
+			if err != nil {
+				logger.Fatalf("error reading private key: %v", err)
+			}
+		}
+
+		// derive public key from private key
+		pubKey, err = util.DeriveECDSAPubFromPrivate(privKey)
+		if err != nil {
+			logger.Fatalf("error deriving public key from private key: %v", err)
+		}
+
+		// create wallet
+		wallet, err := wallt.NewWalletWithKeys(
+			cfg,
+			[]byte("1"),
+			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+			consensusSigner,
+			walletHasher,
+			hash.GetHasher(consensusHasherType),
+			encoding.NewProtobufEncoder(),
+			privKey,
+			pubKey,
+		)
+		if err != nil {
+			logger.Fatalf("error setting up wallet: %v", err)
+		}
+
+		_, err = wallet.InitNetwork()
+		if err != nil {
+			logger.Fatalf("error setting up wallet network: %v", err)
+		}
+
+		utxos, err := wallet.GetWalletUTXOS()
+		if err != nil {
+			logger.Fatalf("error getting wallet UTXOS: %v", err)
+		}
+
+		tx, err := wallet.GenerateNewTransaction(address, amount, fee, utxos)
+		if err != nil {
+			logger.Fatalf("error generating transaction: %v", err)
+		}
+
+		err = wallet.SendTransaction(context.Background(), tx)
+		if err != nil {
+			logger.Fatalf("error sending transaction: %v", err)
+		}
+
+		logger.Infof("Sent transaction: %s", tx.String())
 	},
 }
 
 func init() {
 	// main command
+	config.AddConfigFlags(sendCmd)
 	rootCmd.AddCommand(sendCmd)
+
+	// sub commands
+	sendCmd.Flags().String("address", "", "Destination address to send coins")
+	sendCmd.Flags().Uint("amount", 0, "Amount of coins to send")
+	sendCmd.Flags().Uint("fee", 0, "Amount of fee to send")
+	sendCmd.Flags().String("priv-key", "", "Private key")
+	// todo(): reestructure this duplication
+	sendCmd.Flags().String("wallet-key-path", "", "Path to private key")
+
+	// required flags
+	_ = sendCmd.MarkFlagRequired("address")
+	_ = sendCmd.MarkFlagRequired("amount")
 }

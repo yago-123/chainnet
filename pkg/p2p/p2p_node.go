@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/julienschmidt/httprouter"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -32,21 +37,26 @@ const (
 	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
 	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
+
+	ContentTypeHeader = "Content-Type"
+
+	ServerAPIShutdownTimeout = 10 * time.Second
 )
 
 type nodeP2PHandler struct {
-	cfg      *config.Config
 	logger   *logrus.Logger
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+
+	cfg *config.Config
 }
 
 func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *nodeP2PHandler {
 	return &nodeP2PHandler{
-		cfg:      cfg,
 		logger:   cfg.Logger,
 		encoder:  encoder,
 		explorer: explorer,
+		cfg:      cfg,
 	}
 }
 
@@ -100,7 +110,7 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 	block, err := h.explorer.GetBlockByHash(hash)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			h.logger.Infof("unable to retrieve block for stream %s: block not found", stream.ID())
+			h.logger.Infof("unable to retrieve block for stream %s: block %x not found", stream.ID(), hash)
 			return
 		}
 
@@ -155,6 +165,138 @@ func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
 	}
 }
 
+type HTTPRouter struct {
+	r        *httprouter.Router
+	encoder  encoding.Encoding
+	explorer *explorer.Explorer
+	logger   *logrus.Logger
+
+	isActive bool
+	srv      *http.Server
+
+	cfg *config.Config
+}
+
+func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *HTTPRouter {
+	router := &HTTPRouter{
+		r:        httprouter.New(),
+		encoder:  encoder,
+		explorer: explorer,
+		logger:   cfg.Logger,
+		cfg:      cfg,
+	}
+
+	router.r.GET(fmt.Sprintf(RouterAddressTxs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		router.listTransactions(w, r, ps)
+	})
+	router.r.GET(fmt.Sprintf(RouterAddressUTXOs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		router.listUTXOs(w, r, ps)
+	})
+	router.r.GET(fmt.Sprintf(RouterAddressBalance, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		router.getAddressBalance(w, r, ps)
+	})
+
+	return router
+}
+
+func (router *HTTPRouter) Start() error {
+	if router.isActive {
+		return nil
+	}
+
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", router.cfg.P2P.RouterPort),
+		Handler:      router.r,
+		ReadTimeout:  router.cfg.P2P.ReadTimeout,
+		WriteTimeout: router.cfg.P2P.WriteTimeout,
+		IdleTimeout:  router.cfg.P2P.ConnTimeout,
+	}
+
+	router.srv = srv
+	router.isActive = true
+
+	go func() {
+		err := srv.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			router.logger.Infof("HTTP API server stopped successfully")
+		}
+
+		if err != nil {
+			router.logger.Errorf("Failed to start HTTP server: %v", err)
+		}
+	}()
+
+	return nil
+}
+
+func (router *HTTPRouter) Stop() error {
+	if !router.isActive {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), ServerAPIShutdownTimeout)
+	defer cancel()
+
+	if err := router.srv.Shutdown(ctx); err != nil {
+		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
+	}
+
+	router.isActive = false
+	return nil
+}
+
+func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	txs, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
+	if err != nil {
+		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
+	}
+
+	txsEncoded, err := router.encoder.SerializeTransactions(txs)
+	if err != nil {
+		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
+	}
+
+	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
+	if _, err = w.Write(txsEncoded); err != nil {
+		router.logger.Errorf("Failed to write response: %v", err)
+	}
+}
+
+func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	utxos, err := router.explorer.FindUnspentOutputs(string(base58.Decode(address)))
+	if err != nil {
+		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
+	}
+
+	utxosEncoded, err := router.encoder.SerializeUTXOs(utxos)
+	if err != nil {
+		http.Error(w, "Failed to encode utxos", http.StatusInternalServerError)
+	}
+
+	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
+	if _, err = w.Write(utxosEncoded); err != nil {
+		router.logger.Errorf("Failed to write response: %v", err)
+	}
+}
+
+func (router *HTTPRouter) getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	_, err := router.explorer.CalculateAddressBalance(string(base58.Decode(address)))
+	if err != nil {
+		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
+	}
+
+	// err = json.NewEncoder(w).Encode(balanceResponse)
+	// if err != nil {
+	//	http.Error(w, "Failed to encode balance", http.StatusInternalServerError)
+	// }
+}
+
 type NodeP2P struct {
 	cfg  *config.Config
 	host host.Host
@@ -172,6 +314,8 @@ type NodeP2P struct {
 	// encoder contains the communication data serialization between peers
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+
+	router *HTTPRouter
 
 	// bufferSize represents size of buffer for reading over the network
 	bufferSize uint
@@ -203,8 +347,8 @@ func NewNodeP2P(
 	options = append(options, libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", cfg.P2P.PeerPort)))
 
 	// add identity if the keys exists
-	if cfg.P2P.Identity.PrivKeyPath != "" {
-		privKeyBytes, errKey := util.ReadECDSAPemPrivateKey(cfg.P2P.Identity.PrivKeyPath)
+	if cfg.P2P.IdentityPath != "" {
+		privKeyBytes, errKey := util.ReadECDSAPemPrivateKey(cfg.P2P.IdentityPath)
 		if errKey != nil {
 			return nil, fmt.Errorf("error reading private key: %w", errKey)
 		}
@@ -214,13 +358,13 @@ func NewNodeP2P(
 			return nil, fmt.Errorf("error converting private key: %w", errKey)
 		}
 
-		p2pKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
+		p2pPrivKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
 		if errKey != nil {
 			return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
 		}
 
 		// add peer identity to options
-		options = append(options, libp2p.Identity(p2pKey))
+		options = append(options, libp2p.Identity(p2pPrivKey))
 	}
 
 	// create host
@@ -252,10 +396,14 @@ func NewNodeP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, []string{pubsub.BlockAddedPubSubTopic, pubsub.TxMempoolPubSubTopic}, true)
+	topics := []string{pubsub.BlockAddedPubSubTopic, pubsub.TxAddedPubSubTopic}
+	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, netSubject, topics, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
+
+	// initialize HTTP router for handling HTTP requests (wallet, information requests...)
+	router := NewHTTPRouter(cfg, encoder, explorer)
 
 	// initialize handlers
 	handler := newNodeP2PHandler(cfg, encoder, explorer)
@@ -272,6 +420,7 @@ func NewNodeP2P(
 		discoMDNS:  discoMDNS,
 		pubsub:     pubsub,
 		encoder:    encoder,
+		router:     router,
 		explorer:   explorer,
 		bufferSize: cfg.P2P.BufferSize,
 		logger:     cfg.Logger,
@@ -287,6 +436,10 @@ func (n *NodeP2P) Start() error {
 		return fmt.Errorf("failed to start mDNS discovery: %w", err)
 	}
 
+	if err := n.router.Start(); err != nil {
+		return fmt.Errorf("failed to start HTTP router: %w", err)
+	}
+
 	return nil
 }
 
@@ -299,28 +452,16 @@ func (n *NodeP2P) Stop() error {
 		return fmt.Errorf("error stopping mDNS discovery: %w", err)
 	}
 
+	if err := n.router.Stop(); err != nil {
+		return fmt.Errorf("error stopping HTTP router: %w", err)
+	}
+
 	return n.host.Close()
 }
 
+// ConnectToSeeds creates connection with the seed nodes
 func (n *NodeP2P) ConnectToSeeds() error {
-	for _, seed := range n.cfg.SeedNodes {
-		addr, err := peer.AddrInfoFromString(
-			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
-		)
-		if err != nil {
-			return fmt.Errorf("failed to parse multiaddress: %w", err)
-		}
-
-		err = n.host.Connect(n.ctx, *addr)
-		if err != nil {
-			n.cfg.Logger.Errorf("failed to connect to seed node %s: %v", addr, err)
-			continue
-		}
-
-		n.cfg.Logger.Infof("connected to seed node %s", addr.ID.String())
-	}
-
-	return nil
+	return connectToSeeds(n.cfg, n.host)
 }
 
 // AskLastHeader sends a request to a specific peer to get the last block header

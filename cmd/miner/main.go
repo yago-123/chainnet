@@ -22,6 +22,17 @@ import (
 
 var cfg *config.Config
 
+var (
+	// general consensus hasher (tx, block hashes...)
+	consensusHasherType = hash.SHA256
+
+	// general consensus signer (tx)
+	consensusSigner = crypto.NewHashedSignature(
+		sign.NewECDSASignature(),
+		hash.NewSHA256(),
+	)
+)
+
 func main() {
 	var block *kernel.Block
 
@@ -31,10 +42,6 @@ func main() {
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
 	cfg.Logger.Infof("starting chain node with config %v", cfg)
-
-	// general consensus hasher (tx, block hashes...)
-	consensusHasherType := hash.SHA256
-	// todo(): add consensusSignatureType
 
 	// create observer controllers
 	subjectChain := observer.NewChainSubject()
@@ -59,9 +66,7 @@ func main() {
 			cfg,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
-			crypto.NewHashedSignature(
-				sign.NewECDSASignature(), hash.NewSHA256(),
-			),
+			consensusSigner,
 			hash.GetHasher(consensusHasherType),
 		),
 		subjectChain,
