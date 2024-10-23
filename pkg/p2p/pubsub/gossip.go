@@ -79,14 +79,14 @@ func (h *gossipHandler) listenForTxAdded(sub *pubSubP2P.Subscription) {
 			continue
 		}
 
-		tx, err := h.encoder.DeserializeTransaction([]byte(msg.String()))
+		tx, err := h.encoder.DeserializeTransaction(msg.Data)
 		if err != nil {
 			h.logger.Errorf("failed deserializing transaction from %s: %v", msg.ReceivedFrom, err)
 			continue
 		}
 
 		h.logger.Infof("received transaction from %s with tx ID %x", msg.ReceivedFrom, tx.ID)
-		// h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+		h.netSubject.NotifyUnconfirmedTxReceived(*tx)
 	}
 }
 
