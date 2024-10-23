@@ -104,7 +104,7 @@ func init() {
 	sendCmd.Flags().Uint("fee", 0, "Amount of fee to send")
 	sendCmd.Flags().String("priv-key", "", "Private key")
 	// todo(): reestructure this duplication
-	// sendCmd.Flags().String("priv-key-path", "", "Path to private key")
+	sendCmd.Flags().String("priv-key-path", "", "Path to private key")
 
 	// required flags
 	_ = sendCmd.MarkFlagRequired("address")

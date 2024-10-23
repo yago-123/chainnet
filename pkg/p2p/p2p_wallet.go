@@ -119,7 +119,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	}
 
 	url := fmt.Sprintf(
-		"%s%s",
+		"http://%s%s",
 		n.baseurl,
 		fmt.Sprintf(RouterAddressUTXOs, base58.Encode(address)),
 	)
