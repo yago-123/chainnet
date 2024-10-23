@@ -3,6 +3,7 @@ package kernel
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/script"

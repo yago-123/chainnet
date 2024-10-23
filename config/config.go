@@ -225,21 +225,7 @@ func GetConfigFilePath(cmd *cobra.Command) string {
 	return ""
 }
 
-// ApplyFlagsToConfig updates the config struct with flag values if they have been set
-func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
-	// todo(): use flag-to-config mapping function
-	if cmd.Flags().Changed(KeyNodeSeeds) {
-		nodeSeeds := viper.GetStringSlice(KeyNodeSeeds)
-		seeds, err := parseSeedNodes(nodeSeeds)
-		if err != nil {
-			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
-		} else {
-			cfg.SeedNodes = seeds
-		}
-	}
-	if cmd.Flags().Changed(KeyStorageFile) {
-		cfg.StorageFile = viper.GetString(KeyStorageFile)
-	}
+func applyMiningFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyMiningPubKeyReward) {
 		cfg.Miner.PubKey = viper.GetString(KeyMiningPubKeyReward)
 	}
@@ -249,6 +235,9 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyMiningIntervalAdjustment) {
 		cfg.Miner.AdjustmentInterval = viper.GetUint(KeyMiningIntervalAdjustment)
 	}
+}
+
+func applyP2PFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyP2PEnabled) {
 		cfg.P2P.Enabled = viper.GetBool(KeyP2PEnabled)
 	}
@@ -279,6 +268,9 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyP2PBufferSize) {
 		cfg.P2P.BufferSize = viper.GetUint(KeyP2PBufferSize)
 	}
+}
+
+func applyWalletFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyWalletKeyPairPath) {
 		cfg.Wallet.KeyPairPath = viper.GetString(KeyWalletKeyPairPath)
 	}
@@ -287,6 +279,27 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyWalletServerPort) {
 		cfg.Wallet.ServerPort = viper.GetUint(KeyWalletServerPort)
+	}
+}
+
+// ApplyFlagsToConfig updates the config struct with flag values if they have been set
+func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	applyMiningFlagsToConfig(cmd, cfg)
+	applyP2PFlagsToConfig(cmd, cfg)
+	applyWalletFlagsToConfig(cmd, cfg)
+
+	// todo(): use flag-to-config mapping function
+	if cmd.Flags().Changed(KeyNodeSeeds) {
+		nodeSeeds := viper.GetStringSlice(KeyNodeSeeds)
+		seeds, err := parseSeedNodes(nodeSeeds)
+		if err != nil {
+			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
+		} else {
+			cfg.SeedNodes = seeds
+		}
+	}
+	if cmd.Flags().Changed(KeyStorageFile) {
+		cfg.StorageFile = viper.GetString(KeyStorageFile)
 	}
 }
 
