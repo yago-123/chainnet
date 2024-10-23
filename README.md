@@ -2,7 +2,7 @@
 ## Setup
 Install dependencies: 
 ```bash
-$ sudo apt install protobuf-compiler 
+$ sudo apt install protobuf-compiler base58
 ```
 
 Install go packages: 
@@ -93,8 +93,13 @@ $
 
 In order to receive some coins you can paste your public key into the miner file configuration and mine with your 
 computer: 
-``` 
-...
+```bash
+$ openssl ec -pubin -in pub-key.pem -outform DER 2>/dev/null | base58
+```
+
+Can also obtain from private key directly: 
+```bash
+$ openssl ec -in private_key.pem -pubout -outform DER 2>/dev/null | base58
 ```
 
 
