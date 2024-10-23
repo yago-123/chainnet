@@ -13,11 +13,16 @@ var cfg *config.Config
 var logger = logrus.New()
 
 var (
+	// general consensus hasher (tx, block hashes...)
 	consensusHasherType = hash.SHA256
-	consensusSigner     = crypto.NewHashedSignature(
+
+	// general consensus signer (tx)
+	consensusSigner = crypto.NewHashedSignature(
 		sign.NewECDSASignature(),
 		hash.NewSHA256(),
 	)
+
+	// hasher used for generating wallet addresses in P2PKH
 	walletHasher = crypto.NewMultiHash(
 		[]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()},
 	)
