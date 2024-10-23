@@ -3,6 +3,7 @@ package kernel
 import (
 	"bytes"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/script"
 )
@@ -138,12 +139,12 @@ func (tx *Transaction) IsCoinbase() bool {
 func (tx *Transaction) String() string {
 	inputs := ""
 	for _, in := range tx.Vin {
-		inputs += fmt.Sprintf("%s\n", in.String())
+		inputs += fmt.Sprintf("- %s\n", in.String())
 	}
 
 	outputs := ""
 	for _, out := range tx.Vout {
-		outputs += fmt.Sprintf("%s\n", out.String())
+		outputs += fmt.Sprintf("- %s\n", out.String())
 	}
 
 	msg := fmt.Sprintf("ID: %x\n", tx.ID)
@@ -211,10 +212,10 @@ func (in *TxInput) EqualInput(input TxInput) bool {
 
 func (in *TxInput) String() string {
 	return fmt.Sprintf(
-		"TxInput: %x-%d from %s",
+		"TxInput: id %x-%d from %s",
 		in.Txid,
 		in.Vout,
-		in.PubKey,
+		base58.Encode([]byte(in.PubKey)),
 	)
 }
 
@@ -254,6 +255,6 @@ func (out *TxOutput) String() string {
 	return fmt.Sprintf(
 		"TxOutput: %d to %s",
 		out.Amount,
-		out.PubKey,
+		base58.Encode([]byte(out.PubKey)),
 	)
 }

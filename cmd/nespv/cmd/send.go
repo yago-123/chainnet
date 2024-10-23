@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
@@ -37,7 +38,7 @@ var sendCmd = &cobra.Command{
 		// process key from path or from content
 		if privKeyCont != "" {
 			// todo(): this is encoded somehow?
-			privKey = []byte(privKeyCont)
+			privKey = base58.Decode(privKeyCont)
 		}
 
 		if privKeyPath != "" {

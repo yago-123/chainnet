@@ -76,7 +76,8 @@ func NewWalletP2P(
 	}
 
 	// initialize pubsub module
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, observer.NewNetSubject(), []string{}, false)
+	topics := []string{pubsub.TxAddedPubSubTopic}
+	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, observer.NewNetSubject(), topics, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
 	}
@@ -124,8 +125,11 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 		fmt.Sprintf(RouterAddressUTXOs, base58.Encode(address)),
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
+	defer cancel()
+
 	// send GET request
-	resp, err := getRequest(url)
+	resp, err := getRequest(ctx, url)
 	if err != nil {
 		return []*kernel.UTXO{}, fmt.Errorf("failed to get UTXO response for address %s: %w", base58.Encode(address), err)
 	}
@@ -134,7 +138,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	// read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %w", address, err)
+		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %w", base58.Encode(address), err)
 	}
 
 	// decode UTXOs
@@ -150,10 +154,7 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	return n.pubsub.NotifyTransactionAdded(ctx, tx)
 }
 
-func getRequest(url string) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
-	defer cancel()
-
+func getRequest(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
