@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/julienschmidt/httprouter"
@@ -38,6 +39,8 @@ const (
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
 
 	ContentTypeHeader = "Content-Type"
+
+	ServerAPIShutdownTimeout = 10 * time.Second
 )
 
 type nodeP2PHandler struct {
@@ -168,6 +171,9 @@ type HTTPRouter struct {
 	explorer *explorer.Explorer
 	logger   *logrus.Logger
 
+	isActive bool
+	srv      *http.Server
+
 	cfg *config.Config
 }
 
@@ -193,18 +199,29 @@ func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *expl
 	return router
 }
 
-// todo(): add cancelling mechanism, improve error handling and use flags to pass port
 func (router *HTTPRouter) Start() error {
+	if router.isActive {
+		return nil
+	}
+
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", router.cfg.P2P.RouterPort),
+		Handler:      router.r,
+		ReadTimeout:  router.cfg.P2P.ReadTimeout,
+		WriteTimeout: router.cfg.P2P.WriteTimeout,
+		IdleTimeout:  router.cfg.P2P.ConnTimeout,
+	}
+
+	router.srv = srv
+	router.isActive = true
+
 	go func() {
-		srv := &http.Server{
-			Addr:         fmt.Sprintf(":%d", router.cfg.P2P.RouterPort),
-			Handler:      router.r,
-			ReadTimeout:  router.cfg.P2P.ReadTimeout,
-			WriteTimeout: router.cfg.P2P.WriteTimeout,
-			IdleTimeout:  router.cfg.P2P.ConnTimeout,
+		err := srv.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			router.logger.Infof("HTTP API server stopped successfully")
 		}
 
-		if err := srv.ListenAndServe(); err != nil {
+		if err != nil {
 			router.logger.Errorf("Failed to start HTTP server: %v", err)
 		}
 	}()
@@ -212,8 +229,19 @@ func (router *HTTPRouter) Start() error {
 	return nil
 }
 
-// todo(): add functionality
 func (router *HTTPRouter) Stop() error {
+	if !router.isActive {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), ServerAPIShutdownTimeout)
+	defer cancel()
+
+	if err := router.srv.Shutdown(ctx); err != nil {
+		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
+	}
+
+	router.isActive = false
 	return nil
 }
 

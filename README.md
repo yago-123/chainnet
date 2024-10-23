@@ -110,6 +110,7 @@ miner:
 ```
 
 This ensures your mining rewards will be sent to the public key generated from your wallet.
+
 ## Creating and running nodes and miners 
 ### Bare metal
 Running the `chainnet-node`: 
