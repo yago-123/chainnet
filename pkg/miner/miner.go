@@ -102,6 +102,8 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
 
+	// todo(): validate the block with ValidateBlockWithoutHash
+
 	// start mining process
 	for {
 		select {
