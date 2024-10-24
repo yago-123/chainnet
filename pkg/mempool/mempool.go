@@ -17,7 +17,12 @@ type TxFeePair struct {
 
 type MemPool struct {
 	pairs []TxFeePair
-	mu    sync.Mutex
+	// inputSet is used to keep track of the inputs that are being spent in the mempool. This is useful for removing
+	// transactions that are going to be invalid after a block addition. The key is the STXO key and the value is
+	// the transaction ID that is spending it
+	inputSet map[string][]string
+
+	mu sync.Mutex
 
 	explorer *explorer.Explorer
 }
@@ -25,6 +30,7 @@ type MemPool struct {
 func NewMemPool(explorer *explorer.Explorer) *MemPool {
 	return &MemPool{
 		explorer: explorer,
+		pairs:    []TxFeePair{},
 	}
 }
 
@@ -53,10 +59,19 @@ func (m *MemPool) AppendTransaction(tx *kernel.Transaction) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// todo(): make sure that there are no transactions with same tx.ID :)))
-
 	// append the transaction to the mempool
 	m.pairs = append(m.pairs, TxFeePair{Transaction: tx, Fee: fee})
+
+	// append the inputs to inputSet to keep track of which inputs are being spent in which txs
+	// this is useful for removing txs that are going to be invalid after a block addition
+	// see OnBlockAddition function
+	for _, v := range tx.Vin {
+		if _, ok := m.inputSet[v.UniqueTxoKey()]; !ok {
+			m.inputSet[v.UniqueTxoKey()] = []string{}
+		}
+
+		m.inputSet[v.UniqueTxoKey()] = append(m.inputSet[v.UniqueTxoKey()], string(tx.ID))
+	}
 
 	// ensure MemPool is sorted after adding (may be faster ways, but this is fine for now)
 	sort.Sort(m)
@@ -104,9 +119,32 @@ func (m *MemPool) ID() string {
 }
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
-func (m *MemPool) OnBlockAddition(_ *kernel.Block) {
+func (m *MemPool) OnBlockAddition(block *kernel.Block) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// todo(): remove txs that contain inputs in the block that are spent in the block
+	removeTx := map[string]bool{}
+	for _, tx := range block.Transactions {
+		// iterate over the inputs contained in the transaction
+		for _, txInput := range tx.Vin {
+			// if the input is in the inputSet, remove the txs that are spending it by adding them
+			// into the map removeTx
+			if txIds, ok := m.inputSet[txInput.UniqueTxoKey()]; ok {
+				// add the all txs that are spending the input to the removeTx map
+				for _, txId := range txIds {
+					removeTx[txId] = true
+				}
+			}
+
+			// remove the input from the inputSet
+			delete(m.inputSet, txInput.UniqueTxoKey())
+		}
+	}
+
+	// remove txs that contain inputs in the block that are spent in the block
+	for i, tx := range m.pairs {
+		if _, ok := removeTx[string(tx.Transaction.ID)]; ok {
+			m.pairs = append(m.pairs[:i], m.pairs[i+1:]...)
+		}
+	}
 }
