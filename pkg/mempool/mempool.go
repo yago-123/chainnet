@@ -89,6 +89,7 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 	for i := range m.pairs {
 		// make sure that the transactions retrieved do not contain other txs having same inputs. Otherwise the
 		// miner will be mining blocks that will be discarded by the validator
+		incompatibleTxs := map[string]bool{}
 		tmpTx := m.pairs[i].Transaction
 		for _, tmpInput := range tmpTx.Vin {
 			for _, txAdded := range txs {
