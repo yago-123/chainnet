@@ -305,7 +305,7 @@ func TestExplorer_retrieveBalanceFrom(t *testing.T) {
 		NewOutput(100, script.P2PK, "random-3"),
 	}
 
-	assert.Equal(t, uint(103), retrieveBalanceFrom(utxos))
+	assert.Equal(t, uint(103), retrieveBalanceFromUTXOs(utxos))
 }
 
 func initializeStorage(t *testing.T, blocks []Block) storage.Storage {

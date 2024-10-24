@@ -102,10 +102,13 @@ func (m *Miner) MineBlock() (*kernel.Block, error) {
 		return nil, fmt.Errorf("unable to create block header: %w", err)
 	}
 
+	// todo(): validate the block with ValidateBlockWithoutHash
+
 	// start mining process
 	for {
 		select {
 		case <-m.ctx.Done():
+			// todo(): reeintroduce the transactions that were added to the block in the mempool (those that were not included in the new block)
 			// abort mining if the context is cancelled
 			return nil, fmt.Errorf("cancelled by context (height = %d)", blockHeader.Height)
 		default:

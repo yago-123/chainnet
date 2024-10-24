@@ -53,8 +53,11 @@ func main() {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
+	// create explorer instance
+	explorer := explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
+
 	// create mempool instance
-	mempool := mempool.NewMemPool()
+	mempool := mempool.NewMemPool(explorer)
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -65,7 +68,7 @@ func main() {
 		validator.NewHeavyValidator(
 			cfg,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
+			explorer,
 			consensusSigner,
 			hash.GetHasher(consensusHasherType),
 		),
