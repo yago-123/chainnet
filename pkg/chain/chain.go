@@ -44,6 +44,7 @@ type Blockchain struct {
 	hasher  hash.Hashing
 	store   storage.Storage
 	mempool *mempool.MemPool
+	utxoSet *UTXOSet
 
 	validator consensus.HeavyValidator
 
@@ -73,6 +74,7 @@ func NewBlockchain(
 	var lastBlockHash []byte
 
 	headers := make(map[string]kernel.BlockHeader)
+	utxoSet := NewUTXOSet(cfg)
 
 	// retrieve the last header stored
 	lastHeader, err := store.GetLastHeader()
@@ -104,6 +106,11 @@ func NewBlockchain(
 		headers, err = reconstructHeaders(lastBlockHash, store)
 		if err != nil {
 			return nil, fmt.Errorf("error reconstructing headers: %w", err)
+		}
+
+		err = reconstructUTXOSet(lastBlockHash, store, utxoSet)
+		if err != nil {
+			return nil, fmt.Errorf("error reconstructing UTXO set: %w", err)
 		}
 	}
 
@@ -275,7 +282,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 			return fmt.Errorf("error asking for block %x: %w", remoteBlockHash, err)
 		}
 
-		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside AddBlock)
+		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside addBlock)
 		if err = bc.AddBlock(block); err != nil {
 			// todo(): maybe the node should be blamed and black listed?
 			return fmt.Errorf("error adding block %x to the chain: %w", remoteBlockHash, err)
@@ -380,4 +387,10 @@ func reconstructHeaders(lastBlockHash []byte, store storage.Storage) (map[string
 	}
 
 	return headers, nil
+}
+
+// reconstructUTXOSet
+func reconstructUTXOSet(lastBlockHash []byte, store storage.Storage, utxoSet *UTXOSet) error {
+
+	return nil
 }
