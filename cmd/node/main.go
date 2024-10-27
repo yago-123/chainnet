@@ -4,7 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
-	"github.com/yago-123/chainnet/pkg/chain/explorer"
+	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -48,18 +48,21 @@ func main() {
 		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
 	}
 
+	// create explorer instance
+	explorer := expl.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
+
 	subjectChain.Register(boltdb)
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
-		mempool.NewMemPool(),
+		mempool.NewMemPool(explorer),
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			cfg,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)),
+			explorer,
 			consensusSigner,
 			hash.GetHasher(consensusHasherType),
 		),

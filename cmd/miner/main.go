@@ -1,11 +1,11 @@
 package main
 
 import (
+	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"time"
 
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
-	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	// create explorer instance
-	explorer := explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
+	explorer := expl.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
 
 	// create mempool instance
 	mempool := mempool.NewMemPool(explorer)
@@ -80,7 +80,7 @@ func main() {
 	}
 
 	// create new miner
-	mine, err := miner.NewMiner(cfg, chain, consensusHasherType, explorer.NewExplorer(boltdb, hash.GetHasher(consensusHasherType)))
+	mine, err := miner.NewMiner(cfg, chain, consensusHasherType, explorer)
 	if err != nil {
 		cfg.Logger.Fatalf("error initializing miner: %s", err)
 	}

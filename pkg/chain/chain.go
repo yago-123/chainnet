@@ -344,12 +344,12 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 	if err := bc.validator.ValidateTx(&tx); err != nil {
-		bc.logger.Errorf("error validating transaction: %w", err)
+		bc.logger.Errorf("error validating transaction: %v", err)
 		return
 	}
 
 	if err := bc.mempool.AppendTransaction(&tx); err != nil {
-		bc.logger.Errorf("error appending transaction to mempool: %w", err)
+		bc.logger.Errorf("error appending transaction to mempool: %v", err)
 		return
 	}
 }
