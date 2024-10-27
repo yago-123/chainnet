@@ -57,7 +57,7 @@ func main() {
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
-		mempool.NewMemPool(explorer),
+		mempool.NewMemPool(),
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			cfg,

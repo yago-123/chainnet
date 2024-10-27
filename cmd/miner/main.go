@@ -57,7 +57,7 @@ func main() {
 	explorer := expl.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
 
 	// create mempool instance
-	mempool := mempool.NewMemPool(explorer)
+	mempool := mempool.NewMemPool()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(

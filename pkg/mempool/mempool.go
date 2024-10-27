@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"sort"
 	"sync"
 
@@ -23,14 +22,11 @@ type MemPool struct {
 	inputSet map[string][]string
 
 	mu sync.Mutex
-
-	explorer *explorer.Explorer
 }
 
-func NewMemPool(explorer *explorer.Explorer) *MemPool {
+func NewMemPool() *MemPool {
 	return &MemPool{
-		explorer: explorer,
-		pairs:    []TxFeePair{},
+		pairs: []TxFeePair{},
 	}
 }
 

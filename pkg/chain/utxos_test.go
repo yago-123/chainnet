@@ -1,6 +1,7 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 
 import (
+	"github.com/yago-123/chainnet/config"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -94,7 +95,7 @@ var b3 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 }
 
 func TestUTXOSet_AddBlock(t *testing.T) {
-	utxos := NewUTXOSet()
+	utxos := NewUTXOSet(config.NewConfig())
 
 	require.NoError(t, utxos.AddBlock(b1))
 	require.NoError(t, utxos.AddBlock(b2))
@@ -128,7 +129,7 @@ func TestUTXOSet_AddBlock(t *testing.T) {
 }
 
 func TestUTXOSet_AddBlockWithInvalidInput(t *testing.T) {
-	utxos := NewUTXOSet()
+	utxos := NewUTXOSet(config.NewConfig())
 
 	// add block that references input not in the UTXO set
 	require.Error(t, utxos.AddBlock(b2))

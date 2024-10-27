@@ -1,6 +1,5 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 import (
-	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"os"
 	"testing"
 
@@ -94,7 +93,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
 		store,
-		mempool.NewMemPool(explorer.NewExplorer(store, &mockHash.FakeHashing{})),
+		mempool.NewMemPool(),
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewChainSubject(),
@@ -128,7 +127,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
 		boltdb,
-		mempool.NewMemPool(explorer.NewExplorer(boltdb, mockHashing)),
+		mempool.NewMemPool(),
 		mockHashing,
 		&consensus.MockHeavyValidator{},
 		observer.NewChainSubject(),
