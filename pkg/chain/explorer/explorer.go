@@ -374,34 +374,6 @@ func (explorer *Explorer) findUnspentTransactionsOutputs(pubKey string, unspentT
 	return utxos, nil
 }
 
-// CalculateBalanceFromInputs calculates the total amount of unspent transactions outputs from the inputs. This function
-// assume that the inputs contain outputs unspent (validation must happen before)
-func (explorer *Explorer) CalculateBalanceFromInputs(inputs []kernel.TxInput) (uint, error) {
-	balance := uint(0)
-	addresses := make(map[string]bool)
-
-	for _, input := range inputs {
-		addresses[input.PubKey] = true
-	}
-
-	for k, _ := range addresses {
-		utxos, err := explorer.FindUnspentOutputs(k)
-		if err != nil {
-			return 0, fmt.Errorf("error retrieving unspent outputs for address %s: %w", k, err)
-		}
-
-		for _, utxo := range utxos {
-			for _, input := range inputs {
-				if utxo.EqualInput(input) {
-					balance += utxo.Output.Amount
-				}
-			}
-		}
-	}
-
-	return balance, nil
-}
-
 // isOutputSpent checks if the output has been already spent by another input
 func isOutputSpent(spentTXOs map[string][]uint, txID string, outIdx uint) bool {
 	// check if the outputs have been already spent by an input before

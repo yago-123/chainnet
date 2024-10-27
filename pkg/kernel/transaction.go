@@ -137,6 +137,15 @@ func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0
 }
 
+func (tx *Transaction) OutputAmount() uint {
+	var amount uint
+	for _, out := range tx.Vout {
+		amount += out.Amount
+	}
+
+	return amount
+}
+
 func (tx *Transaction) String() string {
 	inputs := ""
 	for _, in := range tx.Vin {

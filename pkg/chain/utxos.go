@@ -67,6 +67,24 @@ func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
+// RetrieveInputsBalance from the inputs provided
+func (u *UTXOSet) RetrieveInputsBalance(inputs []kernel.TxInput) (uint, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	balance := uint(0)
+	for _, input := range inputs {
+		utxo, ok := u.utxos[input.UniqueTxoKey()]
+		if !ok {
+			return 0, fmt.Errorf("input %s not found in the UTXO set", input.UniqueTxoKey())
+		}
+
+		balance += utxo.Output.Amount
+	}
+
+	return balance, nil
+}
+
 // ID returns the observer id
 func (u *UTXOSet) ID() string {
 	return UTXOSObserverID

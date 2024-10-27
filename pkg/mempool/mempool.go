@@ -39,22 +39,7 @@ func (m *MemPool) Swap(i, j int)      { m.pairs[i], m.pairs[j] = m.pairs[j], m.p
 func (m *MemPool) Less(i, j int) bool { return m.pairs[i].Fee > m.pairs[j].Fee }
 
 // AppendTransaction adds a transaction to the MemPool sorting by highest transaction fee first
-func (m *MemPool) AppendTransaction(tx *kernel.Transaction) error {
-	// retrieve balance from inputs
-	inputBalance, err := m.explorer.CalculateBalanceFromInputs(tx.Vin)
-	if err != nil {
-		return err
-	}
-
-	// retrieve balance from outputs
-	outputBalance := uint(0)
-	for i := range tx.Vout {
-		outputBalance += tx.Vout[i].Amount
-	}
-
-	// calculate fee of the transaction
-	fee := inputBalance - outputBalance
-
+func (m *MemPool) AppendTransaction(tx *kernel.Transaction, fee uint) error {
 	// lock mempool to make sure that no other transaction is added while we are adding this one
 	m.mu.Lock()
 	defer m.mu.Unlock()

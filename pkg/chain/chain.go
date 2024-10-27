@@ -350,7 +350,25 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 		return
 	}
 
-	if err := bc.mempool.AppendTransaction(&tx); err != nil {
+	// calculate the funds provided by the inputs
+	inputBalance, err := bc.utxoSet.RetrieveInputsBalance(tx.Vin)
+	if err != nil {
+		bc.logger.Errorf("error retrieving inputs balance: %v", err)
+		return
+	}
+
+	// calculate the funds spent by the outputs
+	outputBalance := tx.OutputAmount()
+
+	// make sure that the output balance is not greater than the input balance
+	if outputBalance > inputBalance {
+		bc.logger.Errorf("output balance %d is greater than input balance %d", outputBalance, inputBalance)
+		return
+	}
+
+	// calculate the fee and append the transaction to the mempool
+	fee := inputBalance - outputBalance
+	if err := bc.mempool.AppendTransaction(&tx, fee); err != nil {
 		bc.logger.Errorf("error appending transaction to mempool: %v", err)
 		return
 	}
@@ -402,12 +420,6 @@ func reconstructState(store storage.Storage, utxoSet *UTXOSet, headers map[strin
 			return fmt.Errorf("error adding block %x to UTXO set: %w", blockHash, err)
 		}
 	}
-
-	return nil
-}
-
-// reconstructUTXOSet
-func reconstructUTXOSet(lastBlockHash []byte, store storage.Storage, utxoSet *UTXOSet) error {
 
 	return nil
 }
