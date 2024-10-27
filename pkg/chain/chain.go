@@ -103,14 +103,8 @@ func NewBlockchain(
 		cfg.Logger.Debugf("recovering chain with last hash: %x", lastBlockHash)
 
 		// reload the headers into memory
-		headers, err = reconstructHeaders(lastBlockHash, store)
-		if err != nil {
-			return nil, fmt.Errorf("error reconstructing headers: %w", err)
-		}
-
-		err = reconstructUTXOSet(lastBlockHash, store, utxoSet)
-		if err != nil {
-			return nil, fmt.Errorf("error reconstructing UTXO set: %w", err)
+		if err = reconstructState(store, utxoSet, headers, lastBlockHash); err != nil {
+			return nil, fmt.Errorf("error reconstructing chain state: %w", err)
 		}
 	}
 
@@ -121,6 +115,7 @@ func NewBlockchain(
 		syncMutex:     mutex.NewCtxMutex(MaxConcurrentSyncs),
 		hasher:        hasher,
 		mempool:       mempool,
+		utxoSet:       utxoSet,
 		store:         store,
 		validator:     validator,
 		blockSubject:  subject,
@@ -282,7 +277,7 @@ func (bc *Blockchain) syncFromHeaders(ctx context.Context, peerID peer.ID, local
 			return fmt.Errorf("error asking for block %x: %w", remoteBlockHash, err)
 		}
 
-		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside addBlock)
+		// try to add block to the chain, if it fails, log it and finish the sync (blocks are validated insiside AddBlock)
 		if err = bc.AddBlock(block); err != nil {
 			// todo(): maybe the node should be blamed and black listed?
 			return fmt.Errorf("error adding block %x to the chain: %w", remoteBlockHash, err)
@@ -371,22 +366,44 @@ func (bc *Blockchain) GetLastHeight() uint {
 	return bc.lastHeight
 }
 
-// reconstructHeaders
-func reconstructHeaders(lastBlockHash []byte, store storage.Storage) (map[string]kernel.BlockHeader, error) {
-	headers := make(map[string]kernel.BlockHeader)
+// reconstructState retrieves all headers from the last block to the genesis block and reconstructs the UTXO set
+func reconstructState(store storage.Storage, utxoSet *UTXOSet, headers map[string]kernel.BlockHeader, lastBlockHash []byte) error {
+	if len(lastBlockHash) == 0 {
+		return fmt.Errorf("last block hash is empty")
+	}
 
-	// todo(): move to explorer instead?
+	listHashes := make([][]byte, 0)
+	// retrieve all headers from the last block to the genesis block
 	for len(lastBlockHash) != 0 {
 		blockHeader, err := store.RetrieveHeaderByHash(lastBlockHash)
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving block header %x: %w", lastBlockHash, err)
+			return fmt.Errorf("error retrieving block header %x: %w", lastBlockHash, err)
 		}
 
+		// add the header to the map
 		headers[string(lastBlockHash)] = *blockHeader
+		// keep the hash in the list to reconstruct the UTXO set
+		listHashes = append(listHashes, lastBlockHash)
+		// move to the next block
 		lastBlockHash = blockHeader.PrevBlockHash
 	}
 
-	return headers, nil
+	// iterate the list of hashes in reverse order to reconstruct the UTXO set
+	for i, _ := range listHashes {
+		blockHash := listHashes[len(listHashes)-1-i]
+		block, err := store.RetrieveBlockByHash(blockHash)
+		if err != nil {
+			return fmt.Errorf("error retrieving block %x: %w", blockHash, err)
+		}
+
+		// add the block to the UTXO set
+		err = utxoSet.AddBlock(block)
+		if err != nil {
+			return fmt.Errorf("error adding block %x to UTXO set: %w", blockHash, err)
+		}
+	}
+
+	return nil
 }
 
 // reconstructUTXOSet

@@ -96,9 +96,9 @@ var b3 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 func TestUTXOSet_AddBlock(t *testing.T) {
 	utxos := NewUTXOSet()
 
-	require.NoError(t, utxos.addBlock(b1))
-	require.NoError(t, utxos.addBlock(b2))
-	require.NoError(t, utxos.addBlock(b3))
+	require.NoError(t, utxos.AddBlock(b1))
+	require.NoError(t, utxos.AddBlock(b2))
+	require.NoError(t, utxos.AddBlock(b3))
 
 	require.Len(t, utxos.utxos, 4)
 
@@ -131,5 +131,5 @@ func TestUTXOSet_AddBlockWithInvalidInput(t *testing.T) {
 	utxos := NewUTXOSet()
 
 	// add block that references input not in the UTXO set
-	require.Error(t, utxos.addBlock(b2))
+	require.Error(t, utxos.AddBlock(b2))
 }

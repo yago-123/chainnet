@@ -28,8 +28,8 @@ func NewUTXOSet(cfg *config.Config) *UTXOSet {
 	}
 }
 
-// addBlock invalidates the new inputs of the block and adds the new outputs to the UTXO set
-func (u *UTXOSet) addBlock(block *kernel.Block) error {
+// AddBlock invalidates the new inputs of the block and adds the new outputs to the UTXO set
+func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
@@ -74,9 +74,9 @@ func (u *UTXOSet) ID() string {
 
 // OnBlockAddition is called when a new block is added to the blockchain via the observer pattern
 func (u *UTXOSet) OnBlockAddition(block *kernel.Block) {
-	err := u.addBlock(block)
+	err := u.AddBlock(block)
 	if err != nil {
-		u
+		u.logger.Errorf("error adding block to UTXO set: %s", err)
 		return
 	}
 }
