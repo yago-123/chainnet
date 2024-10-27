@@ -45,7 +45,6 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 		hv.validateOwnershipAndBalanceOfInputs,
 		// todo(): validate timelock / block height constraints
 		// todo(): maturity checks?
-		// todo(): validate scriptSig
 		// todo(): each input must have at least CPOMNASE_MATURITY(100) confirmations
 	}
 
