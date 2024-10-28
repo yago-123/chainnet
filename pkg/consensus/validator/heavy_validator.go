@@ -124,7 +124,6 @@ func (hv *HValidator) ValidateBlockWithoutHash(b *kernel.Block) error {
 	}
 
 	return nil
-	return nil
 }
 
 // validateOwnershipAndBalanceOfInputs checks that the inputs of a transaction are owned by the spender and that the
