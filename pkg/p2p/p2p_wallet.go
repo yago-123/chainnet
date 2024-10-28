@@ -150,6 +150,9 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	return utxos, nil
 }
 
+// todo(): reestructure this to send transaction to node directly via API. Once the transaction is verified and appended
+// todo(): mempool then notify the network about the transaction (txid via pubsub), after that nodes will ask for the
+// todo(): transaction details to the node that sent the transaction
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	return n.pubsub.NotifyTransactionAdded(ctx, tx)
 }
