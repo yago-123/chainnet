@@ -42,7 +42,6 @@ func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 // NewCoinbaseTransaction creates a new transaction that pays the miners for their work
 func NewCoinbaseTransaction(to string, reward, txFee uint) *Transaction {
 	input := NewCoinbaseInput()
-	// todo() come up with mechanism for halving CoinbaseReward
 	rewardOutput := NewCoinbaseOutput(reward, script.P2PK, to)
 
 	// if there is tx fee, make sure to add it to the rewardOutput
@@ -135,6 +134,15 @@ func (tx *Transaction) HaveOutputs() bool {
 // IsCoinbase checks if the transaction is a coinbase transaction
 func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0
+}
+
+func (tx *Transaction) OutputAmount() uint {
+	var amount uint
+	for _, out := range tx.Vout {
+		amount += out.Amount
+	}
+
+	return amount
 }
 
 func (tx *Transaction) String() string {

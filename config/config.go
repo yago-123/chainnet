@@ -13,22 +13,26 @@ import (
 
 // default config keys
 const (
-	KeyConfigFile               = "config"
-	KeyNodeSeeds                = "node-seeds"
-	KeyStorageFile              = "storage-file"
+	KeyConfigFile  = "config"
+	KeyNodeSeeds   = "node-seeds"
+	KeyStorageFile = "storage-file"
+
 	KeyMiningPubKeyReward       = "pub-key-reward"
 	KeyMiningInterval           = "mining-interval"
 	KeyMiningIntervalAdjustment = "adjustment-interval"
-	KeyP2PEnabled               = "enabled"
-	KeyP2PPeerIdentityPath      = "identity-path"
-	KeyP2PPeerPort              = "peer-port"
-	KeyP2PRouterPort            = "http-api-port"
-	KeyP2PMinNumConn            = "min-conn"
-	KeyP2PMaxNumConn            = "max-conn"
-	KeyP2PConnTimeout           = "conn-timeout"
-	KeyP2PWriteTimeout          = "write-timeout"
-	KeyP2PReadTimeout           = "read-timeout"
-	KeyP2PBufferSize            = "buffer-size"
+
+	KeyChainMaxTxsMempool = "max-txs-mempool"
+
+	KeyP2PEnabled          = "enabled"
+	KeyP2PPeerIdentityPath = "identity-path"
+	KeyP2PPeerPort         = "peer-port"
+	KeyP2PRouterPort       = "http-api-port"
+	KeyP2PMinNumConn       = "min-conn"
+	KeyP2PMaxNumConn       = "max-conn"
+	KeyP2PConnTimeout      = "conn-timeout"
+	KeyP2PWriteTimeout     = "write-timeout"
+	KeyP2PReadTimeout      = "read-timeout"
+	KeyP2PBufferSize       = "buffer-size"
 
 	KeyWalletKeyPairPath   = "key-pair-path"
 	KeyWalletServerAddress = "server-address"
@@ -43,6 +47,8 @@ const (
 
 	DefaultMiningInterval           = 10 * time.Minute
 	DefaultMiningIntervalAdjustment = uint(6)
+
+	DefaultMaxTxsMempool = 10000
 
 	DefaultP2PEnabled      = true
 	DefaultP2PPeerPort     = 9100
@@ -75,6 +81,10 @@ type Miner struct {
 	AdjustmentInterval uint          `mapstructure:"adjustment-interval"`
 }
 
+type Chain struct {
+	MaxTxsMempool uint `mapstructure:"max-txs-mempool"`
+}
+
 // P2PConfig holds P2P-specific configuration
 type P2PConfig struct {
 	Enabled      bool          `mapstructure:"enabled"`
@@ -101,6 +111,7 @@ type Config struct {
 	SeedNodes   []SeedNode   `mapstructure:"seed-nodes"`
 	StorageFile string       `mapstructure:"storage-file"`
 	Miner       Miner        `mapstructure:"miner"`
+	Chain       Chain        `mapstructure:"chain"`
 	P2P         P2PConfig    `mapstructure:"p2p"`
 	Wallet      WalletConfig `mapstructure:"wallet"`
 }
@@ -115,6 +126,9 @@ func NewConfig() *Config {
 			PubKey:             "",
 			MiningInterval:     DefaultMiningInterval,
 			AdjustmentInterval: DefaultMiningIntervalAdjustment,
+		},
+		Chain: Chain{
+			MaxTxsMempool: DefaultMaxTxsMempool,
 		},
 		P2P: P2PConfig{
 			Enabled:      DefaultP2PEnabled,
@@ -178,9 +192,13 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().StringArray(KeyNodeSeeds, []string{}, "Node seeds used to synchronize during startup")
 	cmd.Flags().String(KeyStorageFile, DefaultChainnetStorage, "Storage file name")
+
 	cmd.Flags().String(KeyMiningPubKeyReward, "", "Public key used for receiving mining rewards")
 	cmd.Flags().Duration(KeyMiningInterval, DefaultMiningInterval, "Mining interval in seconds")
 	cmd.Flags().Uint(KeyMiningIntervalAdjustment, DefaultMiningIntervalAdjustment, "Number of blocks for adjusting difficulty")
+
+	cmd.Flags().Uint(KeyChainMaxTxsMempool, DefaultMaxTxsMempool, "Maximum number of transactions in the mempool")
+
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().String(KeyP2PPeerIdentityPath, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "P2P port for receiving connections")
@@ -191,6 +209,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Duration(KeyP2PWriteTimeout, DefaultP2PWriteTimeout, "P2P write timeout")
 	cmd.Flags().Duration(KeyP2PReadTimeout, DefaultP2PReadTimeout, "P2P read timeout")
 	cmd.Flags().Uint(KeyP2PBufferSize, DefaultP2PBufferSize, "P2P buffer size for reading from stream")
+
 	cmd.Flags().String(KeyWalletKeyPairPath, "", "Path to the key pair file")
 	cmd.Flags().String(KeyWalletServerAddress, DefaultServerAddress, "Server address for wallet API requests")
 	cmd.Flags().Uint(KeyWalletServerPort, DefaultServerPort, "Server port for wallet API requests")
@@ -199,9 +218,13 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyNodeSeeds, cmd.Flags().Lookup(KeyNodeSeeds))
 	_ = viper.BindPFlag(KeyStorageFile, cmd.Flags().Lookup(KeyStorageFile))
+
 	_ = viper.BindPFlag(KeyMiningPubKeyReward, cmd.Flags().Lookup(KeyMiningPubKeyReward))
 	_ = viper.BindPFlag(KeyMiningInterval, cmd.Flags().Lookup(KeyMiningInterval))
 	_ = viper.BindPFlag(KeyMiningIntervalAdjustment, cmd.Flags().Lookup(KeyMiningIntervalAdjustment))
+
+	_ = viper.BindPFlag(KeyChainMaxTxsMempool, cmd.Flags().Lookup(KeyChainMaxTxsMempool))
+
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PPeerIdentityPath, cmd.Flags().Lookup(KeyP2PPeerIdentityPath))
 	_ = viper.BindPFlag(KeyP2PPeerPort, cmd.Flags().Lookup(KeyP2PPeerPort))
@@ -212,6 +235,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyP2PWriteTimeout, cmd.Flags().Lookup(KeyP2PWriteTimeout))
 	_ = viper.BindPFlag(KeyP2PReadTimeout, cmd.Flags().Lookup(KeyP2PReadTimeout))
 	_ = viper.BindPFlag(KeyP2PBufferSize, cmd.Flags().Lookup(KeyP2PBufferSize))
+
 	_ = viper.BindPFlag(KeyWalletKeyPairPath, cmd.Flags().Lookup(KeyWalletKeyPairPath))
 	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
 	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
@@ -234,6 +258,12 @@ func applyMiningFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyMiningIntervalAdjustment) {
 		cfg.Miner.AdjustmentInterval = viper.GetUint(KeyMiningIntervalAdjustment)
+	}
+}
+
+func applyChainFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	if cmd.Flags().Changed(KeyChainMaxTxsMempool) {
+		cfg.Chain.MaxTxsMempool = viper.GetUint(KeyChainMaxTxsMempool)
 	}
 }
 
@@ -285,6 +315,7 @@ func applyWalletFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 // ApplyFlagsToConfig updates the config struct with flag values if they have been set
 func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	applyMiningFlagsToConfig(cmd, cfg)
+	applyChainFlagsToConfig(cmd, cfg)
 	applyP2PFlagsToConfig(cmd, cfg)
 	applyWalletFlagsToConfig(cmd, cfg)
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
-	"github.com/yago-123/chainnet/pkg/chain/explorer"
+	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/encoding"
@@ -80,15 +80,6 @@ var txFeePair6 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lin
 var txs = []mempool.TxFeePair{txFeePair1, txFeePair2, txFeePair3, txFeePair4, txFeePair5, txFeePair6} //nolint: gochecknoglobals // no need to lint this global variable
 
 func TestMiner_MineBlock(t *testing.T) {
-	mempool := mempool.NewMemPool()
-	for _, v := range txs {
-		txID, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
-		require.NoError(t, err)
-
-		v.Transaction.SetID(txID)
-		mempool.AppendTransaction(v.Transaction, v.Fee)
-	}
-
 	store := &mockStorage.MockStorage{}
 	store.
 		On("GetLastHeader").
@@ -97,6 +88,17 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
+	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
+
+	mempool := mempool.NewMemPool(1000)
+	for _, v := range txs {
+		txID, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
+		require.NoError(t, err)
+
+		v.Transaction.SetID(txID)
+		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
+	}
+
 	chain, err := blockchain.NewBlockchain(config.NewConfig(), store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
@@ -104,7 +106,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		hasherType:  hash.SHA256,
 		minerPubKey: []byte("minerPubKey"),
 		chain:       chain,
-		explorer:    explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)),
+		explorer:    explorer,
 		cfg:         config.NewConfig(),
 	}
 
@@ -133,12 +135,14 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
+	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
+
 	cfg := config.NewConfig()
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(1000), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	cfg.Miner.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"
-	miner, err := NewMiner(cfg, chain, hash.SHA256, explorer.NewExplorer(store, hash.GetHasher(hash.SHA256)))
+	miner, err := NewMiner(cfg, chain, hash.SHA256, explorer)
 	require.NoError(t, err)
 
 	coinbase, err := miner.createCoinbaseTransaction(0, 0)

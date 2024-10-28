@@ -44,6 +44,7 @@ type Blockchain struct {
 	hasher  hash.Hashing
 	store   storage.Storage
 	mempool *mempool.MemPool
+	utxoSet *UTXOSet
 
 	validator consensus.HeavyValidator
 
@@ -73,6 +74,7 @@ func NewBlockchain(
 	var lastBlockHash []byte
 
 	headers := make(map[string]kernel.BlockHeader)
+	utxoSet := NewUTXOSet(cfg)
 
 	// retrieve the last header stored
 	lastHeader, err := store.GetLastHeader()
@@ -101,9 +103,8 @@ func NewBlockchain(
 		cfg.Logger.Debugf("recovering chain with last hash: %x", lastBlockHash)
 
 		// reload the headers into memory
-		headers, err = reconstructHeaders(lastBlockHash, store)
-		if err != nil {
-			return nil, fmt.Errorf("error reconstructing headers: %w", err)
+		if err = reconstructState(store, utxoSet, headers, lastBlockHash); err != nil {
+			return nil, fmt.Errorf("error reconstructing chain state: %w", err)
 		}
 	}
 
@@ -114,6 +115,7 @@ func NewBlockchain(
 		syncMutex:     mutex.NewCtxMutex(MaxConcurrentSyncs),
 		hasher:        hasher,
 		mempool:       mempool,
+		utxoSet:       utxoSet,
 		store:         store,
 		validator:     validator,
 		blockSubject:  subject,
@@ -343,8 +345,40 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 }
 
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
-	// todo() figure how to retrieve fee
-	bc.mempool.AppendTransaction(&tx, 0)
+	if err := bc.validator.ValidateTx(&tx); err != nil {
+		bc.logger.Errorf("error validating transaction: %v", err)
+		return
+	}
+
+	fee, err := bc.calculateTxFee(tx)
+	if err != nil {
+		bc.logger.Errorf("error calculating transaction fee: %v", err)
+		return
+	}
+
+	if errMempool := bc.mempool.AppendTransaction(&tx, fee); errMempool != nil {
+		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
+		return
+	}
+}
+
+func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
+	// calculate the funds provided by the inputs
+	inputBalance, err := bc.utxoSet.RetrieveInputsBalance(tx.Vin)
+	if err != nil {
+		return 0, fmt.Errorf("error retrieving inputs balance: %w", err)
+	}
+
+	// calculate the funds spent by the outputs
+	outputBalance := tx.OutputAmount()
+
+	// make sure that the output balance is not greater than the input balance
+	if outputBalance > inputBalance {
+		return 0, fmt.Errorf("output balance %d is greater than input balance %d", outputBalance, inputBalance)
+	}
+
+	// calculate the fee and append the transaction to the mempool
+	return inputBalance - outputBalance, nil
 }
 
 // GetLastBlockHash returns the latest block hash
@@ -357,20 +391,42 @@ func (bc *Blockchain) GetLastHeight() uint {
 	return bc.lastHeight
 }
 
-// reconstructHeaders
-func reconstructHeaders(lastBlockHash []byte, store storage.Storage) (map[string]kernel.BlockHeader, error) {
-	headers := make(map[string]kernel.BlockHeader)
+// reconstructState retrieves all headers from the last block to the genesis block and reconstructs the UTXO set
+func reconstructState(store storage.Storage, utxoSet *UTXOSet, headers map[string]kernel.BlockHeader, lastBlockHash []byte) error {
+	if len(lastBlockHash) == 0 {
+		return fmt.Errorf("last block hash is empty")
+	}
 
-	// todo(): move to explorer instead?
+	listHashes := make([][]byte, 0)
+	// retrieve all headers from the last block to the genesis block
 	for len(lastBlockHash) != 0 {
 		blockHeader, err := store.RetrieveHeaderByHash(lastBlockHash)
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving block header %x: %w", lastBlockHash, err)
+			return fmt.Errorf("error retrieving block header %x: %w", lastBlockHash, err)
 		}
 
+		// add the header to the map
 		headers[string(lastBlockHash)] = *blockHeader
+		// keep the hash in the list to reconstruct the UTXO set
+		listHashes = append(listHashes, lastBlockHash)
+		// move to the next block
 		lastBlockHash = blockHeader.PrevBlockHash
 	}
 
-	return headers, nil
+	// iterate the list of hashes in reverse order to reconstruct the UTXO set
+	for i := range listHashes {
+		blockHash := listHashes[len(listHashes)-1-i]
+		block, err := store.RetrieveBlockByHash(blockHash)
+		if err != nil {
+			return fmt.Errorf("error retrieving block %x: %w", blockHash, err)
+		}
+
+		// add the block to the UTXO set
+		err = utxoSet.AddBlock(block)
+		if err != nil {
+			return fmt.Errorf("error adding block %x to UTXO set: %w", blockHash, err)
+		}
+	}
+
+	return nil
 }

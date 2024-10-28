@@ -45,7 +45,6 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 		hv.validateOwnershipAndBalanceOfInputs,
 		// todo(): validate timelock / block height constraints
 		// todo(): maturity checks?
-		// todo(): validate scriptSig
 		// todo(): each input must have at least CPOMNASE_MATURITY(100) confirmations
 	}
 
@@ -81,11 +80,38 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 		return fmt.Errorf("error validating block header: %w", err)
 	}
 
+	// todo() where the fuck is the block hash target validated???
+
 	validations := []BlockFunc{
 		hv.validateBlockHash,
+		hv.ValidateBlockWithoutHash,
+
+		// todo(): validate block size limit
+		// todo(): validate coinbase transaction
+		// todo(): validate block timestamp
+	}
+
+	for _, validate := range validations {
+		if err := validate(b); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ValidateBlockWithoutHash is a special case of ValidateBlock that does not check the block hash. This is useful for
+// the miner to validate the block before mining it. It's used to ensure that the block is valid before mining it
+func (hv *HValidator) ValidateBlockWithoutHash(b *kernel.Block) error {
+	if err := hv.ValidateHeader(b.Header); err != nil {
+		return fmt.Errorf("error validating block header: %w", err)
+	}
+
+	validations := []BlockFunc{
 		hv.validateNumberOfCoinbaseTxs,
 		hv.validateNoDoubleSpendingInsideBlock,
 		hv.validateMerkleTree,
+
 		// todo(): validate block size limit
 		// todo(): validate coinbase transaction
 		// todo(): validate block timestamp

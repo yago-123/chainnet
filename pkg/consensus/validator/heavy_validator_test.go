@@ -22,6 +22,12 @@ func TestHValidator_validateOwnershipAndBalanceOfInputs(_ *testing.T) {
 	// todo() once we have RPN done
 }
 
+func TestHValidator_validateNoCoinbaseAccepted(t *testing.T) {
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
+
+	require.Error(t, hvalidator.ValidateTx(kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0)))
+}
+
 func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 	blockWithoutCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{

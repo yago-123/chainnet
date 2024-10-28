@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+	"github.com/yago-123/chainnet/config"
+
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
@@ -12,12 +15,17 @@ const UTXOSObserverID = "utxos-observer"
 type UTXOSet struct {
 	mu    sync.Mutex
 	utxos map[string]kernel.UTXO
+
+	logger *logrus.Logger
+	cfg    *config.Config
 }
 
-func NewUTXOSet() *UTXOSet {
+func NewUTXOSet(cfg *config.Config) *UTXOSet {
 	return &UTXOSet{
-		mu:    sync.Mutex{},
-		utxos: make(map[string]kernel.UTXO),
+		mu:     sync.Mutex{},
+		utxos:  make(map[string]kernel.UTXO),
+		logger: cfg.Logger,
+		cfg:    cfg,
 	}
 }
 
@@ -60,6 +68,24 @@ func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
+// RetrieveInputsBalance from the inputs provided
+func (u *UTXOSet) RetrieveInputsBalance(inputs []kernel.TxInput) (uint, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	balance := uint(0)
+	for _, input := range inputs {
+		utxo, ok := u.utxos[input.UniqueTxoKey()]
+		if !ok {
+			return 0, fmt.Errorf("input %s not found in the UTXO set", input.UniqueTxoKey())
+		}
+
+		balance += utxo.Output.Amount
+	}
+
+	return balance, nil
+}
+
 // ID returns the observer id
 func (u *UTXOSet) ID() string {
 	return UTXOSObserverID
@@ -69,7 +95,7 @@ func (u *UTXOSet) ID() string {
 func (u *UTXOSet) OnBlockAddition(block *kernel.Block) {
 	err := u.AddBlock(block)
 	if err != nil {
-		// add logging
+		u.logger.Errorf("error adding block to UTXO set: %s", err)
 		return
 	}
 }

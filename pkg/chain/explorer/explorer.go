@@ -318,7 +318,7 @@ func (explorer *Explorer) CalculateAddressBalance(pubKey string) (uint, error) {
 		return 0, err
 	}
 
-	return retrieveBalanceFrom(unspentTXs), nil
+	return retrieveBalanceFromUTXOs(unspentTXs), nil
 }
 
 func (explorer *Explorer) FindAmountSpendableOutputs(pubKey string, amount uint) (uint, map[string][]uint, error) {
@@ -389,8 +389,8 @@ func isOutputSpent(spentTXOs map[string][]uint, txID string, outIdx uint) bool {
 	return false
 }
 
-// retrieveBalanceFrom calculates the total amount of unspent transactions outputs
-func retrieveBalanceFrom(utxos []kernel.TxOutput) uint {
+// retrieveBalanceFromUTXOs calculates the total amount of unspent transactions outputs
+func retrieveBalanceFromUTXOs(utxos []kernel.TxOutput) uint {
 	accumulated := uint(0)
 
 	for _, out := range utxos {
