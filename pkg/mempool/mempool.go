@@ -71,13 +71,13 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 	}
 
 	totalFee := uint(0)
-	txs := []*kernel.Transaction{}
+	txs := make([]*kernel.Transaction, 0, maxNumberTxs)
 	retrievedInputs := map[string]bool{}
 
-	for i := range m.pairs {
+	for _, pair := range m.pairs {
 		// make sure that the transactions retrieved do not contain other txs having same inputs. Otherwise the
 		// miner will be mining blocks that will be discarded by the validator
-		transaction := m.pairs[i].Transaction
+		transaction := pair.Transaction
 		hasConflictingInputs := false
 
 		// check if the transaction has conflicting inputs
@@ -96,7 +96,7 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 
 		// add the transaction to the list
 		txs = append(txs, transaction)
-		totalFee += m.pairs[i].Fee
+		totalFee += pair.Fee
 
 		// mark the inputs as used
 		for _, input := range transaction.Vin {
