@@ -1,9 +1,6 @@
 package mempool //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/stretchr/testify/require"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
-	"github.com/yago-123/chainnet/tests/mocks/crypto/hash"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -13,59 +10,66 @@ import (
 )
 
 var tx1 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id1"), 1, "sig", "pubkey1")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey1")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("tx1"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id1"), 1, "sig", "pubkey1")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey1")},
+	},
 	Fee: 10,
 }
 
 var tx2 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id2"), 1, "sig", "pubkey2")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey2")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("tx2"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id2"), 1, "sig", "pubkey2")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey2")},
+	},
 	Fee: 2,
 }
 
 var tx3 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id3"), 1, "sig", "pubkey3")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey3")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("tx3"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id3"), 1, "sig", "pubkey3")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey3")},
+	},
 	Fee: 3,
 }
 
 var tx4 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id4"), 1, "sig", "pubkey4")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey4")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("tx4"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id4"), 1, "sig", "pubkey4")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey4")},
+	},
 	Fee: 1,
 }
 
 var tx5 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id5"), 1, "sig", "pubkey5")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey5")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("tx5"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id5"), 1, "sig", "pubkey5")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey5")},
+	},
 	Fee: 9,
 }
 
 var tx6 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id6"), 1, "sig", "pubkey6")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey6")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("tx6"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id6"), 1, "sig", "pubkey6")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey6")},
+	},
 	Fee: 6,
 }
 
 // transaction that share input with tx1
 var txIncompatibleWithTx1 = TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
-	Transaction: kernel.NewTransaction(
-		[]kernel.TxInput{kernel.NewInput([]byte("id1"), 1, "sig", "pubkey1")},
-		[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey9")},
-	),
+	Transaction: &kernel.Transaction{
+		ID:   []byte("txIncompatibleWithTx1"),
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("id1"), 1, "sig", "pubkey1")},
+		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "pubkey9")},
+	},
 	Fee: 9,
 }
 
@@ -130,36 +134,22 @@ func TestMemPoolInputSet(t *testing.T) {
 
 	// add 6 txs to the mempool
 	for _, v := range txFeePairs {
-		txid, err := util.CalculateTxHash(v.Transaction, &hash.FakeHashing{})
-		require.NoError(t, err)
-
-		mempool.AppendTransaction(&kernel.Transaction{
-			ID:   txid,
-			Vin:  v.Transaction.Vin,
-			Vout: v.Transaction.Vout,
-		}, v.Fee)
+		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
 
-	txid, err := util.CalculateTxHash(txIncompatibleWithTx1.Transaction, &hash.FakeHashing{})
-	require.NoError(t, err)
-
 	// add tx that shares input with tx1
-	mempool.AppendTransaction(&kernel.Transaction{
-		ID:   txid,
-		Vin:  txIncompatibleWithTx1.Transaction.Vin,
-		Vout: txIncompatibleWithTx1.Transaction.Vout,
-	}, txIncompatibleWithTx1.Fee)
+	mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee)
 
 	expectedInputSet := map[string][]string{
 		"id1-1": []string{
-			"Inputs:id11sigpubkey1Outputs:1\x005GBGp5uHwv OP_CHECKSIGpubkey1-hashed",
-			"Inputs:id11sigpubkey1Outputs:1\x005GBGp5uHx4 OP_CHECKSIGpubkey9-hashed",
+			"tx1",
+			"txIncompatibleWithTx1",
 		},
-		"id2-1": []string{"Inputs:id21sigpubkey2Outputs:1\x005GBGp5uHww OP_CHECKSIGpubkey2-hashed"},
-		"id3-1": []string{"Inputs:id31sigpubkey3Outputs:1\x005GBGp5uHwx OP_CHECKSIGpubkey3-hashed"},
-		"id4-1": []string{"Inputs:id41sigpubkey4Outputs:1\x005GBGp5uHwy OP_CHECKSIGpubkey4-hashed"},
-		"id5-1": []string{"Inputs:id51sigpubkey5Outputs:1\x005GBGp5uHwz OP_CHECKSIGpubkey5-hashed"},
-		"id6-1": []string{"Inputs:id61sigpubkey6Outputs:1\x005GBGp5uHx1 OP_CHECKSIGpubkey6-hashed"},
+		"id2-1": []string{"tx2"},
+		"id3-1": []string{"tx3"},
+		"id4-1": []string{"tx4"},
+		"id5-1": []string{"tx5"},
+		"id6-1": []string{"tx6"},
 	}
 
 	assert.Equal(t, expectedInputSet, mempool.inputSet)
@@ -172,5 +162,23 @@ func TestMemPoolOnBlockAddition(t *testing.T) {
 		mempool.AppendTransaction(v.Transaction, v.Fee)
 	}
 
-	assert.Equal(t, 1, 2)
+	mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee)
+
+	mempool.OnBlockAddition(
+		&kernel.Block{
+			Transactions: []*kernel.Transaction{
+				tx1.Transaction,
+				tx2.Transaction,
+				tx6.Transaction,
+			},
+		},
+	)
+
+	expectedInputSet := map[string][]string{
+		"id3-1": []string{"tx3"},
+		"id4-1": []string{"tx4"},
+		"id5-1": []string{"tx5"},
+	}
+
+	assert.Equal(t, expectedInputSet, mempool.inputSet)
 }
