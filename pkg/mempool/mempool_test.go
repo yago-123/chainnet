@@ -1,6 +1,7 @@
 package mempool //nolint:testpackage // don't create separate package for tests
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -76,7 +77,7 @@ var txIncompatibleWithTx1 = TxFeePair{ //nolint: gochecknoglobals // no need to 
 var txFeePairs = []TxFeePair{tx1, tx2, tx3, tx4, tx5, tx6} //nolint: gochecknoglobals // no need to lint this global variable
 
 func TestRetrieveTxsWithoutIncompatibilities(t *testing.T) {
-	mempool := NewMemPool()
+	mempool := NewMemPool(100)
 	// add 6 txs to the mempool
 	for _, v := range txFeePairs {
 		mempool.AppendTransaction(v.Transaction, v.Fee)
@@ -116,7 +117,7 @@ func TestRetrieveTxsWithoutIncompatibilities(t *testing.T) {
 }
 
 func TestRetrieveTxsWithIncompatibilities(t *testing.T) {
-	mempool := NewMemPool()
+	mempool := NewMemPool(100)
 
 	for _, v := range txFeePairs {
 		mempool.AppendTransaction(v.Transaction, v.Fee)
@@ -133,7 +134,7 @@ func TestRetrieveTxsWithIncompatibilities(t *testing.T) {
 }
 
 func TestMemPoolInputSet(t *testing.T) {
-	mempool := NewMemPool()
+	mempool := NewMemPool(100)
 
 	// add 6 txs to the mempool
 	for _, v := range txFeePairs {
@@ -159,7 +160,7 @@ func TestMemPoolInputSet(t *testing.T) {
 }
 
 func TestMemPoolOnBlockAddition(t *testing.T) {
-	mempool := NewMemPool()
+	mempool := NewMemPool(100)
 
 	for _, v := range txFeePairs {
 		mempool.AppendTransaction(v.Transaction, v.Fee)
@@ -186,12 +187,9 @@ func TestMemPoolOnBlockAddition(t *testing.T) {
 	assert.Equal(t, expectedInputSet, mempool.inputSet)
 }
 
-func TestMemPoolCoinbaseTx(t *testing.T) {
-	_ = NewMemPool()
+func TestMemPoolMaxNumberTxsMempool(t *testing.T) {
+	mempool := NewMemPool(1)
 
-	assert.Equal(t, 1, 2)
-}
-
-func TestMemPoolGenesisBlock(t *testing.T) {
-	assert.Equal(t, 1, 2)
+	require.NoError(t, mempool.AppendTransaction(tx1.Transaction, tx1.Fee))
+	require.Error(t, mempool.AppendTransaction(tx2.Transaction, tx2.Fee))
 }

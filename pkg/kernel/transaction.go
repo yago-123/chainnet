@@ -42,7 +42,6 @@ func NewTransaction(inputs []TxInput, outputs []TxOutput) *Transaction {
 // NewCoinbaseTransaction creates a new transaction that pays the miners for their work
 func NewCoinbaseTransaction(to string, reward, txFee uint) *Transaction {
 	input := NewCoinbaseInput()
-	// todo() come up with mechanism for halving CoinbaseReward
 	rewardOutput := NewCoinbaseOutput(reward, script.P2PK, to)
 
 	// if there is tx fee, make sure to add it to the rewardOutput

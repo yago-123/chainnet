@@ -4,10 +4,13 @@ import (
 	"sort"
 	"sync"
 
+	"errors"
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const MemPoolObserverID = "mempool-observer"
+
+var ErrMemPoolFull = errors.New("mempool does not have enough space")
 
 type TxFeePair struct {
 	Transaction *kernel.Transaction
@@ -19,15 +22,17 @@ type MemPool struct {
 	// inputSet is used to keep track of the inputs that are being spent in the mempool. This is useful for removing
 	// transactions that are going to be invalid after a block addition. The key is the STXO key and the value is
 	// the transaction ID that is spending it
-	inputSet map[string][]string
+	inputSet     map[string][]string
+	maxNumberTxs uint
 
 	mu sync.Mutex
 }
 
-func NewMemPool() *MemPool {
+func NewMemPool(maxNumberTxs uint) *MemPool {
 	return &MemPool{
-		pairs:    []TxFeePair{},
-		inputSet: make(map[string][]string),
+		pairs:        make([]TxFeePair, 0, maxNumberTxs),
+		inputSet:     make(map[string][]string),
+		maxNumberTxs: maxNumberTxs,
 	}
 }
 
@@ -37,9 +42,12 @@ func (m *MemPool) Less(i, j int) bool { return m.pairs[i].Fee > m.pairs[j].Fee }
 
 // AppendTransaction adds a transaction to the MemPool sorting by highest transaction fee first
 func (m *MemPool) AppendTransaction(tx *kernel.Transaction, fee uint) error {
-	// lock mempool to make sure that no other transaction is added while we are adding this one
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if uint(len(m.pairs)) >= m.maxNumberTxs {
+		return ErrMemPoolFull
+	}
 
 	// append the transaction to the mempool
 	m.pairs = append(m.pairs, TxFeePair{Transaction: tx, Fee: fee})

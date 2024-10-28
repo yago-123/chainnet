@@ -90,7 +90,7 @@ func TestMiner_MineBlock(t *testing.T) {
 
 	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
 
-	mempool := mempool.NewMemPool()
+	mempool := mempool.NewMemPool(1000)
 	for _, v := range txs {
 		txID, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
 		require.NoError(t, err)
@@ -138,7 +138,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
 
 	cfg := config.NewConfig()
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(1000), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
 	require.NoError(t, err)
 
 	cfg.Miner.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"

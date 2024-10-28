@@ -93,7 +93,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
 		store,
-		mempool.NewMemPool(),
+		mempool.NewMemPool(1000),
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewChainSubject(),
@@ -127,7 +127,7 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 	chain, err := NewBlockchain(
 		&config.Config{Logger: logrus.New()},
 		boltdb,
-		mempool.NewMemPool(),
+		mempool.NewMemPool(1000),
 		mockHashing,
 		&consensus.MockHeavyValidator{},
 		observer.NewChainSubject(),
