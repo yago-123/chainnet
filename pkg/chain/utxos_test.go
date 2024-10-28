@@ -192,9 +192,32 @@ func TestUTXOSet_RetrieveInputsBalance(t *testing.T) {
 	require.Equal(t, uint(125), balance)
 }
 
+func TestUTXOSet_RetrieveInputsBalanceWithInvalidInput(t *testing.T) {
+	utxos := NewUTXOSet(config.NewConfig())
+
+	utxos.OnBlockAddition(b1)
+	utxos.OnBlockAddition(b2)
+	utxos.OnBlockAddition(b3)
+
+	_, err := utxos.RetrieveInputsBalance([]kernel.TxInput{
+		{Txid: []byte("coinbase-transaction-block-2"), Vout: 1}, // Vout does not exist
+	})
+	require.Error(t, err)
+
+	_, err = utxos.RetrieveInputsBalance([]kernel.TxInput{
+		{Txid: []byte("coinbase-transaction-block-1"), Vout: 0}, // Spent output
+	})
+	require.Error(t, err)
+
+	_, err = utxos.RetrieveInputsBalance([]kernel.TxInput{
+		{Txid: []byte("random-id"), Vout: 0}, // Random ID
+	})
+	require.Error(t, err)
+}
+
 func TestUTXOSet_AddBlockWithInvalidInput(t *testing.T) {
 	utxos := NewUTXOSet(config.NewConfig())
 
-	// add block that references input not in the UTXO set
+	// add block that references input not present in the UTXO set
 	require.Error(t, utxos.AddBlock(b2))
 }
