@@ -417,7 +417,7 @@ func reconstructState(store storage.Storage, utxoSet *UTXOSet, headers map[strin
 	}
 
 	// iterate the list of hashes in reverse order to reconstruct the UTXO set
-	for i, _ := range listHashes {
+	for i := range listHashes {
 		blockHash := listHashes[len(listHashes)-1-i]
 		block, err := store.RetrieveBlockByHash(blockHash)
 		if err != nil {
