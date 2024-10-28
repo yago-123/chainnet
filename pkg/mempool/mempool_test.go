@@ -85,7 +85,10 @@ func TestRetrieveTxsWithoutIncompatibilities(t *testing.T) {
 	assert.Equal(t, 6, mempool.Len())
 
 	// checks for RetrieveTransactions
-	txs, fee := mempool.RetrieveTransactions(1)
+	txs, fee := mempool.RetrieveTransactions(0)
+	assert.Len(t, txs, 0)
+
+	txs, fee = mempool.RetrieveTransactions(1)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, uint(10), fee)
 	assert.Equal(t, []byte("id1"), txs[0].Vin[0].Txid)

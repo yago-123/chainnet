@@ -66,6 +66,10 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	if maxNumberTxs == 0 {
+		return []*kernel.Transaction{}, 0
+	}
+
 	totalFee := uint(0)
 	txs := []*kernel.Transaction{}
 	retrievedInputs := map[string]bool{}
