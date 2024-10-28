@@ -26,7 +26,8 @@ type MemPool struct {
 
 func NewMemPool() *MemPool {
 	return &MemPool{
-		pairs: []TxFeePair{},
+		pairs:    []TxFeePair{},
+		inputSet: make(map[string][]string),
 	}
 }
 
@@ -67,24 +68,35 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 
 	totalFee := uint(0)
 	txs := []*kernel.Transaction{}
-	appendedInputs := map[string]bool{}
+	retrievedInputs := map[string]bool{}
+
 	for i := range m.pairs {
 		// make sure that the transactions retrieved do not contain other txs having same inputs. Otherwise the
 		// miner will be mining blocks that will be discarded by the validator
-		for _, input := range m.pairs[i].Transaction.Vin {
-			// if input have already been added, skip this transaction
-			if _, ok := appendedInputs[input.UniqueTxoKey()]; ok {
-				continue
+		transaction := m.pairs[i].Transaction
+		hasConflictingInputs := false
+
+		// check if the transaction has conflicting inputs
+		for _, input := range transaction.Vin {
+			// if input have already been added, mark transaction as having conflicting inputs
+			if _, ok := retrievedInputs[input.UniqueTxoKey()]; ok {
+				hasConflictingInputs = true
+				break // exit the inner loop if a conflict is found
 			}
 		}
 
+		// if there are conflicting inputs, skip adding this transaction
+		if hasConflictingInputs {
+			continue
+		}
+
 		// add the transaction to the list
-		txs = append(txs, m.pairs[i].Transaction)
+		txs = append(txs, transaction)
 		totalFee += m.pairs[i].Fee
 
 		// mark the inputs as used
-		for _, input := range m.pairs[i].Transaction.Vin {
-			appendedInputs[input.UniqueTxoKey()] = true
+		for _, input := range transaction.Vin {
+			retrievedInputs[input.UniqueTxoKey()] = true
 		}
 
 		// stop looking for txs if already reached the goal
