@@ -182,3 +182,13 @@ func TestMemPoolOnBlockAddition(t *testing.T) {
 
 	assert.Equal(t, expectedInputSet, mempool.inputSet)
 }
+
+func TestMemPoolCoinbaseTx(t *testing.T) {
+	_ = NewMemPool()
+
+	assert.Equal(t, 1, 2)
+}
+
+func TestMemPoolGenesisBlock(t *testing.T) {
+	assert.Equal(t, 1, 2)
+}
