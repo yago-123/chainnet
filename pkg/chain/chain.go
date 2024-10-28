@@ -350,7 +350,6 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 		return
 	}
 
-	// todo(): move all of this to an auxiliar function in this same file
 	fee, err := bc.calculateTxFee(tx)
 	if err != nil {
 		bc.logger.Errorf("error calculating transaction fee: %v", err)
