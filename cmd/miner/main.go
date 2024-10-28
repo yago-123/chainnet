@@ -1,8 +1,9 @@
 package main
 
 import (
-	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"time"
+
+	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"

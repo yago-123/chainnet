@@ -2,9 +2,10 @@ package blockchain
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
-	"sync"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
 )

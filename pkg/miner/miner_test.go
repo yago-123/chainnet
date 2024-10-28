@@ -96,7 +96,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		require.NoError(t, err)
 
 		v.Transaction.SetID(txID)
-		mempool.AppendTransaction(v.Transaction, v.Fee)
+		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
 	}
 
 	chain, err := blockchain.NewBlockchain(config.NewConfig(), store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())

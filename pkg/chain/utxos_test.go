@@ -1,8 +1,9 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/yago-123/chainnet/config"
 	"testing"
+
+	"github.com/yago-123/chainnet/config"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"

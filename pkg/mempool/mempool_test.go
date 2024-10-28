@@ -1,8 +1,9 @@
 package mempool //nolint:testpackage // don't create separate package for tests
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
@@ -80,16 +81,16 @@ func TestRetrieveTxsWithoutIncompatibilities(t *testing.T) {
 	mempool := NewMemPool(100)
 	// add 6 txs to the mempool
 	for _, v := range txFeePairs {
-		mempool.AppendTransaction(v.Transaction, v.Fee)
+		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
 	}
 
 	assert.Equal(t, 6, mempool.Len())
 
 	// checks for RetrieveTransactions
-	txs, fee := mempool.RetrieveTransactions(0)
-	assert.Len(t, txs, 0)
+	txs, _ := mempool.RetrieveTransactions(0)
+	assert.Empty(t, txs)
 
-	txs, fee = mempool.RetrieveTransactions(1)
+	txs, fee := mempool.RetrieveTransactions(1)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, uint(10), fee)
 	assert.Equal(t, []byte("id1"), txs[0].Vin[0].Txid)
@@ -113,6 +114,7 @@ func TestRetrieveTxsWithoutIncompatibilities(t *testing.T) {
 	assert.Equal(t, []byte("id1"), txs[0].Vin[0].Txid)
 
 	txs, fee = mempool.RetrieveTransactions(10)
+	assert.Equal(t, uint(31), fee)
 	assert.Len(t, txs, 6)
 }
 
@@ -120,10 +122,10 @@ func TestRetrieveTxsWithIncompatibilities(t *testing.T) {
 	mempool := NewMemPool(100)
 
 	for _, v := range txFeePairs {
-		mempool.AppendTransaction(v.Transaction, v.Fee)
+		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
 	}
 
-	mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee)
+	require.NoError(t, mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee))
 
 	txs, fee := mempool.RetrieveTransactions(3)
 	assert.Len(t, txs, 3)
@@ -138,11 +140,11 @@ func TestMemPoolInputSet(t *testing.T) {
 
 	// add 6 txs to the mempool
 	for _, v := range txFeePairs {
-		mempool.AppendTransaction(v.Transaction, v.Fee)
+		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
 	}
 
 	// add tx that shares input with tx1
-	mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee)
+	require.NoError(t, mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee))
 
 	expectedInputSet := map[string][]string{
 		"id1-1": []string{
@@ -163,10 +165,10 @@ func TestMemPoolOnBlockAddition(t *testing.T) {
 	mempool := NewMemPool(100)
 
 	for _, v := range txFeePairs {
-		mempool.AppendTransaction(v.Transaction, v.Fee)
+		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
 	}
 
-	mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee)
+	require.NoError(t, mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee))
 
 	mempool.OnBlockAddition(
 		&kernel.Block{

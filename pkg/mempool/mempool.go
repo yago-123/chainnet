@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"errors"
+
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
@@ -136,10 +137,10 @@ func (m *MemPool) OnBlockAddition(block *kernel.Block) {
 		for _, txInput := range tx.Vin {
 			// if the input is in the inputSet, remove the txs that are spending it by adding them
 			// into the map removeTx
-			if txIds, ok := m.inputSet[txInput.UniqueTxoKey()]; ok {
+			if txIDs, ok := m.inputSet[txInput.UniqueTxoKey()]; ok {
 				// add the all txs that are spending the input to the removeTx map
-				for _, txId := range txIds {
-					removeTx[txId] = true
+				for _, txID := range txIDs {
+					removeTx[txID] = true
 				}
 			}
 

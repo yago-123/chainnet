@@ -357,8 +357,8 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 		return
 	}
 
-	if err := bc.mempool.AppendTransaction(&tx, fee); err != nil {
-		bc.logger.Errorf("error appending transaction to mempool: %v", err)
+	if errMempool := bc.mempool.AppendTransaction(&tx, fee); errMempool != nil {
+		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
 		return
 	}
 }
@@ -367,7 +367,7 @@ func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
 	// calculate the funds provided by the inputs
 	inputBalance, err := bc.utxoSet.RetrieveInputsBalance(tx.Vin)
 	if err != nil {
-		return 0, fmt.Errorf("error retrieving inputs balance: %v", err)
+		return 0, fmt.Errorf("error retrieving inputs balance: %w", err)
 	}
 
 	// calculate the funds spent by the outputs
@@ -376,12 +376,10 @@ func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
 	// make sure that the output balance is not greater than the input balance
 	if outputBalance > inputBalance {
 		return 0, fmt.Errorf("output balance %d is greater than input balance %d", outputBalance, inputBalance)
-
 	}
 
 	// calculate the fee and append the transaction to the mempool
 	return inputBalance - outputBalance, nil
-
 }
 
 // GetLastBlockHash returns the latest block hash
