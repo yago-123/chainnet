@@ -44,6 +44,11 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 		}).ServeHTTP(w, req)
 	})
 
+	// register the metrics for each monitor
+	for _, monitor := range monitors {
+		monitor.RegisterMetrics(registry)
+	}
+
 	return &PromExporter{
 		monitors: monitors,
 		r:        r,
@@ -56,10 +61,6 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 func (prom *PromExporter) Start() error {
 	if prom.isActive {
 		return nil
-	}
-
-	for _, monitor := range prom.monitors {
-		monitor.RegisterMetrics(prom.registry)
 	}
 
 	srv := &http.Server{
