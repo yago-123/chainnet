@@ -124,6 +124,10 @@ func main() {
 		if err = prometheusExporter.Start(); err != nil {
 			cfg.Logger.Fatalf("Error starting prometheus exporter: %s", err)
 		}
+
+		if err == nil {
+			cfg.Logger.Infof("Exposing Prometheus metrics in localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
+		}
 	}
 
 	for {

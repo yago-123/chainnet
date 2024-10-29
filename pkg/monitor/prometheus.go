@@ -22,13 +22,14 @@ const (
 )
 
 type PromExporter struct {
-	logger   *logrus.Logger
 	monitors []Monitor
 	r        *httprouter.Router
 	srv      *http.Server
 	isActive bool
 	registry *prometheus.Registry
-	cfg      *config.Config
+
+	logger *logrus.Logger
+	cfg    *config.Config
 }
 
 func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter {
@@ -76,10 +77,12 @@ func (prom *PromExporter) Start() error {
 		err := srv.ListenAndServe()
 		if errors.Is(err, http.ErrServerClosed) {
 			prom.logger.Infof("prometheus exporter server stopped successfully")
+			return
 		}
 
 		if err != nil {
 			prom.logger.Errorf("prometheus exporter server stopped with error: %s", err)
+			return
 		}
 	}()
 
