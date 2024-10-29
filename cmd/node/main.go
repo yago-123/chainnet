@@ -11,8 +11,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/mempool"
+	"github.com/yago-123/chainnet/pkg/monitor"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/utxoset"
 )
 
 var cfg *config.Config
@@ -45,44 +47,74 @@ func main() {
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
-		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
+		cfg.Logger.Fatalf("error creating bolt db: %s", err)
 	}
 
 	// create explorer instance
 	explorer := expl.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
 
-	subjectChain.Register(boltdb)
+	// create mempool instance
+	mempool := mempool.NewMemPool(cfg.Chain.MaxTxsMempool)
+
+	// create utxo set instance
+	utxoSet := utxoset.NewUTXOSet(cfg)
+
+	// create heavy validator
+	heavyValidator := validator.NewHeavyValidator(
+		cfg,
+		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+		explorer,
+		consensusSigner,
+		hash.GetHasher(consensusHasherType),
+	)
+
+	// define encoder type
+	encoder := encoding.NewProtobufEncoder()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
-		mempool.NewMemPool(cfg.Chain.MaxTxsMempool),
+		mempool,
+		utxoSet,
 		hash.GetHasher(consensusHasherType),
-		validator.NewHeavyValidator(
-			cfg,
-			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			explorer,
-			consensusSigner,
-			hash.GetHasher(consensusHasherType),
-		),
+		heavyValidator,
 		subjectChain,
-		encoding.NewProtobufEncoder(),
+		encoder,
 	)
 	if err != nil {
-		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
+		cfg.Logger.Fatalf("error creating blockchain: %s", err)
 	}
 
-	// create net subject and register chain
+	// register network observers
 	netSubject.Register(chain)
+
+	// register chain observers
+	subjectChain.Register(boltdb)
+	subjectChain.Register(mempool)
+	subjectChain.Register(utxoSet)
 
 	network, err := chain.InitNetwork(netSubject)
 	if err != nil {
-		cfg.Logger.Fatalf("Error initializing network: %s", err)
+		cfg.Logger.Fatalf("error initializing network: %s", err)
 	}
 
 	// register the block subject to the network
 	subjectChain.Register(network)
+
+	// add monitoring via Prometheus
+	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet}
+	prometheusExporter := monitor.NewPrometheusExporter(cfg, monitors)
+
+	if cfg.Prometheus.Enabled {
+		if err = prometheusExporter.Start(); err != nil {
+			cfg.Logger.Fatalf("error starting prometheus exporter: %s", err)
+		}
+
+		if err == nil {
+			cfg.Logger.Infof("exposing Prometheus metrics in http://localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
+		}
+	}
 
 	select {}
 }

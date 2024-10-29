@@ -1,8 +1,11 @@
-package blockchain
+package utxoset
 
 import (
 	"fmt"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/yago-123/chainnet/pkg/monitor"
 
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
@@ -98,4 +101,13 @@ func (u *UTXOSet) OnBlockAddition(block *kernel.Block) {
 		u.logger.Errorf("error adding block to UTXO set: %s", err)
 		return
 	}
+}
+
+// RegisterMetrics registers the UTXO set metrics to the prometheus registry
+func (u *UTXOSet) RegisterMetrics(register *prometheus.Registry) {
+	monitor.NewMetric(register, monitor.Gauge, "utxo_set_size", "A gauge containing the number of UTXOs in the UTXO set",
+		func() float64 {
+			return float64(len(u.utxos))
+		},
+	)
 }

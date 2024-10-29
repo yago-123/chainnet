@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/yago-123/chainnet/pkg/utxoset"
+
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -17,8 +19,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/tests/mocks/consensus"
 	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -99,7 +99,17 @@ func TestMiner_MineBlock(t *testing.T) {
 		require.NoError(t, mempool.AppendTransaction(v.Transaction, v.Fee))
 	}
 
-	chain, err := blockchain.NewBlockchain(config.NewConfig(), store, mempool, hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	cfg := config.NewConfig()
+	chain, err := blockchain.NewBlockchain(
+		cfg,
+		store,
+		mempool,
+		utxoset.NewUTXOSet(cfg),
+		hash.NewSHA256(),
+		consensus.NewMockHeavyValidator(),
+		observer.NewChainSubject(),
+		encoding.NewGobEncoder(),
+	)
 	require.NoError(t, err)
 
 	miner := Miner{
@@ -138,7 +148,16 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
 
 	cfg := config.NewConfig()
-	chain, err := blockchain.NewBlockchain(&config.Config{Logger: logrus.New()}, store, mempool.NewMemPool(1000), hash.NewSHA256(), consensus.NewMockHeavyValidator(), observer.NewChainSubject(), encoding.NewGobEncoder())
+	chain, err := blockchain.NewBlockchain(
+		cfg,
+		store,
+		mempool.NewMemPool(1000),
+		utxoset.NewUTXOSet(cfg),
+		hash.NewSHA256(),
+		consensus.NewMockHeavyValidator(),
+		observer.NewChainSubject(),
+		encoding.NewGobEncoder(),
+	)
 	require.NoError(t, err)
 
 	cfg.Miner.PubKey = "12D3KooWACTzxPJTeyuFKDQQnzZs3WrynJ6L67BZGPCKAgZrNzZe"

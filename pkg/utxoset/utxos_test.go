@@ -1,4 +1,4 @@
-package blockchain //nolint:testpackage // don't create separate package for tests
+package utxoset //nolint:testpackage // don't create separate package for tests
 
 import (
 	"testing"

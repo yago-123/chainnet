@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/yago-123/chainnet/pkg/monitor"
+	"github.com/yago-123/chainnet/pkg/utxoset"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -44,7 +48,7 @@ type Blockchain struct {
 	hasher  hash.Hashing
 	store   storage.Storage
 	mempool *mempool.MemPool
-	utxoSet *UTXOSet
+	utxoSet *utxoset.UTXOSet
 
 	validator consensus.HeavyValidator
 
@@ -64,6 +68,7 @@ func NewBlockchain(
 	cfg *config.Config,
 	store storage.Storage,
 	mempool *mempool.MemPool,
+	utxoSet *utxoset.UTXOSet,
 	hasher hash.Hashing,
 	validator consensus.HeavyValidator,
 	subject observer.ChainSubject,
@@ -74,7 +79,6 @@ func NewBlockchain(
 	var lastBlockHash []byte
 
 	headers := make(map[string]kernel.BlockHeader)
-	utxoSet := NewUTXOSet(cfg)
 
 	// retrieve the last header stored
 	lastHeader, err := store.GetLastHeader()
@@ -344,6 +348,7 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 	}
 }
 
+// OnUnconfirmedTxReceived is called when a new transaction is received from the network
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 	if err := bc.validator.ValidateTx(&tx); err != nil {
 		bc.logger.Errorf("error validating transaction: %v", err)
@@ -360,6 +365,12 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
 		return
 	}
+}
+
+func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
+	monitor.NewMetric(registry, monitor.Gauge, "blockchain_height", "A gauge of the blockchain height", func() float64 {
+		return float64(bc.GetLastHeight())
+	})
 }
 
 func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
@@ -392,7 +403,7 @@ func (bc *Blockchain) GetLastHeight() uint {
 }
 
 // reconstructState retrieves all headers from the last block to the genesis block and reconstructs the UTXO set
-func reconstructState(store storage.Storage, utxoSet *UTXOSet, headers map[string]kernel.BlockHeader, lastBlockHash []byte) error {
+func reconstructState(store storage.Storage, utxoSet *utxoset.UTXOSet, headers map[string]kernel.BlockHeader, lastBlockHash []byte) error {
 	if len(lastBlockHash) == 0 {
 		return fmt.Errorf("last block hash is empty")
 	}
