@@ -25,6 +25,7 @@ type PromExporter struct {
 	monitors []Monitor
 	r        *httprouter.Router
 	srv      *http.Server
+
 	isActive bool
 	registry *prometheus.Registry
 

@@ -110,7 +110,7 @@ func main() {
 
 	network, err := chain.InitNetwork(subjectNet)
 	if err != nil {
-		cfg.Logger.Fatalf("Error initializing network: %s", err)
+		cfg.Logger.Fatalf("error initializing network: %s", err)
 	}
 
 	// register the block subject to the network
@@ -122,11 +122,11 @@ func main() {
 
 	if cfg.Prometheus.Enabled {
 		if err = prometheusExporter.Start(); err != nil {
-			cfg.Logger.Fatalf("Error starting prometheus exporter: %s", err)
+			cfg.Logger.Fatalf("error starting prometheus exporter: %s", err)
 		}
 
 		if err == nil {
-			cfg.Logger.Infof("Exposing Prometheus metrics in localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
+			cfg.Logger.Infof("exposing Prometheus metrics in localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
 		}
 	}
 
@@ -134,7 +134,7 @@ func main() {
 		// start mining block
 		block, err = mine.MineBlock()
 		if err != nil {
-			cfg.Logger.Errorf("Stopped mining block: %s", err)
+			cfg.Logger.Errorf("stopped mining block: %s", err)
 			continue
 		}
 

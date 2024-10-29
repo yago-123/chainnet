@@ -47,7 +47,7 @@ func main() {
 	// create instance for persisting data
 	boltdb, err := storage.NewBoltDB(cfg.StorageFile, "block-bucket", "header-bucket", encoding.NewGobEncoder())
 	if err != nil {
-		cfg.Logger.Fatalf("Error creating bolt db: %s", err)
+		cfg.Logger.Fatalf("error creating bolt db: %s", err)
 	}
 
 	// create explorer instance
@@ -83,7 +83,7 @@ func main() {
 		encoder,
 	)
 	if err != nil {
-		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
+		cfg.Logger.Fatalf("error creating blockchain: %s", err)
 	}
 
 	// register network observers
@@ -96,7 +96,7 @@ func main() {
 
 	network, err := chain.InitNetwork(netSubject)
 	if err != nil {
-		cfg.Logger.Fatalf("Error initializing network: %s", err)
+		cfg.Logger.Fatalf("error initializing network: %s", err)
 	}
 
 	// register the block subject to the network
@@ -108,11 +108,11 @@ func main() {
 
 	if cfg.Prometheus.Enabled {
 		if err = prometheusExporter.Start(); err != nil {
-			cfg.Logger.Fatalf("Error starting prometheus exporter: %s", err)
+			cfg.Logger.Fatalf("error starting prometheus exporter: %s", err)
 		}
 
 		if err == nil {
-			cfg.Logger.Infof("Exposing Prometheus metrics in localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
+			cfg.Logger.Infof("exposing Prometheus metrics in localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
 		}
 	}
 
