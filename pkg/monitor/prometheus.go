@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	MetricsPath                       = "/metrics"
+	ReadWriteTimeout = 5 * time.Second
+	IdleTimeout      = 10 * time.Second
+
 	PrometheusExporterShutdownTimeout = 10 * time.Second
 )
 
@@ -32,10 +34,10 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 	r := httprouter.New()
 	registry := prometheus.NewRegistry()
 
-	r.GET(MetricsPath, func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	r.GET(cfg.Prometheus.Path, func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 		promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 			ErrorLog:      cfg.Logger,
-			Timeout:       5 * time.Second,
+			Timeout:       ReadWriteTimeout,
 			ErrorHandling: promhttp.ContinueOnError,
 		}).ServeHTTP(w, req)
 	})
@@ -59,11 +61,11 @@ func (prom *PromExporter) Start() error {
 	}
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", 8000),
+		Addr:         fmt.Sprintf(":%d", prom.cfg.Prometheus.Port),
 		Handler:      prom.r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  10 * time.Second,
+		ReadTimeout:  ReadWriteTimeout,
+		WriteTimeout: ReadWriteTimeout,
+		IdleTimeout:  IdleTimeout,
 	}
 
 	prom.srv = srv

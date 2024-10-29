@@ -25,10 +25,10 @@ seed-nodes:                               # List of seed nodes
     port: 9100
   - address: "seed-2.chainnet.yago.ninja"
     peer-id: "peerID-2"
-    port: 9100
+    port: 8081
   - address: "seed-3.chainnet.yago.ninja"
     peer-id: "peerID-3"
-    port: 9100
+    port: 8082
 
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
@@ -40,9 +40,14 @@ miner:
 chain:
   max-txs-mempool: 10000                  # Maximum number of transactions allowed in the mempool
 
+prometheus:
+  enabled: true                           # Enable or disable prometheus metrics
+  port: 9091                              # Port exposed for prometheus metrics
+  path: "/metrics"                        # Path for prometheus metrics endpoint
+
 p2p:
   enabled: true                           # Enable or disable network communication
-  identity-path: "identity.pem"           # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
+  #identity-path: "identity.pem"          # ECDSA peer private key path in PEM format (leave empty to generate a random identity)
   peer-port: 9100                         # Port used for network communication with other peers
   http-api-port: 8080                     # Port exposed for the router API (required for nespv wallets)
   min-conn: 5                             # Minimum number of connections
