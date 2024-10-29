@@ -11,6 +11,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/mempool"
+	"github.com/yago-123/chainnet/pkg/monitor"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/storage"
 )
@@ -83,6 +84,8 @@ func main() {
 
 	// register the block subject to the network
 	subjectChain.Register(network)
+
+	monitor.NewPrometheusExporter([]monitor.Monitor{chain}).Start()
 
 	select {}
 }

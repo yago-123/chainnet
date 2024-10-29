@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/yago-123/chainnet/pkg/monitor"
 	"sort"
 
 	"github.com/yago-123/chainnet/config"
@@ -344,6 +346,7 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 	}
 }
 
+// OnUnconfirmedTxReceived is called when a new transaction is received from the network
 func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 	if err := bc.validator.ValidateTx(&tx); err != nil {
 		bc.logger.Errorf("error validating transaction: %v", err)
@@ -360,6 +363,12 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
 		return
 	}
+}
+
+func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
+	monitor.NewMetric(registry, monitor.Gauge, "blockchain_height", "A gauge of the blockchain height", func() float64 {
+		return float64(bc.GetLastHeight())
+	})
 }
 
 func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
