@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/monitor"
+	"github.com/yago-123/chainnet/pkg/utxoset"
 	"sort"
 
 	"github.com/yago-123/chainnet/config"
@@ -46,7 +47,7 @@ type Blockchain struct {
 	hasher  hash.Hashing
 	store   storage.Storage
 	mempool *mempool.MemPool
-	utxoSet *UTXOSet
+	utxoSet *utxoset.UTXOSet
 
 	validator consensus.HeavyValidator
 
@@ -66,6 +67,7 @@ func NewBlockchain(
 	cfg *config.Config,
 	store storage.Storage,
 	mempool *mempool.MemPool,
+	utxoSet *utxoset.UTXOSet,
 	hasher hash.Hashing,
 	validator consensus.HeavyValidator,
 	subject observer.ChainSubject,
@@ -76,7 +78,6 @@ func NewBlockchain(
 	var lastBlockHash []byte
 
 	headers := make(map[string]kernel.BlockHeader)
-	utxoSet := NewUTXOSet(cfg)
 
 	// retrieve the last header stored
 	lastHeader, err := store.GetLastHeader()

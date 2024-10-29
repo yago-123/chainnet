@@ -60,11 +60,15 @@ func main() {
 	// create mempool instance
 	mempool := mempool.NewMemPool(cfg.Chain.MaxTxsMempool)
 
+	// create utxo set instance
+	utxoSet := blockchain.NewUTXOSet(cfg)
+
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
 		mempool,
+		utxoSet,
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			cfg,
@@ -93,6 +97,7 @@ func main() {
 	subjectChain.Register(mine)
 	subjectChain.Register(boltdb)
 	subjectChain.Register(mempool)
+	subjectChain.Register(utxoSet)
 
 	network, err := chain.InitNetwork(subjectNet)
 	if err != nil {

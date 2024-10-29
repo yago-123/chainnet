@@ -52,13 +52,18 @@ func main() {
 	// create explorer instance
 	explorer := expl.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
 
-	subjectChain.Register(boltdb)
+	// create mempool instance
+	mempool := mempool.NewMemPool(cfg.Chain.MaxTxsMempool)
+
+	// create utxo set instance
+	utxoSet := blockchain.NewUTXOSet(cfg)
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
 		cfg,
 		boltdb,
-		mempool.NewMemPool(cfg.Chain.MaxTxsMempool),
+		mempool,
+		utxoSet,
 		hash.GetHasher(consensusHasherType),
 		validator.NewHeavyValidator(
 			cfg,
@@ -74,8 +79,13 @@ func main() {
 		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
 	}
 
-	// create net subject and register chain
+	// register network observers
 	netSubject.Register(chain)
+
+	// register chain observers
+	subjectChain.Register(boltdb)
+	subjectChain.Register(mempool)
+	subjectChain.Register(utxoSet)
 
 	network, err := chain.InitNetwork(netSubject)
 	if err != nil {
