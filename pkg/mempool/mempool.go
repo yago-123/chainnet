@@ -184,13 +184,13 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Counter, "mempool_max_size", "A gauge containing the maximum number of transactions the mempool can hold",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_max_size", "A gauge containing the maximum number of transactions the mempool can hold",
 		func() float64 {
 			return float64(m.maxNumberTxs)
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Counter, "mempool_inputs_tracked", "A gauge containing the number of inputs being tracked in the mempool",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_inputs_tracked", "A gauge containing the number of inputs being tracked in the mempool",
 		func() float64 {
 			m.mu.Lock()
 			defer m.mu.Unlock()
