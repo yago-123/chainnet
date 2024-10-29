@@ -112,7 +112,7 @@ func main() {
 		}
 
 		if err == nil {
-			cfg.Logger.Infof("exposing Prometheus metrics in localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
+			cfg.Logger.Infof("exposing Prometheus metrics in http://localhost:%d%s", cfg.Prometheus.Port, cfg.Prometheus.Path)
 		}
 	}
 
