@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/julienschmidt/httprouter"
 
@@ -544,4 +546,10 @@ func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
 	if err := n.pubsub.NotifyBlockHeaderAdded(ctx, *block.Header); err != nil {
 		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
 	}
+}
+
+func (n *NodeP2P) RegisterMetrics(_ *prometheus.Registry) {
+	// todo(): figure how to parse the metrics from the pubsub and the discovery
+	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
+	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards
 }

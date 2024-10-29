@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 
@@ -326,6 +328,10 @@ func (bolt *BoltDB) OnBlockAddition(block *kernel.Block) {
 
 func (bolt *BoltDB) Close() error {
 	return bolt.db.Close()
+}
+
+func (bolt *BoltDB) RegisterMetrics(_ *prometheus.Registry) {
+	// todo(): add metrics related to number of requests, response times, etc
 }
 
 func bucketExists(bucketName string, tx *boltdb.Tx) (bool, *boltdb.Bucket) {

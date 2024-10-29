@@ -17,26 +17,30 @@ const (
 	KeyNodeSeeds   = "node-seeds"
 	KeyStorageFile = "storage-file"
 
-	KeyMiningPubKeyReward       = "pub-key-reward"
-	KeyMiningInterval           = "mining-interval"
-	KeyMiningIntervalAdjustment = "adjustment-interval"
+	KeyMiningPubKeyReward       = "miner.pub-key-reward"
+	KeyMiningInterval           = "miner.mining-interval"
+	KeyMiningIntervalAdjustment = "miner.adjustment-interval"
 
-	KeyChainMaxTxsMempool = "max-txs-mempool"
+	KeyChainMaxTxsMempool = "mempool.max-txs-mempool"
 
-	KeyP2PEnabled          = "enabled"
-	KeyP2PPeerIdentityPath = "identity-path"
-	KeyP2PPeerPort         = "peer-port"
-	KeyP2PRouterPort       = "http-api-port"
-	KeyP2PMinNumConn       = "min-conn"
-	KeyP2PMaxNumConn       = "max-conn"
-	KeyP2PConnTimeout      = "conn-timeout"
-	KeyP2PWriteTimeout     = "write-timeout"
-	KeyP2PReadTimeout      = "read-timeout"
-	KeyP2PBufferSize       = "buffer-size"
+	KeyPrometheusEnabled = "prometheus.enabled"
+	KeyPrometheusPort    = "prometheus.port"
+	KeyPrometheusPath    = "prometheus.metrics"
 
-	KeyWalletKeyPairPath   = "key-pair-path"
-	KeyWalletServerAddress = "server-address"
-	KeyWalletServerPort    = "server-port"
+	KeyP2PEnabled          = "p2p.enabled"
+	KeyP2PPeerIdentityPath = "p2p.identity-path"
+	KeyP2PPeerPort         = "p2p.peer-port"
+	KeyP2PRouterPort       = "p2p.http-api-port"
+	KeyP2PMinNumConn       = "p2p.min-conn"
+	KeyP2PMaxNumConn       = "p2p.max-conn"
+	KeyP2PConnTimeout      = "p2p.conn-timeout"
+	KeyP2PWriteTimeout     = "p2p.write-timeout" //nolint:gosec // false positive regarding hardcoded credentials
+	KeyP2PReadTimeout      = "p2p.read-timeout"
+	KeyP2PBufferSize       = "p2p.buffer-size"
+
+	KeyWalletKeyPairPath   = "wallet.key-pair-path"
+	KeyWalletServerAddress = "wallet.server-address"
+	KeyWalletServerPort    = "wallet.server-port"
 )
 
 // default config values
@@ -49,6 +53,10 @@ const (
 	DefaultMiningIntervalAdjustment = uint(6)
 
 	DefaultMaxTxsMempool = 10000
+
+	DefaultPrometheusEnabled = true
+	DefaultPrometheusPort    = 9090
+	DefaultPrometheusPath    = "/metrics"
 
 	DefaultP2PEnabled      = true
 	DefaultP2PPeerPort     = 9100
@@ -85,6 +93,12 @@ type Chain struct {
 	MaxTxsMempool uint `mapstructure:"max-txs-mempool"`
 }
 
+type Prometheus struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Port    uint   `mapstructure:"port"`
+	Path    string `mapstructure:"path"`
+}
+
 // P2PConfig holds P2P-specific configuration
 type P2PConfig struct {
 	Enabled      bool          `mapstructure:"enabled"`
@@ -112,6 +126,7 @@ type Config struct {
 	StorageFile string       `mapstructure:"storage-file"`
 	Miner       Miner        `mapstructure:"miner"`
 	Chain       Chain        `mapstructure:"chain"`
+	Prometheus  Prometheus   `mapstructure:"prometheus"`
 	P2P         P2PConfig    `mapstructure:"p2p"`
 	Wallet      WalletConfig `mapstructure:"wallet"`
 }
@@ -129,6 +144,11 @@ func NewConfig() *Config {
 		},
 		Chain: Chain{
 			MaxTxsMempool: DefaultMaxTxsMempool,
+		},
+		Prometheus: Prometheus{
+			Enabled: DefaultPrometheusEnabled,
+			Port:    DefaultPrometheusPort,
+			Path:    DefaultPrometheusPath,
 		},
 		P2P: P2PConfig{
 			Enabled:      DefaultP2PEnabled,
@@ -199,6 +219,10 @@ func AddConfigFlags(cmd *cobra.Command) {
 
 	cmd.Flags().Uint(KeyChainMaxTxsMempool, DefaultMaxTxsMempool, "Maximum number of transactions in the mempool")
 
+	cmd.Flags().Bool(KeyPrometheusEnabled, DefaultPrometheusEnabled, "Enable Prometheus metrics endpoint")
+	cmd.Flags().Uint(KeyPrometheusPort, DefaultPrometheusPort, "Port for Prometheus metrics")
+	cmd.Flags().String(KeyPrometheusPath, DefaultPrometheusPath, "Path for Prometheus metrics")
+
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
 	cmd.Flags().String(KeyP2PPeerIdentityPath, "", "ECDSA peer private key path in PEM format")
 	cmd.Flags().Uint(KeyP2PPeerPort, DefaultP2PPeerPort, "P2P port for receiving connections")
@@ -224,6 +248,10 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyMiningIntervalAdjustment, cmd.Flags().Lookup(KeyMiningIntervalAdjustment))
 
 	_ = viper.BindPFlag(KeyChainMaxTxsMempool, cmd.Flags().Lookup(KeyChainMaxTxsMempool))
+
+	_ = viper.BindPFlag(KeyPrometheusEnabled, cmd.Flags().Lookup(KeyPrometheusEnabled))
+	_ = viper.BindPFlag(KeyPrometheusPort, cmd.Flags().Lookup(KeyPrometheusPort))
+	_ = viper.BindPFlag(KeyPrometheusPath, cmd.Flags().Lookup(KeyPrometheusPath))
 
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
 	_ = viper.BindPFlag(KeyP2PPeerIdentityPath, cmd.Flags().Lookup(KeyP2PPeerIdentityPath))
@@ -264,6 +292,18 @@ func applyMiningFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 func applyChainFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyChainMaxTxsMempool) {
 		cfg.Chain.MaxTxsMempool = viper.GetUint(KeyChainMaxTxsMempool)
+	}
+}
+
+func applyPrometheusFlagsToConfig(cmd *cobra.Command, cfg *Config) {
+	if cmd.Flags().Changed(KeyPrometheusEnabled) {
+		cfg.Prometheus.Enabled = viper.GetBool(KeyPrometheusEnabled)
+	}
+	if cmd.Flags().Changed(KeyPrometheusPort) {
+		cfg.Prometheus.Port = viper.GetUint(KeyPrometheusPort)
+	}
+	if cmd.Flags().Changed(KeyPrometheusPath) {
+		cfg.Prometheus.Path = viper.GetString(KeyPrometheusPath)
 	}
 }
 
@@ -316,6 +356,7 @@ func applyWalletFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	applyMiningFlagsToConfig(cmd, cfg)
 	applyChainFlagsToConfig(cmd, cfg)
+	applyPrometheusFlagsToConfig(cmd, cfg)
 	applyP2PFlagsToConfig(cmd, cfg)
 	applyWalletFlagsToConfig(cmd, cfg)
 

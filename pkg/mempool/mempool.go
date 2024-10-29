@@ -4,6 +4,9 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/yago-123/chainnet/pkg/monitor"
+
 	"errors"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -155,4 +158,50 @@ func (m *MemPool) OnBlockAddition(block *kernel.Block) {
 			m.pairs = append(m.pairs[:i], m.pairs[i+1:]...)
 		}
 	}
+}
+
+// RegisterMetrics registers the UTXO set metrics to the prometheus registry
+func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
+	monitor.NewMetric(register, monitor.Gauge, "mempool_size", "A gauge containing the number of transactions in the mempool",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			return float64(len(m.pairs))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "mempool_total_fee", "A gauge containing the total fee of the transactions in the mempool",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			totalFee := uint(0)
+			for _, pair := range m.pairs {
+				totalFee += pair.Fee
+			}
+			return float64(totalFee)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "mempool_max_size", "A gauge containing the maximum number of transactions the mempool can hold",
+		func() float64 {
+			return float64(m.maxNumberTxs)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "mempool_inputs_tracked", "A gauge containing the number of inputs being tracked in the mempool",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			return float64(len(m.inputSet))
+		},
+	)
+
+	// todo(): add histogram reflecting the distribution of fees in the mempool
+	// todo(): add histogram reflecting the distribution of transaction sizes in the mempool
+	// todo(): add histogram reflecting the distribution of transaction fees per byte in the mempool
+	// todo(): add histogram reflecting the number of inputs per transaction in the mempool
+	// todo(): add histogram reflecting the number of outputs per transaction in the mempool
 }
