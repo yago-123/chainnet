@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/yago-123/chainnet/pkg/monitor"
+	"github.com/yago-123/chainnet/pkg/utxoset"
 	"time"
 
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -61,7 +63,19 @@ func main() {
 	mempool := mempool.NewMemPool(cfg.Chain.MaxTxsMempool)
 
 	// create utxo set instance
-	utxoSet := blockchain.NewUTXOSet(cfg)
+	utxoSet := utxoset.NewUTXOSet(cfg)
+
+	// create heavy validator
+	heavyValidator := validator.NewHeavyValidator(
+		cfg,
+		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+		explorer,
+		consensusSigner,
+		hash.GetHasher(consensusHasherType),
+	)
+
+	// define encoder type
+	encoder := encoding.NewProtobufEncoder()
 
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
@@ -70,15 +84,9 @@ func main() {
 		mempool,
 		utxoSet,
 		hash.GetHasher(consensusHasherType),
-		validator.NewHeavyValidator(
-			cfg,
-			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-			explorer,
-			consensusSigner,
-			hash.GetHasher(consensusHasherType),
-		),
+		heavyValidator,
 		subjectChain,
-		encoding.NewProtobufEncoder(),
+		encoder,
 	)
 	if err != nil {
 		cfg.Logger.Fatalf("Error creating blockchain: %s", err)
@@ -106,6 +114,9 @@ func main() {
 
 	// register the block subject to the network
 	subjectChain.Register(network)
+
+	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet}
+	monitor.NewPrometheusExporter(cfg, monitors).Start()
 
 	for {
 		// start mining block

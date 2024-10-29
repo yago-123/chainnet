@@ -3,16 +3,19 @@ package monitor
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/yago-123/chainnet/config"
 	"net/http"
 )
 
 type PromExporter struct {
+	cfg      *config.Config
 	monitors []Monitor
 	registry *prometheus.Registry
 }
 
-func NewPrometheusExporter(monitors []Monitor) *PromExporter {
+func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter {
 	return &PromExporter{
+		cfg:      cfg,
 		monitors: monitors,
 		registry: prometheus.NewRegistry(),
 	}

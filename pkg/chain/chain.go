@@ -402,7 +402,7 @@ func (bc *Blockchain) GetLastHeight() uint {
 }
 
 // reconstructState retrieves all headers from the last block to the genesis block and reconstructs the UTXO set
-func reconstructState(store storage.Storage, utxoSet *UTXOSet, headers map[string]kernel.BlockHeader, lastBlockHash []byte) error {
+func reconstructState(store storage.Storage, utxoSet *utxoset.UTXOSet, headers map[string]kernel.BlockHeader, lastBlockHash []byte) error {
 	if len(lastBlockHash) == 0 {
 		return fmt.Errorf("last block hash is empty")
 	}
