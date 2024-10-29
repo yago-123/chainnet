@@ -102,8 +102,15 @@ func main() {
 	// register the block subject to the network
 	subjectChain.Register(network)
 
+	// add monitoring via Prometheus
 	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet}
-	monitor.NewPrometheusExporter(cfg, monitors).Start()
+	prometheusExporter := monitor.NewPrometheusExporter(cfg, monitors)
+
+	if cfg.Prometheus.Enabled {
+		if err = prometheusExporter.Start(); err != nil {
+			cfg.Logger.Fatalf("Error starting prometheus exporter: %s", err)
+		}
+	}
 
 	select {}
 }
