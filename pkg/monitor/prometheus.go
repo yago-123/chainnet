@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
-	"net/http"
-	"time"
 )
 
 const (

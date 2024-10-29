@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/julienschmidt/httprouter"
@@ -547,7 +548,7 @@ func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
 	}
 }
 
-func (n *NodeP2P) RegisterMetrics(registry *prometheus.Registry) {
+func (n *NodeP2P) RegisterMetrics(_ *prometheus.Registry) {
 	// todo(): figure how to parse the metrics from the pubsub and the discovery
 	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
 	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards

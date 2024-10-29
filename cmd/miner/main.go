@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/yago-123/chainnet/pkg/monitor"
 	"github.com/yago-123/chainnet/pkg/utxoset"
-	"time"
 
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 

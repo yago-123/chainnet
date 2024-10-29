@@ -34,7 +34,7 @@ const (
 	KeyP2PMinNumConn       = "p2p.min-conn"
 	KeyP2PMaxNumConn       = "p2p.max-conn"
 	KeyP2PConnTimeout      = "p2p.conn-timeout"
-	KeyP2PWriteTimeout     = "p2p.write-timeout"
+	KeyP2PWriteTimeout     = "p2p.write-timeout" //nolint:gosec // false positive regarding hardcoded credentials
 	KeyP2PReadTimeout      = "p2p.read-timeout"
 	KeyP2PBufferSize       = "p2p.buffer-size"
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/monitor"
 	"github.com/yago-123/chainnet/pkg/utxoset"
-	"sort"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"

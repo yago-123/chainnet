@@ -2,9 +2,10 @@ package utxoset
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/monitor"
-	"sync"
 
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"

@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -329,7 +330,7 @@ func (bolt *BoltDB) Close() error {
 	return bolt.db.Close()
 }
 
-func (bolt *BoltDB) RegisterMetrics(register *prometheus.Registry) {
+func (bolt *BoltDB) RegisterMetrics(_ *prometheus.Registry) {
 	// todo(): add metrics related to number of requests, response times, etc
 }
 

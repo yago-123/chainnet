@@ -1,10 +1,11 @@
 package mempool
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/yago-123/chainnet/pkg/monitor"
 	"sort"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/yago-123/chainnet/pkg/monitor"
 
 	"errors"
 

@@ -3,6 +3,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/yago-123/chainnet/pkg/utxoset"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -90,10 +92,13 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 		On("GetLastHeader").
 		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
 
+	cfg := &config.Config{Logger: logrus.New()}
+
 	chain, err := NewBlockchain(
-		&config.Config{Logger: logrus.New()},
+		cfg,
 		store,
 		mempool.NewMemPool(1000),
+		utxoset.NewUTXOSet(cfg),
 		&mockHash.FakeHashing{},
 		&consensus.MockHeavyValidator{},
 		observer.NewChainSubject(),
@@ -123,11 +128,13 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 		On("Hash", block4.Header.Assemble()).
 		Return([]byte("block-4-hash"), nil)
 
+	cfg := &config.Config{Logger: logrus.New()}
 	// initialize chain and make sure that the values are retrieved correctly
 	chain, err := NewBlockchain(
-		&config.Config{Logger: logrus.New()},
+		cfg,
 		boltdb,
 		mempool.NewMemPool(1000),
+		utxoset.NewUTXOSet(cfg),
 		mockHashing,
 		&consensus.MockHeavyValidator{},
 		observer.NewChainSubject(),
