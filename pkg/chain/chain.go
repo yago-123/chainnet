@@ -200,7 +200,7 @@ func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
 	}
 
 	// calculate the transaction fee
-	fee, err := bc.calculateTxFee(*tx)
+	fee, err := bc.calculateTxFee(tx)
 	if err != nil {
 		return fmt.Errorf("error calculating transaction fee for %x: %w", tx.ID, err)
 	}
@@ -413,7 +413,7 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
 	})
 }
 
-func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
+func (bc *Blockchain) calculateTxFee(tx *kernel.Transaction) (uint, error) {
 	// calculate the funds provided by the inputs
 	inputBalance, err := bc.utxoSet.RetrieveInputsBalance(tx.Vin)
 	if err != nil {
