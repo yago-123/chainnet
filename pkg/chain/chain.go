@@ -193,6 +193,7 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
+// AddTransaction adds a new transaction to the mempool. The transaction is validated before being added to the mempool
 func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
 	// make sure that the tx uses proper UTXOs and contains valid signatures
 	if err := bc.validator.ValidateTx(tx); err != nil {

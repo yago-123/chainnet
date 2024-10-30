@@ -20,13 +20,23 @@ const (
 	PropagateTxFromWalletToNode = "/propagateTxFromWalletToNode/0.1.0"
 )
 
+func extractAddrInfo(addr string, port uint, id string) (*peer.AddrInfo, error) {
+	addrInfo, err := peer.AddrInfoFromString(
+		fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", addr, port, id),
+	)
+	if err != nil {
+		return &peer.AddrInfo{}, fmt.Errorf("failed to parse multiaddress: %w", err)
+	}
+
+	return addrInfo, nil
+}
+
 func connectToSeeds(cfg *config.Config, host host.Host) error {
 	for _, seed := range cfg.SeedNodes {
-		addr, err := peer.AddrInfoFromString(
-			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
-		)
+		addr, err := extractAddrInfo(seed.Address, uint(seed.Port), seed.PeerID)
 		if err != nil {
-			return fmt.Errorf("failed to parse multiaddress: %w", err)
+			cfg.Logger.Errorf("failed to extract address info from seed node %s: %v", seed.Address, err)
+			continue
 		}
 
 		// todo(): provide this context via argument

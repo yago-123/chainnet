@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/libp2p/go-libp2p/core/peer"
-
 	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/consensus/util"
@@ -144,9 +142,7 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 // todo(): transaction details to the node that sent the transaction
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	// retrieve the address of the node
-	addr, err := peer.AddrInfoFromString(
-		fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", n.cfg.Wallet.ServerAddress, n.cfg.Wallet.ServerPort, n.cfg.Wallet.ServerID),
-	)
+	addr, err := extractAddrInfo(n.cfg.Wallet.ServerAddress, n.cfg.Wallet.ServerPort, n.cfg.Wallet.ServerID)
 	if err != nil {
 		return fmt.Errorf("failed to parse multiaddress: %w", err)
 	}
