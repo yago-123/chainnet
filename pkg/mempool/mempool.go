@@ -175,13 +175,13 @@ func (m *MemPool) OnBlockAddition(block *kernel.Block) {
 	}
 
 	// remove the txs from the txIDs map
-	for k, _ := range removeTx {
+	for k := range removeTx {
 		delete(m.txIDs, k)
 	}
 }
 
 // OnTxAddition is called when a new tx is added to the mempool via the observer pattern
-func (m *MemPool) OnTxAddition(tx *kernel.Transaction) {
+func (m *MemPool) OnTxAddition(_ *kernel.Transaction) {
 	// do nothing
 }
 

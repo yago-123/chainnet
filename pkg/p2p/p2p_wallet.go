@@ -3,11 +3,12 @@ package p2p
 import (
 	"context"
 	"fmt"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"io"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/btcsuite/btcutil/base58"
 
@@ -153,7 +154,7 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	// try to connect to the node
 	err = n.host.Connect(ctx, *addr)
 	if err != nil {
-		return fmt.Errorf("failed to connect to seed node %s: %v", addr, err)
+		return fmt.Errorf("failed to connect to seed node %s: %w", addr, err)
 	}
 
 	// open stream to peer with timeout

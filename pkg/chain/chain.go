@@ -349,29 +349,36 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 }
 
 // OnUnconfirmedTxReceived is called when a new transaction is received from the network
-func (bc *Blockchain) OnUnconfirmedTxReceived(peer peer.ID, tx kernel.Transaction) {
+func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) {
+	// make sure that the tx uses proper UTXOs and contains valid signatures
 	if err := bc.validator.ValidateTx(&tx); err != nil {
 		bc.logger.Errorf("error validating transaction: %v", err)
 		return
 	}
 
+	// calculate the transaction fee
 	fee, err := bc.calculateTxFee(tx)
 	if err != nil {
 		bc.logger.Errorf("error calculating transaction fee: %v", err)
 		return
 	}
 
+	// append the transaction to the mempool
 	if errMempool := bc.mempool.AppendTransaction(&tx, fee); errMempool != nil {
 		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
 		return
 	}
 
+	// notify chain observers of a new transaction added into the mempool. This is required because
+	// although mempool is a separate module, it represents an important part of the chain. Important
+	// modules like the storage and the network (propagates via pubsub to other nodes) need to be
+	// aware of this event
 	bc.blockSubject.NotifyTxAdded(&tx)
 }
 
 // OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
 func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID string) {
-	containsTx, tx := bc.mempool.ContainsTxID(txID)
+	containsTx, _ := bc.mempool.ContainsTxID(txID)
 	// if the transaction is already in the mempool, skip execution
 	if containsTx {
 		return

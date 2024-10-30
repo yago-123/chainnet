@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yago-123/chainnet/pkg/mempool"
 	"net/http"
 	"time"
+
+	"github.com/yago-123/chainnet/pkg/mempool"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -235,9 +236,7 @@ func (h *nodeP2PHandler) handleReceiveTxFromWallet(stream network.Stream) {
 		return
 	}
 
-	h.netSubject.NotifyUnconfirmedTxIDReceived(stream.Conn().RemotePeer(), string(tx.ID))
-
-	// todo(): should we notify the sender that the transaction have not been added?
+	h.netSubject.NotifyUnconfirmedTxReceived(stream.Conn().RemotePeer(), *tx)
 }
 
 type HTTPRouter struct {
