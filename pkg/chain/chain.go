@@ -369,6 +369,8 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) 
 		return
 	}
 
+	bc.logger.Infof("transaction %x added to mempool", tx.ID)
+
 	// notify chain observers of a new transaction added into the mempool. This is required because
 	// although mempool is a separate module, it represents an important part of the chain. Important
 	// modules like the storage and the network (propagates via pubsub to other nodes) need to be
@@ -378,7 +380,7 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) 
 
 // OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
 func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID string) {
-	containsTx, _ := bc.mempool.ContainsTxID(txID)
+	containsTx := bc.mempool.ContainsTx(txID)
 	// if the transaction is already in the mempool, skip execution
 	if containsTx {
 		return

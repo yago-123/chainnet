@@ -80,6 +80,15 @@ func (m *MemPool) AppendTransaction(tx *kernel.Transaction, fee uint) error {
 	return nil
 }
 
+// ContainsTx checks if the MemPool contains a transaction with the given txID
+func (m *MemPool) ContainsTx(txID string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	_, ok := m.txIDs[txID]
+	return ok
+}
+
 // RetrieveTransactions retrieves the transactions from the MemPool with the highest fee
 func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction, uint) {
 	m.mu.Lock()
