@@ -15,6 +15,9 @@ const (
 	RouterAddressTxs     = "/address/%s/transactions"
 	RouterAddressUTXOs   = "/address/%s/utxos"
 	RouterAddressBalance = "/address/%s/balance"
+
+	// PropagateTxFromWalletToNode is the endpoint exposed by nodes to receive a transaction from wallets
+	PropagateTxFromWalletToNode = "/propagateTxFromWalletToNode/0.1.0"
 )
 
 func connectToSeeds(cfg *config.Config, host host.Host) error {

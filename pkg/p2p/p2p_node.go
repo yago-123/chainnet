@@ -50,15 +50,18 @@ type nodeP2PHandler struct {
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
 
+	netSubject observer.NetSubject
+
 	cfg *config.Config
 }
 
-func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *nodeP2PHandler {
+func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer, netSubject observer.NetSubject) *nodeP2PHandler {
 	return &nodeP2PHandler{
-		logger:   cfg.Logger,
-		encoder:  encoder,
-		explorer: explorer,
-		cfg:      cfg,
+		logger:     cfg.Logger,
+		encoder:    encoder,
+		explorer:   explorer,
+		netSubject: netSubject,
+		cfg:        cfg,
 	}
 }
 
@@ -165,6 +168,30 @@ func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
 		h.logger.Errorf("error writing headers for stream %s: %s", stream.ID(), err)
 		return
 	}
+}
+
+// handleReceiveTxFromWallet handler that receives transactions from the wallet
+func (h *nodeP2PHandler) handleReceiveTxFromWallet(stream network.Stream) {
+	// open stream with timeout
+	timeoutStream := AddTimeoutToStream(stream, h.cfg)
+	defer timeoutStream.Close()
+
+	// send headers encoded to the peer
+	data, err := timeoutStream.ReadWithTimeout()
+	if err != nil {
+		h.logger.Errorf("error getting transaction for stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	tx, err := h.encoder.DeserializeTransaction(data)
+	if err != nil {
+		h.logger.Errorf("error deserializing transaction for stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+
+	// todo(): should we notify the sender that the transaction have not been added?
 }
 
 type HTTPRouter struct {
@@ -408,10 +435,11 @@ func NewNodeP2P(
 	router := NewHTTPRouter(cfg, encoder, explorer)
 
 	// initialize handlers
-	handler := newNodeP2PHandler(cfg, encoder, explorer)
+	handler := newNodeP2PHandler(cfg, encoder, explorer, netSubject)
 	host.SetStreamHandler(AskLastHeaderProtocol, handler.handleAskLastHeader)
 	host.SetStreamHandler(AskSpecificBlockProtocol, handler.handleAskSpecificBlock)
 	host.SetStreamHandler(AskAllHeaders, handler.handleAskAllHeaders)
+	host.SetStreamHandler(PropagateTxFromWalletToNode, handler.handleReceiveTxFromWallet)
 
 	return &NodeP2P{
 		cfg:        cfg,

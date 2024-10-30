@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"io"
 	"net"
 	"net/http"
@@ -12,17 +13,14 @@ import (
 
 	"github.com/yago-123/chainnet/pkg/consensus/util"
 
-	"github.com/yago-123/chainnet/config"
-	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/observer"
-	"github.com/yago-123/chainnet/pkg/p2p/discovery"
-	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
-
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/sirupsen/logrus"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/p2p/discovery"
 )
 
 const RequestTimeout = 10 * time.Second
@@ -35,8 +33,6 @@ type WalletP2P struct {
 
 	// disco is in charge of setting up the logic for node discovery
 	disco discovery.Discovery
-	// pubsub is in charge of setting up the logic for data propagation
-	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
 	encoder encoding.Encoding
 
@@ -75,13 +71,6 @@ func NewWalletP2P(
 		return nil, fmt.Errorf("failed to create DHT discovery module: %w", err)
 	}
 
-	// initialize pubsub module
-	topics := []string{pubsub.TxAddedPubSubTopic}
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, observer.NewNetSubject(), topics, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
-	}
-
 	baseURL := net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort))
 
 	return &WalletP2P{
@@ -89,7 +78,6 @@ func NewWalletP2P(
 		host:    host,
 		ctx:     ctx,
 		disco:   disco,
-		pubsub:  pubsub,
 		encoder: encoder,
 		baseurl: baseURL,
 		logger:  cfg.Logger,
@@ -154,7 +142,45 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 // todo(): mempool then notify the network about the transaction (txid via pubsub), after that nodes will ask for the
 // todo(): transaction details to the node that sent the transaction
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
-	return n.pubsub.NotifyTransactionAdded(ctx, tx)
+	// retrieve the address of the node
+	addr, err := peer.AddrInfoFromString(
+		fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", n.cfg.Wallet.ServerAddress, n.cfg.Wallet.ServerPort, n.cfg.Wallet.ServerID),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to parse multiaddress: %w", err)
+	}
+
+	// try to connect to the node
+	err = n.host.Connect(ctx, *addr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to seed node %s: %v", addr, err)
+	}
+
+	// open stream to peer with timeout
+	timeoutStream, err := NewTimeoutStream(ctx, n.cfg, n.host, addr.ID, PropagateTxFromWalletToNode)
+	if err != nil {
+		return err
+	}
+	defer timeoutStream.Close()
+
+	data, err := n.encoder.SerializeTransaction(tx)
+	if err != nil {
+		return fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	// read and decode reply
+	_, err = timeoutStream.WriteWithTimeout(data)
+	if err != nil {
+		return fmt.Errorf("error writing data to stream %s: %w", timeoutStream.stream.ID(), err)
+	}
+
+	// close write side of the stream so the peer knows we are done writing
+	err = timeoutStream.stream.CloseWrite()
+	if err != nil {
+		return fmt.Errorf("error closing write side of the stream: %w", err)
+	}
+
+	return nil
 }
 
 func getRequest(ctx context.Context, url string) (*http.Response, error) {
