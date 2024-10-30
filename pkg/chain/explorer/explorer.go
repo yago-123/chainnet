@@ -12,20 +12,24 @@ import (
 	"github.com/yago-123/chainnet/pkg/storage"
 )
 
-type Explorer struct {
+// ChainExplorer is a module that allows to explore the chain, retrieve blocks, headers, etc. It is used to split the
+// chain module from the rest of the modules that need to interact with the chain but don't need to know the internals
+// this helps to avoid circular dependencies and to define clear boundaries. This module relies on the storage module
+// to retrieve the information (instead of querying the chain state directly)
+type ChainExplorer struct {
 	store  storage.Storage
 	hasher hash.Hashing
 }
 
-func NewExplorer(store storage.Storage, hasher hash.Hashing) *Explorer {
-	return &Explorer{
+func NewChainExplorer(store storage.Storage, hasher hash.Hashing) *ChainExplorer {
+	return &ChainExplorer{
 		store:  store,
 		hasher: hasher,
 	}
 }
 
 // GetLastBlock returns the last block in the chain persisted
-func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
+func (explorer *ChainExplorer) GetLastBlock() (*kernel.Block, error) {
 	block, err := explorer.store.GetLastBlock()
 	if err != nil {
 		return nil, err
@@ -36,7 +40,7 @@ func (explorer *Explorer) GetLastBlock() (*kernel.Block, error) {
 }
 
 // GetBlockByHash returns the block corresponding to the hash provided
-func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
+func (explorer *ChainExplorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 	block, err := explorer.store.RetrieveBlockByHash(hash)
 	if err != nil {
 		return nil, err
@@ -46,7 +50,7 @@ func (explorer *Explorer) GetBlockByHash(hash []byte) (*kernel.Block, error) {
 }
 
 // GetHeaderByHeight returns the block corresponding to the height provided
-func (explorer *Explorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, error) {
+func (explorer *ChainExplorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, error) {
 	lastHeaderHash, err := explorer.store.GetLastBlockHash()
 	if err != nil {
 		return nil, err
@@ -77,7 +81,7 @@ func (explorer *Explorer) GetHeaderByHeight(height uint) (*kernel.BlockHeader, e
 
 // GetLastHeader returns the last block header in the chain persisted
 // todo() handle the case when there is no last header yet
-func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
+func (explorer *ChainExplorer) GetLastHeader() (*kernel.BlockHeader, error) {
 	header, err := explorer.store.GetLastHeader()
 	if err != nil {
 		return nil, err
@@ -91,7 +95,7 @@ func (explorer *Explorer) GetLastHeader() (*kernel.BlockHeader, error) {
 // This function is used for determining the mining target of the block that is going to be mined or added
 // to the chain. For example when the chain is synchronizing (needs to validate target) or when
 // the miner needs to know the next mining difficulty
-func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error) {
+func (explorer *ChainExplorer) GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error) {
 	// if height remains smaller than difficulty interval, return initial difficulty
 	if height < difficultyAdjustmentInterval {
 		return util.InitialBlockTarget, nil
@@ -137,8 +141,8 @@ func (explorer *Explorer) GetMiningTarget(height uint, difficultyAdjustmentInter
 // GetAllHeaders returns all the block headers added to the chain. This implementation is not efficient, headers should
 // be cached but would introduce a lot of complexity and inconsistency. All the headers persisted are cached in the chain
 // module itself but it is not exposed to the outside and even if it was public, it would require a circular dependency,
-// This Explorer module was specifically introduced to avoid the dependency with the chain module
-func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
+// This ChainExplorer module was specifically introduced to avoid the dependency with the chain module
+func (explorer *ChainExplorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	var err error
 	var header *kernel.BlockHeader
 	var headers []*kernel.BlockHeader
@@ -172,7 +176,7 @@ func (explorer *Explorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	return headers, nil
 }
 
-func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
+func (explorer *ChainExplorer) FindUnspentTransactions(pubKey string) ([]*kernel.Transaction, error) {
 	return explorer.findUnspentTransactions(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
@@ -180,7 +184,7 @@ func (explorer *Explorer) FindUnspentTransactions(pubKey string) ([]*kernel.Tran
 // by checking the outputs and later the inputs, this is done this way in order to follow the inverse flow
 // of transactions
 // todo() remove this method, we will be using findUnspentOutputs instead most likely
-func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.BlockIterator) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
+func (explorer *ChainExplorer) findUnspentTransactions(pubKey string, it iterator.BlockIterator) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	var unspentTXs []*kernel.Transaction
 
@@ -245,12 +249,12 @@ func (explorer *Explorer) findUnspentTransactions(pubKey string, it iterator.Blo
 	return unspentTXs, nil
 }
 
-func (explorer *Explorer) FindUnspentOutputs(pubKey string) ([]*kernel.UTXO, error) {
+func (explorer *ChainExplorer) FindUnspentOutputs(pubKey string) ([]*kernel.UTXO, error) {
 	return explorer.findUnspentOutputs(pubKey, iterator.NewReverseBlockIterator(explorer.store))
 }
 
 // findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
-func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIterator) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
+func (explorer *ChainExplorer) findUnspentOutputs(pubKey string, it iterator.BlockIterator) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	unspentTXOs := []*kernel.UTXO{}
 	spentTXOs := make(map[string][]uint)
@@ -312,7 +316,7 @@ func (explorer *Explorer) findUnspentOutputs(pubKey string, it iterator.BlockIte
 	return unspentTXOs, nil
 }
 
-func (explorer *Explorer) CalculateAddressBalance(pubKey string) (uint, error) {
+func (explorer *ChainExplorer) CalculateAddressBalance(pubKey string) (uint, error) {
 	unspentTXs, err := explorer.FindUnspentTransactionsOutputs(pubKey)
 	if err != nil {
 		return 0, err
@@ -321,7 +325,7 @@ func (explorer *Explorer) CalculateAddressBalance(pubKey string) (uint, error) {
 	return retrieveBalanceFromUTXOs(unspentTXs), nil
 }
 
-func (explorer *Explorer) FindAmountSpendableOutputs(pubKey string, amount uint) (uint, map[string][]uint, error) {
+func (explorer *ChainExplorer) FindAmountSpendableOutputs(pubKey string, amount uint) (uint, map[string][]uint, error) {
 	unspentOutputs := make(map[string][]uint)
 	unspentTXs, err := explorer.FindUnspentTransactions(pubKey)
 	if err != nil {
@@ -351,7 +355,7 @@ func (explorer *Explorer) FindAmountSpendableOutputs(pubKey string, amount uint)
 	return accumulated, unspentOutputs, nil
 }
 
-func (explorer *Explorer) FindUnspentTransactionsOutputs(pubKey string) ([]kernel.TxOutput, error) {
+func (explorer *ChainExplorer) FindUnspentTransactionsOutputs(pubKey string) ([]kernel.TxOutput, error) {
 	unspentTransactions, err := explorer.FindUnspentTransactions(pubKey)
 	if err != nil {
 		return []kernel.TxOutput{}, err
@@ -360,7 +364,7 @@ func (explorer *Explorer) FindUnspentTransactionsOutputs(pubKey string) ([]kerne
 	return explorer.findUnspentTransactionsOutputs(pubKey, unspentTransactions)
 }
 
-func (explorer *Explorer) findUnspentTransactionsOutputs(pubKey string, unspentTransactions []*kernel.Transaction) ([]kernel.TxOutput, error) {
+func (explorer *ChainExplorer) findUnspentTransactionsOutputs(pubKey string, unspentTransactions []*kernel.Transaction) ([]kernel.TxOutput, error) {
 	var utxos []kernel.TxOutput
 
 	for _, tx := range unspentTransactions {

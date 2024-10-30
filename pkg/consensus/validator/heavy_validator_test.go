@@ -23,7 +23,7 @@ func TestHValidator_validateOwnershipAndBalanceOfInputs(_ *testing.T) {
 }
 
 func TestHValidator_validateNoCoinbaseAccepted(t *testing.T) {
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewChainExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
 
 	require.Error(t, hvalidator.ValidateTx(kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0)))
 }
@@ -51,7 +51,7 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 		},
 	}
 
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewChainExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
 
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithoutCoinbase))
 	require.Error(t, hvalidator.validateNumberOfCoinbaseTxs(blockWithTwoCoinbase))
@@ -76,7 +76,7 @@ func TestHValidator_validateNoDoubleSpendingInsideBlock(t *testing.T) {
 	}
 
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewChainExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 	require.Error(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithDoubleSpending))
 	require.NoError(t, hvalidator.validateNoDoubleSpendingInsideBlock(blockWithoutDoubleSpending))
 }
@@ -101,7 +101,7 @@ func TestHValidator_validateBlockHash(t *testing.T) {
 	}
 
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewChainExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the block hash corresponds to the target
 	require.NoError(t, hvalidator.validateBlockHash(block))
@@ -119,7 +119,7 @@ func TestHValidator_validateHeaderPreviousBlock(t *testing.T) {
 		On("GetLastHeader").
 		Return(mockHeader, nil)
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, fakeHashing), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewChainExplorer(mockStore, fakeHashing), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the previous block hash of the block matches the latest block
 	require.NoError(t, hvalidator.validateHeaderPreviousBlock(&kernel.BlockHeader{PrevBlockHash: append(mockHeader.Assemble(), []byte("-hashed")...), Height: 1}))
@@ -142,7 +142,7 @@ func TestHValidator_validateGenesisHeader(t *testing.T) {
 		On("GetLastHeader").
 		Return(mockHeader, nil)
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, fakeHashing), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewChainExplorer(mockStore, fakeHashing), &mockSign.MockSign{}, fakeHashing)
 
 	// check that can be a single genesis block
 	require.Error(t, hvalidator.validateGenesisHeader(&kernel.BlockHeader{Height: 0, PrevBlockHash: []byte{}}))
@@ -155,7 +155,7 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 		Return(&kernel.BlockHeader{Height: 10}, nil)
 
 	fakeHashing := &mockHash.FakeHashing{}
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(fakeHashing), expl.NewChainExplorer(mockStore, &mockHash.FakeHashing{}), &mockSign.MockSign{}, fakeHashing)
 
 	// check that the block height matches the current chain height
 	require.NoError(t, hvalidator.validateHeaderHeight(&kernel.BlockHeader{Height: 11}))
@@ -205,7 +205,7 @@ func TestHValidator_validateMerkleTree(t *testing.T) {
 		Transactions: txs,
 	}
 
-	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
+	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewChainExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
 
 	// verify correct merkle root does not generate error
 	require.NoError(t, hvalidator.validateMerkleTree(block))

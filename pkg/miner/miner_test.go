@@ -88,7 +88,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
+	explorer := expl.NewChainExplorer(store, hash.GetHasher(hash.SHA256))
 
 	mempool := mempool.NewMemPool(1000)
 	for _, v := range txs {
@@ -145,7 +145,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 		On("GetLastBlockHash").
 		Return([]byte{}, storage.ErrNotFound)
 
-	explorer := expl.NewExplorer(store, hash.GetHasher(hash.SHA256))
+	explorer := expl.NewChainExplorer(store, hash.GetHasher(hash.SHA256))
 
 	cfg := config.NewConfig()
 	chain, err := blockchain.NewBlockchain(

@@ -30,7 +30,7 @@ type Miner struct {
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
-	explorer   *explorer.Explorer
+	explorer   *explorer.ChainExplorer
 
 	minerPubKey []byte
 
@@ -41,7 +41,7 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.Explorer) (*Miner, error) {
+func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.ChainExplorer) (*Miner, error) {
 	if len(cfg.Miner.PubKey) == 0 {
 		return nil, fmt.Errorf("public key not provided, check the config file")
 	}

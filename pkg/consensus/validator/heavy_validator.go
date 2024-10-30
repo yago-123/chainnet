@@ -23,7 +23,7 @@ type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
 	lv       consensus.LightValidator
-	explorer *explorer.Explorer
+	explorer *explorer.ChainExplorer
 	signer   sign.Signature
 	hasher   hash.Hashing
 	cfg      *config.Config
@@ -32,7 +32,7 @@ type HValidator struct {
 func NewHeavyValidator(
 	cfg *config.Config,
 	lv consensus.LightValidator,
-	explorer *explorer.Explorer,
+	explorer *explorer.ChainExplorer,
 	signer sign.Signature,
 	hasher hash.Hashing,
 ) *HValidator {

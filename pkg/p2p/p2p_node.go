@@ -51,7 +51,7 @@ const (
 type nodeP2PHandler struct {
 	logger          *logrus.Logger
 	encoder         encoding.Encoding
-	explorer        *explorer.Explorer
+	explorer        *explorer.ChainExplorer
 	mempoolExplorer *mempool.MemPoolExplorer
 
 	netSubject observer.NetSubject
@@ -62,7 +62,7 @@ type nodeP2PHandler struct {
 func newNodeP2PHandler(
 	cfg *config.Config,
 	encoder encoding.Encoding,
-	explorer *explorer.Explorer,
+	explorer *explorer.ChainExplorer,
 	mempoolExplorer *mempool.MemPoolExplorer,
 	netSubject observer.NetSubject,
 ) *nodeP2PHandler {
@@ -250,7 +250,7 @@ func (h *nodeP2PHandler) handleReceiveTxFromWallet(stream network.Stream) {
 type HTTPRouter struct {
 	r        *httprouter.Router
 	encoder  encoding.Encoding
-	explorer *explorer.Explorer
+	explorer *explorer.ChainExplorer
 	logger   *logrus.Logger
 
 	isActive bool
@@ -259,7 +259,7 @@ type HTTPRouter struct {
 	cfg *config.Config
 }
 
-func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *HTTPRouter {
+func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.ChainExplorer) *HTTPRouter {
 	router := &HTTPRouter{
 		r:        httprouter.New(),
 		encoder:  encoder,
@@ -395,7 +395,7 @@ type NodeP2P struct {
 	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
 	encoder  encoding.Encoding
-	explorer *explorer.Explorer
+	explorer *explorer.ChainExplorer
 
 	router *HTTPRouter
 
@@ -410,7 +410,7 @@ func NewNodeP2P(
 	cfg *config.Config,
 	netSubject observer.NetSubject,
 	encoder encoding.Encoding,
-	explorer *explorer.Explorer,
+	explorer *explorer.ChainExplorer,
 	mempoolExplorer *mempool.MemPoolExplorer,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
