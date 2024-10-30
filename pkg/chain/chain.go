@@ -352,20 +352,20 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) {
 	// make sure that the tx uses proper UTXOs and contains valid signatures
 	if err := bc.validator.ValidateTx(&tx); err != nil {
-		bc.logger.Errorf("error validating transaction: %v", err)
+		bc.logger.Errorf("error validating transaction %x: %v", tx.ID, err)
 		return
 	}
 
 	// calculate the transaction fee
 	fee, err := bc.calculateTxFee(tx)
 	if err != nil {
-		bc.logger.Errorf("error calculating transaction fee: %v", err)
+		bc.logger.Errorf("error calculating transaction fee for %x: %v", tx.ID, err)
 		return
 	}
 
 	// append the transaction to the mempool
 	if errMempool := bc.mempool.AppendTransaction(&tx, fee); errMempool != nil {
-		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
+		bc.logger.Errorf("error appending transaction %x to mempool: %v", tx.ID, errMempool)
 		return
 	}
 
@@ -379,8 +379,8 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) 
 }
 
 // OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
-func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID string) {
-	containsTx := bc.mempool.ContainsTx(txID)
+func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
+	containsTx := bc.mempool.ContainsTx(string(txID))
 	// if the transaction is already in the mempool, skip execution
 	if containsTx {
 		return
@@ -391,7 +391,7 @@ func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID string) {
 	defer cancel()
 
 	// ask the peer for the whole transaction
-	tx, err := bc.p2pNet.AskSpecificTx(ctx, peer, []byte(txID))
+	tx, err := bc.p2pNet.AskSpecificTx(ctx, peer, txID)
 	if err != nil {
 		bc.logger.Errorf("error asking for transaction %x to %s: %s", txID, peer.String(), err)
 		return

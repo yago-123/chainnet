@@ -14,7 +14,7 @@ type NetObserver interface {
 	OnNodeDiscovered(peerID peer.ID)
 	OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader)
 	OnUnconfirmedTxReceived(peer peer.ID, tx kernel.Transaction)
-	OnUnconfirmedTxIDReceived(peer peer.ID, txID string)
+	OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte)
 }
 
 // NetSubject controller that manages the net observers
@@ -24,7 +24,7 @@ type NetSubject interface {
 	NotifyNodeDiscovered(peerID peer.ID)
 	NotifyUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader)
 	NotifyUnconfirmedTxReceived(peer peer.ID, tx kernel.Transaction)
-	NotifyUnconfirmedTxIDReceived(peer peer.ID, txID string)
+	NotifyUnconfirmedTxIDReceived(peer peer.ID, txID []byte)
 }
 
 type NetSubjectController struct {
@@ -80,7 +80,7 @@ func (no *NetSubjectController) NotifyUnconfirmedTxReceived(peer peer.ID, tx ker
 }
 
 // NotifyUnconfirmedTxIDReceived notifies all observers that a new unconfirmed transaction ID has been received
-func (no *NetSubjectController) NotifyUnconfirmedTxIDReceived(peer peer.ID, txID string) {
+func (no *NetSubjectController) NotifyUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	for _, observer := range no.observers {

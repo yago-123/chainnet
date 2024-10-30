@@ -83,7 +83,7 @@ func (h *gossipHandler) listenForTxAdded(sub *pubSubP2P.Subscription) {
 		// todo(): verify that is a transaction ID
 
 		h.logger.Infof("received transaction from %s with tx ID %x", msg.ReceivedFrom, msg.Data)
-		h.netSubject.NotifyUnconfirmedTxIDReceived(msg.ReceivedFrom, string(msg.Data))
+		h.netSubject.NotifyUnconfirmedTxIDReceived(msg.ReceivedFrom, msg.Data)
 	}
 }
 
