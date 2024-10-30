@@ -49,10 +49,10 @@ const (
 )
 
 type nodeP2PHandler struct {
-	logger   *logrus.Logger
-	encoder  encoding.Encoding
-	explorer *explorer.Explorer
-	mempool  *mempool.MemPool
+	logger          *logrus.Logger
+	encoder         encoding.Encoding
+	explorer        *explorer.Explorer
+	mempoolExplorer *mempool.MemPoolExplorer
 
 	netSubject observer.NetSubject
 
@@ -63,16 +63,16 @@ func newNodeP2PHandler(
 	cfg *config.Config,
 	encoder encoding.Encoding,
 	explorer *explorer.Explorer,
-	mempool *mempool.MemPool,
+	mempoolExplorer *mempool.MemPoolExplorer,
 	netSubject observer.NetSubject,
 ) *nodeP2PHandler {
 	return &nodeP2PHandler{
-		logger:     cfg.Logger,
-		encoder:    encoder,
-		explorer:   explorer,
-		mempool:    mempool,
-		netSubject: netSubject,
-		cfg:        cfg,
+		logger:          cfg.Logger,
+		encoder:         encoder,
+		explorer:        explorer,
+		mempoolExplorer: mempoolExplorer,
+		netSubject:      netSubject,
+		cfg:             cfg,
 	}
 }
 
@@ -164,8 +164,8 @@ func (h *nodeP2PHandler) handleAskSpecificTx(stream network.Stream) {
 	// todo() verify that is a correct tx ID
 
 	// retrieve transaction from explorer
-	contained, tx := h.mempool.ContainsTxID(string(txID))
-	if !contained {
+	tx, err := h.mempoolExplorer.RetrieveTx(string(txID))
+	if err != nil {
 		h.logger.Errorf("unable to retrieve transaction for stream %s: transaction %x not found", stream.ID(), txID)
 		return
 	}
@@ -403,7 +403,7 @@ func NewNodeP2P(
 	netSubject observer.NetSubject,
 	encoder encoding.Encoding,
 	explorer *explorer.Explorer,
-	mempool *mempool.MemPool,
+	mempoolExplorer *mempool.MemPoolExplorer,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
 	options := []p2pConfig.Option{}
@@ -481,7 +481,7 @@ func NewNodeP2P(
 	router := NewHTTPRouter(cfg, encoder, explorer)
 
 	// initialize handlers
-	handler := newNodeP2PHandler(cfg, encoder, explorer, mempool, netSubject)
+	handler := newNodeP2PHandler(cfg, encoder, explorer, mempoolExplorer, netSubject)
 	host.SetStreamHandler(AskLastHeaderProtocol, handler.handleAskLastHeader)
 	host.SetStreamHandler(AskSpecificBlockProtocol, handler.handleAskSpecificBlock)
 	host.SetStreamHandler(AskSpecificTxProtocol, handler.handleAskSpecificTx)

@@ -131,14 +131,6 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 	return txs, totalFee
 }
 
-// ContainsTxID checks if the mempool contains a transaction with the given txID
-func (m *MemPool) ContainsTxID(txID string) (bool, *kernel.Transaction) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	return m.txIDs[txID] != nil, m.txIDs[txID]
-}
-
 // ID returns the observer id
 func (m *MemPool) ID() string {
 	return MemPoolObserverID
