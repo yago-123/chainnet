@@ -193,6 +193,34 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 	return nil
 }
 
+func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
+	// make sure that the tx uses proper UTXOs and contains valid signatures
+	if err := bc.validator.ValidateTx(tx); err != nil {
+		return fmt.Errorf("error validating transaction %x: %w", tx.ID, err)
+	}
+
+	// calculate the transaction fee
+	fee, err := bc.calculateTxFee(*tx)
+	if err != nil {
+		return fmt.Errorf("error calculating transaction fee for %x: %w", tx.ID, err)
+	}
+
+	// append the transaction to the mempool
+	if errMempool := bc.mempool.AppendTransaction(tx, fee); errMempool != nil {
+		return fmt.Errorf("error appending transaction %x to mempool: %v", tx.ID, errMempool)
+	}
+
+	bc.logger.Infof("transaction %x added to mempool", tx.ID)
+
+	// notify chain observers of a new transaction added into the mempool. This is required because
+	// although mempool is a separate module, it represents an important part of the chain. Important
+	// modules like the storage and the network (propagates via pubsub to other nodes) need to be
+	// aware of this event
+	bc.blockSubject.NotifyTxAdded(tx)
+
+	return nil
+}
+
 // func (bc *Blockchain) generalSync() {
 // 	try to sync regularly with other nodes to see if there is some sort of fork (take into account that +6 blocks of
 // 	difference is already considered kind of a fork)
@@ -350,32 +378,9 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 
 // OnUnconfirmedTxReceived is called when a new transaction is received from the network
 func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) {
-	// make sure that the tx uses proper UTXOs and contains valid signatures
-	if err := bc.validator.ValidateTx(&tx); err != nil {
-		bc.logger.Errorf("error validating transaction %x: %v", tx.ID, err)
-		return
+	if err := bc.AddTransaction(&tx); err != nil {
+		bc.logger.Errorf("error adding transaction %x to the chain: %s", tx.ID, err)
 	}
-
-	// calculate the transaction fee
-	fee, err := bc.calculateTxFee(tx)
-	if err != nil {
-		bc.logger.Errorf("error calculating transaction fee for %x: %v", tx.ID, err)
-		return
-	}
-
-	// append the transaction to the mempool
-	if errMempool := bc.mempool.AppendTransaction(&tx, fee); errMempool != nil {
-		bc.logger.Errorf("error appending transaction %x to mempool: %v", tx.ID, errMempool)
-		return
-	}
-
-	bc.logger.Infof("transaction %x added to mempool", tx.ID)
-
-	// notify chain observers of a new transaction added into the mempool. This is required because
-	// although mempool is a separate module, it represents an important part of the chain. Important
-	// modules like the storage and the network (propagates via pubsub to other nodes) need to be
-	// aware of this event
-	bc.blockSubject.NotifyTxAdded(&tx)
 }
 
 // OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
@@ -397,8 +402,9 @@ func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
 		return
 	}
 
-	// try to add the transaction
-	bc.OnUnconfirmedTxReceived(peer, *tx)
+	if err = bc.AddTransaction(tx); err != nil {
+		bc.logger.Errorf("error adding transaction %x to the chain: %s", tx.ID, err)
+	}
 }
 
 func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
