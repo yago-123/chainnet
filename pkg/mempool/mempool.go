@@ -24,14 +24,14 @@ type TxFeePair struct {
 type MemPool struct {
 	// pairs is a slice of transactions and their corresponding fees
 	pairs []TxFeePair
+	// txIDs is a map containing transaction ID as key and transaction as value
+	txIDs map[string]*kernel.Transaction
 	// inputSet is used to keep track of the inputs that are being spent in the mempool. This is useful for removing
 	// transactions that are going to be invalid after a block addition. The key is the STXO key and the value is
 	// the transaction ID that is spending it
 	inputSet map[string][]string
 	// maxNumberTxs is the maximum number of transactions the mempool can hold
 	maxNumberTxs uint
-	// txIDs is a map containing transaction ID as key and transaction as value
-	txIDs map[string]*kernel.Transaction
 
 	mu sync.Mutex
 }
@@ -39,8 +39,8 @@ type MemPool struct {
 func NewMemPool(maxNumberTxs uint) *MemPool {
 	return &MemPool{
 		pairs:        make([]TxFeePair, 0, maxNumberTxs),
-		inputSet:     make(map[string][]string),
 		txIDs:        make(map[string]*kernel.Transaction),
+		inputSet:     make(map[string][]string),
 		maxNumberTxs: maxNumberTxs,
 	}
 }

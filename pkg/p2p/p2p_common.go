@@ -16,7 +16,7 @@ const (
 	RouterAddressUTXOs   = "/address/%s/utxos"
 	RouterAddressBalance = "/address/%s/balance"
 
-	// PropagateTxFromWalletToNode is the endpoint exposed by nodes to receive a transaction from wallets
+	// PropagateTxFromWalletToNode is the endpoint used to negotiate tx propagation between wallets and nodes
 	PropagateTxFromWalletToNode = "/propagateTxFromWalletToNode/0.1.0"
 )
 

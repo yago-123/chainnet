@@ -3,10 +3,10 @@ package explorer
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/util"
 	"time"
 
 	"github.com/yago-123/chainnet/pkg/chain/iterator"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/storage"

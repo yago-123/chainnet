@@ -9,9 +9,9 @@ import (
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/btcsuite/btcutil/base58"
 )

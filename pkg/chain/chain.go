@@ -13,7 +13,6 @@ import (
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -21,6 +20,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/p2p"
 	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/util"
 	"github.com/yago-123/chainnet/pkg/util/mutex"
 
 	"github.com/libp2p/go-libp2p/core/peer"

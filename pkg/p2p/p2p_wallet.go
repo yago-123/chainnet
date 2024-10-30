@@ -10,7 +10,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 
-	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"

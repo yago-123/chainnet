@@ -7,7 +7,6 @@ import (
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
@@ -15,6 +14,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/p2p"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/btcsuite/btcutil/base58"
 )

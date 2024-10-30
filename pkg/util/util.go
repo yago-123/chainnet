@@ -22,6 +22,9 @@ const (
 	InitialBlockTarget   = uint(1)
 	MinimumTarget        = uint(1)
 	MaximumTarget        = uint(255)
+
+	MinLengthHash = 16
+	MaxLengthHash = 256
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -140,6 +143,21 @@ func IsValidAddress(_ []byte) bool {
 	return true
 }
 
+func IsValidHash(hash []byte) bool {
+	// check length constraint
+	if len(hash) < MinLengthHash || len(hash) > MaxLengthHash {
+		return false
+	}
+
+	// check each byte to ensure it is either a lowercase letter or a digit
+	for _, b := range hash {
+		if !(b >= 'a' && b <= 'z') && !(b >= '0' && b <= '9') {
+			return false
+		}
+	}
+	return true
+}
+
 func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	publicKey, err := ConvertECDSAPubToBytes(pubKey)
 	if err != nil {
@@ -204,7 +222,7 @@ func ConvertBytesToECDSAPub(pubKey []byte) (*ecdsa.PublicKey, error) {
 
 // ReadECDSAPemPrivateKey reads an ECDSA private key from a PEM file
 func ReadECDSAPemPrivateKey(path string) ([]byte, error) {
-	privateKeyBytes, err := readFile(path)
+	privateKeyBytes, err := ReadFile(path)
 	if err != nil {
 		return []byte{}, fmt.Errorf("error reading private key file: %w", err)
 	}
@@ -220,7 +238,7 @@ func ReadECDSAPemPrivateKey(path string) ([]byte, error) {
 
 // ReadECDSAPemPublicKeyBytes reads an ECDSA public key from a PEM file and returns the raw DER encoded bytes.
 func ReadECDSAPemPublicKeyBytes(path string) ([]byte, error) {
-	publicKeyBytes, err := readFile(path)
+	publicKeyBytes, err := ReadFile(path)
 	if err != nil {
 		return []byte{}, fmt.Errorf("error reading private key file: %w", err)
 	}
@@ -235,7 +253,7 @@ func ReadECDSAPemPublicKeyBytes(path string) ([]byte, error) {
 	return block.Bytes, nil
 }
 
-func readFile(path string) ([]byte, error) {
+func ReadFile(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return []byte{}, fmt.Errorf("error opening file: %w", err)

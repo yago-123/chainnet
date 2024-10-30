@@ -6,7 +6,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/config"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/spf13/cobra"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"

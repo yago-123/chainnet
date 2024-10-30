@@ -16,7 +16,6 @@ import (
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/observer"
@@ -24,6 +23,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/p2p/events"
 	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
 	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/libp2p/go-libp2p"
 	p2pConfig "github.com/libp2p/go-libp2p/config"
@@ -122,6 +122,11 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 		return
 	}
 
+	if valid := util.IsValidHash(hash); !valid {
+		h.logger.Errorf("invalid hash %x received from stream %s", hash, stream.ID())
+		return
+	}
+
 	// retrieve block from explorer
 	block, err := h.explorer.GetBlockByHash(hash)
 	if err != nil {
@@ -161,7 +166,10 @@ func (h *nodeP2PHandler) handleAskSpecificTx(stream network.Stream) {
 		return
 	}
 
-	// todo() verify that is a correct tx ID
+	if valid := util.IsValidHash(txID); !valid {
+		h.logger.Errorf("invalid hash %x received from stream %s", txID, stream.ID())
+		return
+	}
 
 	// retrieve transaction from explorer
 	tx, err := h.mempoolExplorer.RetrieveTx(string(txID))
