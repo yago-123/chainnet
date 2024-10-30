@@ -159,6 +159,18 @@ func TestMemPoolInputSet(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedInputSet, mempool.inputSet)
+
+	expectedTxIDs := map[string]*kernel.Transaction{
+		"tx1":                   tx1.Transaction,
+		"tx2":                   tx2.Transaction,
+		"tx3":                   tx3.Transaction,
+		"tx4":                   tx4.Transaction,
+		"tx5":                   tx5.Transaction,
+		"tx6":                   tx6.Transaction,
+		"txIncompatibleWithTx1": txIncompatibleWithTx1.Transaction,
+	}
+
+	assert.Equal(t, expectedTxIDs, mempool.txIDs)
 }
 
 func TestMemPoolOnBlockAddition(t *testing.T) {
@@ -187,6 +199,14 @@ func TestMemPoolOnBlockAddition(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedInputSet, mempool.inputSet)
+
+	expectedTxIDs := map[string]*kernel.Transaction{
+		"tx3": tx3.Transaction,
+		"tx4": tx4.Transaction,
+		"tx5": tx5.Transaction,
+	}
+
+	assert.Equal(t, expectedTxIDs, mempool.txIDs)
 }
 
 func TestMemPoolMaxNumberTxsMempool(t *testing.T) {

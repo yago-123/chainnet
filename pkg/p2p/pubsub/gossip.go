@@ -80,14 +80,10 @@ func (h *gossipHandler) listenForTxAdded(sub *pubSubP2P.Subscription) {
 			continue
 		}
 
-		tx, err := h.encoder.DeserializeTransaction(msg.Data)
-		if err != nil {
-			h.logger.Errorf("failed deserializing transaction from %s: %v", msg.ReceivedFrom, err)
-			continue
-		}
+		// todo(): verify that is a transaction ID
 
-		h.logger.Infof("received transaction from %s with tx ID %x", msg.ReceivedFrom, tx.ID)
-		h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+		h.logger.Infof("received transaction from %s with tx ID %x", msg.ReceivedFrom, msg.Data)
+		h.netSubject.NotifyUnconfirmedTxIDReceived(msg.ReceivedFrom, string(msg.Data))
 	}
 }
 
@@ -170,16 +166,14 @@ func (g *GossipPubSub) NotifyBlockHeaderAdded(ctx context.Context, header kernel
 	return topic.Publish(ctx, data)
 }
 
+// NotifyTransactionAdded used for notifying the pubsub network that a local transaction has been added to
+// the mempool. It propagates the transaction ID only. If nodes want to retrieve the transaction details,
+// they will ask the node that sent the transaction.
 func (g *GossipPubSub) NotifyTransactionAdded(ctx context.Context, tx kernel.Transaction) error {
 	topic, ok := g.topicStore[TxAddedPubSubTopic]
 	if !ok {
 		return fmt.Errorf("topic %s not registered", TxAddedPubSubTopic)
 	}
 
-	data, err := g.encoder.SerializeTransaction(tx)
-	if err != nil {
-		return fmt.Errorf("failed to serialize transaction: %w", err)
-	}
-
-	return topic.Publish(ctx, data)
+	return topic.Publish(ctx, tx.ID)
 }

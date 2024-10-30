@@ -145,7 +145,7 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P,
 
 	// create new P2P node
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store, bc.hasher))
+	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store, bc.hasher), bc.mempool)
 	if err != nil {
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
@@ -349,7 +349,7 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 }
 
 // OnUnconfirmedTxReceived is called when a new transaction is received from the network
-func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
+func (bc *Blockchain) OnUnconfirmedTxReceived(peer peer.ID, tx kernel.Transaction) {
 	if err := bc.validator.ValidateTx(&tx); err != nil {
 		bc.logger.Errorf("error validating transaction: %v", err)
 		return
@@ -365,6 +365,30 @@ func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
 		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
 		return
 	}
+
+	bc.blockSubject.NotifyTxAdded(&tx)
+}
+
+// OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
+func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID string) {
+	containsTx, tx := bc.mempool.ContainsTxID(txID)
+	// if the transaction is already in the mempool, skip execution
+	if containsTx {
+		return
+	}
+
+	// ask the peer for the transaction
+	ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	// ask the peer for the whole transaction
+	tx, err := bc.p2pNet.AskSpecificTx(ctx, peer, []byte(txID))
+	if err != nil {
+		bc.logger.Errorf("error asking for transaction %x to %s: %s", txID, peer.String(), err)
+		return
+	}
+
+	bc.OnUnconfirmedTxReceived(peer, *tx)
 }
 
 func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {

@@ -150,6 +150,11 @@ func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	m.CancelMining()
 }
 
+// OnTxAddition is triggered when a new transaction is added into the MemPool
+func (m *Miner) OnTxAddition(_ *kernel.Transaction) {
+	// do nothing
+}
+
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees
 func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Transaction, error) {
 	reward := uint(0)

@@ -22,12 +22,16 @@ type TxFeePair struct {
 }
 
 type MemPool struct {
+	// pairs is a slice of transactions and their corresponding fees
 	pairs []TxFeePair
 	// inputSet is used to keep track of the inputs that are being spent in the mempool. This is useful for removing
 	// transactions that are going to be invalid after a block addition. The key is the STXO key and the value is
 	// the transaction ID that is spending it
-	inputSet     map[string][]string
+	inputSet map[string][]string
+	// maxNumberTxs is the maximum number of transactions the mempool can hold
 	maxNumberTxs uint
+	// txIDs is a map containing transaction ID as key and transaction as value
+	txIDs map[string]*kernel.Transaction
 
 	mu sync.Mutex
 }
@@ -36,6 +40,7 @@ func NewMemPool(maxNumberTxs uint) *MemPool {
 	return &MemPool{
 		pairs:        make([]TxFeePair, 0, maxNumberTxs),
 		inputSet:     make(map[string][]string),
+		txIDs:        make(map[string]*kernel.Transaction),
 		maxNumberTxs: maxNumberTxs,
 	}
 }
@@ -66,6 +71,8 @@ func (m *MemPool) AppendTransaction(tx *kernel.Transaction, fee uint) error {
 
 		m.inputSet[v.UniqueTxoKey()] = append(m.inputSet[v.UniqueTxoKey()], string(tx.ID))
 	}
+
+	m.txIDs[string(tx.ID)] = tx
 
 	// ensure MemPool is sorted after adding (may be faster ways, but this is fine for now)
 	sort.Sort(m)
@@ -124,6 +131,14 @@ func (m *MemPool) RetrieveTransactions(maxNumberTxs uint) ([]*kernel.Transaction
 	return txs, totalFee
 }
 
+// ContainsTxID checks if the mempool contains a transaction with the given txID
+func (m *MemPool) ContainsTxID(txID string) (bool, *kernel.Transaction) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return m.txIDs[txID] != nil, m.txIDs[txID]
+}
+
 // ID returns the observer id
 func (m *MemPool) ID() string {
 	return MemPoolObserverID
@@ -158,6 +173,16 @@ func (m *MemPool) OnBlockAddition(block *kernel.Block) {
 			m.pairs = append(m.pairs[:i], m.pairs[i+1:]...)
 		}
 	}
+
+	// remove the txs from the txIDs map
+	for k, _ := range removeTx {
+		delete(m.txIDs, k)
+	}
+}
+
+// OnTxAddition is called when a new tx is added to the mempool via the observer pattern
+func (m *MemPool) OnTxAddition(tx *kernel.Transaction) {
+	// do nothing
 }
 
 // RegisterMetrics registers the UTXO set metrics to the prometheus registry

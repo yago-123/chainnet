@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/mempool"
 	"net/http"
 	"time"
 
@@ -38,6 +39,7 @@ const (
 
 	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
 	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
+	AskSpecificTxProtocol    = "/askSpecificTx/0.1.0"
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
 
 	ContentTypeHeader = "Content-Type"
@@ -49,17 +51,25 @@ type nodeP2PHandler struct {
 	logger   *logrus.Logger
 	encoder  encoding.Encoding
 	explorer *explorer.Explorer
+	mempool  *mempool.MemPool
 
 	netSubject observer.NetSubject
 
 	cfg *config.Config
 }
 
-func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer, netSubject observer.NetSubject) *nodeP2PHandler {
+func newNodeP2PHandler(
+	cfg *config.Config,
+	encoder encoding.Encoding,
+	explorer *explorer.Explorer,
+	mempool *mempool.MemPool,
+	netSubject observer.NetSubject,
+) *nodeP2PHandler {
 	return &nodeP2PHandler{
 		logger:     cfg.Logger,
 		encoder:    encoder,
 		explorer:   explorer,
+		mempool:    mempool,
 		netSubject: netSubject,
 		cfg:        cfg,
 	}
@@ -138,6 +148,42 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 	}
 }
 
+func (h *nodeP2PHandler) handleAskSpecificTx(stream network.Stream) {
+	// open stream with timeout
+	timeoutStream := AddTimeoutToStream(stream, h.cfg)
+	defer timeoutStream.Close()
+
+	// read hash of transaction that is being requested
+	txID, err := timeoutStream.ReadWithTimeout()
+	if err != nil {
+		h.logger.Errorf("error reading transaction hash from stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	// todo() verify that is a correct tx ID
+
+	// retrieve transaction from explorer
+	contained, tx := h.mempool.ContainsTxID(string(txID))
+	if !contained {
+		h.logger.Errorf("unable to retrieve transaction for stream %s: transaction %x not found", stream.ID(), txID)
+		return
+	}
+
+	// encode transaction
+	data, err := h.encoder.SerializeTransaction(*tx)
+	if err != nil {
+		h.logger.Errorf("error serializing transaction with hash %x for stream %s: %s", txID, stream.ID(), err)
+		return
+	}
+
+	// send transaction encoded to the peer
+	_, err = timeoutStream.WriteWithTimeout(data)
+	if err != nil {
+		h.logger.Errorf("error writing transaction with hash %x to stream %s: %s", txID, stream.ID(), err)
+		return
+	}
+}
+
 // handleAskAllHeaders handler that replies to the requests from AskAllHeaders
 func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
 	// open stream with timeout
@@ -189,7 +235,7 @@ func (h *nodeP2PHandler) handleReceiveTxFromWallet(stream network.Stream) {
 		return
 	}
 
-	h.netSubject.NotifyUnconfirmedTxReceived(*tx)
+	h.netSubject.NotifyUnconfirmedTxIDReceived(stream.Conn().RemotePeer(), string(tx.ID))
 
 	// todo(): should we notify the sender that the transaction have not been added?
 }
@@ -358,6 +404,7 @@ func NewNodeP2P(
 	netSubject observer.NetSubject,
 	encoder encoding.Encoding,
 	explorer *explorer.Explorer,
+	mempool *mempool.MemPool,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
 	options := []p2pConfig.Option{}
@@ -435,9 +482,10 @@ func NewNodeP2P(
 	router := NewHTTPRouter(cfg, encoder, explorer)
 
 	// initialize handlers
-	handler := newNodeP2PHandler(cfg, encoder, explorer, netSubject)
+	handler := newNodeP2PHandler(cfg, encoder, explorer, mempool, netSubject)
 	host.SetStreamHandler(AskLastHeaderProtocol, handler.handleAskLastHeader)
 	host.SetStreamHandler(AskSpecificBlockProtocol, handler.handleAskSpecificBlock)
+	host.SetStreamHandler(AskSpecificTxProtocol, handler.handleAskSpecificTx)
 	host.SetStreamHandler(AskAllHeaders, handler.handleAskAllHeaders)
 	host.SetStreamHandler(PropagateTxFromWalletToNode, handler.handleReceiveTxFromWallet)
 
@@ -541,6 +589,34 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 	return n.encoder.DeserializeBlock(data)
 }
 
+func (n *NodeP2P) AskSpecificTx(ctx context.Context, peerID peer.ID, txID []byte) (*kernel.Transaction, error) {
+	// open stream to peer with timeout
+	timeoutStream, err := NewTimeoutStream(ctx, n.cfg, n.host, peerID, AskSpecificTxProtocol)
+	if err != nil {
+		return nil, err
+	}
+	defer timeoutStream.Close()
+
+	// write transaction hash required to stream
+	_, err = timeoutStream.WriteWithTimeout(txID)
+	if err != nil {
+		return nil, fmt.Errorf("error writing transaction hash %x to stream: %w", txID, err)
+	}
+	// close write side of the stream so the peer knows we are done writing
+	err = timeoutStream.stream.CloseWrite()
+	if err != nil {
+		return nil, fmt.Errorf("error closing write side of the stream: %w", err)
+	}
+
+	// read and decode transaction retrieved
+	data, err := timeoutStream.ReadWithTimeout()
+	if err != nil {
+		return nil, fmt.Errorf("error reading data from stream: %w", err)
+	}
+
+	return n.encoder.DeserializeTransaction(data)
+}
+
 // AskAllHeaders sends a request to a specific peer to get all headers from the remote chain. The reply contains
 // a list of headers unsorted
 func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.BlockHeader, error) {
@@ -573,6 +649,17 @@ func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
 	// notify all peers about the new block added
 	if err := n.pubsub.NotifyBlockHeaderAdded(ctx, *block.Header); err != nil {
 		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
+	}
+}
+
+// OnTxAddition is triggered when a new transaction is added into the MemPool
+func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
+	ctx, cancel := context.WithTimeout(context.Background(), n.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	// notify all peers about the new transaction added
+	if err := n.pubsub.NotifyTransactionAdded(ctx, *tx); err != nil {
+		n.logger.Errorf("error notifying transaction %x: %s", tx.ID, err)
 	}
 }
 
