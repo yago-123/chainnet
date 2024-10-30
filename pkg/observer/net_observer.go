@@ -21,9 +21,13 @@ type NetObserver interface {
 type NetSubject interface {
 	Register(observer NetObserver)
 	Unregister(observer NetObserver)
+	// NotifyNodeDiscovered notifies the chain when a new node has been discovered via pubsub
 	NotifyNodeDiscovered(peerID peer.ID)
+	// NotifyUnconfirmedHeaderReceived notifies the chain when a header is received via pubsub
 	NotifyUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader)
+	// NotifyUnconfirmedTxReceived notifies the chain when a transaction is received via stream
 	NotifyUnconfirmedTxReceived(peer peer.ID, tx kernel.Transaction)
+	// NotifyUnconfirmedTxIDReceived notifies the chain when a transaction ID is received via pubsub
 	NotifyUnconfirmedTxIDReceived(peer peer.ID, txID []byte)
 }
 
