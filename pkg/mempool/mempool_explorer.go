@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 

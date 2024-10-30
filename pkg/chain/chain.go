@@ -207,7 +207,7 @@ func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
 
 	// append the transaction to the mempool
 	if errMempool := bc.mempool.AppendTransaction(tx, fee); errMempool != nil {
-		return fmt.Errorf("error appending transaction %x to mempool: %v", tx.ID, errMempool)
+		return fmt.Errorf("error appending transaction %x to mempool: %w", tx.ID, errMempool)
 	}
 
 	bc.logger.Infof("transaction %x added to mempool", tx.ID)
