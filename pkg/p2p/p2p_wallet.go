@@ -137,46 +137,8 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	return utxos, nil
 }
 
-// todo(): reestructure this to send transaction to node directly via API. Once the transaction is verified and appended
-// todo(): mempool then notify the network about the transaction (txid via pubsub), after that nodes will ask for the
-// todo(): transaction details to the node that sent the transaction
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
-	// retrieve the address of the node
-	addr, err := extractAddrInfo(n.cfg.Wallet.ServerAddress, n.cfg.Wallet.ServerPort, n.cfg.Wallet.ServerID)
-	if err != nil {
-		return fmt.Errorf("failed to parse multiaddress: %w", err)
-	}
-
-	// try to connect to the node
-	err = n.host.Connect(ctx, *addr)
-	if err != nil {
-		return fmt.Errorf("failed to connect to seed node %s: %w", addr, err)
-	}
-
-	// open stream to peer with timeout
-	timeoutStream, err := NewTimeoutStream(ctx, n.cfg, n.host, addr.ID, PropagateTxFromWalletToNode)
-	if err != nil {
-		return err
-	}
-	defer timeoutStream.Close()
-
-	data, err := n.encoder.SerializeTransaction(tx)
-	if err != nil {
-		return fmt.Errorf("failed to serialize transaction: %w", err)
-	}
-
-	// read and decode reply
-	_, err = timeoutStream.WriteWithTimeout(data)
-	if err != nil {
-		return fmt.Errorf("error writing data to stream %s: %w", timeoutStream.stream.ID(), err)
-	}
-
-	// close write side of the stream so the peer knows we are done writing
-	err = timeoutStream.stream.CloseWrite()
-	if err != nil {
-		return fmt.Errorf("error closing write side of the stream: %w", err)
-	}
-
+	// todo(): implement this via HTTP API only, also delete the receiver from the node side
 	return nil
 }
 
