@@ -107,19 +107,19 @@ func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Reques
 
 	addr, err := decodeAddress(address)
 	if err != nil {
-		router.handleError(w, "Invalid address", http.StatusBadRequest, err)
+		router.handleError(w, fmt.Sprintf("Invalid address: %s", err.Error()), http.StatusBadRequest, err)
 		return
 	}
 
 	txs, err := router.explorer.FindUnspentTransactions(addr)
 	if err != nil {
-		router.handleError(w, "Failed to retrieve transactions", http.StatusInternalServerError, err)
+		router.handleError(w, fmt.Sprintf("Failed to retrieve transactions: %s", err.Error()), http.StatusInternalServerError, err)
 		return
 	}
 
 	txsEncoded, err := router.encoder.SerializeTransactions(txs)
 	if err != nil {
-		router.handleError(w, "Failed to encode transactions", http.StatusBadRequest, err)
+		router.handleError(w, fmt.Sprintf("Failed to encode transactions: %s", err.Error()), http.StatusBadRequest, err)
 		return
 	}
 
@@ -132,19 +132,19 @@ func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps h
 
 	addr, err := decodeAddress(address)
 	if err != nil {
-		router.handleError(w, "Invalid address", http.StatusBadRequest, err)
+		router.handleError(w, fmt.Sprintf("Invalid address: %s", err.Error()), http.StatusBadRequest, err)
 		return
 	}
 
 	utxos, err := router.explorer.FindUnspentOutputs(addr)
 	if err != nil {
-		router.handleError(w, "Failed to retrieve UTXOs", http.StatusInternalServerError, err)
+		router.handleError(w, fmt.Sprintf("Failed to retrieve UTXOs: %s", err.Error()), http.StatusInternalServerError, err)
 		return
 	}
 
 	utxosEncoded, err := router.encoder.SerializeUTXOs(utxos)
 	if err != nil {
-		router.handleError(w, "Failed to encode UTXOs", http.StatusBadRequest, err)
+		router.handleError(w, fmt.Sprintf("Failed to encode UTXOs: %s", err.Error()), http.StatusBadRequest, err)
 		return
 	}
 
@@ -155,18 +155,18 @@ func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps h
 func (router *HTTPRouter) receiveTransaction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		router.handleError(w, "Failed to read payload", http.StatusInternalServerError, err)
+		router.handleError(w, fmt.Sprintf("Failed to read payload: %s", err.Error()), http.StatusInternalServerError, err)
 		return
 	}
 
 	tx, err := router.encoder.DeserializeTransaction(data)
 	if err != nil {
-		router.handleError(w, "Failed to decode transaction", http.StatusInternalServerError, err)
+		router.handleError(w, fmt.Sprintf("Failed to decode transaction: %s", err.Error()), http.StatusInternalServerError, err)
 		return
 	}
 
 	if errObserver := router.netSubject.NotifyUnconfirmedTxReceived(*tx); errObserver != nil {
-		router.handleError(w, "Failed to append transaction", http.StatusBadRequest, errObserver)
+		router.handleError(w, fmt.Sprintf("Failed to append transaction: %s", errObserver.Error()), http.StatusBadRequest, errObserver)
 	}
 }
 
