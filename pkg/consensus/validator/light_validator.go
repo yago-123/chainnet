@@ -101,7 +101,7 @@ func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) error {
 	for i := range len(tx.Vin) {
 		for j := i + 1; j < len(tx.Vin); j++ {
 			if tx.Vin[i].EqualInput(tx.Vin[j]) {
-				return fmt.Errorf("transaction %s has multiple inputs with the same source", string(tx.ID))
+				return fmt.Errorf("transaction %x has multiple inputs with the same source", tx.ID)
 			}
 		}
 	}

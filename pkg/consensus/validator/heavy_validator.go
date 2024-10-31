@@ -155,7 +155,7 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 				}
 
 				if !sigCheck {
-					return fmt.Errorf("input with id %s and index %d has invalid signature", vin.Txid, vin.Vout)
+					return fmt.Errorf("input with id %x and index %d has invalid signature", vin.Txid, vin.Vout)
 				}
 
 				// append the balance
@@ -254,6 +254,8 @@ func (hv *HValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
 		return fmt.Errorf("expected %d target, but header had %d", targetExpected, bh.Target)
 	}
 
+	// todo(): validate the 0s in the hash
+
 	return nil
 }
 
@@ -288,7 +290,7 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 			for _, vin := range b.Transactions[i].Vin {
 				for _, vin2 := range b.Transactions[j].Vin {
 					if vin.EqualInput(vin2) {
-						return fmt.Errorf("transaction %s has input that is also spent in transaction %s", string(b.Transactions[i].ID), vin.Txid)
+						return fmt.Errorf("transaction %x has input that is also spent in transaction %x", b.Transactions[i].ID, vin.Txid)
 					}
 				}
 			}
