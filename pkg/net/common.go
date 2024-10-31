@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	RouterRetrieveAddressTxs     = "/api/v1/address/%s/txs"
-	RouterRetrieveAddressUTXOs   = "/api/v1/address/%s/utxos"
-	RouterRetrieveAddressBalance = "/api/v1/address/%s/balance"
-	RouterSendTx                 = "/api/v1/sendTx"
+	RouterRetrieveAddressTxs   = "/api/v1/address/%s/txs"
+	RouterRetrieveAddressUTXOs = "/api/v1/address/%s/utxos"
+	RouterSendTx               = "/api/v1/sendTx"
 
 	ContentTypeHeader = "Content-Type"
 )
