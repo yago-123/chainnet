@@ -152,12 +152,6 @@ func IsValidHash(hash []byte) bool {
 		return false
 	}
 
-	// check each byte to ensure it is either a lowercase letter or a digit
-	for _, b := range hexString {
-		if !(b >= 'a' && b <= 'z') && !(b >= '0' && b <= '9') {
-			return false
-		}
-	}
 	return true
 }
 
