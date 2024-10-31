@@ -35,9 +35,6 @@ jobs:
         with:
           version: 'v1.60.2'
 
-      - name: Build CLI
-        run: make cli
-
       - name: Build Node
         run: make node
 
