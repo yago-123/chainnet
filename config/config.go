@@ -25,7 +25,7 @@ const (
 
 	KeyPrometheusEnabled = "prometheus.enabled"
 	KeyPrometheusPort    = "prometheus.port"
-	KeyPrometheusPath    = "prometheus.metrics"
+	KeyPrometheusPath    = "prometheus.path"
 
 	KeyP2PEnabled          = "p2p.enabled"
 	KeyP2PPeerIdentityPath = "p2p.identity-path"
