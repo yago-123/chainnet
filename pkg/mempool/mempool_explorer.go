@@ -9,7 +9,7 @@ import (
 // MemPoolExplorer is a middleware for MemPool, designed to prevent other packages, such as the network layer,
 // from directly accessing its structure. This separation ensures a clear boundary, restricting MemPool manipulation
 // to the chain object only
-type MemPoolExplorer struct {
+type MemPoolExplorer struct { //nolint:revive // name shutter it's OK here
 	mempool *MemPool
 }
 

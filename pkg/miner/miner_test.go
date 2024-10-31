@@ -9,7 +9,6 @@ import (
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -17,6 +16,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/script"
 	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/util"
 	"github.com/yago-123/chainnet/tests/mocks/consensus"
 	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
 

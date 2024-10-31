@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/yago-123/chainnet/pkg/util"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
@@ -11,8 +16,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/observer"
-	"io"
-	"net/http"
 )
 
 type HTTPRouter struct {
@@ -44,15 +47,9 @@ func NewHTTPRouter(
 		cfg:        cfg,
 	}
 
-	router.r.GET(fmt.Sprintf(RouterRetrieveAddressTxs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		router.listTransactions(w, r, ps)
-	})
-	router.r.GET(fmt.Sprintf(RouterRetrieveAddressUTXOs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		router.listUTXOs(w, r, ps)
-	})
-	router.r.POST(RouterSendTx, func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		router.receiveTransaction(w, r)
-	})
+	router.r.GET(fmt.Sprintf(RouterRetrieveAddressTxs, ":address"), router.listTransactions)
+	router.r.GET(fmt.Sprintf(RouterRetrieveAddressUTXOs, ":address"), router.listUTXOs)
+	router.r.POST(RouterSendTx, router.receiveTransaction)
 
 	return router
 }
@@ -108,52 +105,88 @@ func (router *HTTPRouter) Stop() error {
 func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	address := ps.ByName("address")
 
-	txs, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
+	addr, err := decodeAddress(address)
 	if err != nil {
-		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
+		router.handleError(w, "Invalid address", http.StatusBadRequest, err)
+		return
+	}
+
+	txs, err := router.explorer.FindUnspentTransactions(addr)
+	if err != nil {
+		router.handleError(w, "Failed to retrieve transactions", http.StatusInternalServerError, err)
+		return
 	}
 
 	txsEncoded, err := router.encoder.SerializeTransactions(txs)
 	if err != nil {
-		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
+		router.handleError(w, "Failed to encode transactions", http.StatusBadRequest, err)
+		return
 	}
 
-	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
-	if _, err = w.Write(txsEncoded); err != nil {
-		router.logger.Errorf("Failed to write response: %v", err)
-	}
+	router.writeResponse(w, txsEncoded)
 }
 
 // listUTXOs receive a wallet address and retrieve the corresponding UTXOs
 func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	address := ps.ByName("address")
 
-	utxos, err := router.explorer.FindUnspentOutputs(string(base58.Decode(address)))
+	addr, err := decodeAddress(address)
 	if err != nil {
-		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
+		router.handleError(w, "Invalid address", http.StatusBadRequest, err)
+		return
+	}
+
+	utxos, err := router.explorer.FindUnspentOutputs(addr)
+	if err != nil {
+		router.handleError(w, "Failed to retrieve UTXOs", http.StatusInternalServerError, err)
+		return
 	}
 
 	utxosEncoded, err := router.encoder.SerializeUTXOs(utxos)
 	if err != nil {
-		http.Error(w, "Failed to encode utxos", http.StatusInternalServerError)
+		router.handleError(w, "Failed to encode UTXOs", http.StatusBadRequest, err)
+		return
 	}
 
+	router.writeResponse(w, utxosEncoded)
+}
+
+// receiveTransaction receives txs sent by the wallets in order to be appended into the chain mempool via POST request
+func (router *HTTPRouter) receiveTransaction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		router.handleError(w, "Failed to read payload", http.StatusInternalServerError, err)
+		return
+	}
+
+	tx, err := router.encoder.DeserializeTransaction(data)
+	if err != nil {
+		router.handleError(w, "Failed to decode transaction", http.StatusInternalServerError, err)
+		return
+	}
+
+	if errObserver := router.netSubject.NotifyUnconfirmedTxReceived(*tx); errObserver != nil {
+		router.handleError(w, "Failed to append transaction", http.StatusBadRequest, errObserver)
+	}
+}
+
+func (router *HTTPRouter) writeResponse(w http.ResponseWriter, data []byte) {
 	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
-	if _, err = w.Write(utxosEncoded); err != nil {
+	if _, err := w.Write(data); err != nil {
 		router.logger.Errorf("Failed to write response: %v", err)
 	}
 }
 
-// receiveTransaction receives txs sent by the wallets in order to be appended into the chain mempool via POST request
-func (router *HTTPRouter) receiveTransaction(w http.ResponseWriter, r *http.Request) {
-	data, err := io.ReadAll(r.Body)
-
-	tx, err := router.encoder.DeserializeTransaction(data)
-	if err != nil {
-		http.Error(w, "Failed to decode transaction", http.StatusInternalServerError)
+func (router *HTTPRouter) handleError(w http.ResponseWriter, msg string, code int, logErr error) {
+	http.Error(w, msg, code)
+	if logErr != nil {
+		router.logger.Errorf("%s: %v", msg, logErr)
 	}
+}
 
-	if errObserver := router.netSubject.NotifyUnconfirmedTxReceived(*tx); errObserver != nil {
-		http.Error(w, fmt.Sprintf("Failed to append transaction: %v", errObserver), http.StatusExpectationFailed)
+func decodeAddress(address string) (string, error) {
+	if !util.IsValidAddress([]byte(address)) {
+		return "", fmt.Errorf("error validating address")
 	}
+	return string(base58.Decode(address)), nil
 }

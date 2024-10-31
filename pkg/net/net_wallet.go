@@ -113,7 +113,7 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	url := fmt.Sprintf(
 		"http://%s%s",
 		n.baseurl,
-		fmt.Sprintf(RouterSendTx),
+		RouterSendTx,
 	)
 
 	data, err := n.encoder.SerializeTransaction(tx)
@@ -124,12 +124,12 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	// send request containing the transaction encoded
 	resp, err := n.postRequest(ctx, url, bytes.NewBuffer(data))
 	if err != nil {
-		return fmt.Errorf("failed to send POST request: %v", err)
+		return fmt.Errorf("failed to send POST request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to send transaction, response: %s", resp.StatusCode)
+		return fmt.Errorf("failed to send transaction, response: %d", resp.StatusCode)
 	}
 
 	return nil
