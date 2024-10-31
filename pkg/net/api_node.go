@@ -77,7 +77,7 @@ func (router *HTTPRouter) Start() error {
 		}
 
 		if err != nil {
-			router.logger.Errorf("Failed to start HTTP server: %v", err)
+			router.logger.Errorf("failed to start HTTP server: %v", err)
 		}
 	}()
 
@@ -173,7 +173,7 @@ func (router *HTTPRouter) receiveTransaction(w http.ResponseWriter, r *http.Requ
 func (router *HTTPRouter) writeResponse(w http.ResponseWriter, data []byte) {
 	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
 	if _, err := w.Write(data); err != nil {
-		router.logger.Errorf("Failed to write response: %v", err)
+		router.logger.Errorf("failed to write response: %v", err)
 	}
 }
 
