@@ -214,7 +214,7 @@ func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
 		return fmt.Errorf("error appending transaction %x to mempool: %w", tx.ID, errMempool)
 	}
 
-	bc.logger.Infof("transaction %x added to mempool", tx.ID)
+	bc.logger.Debugf("transaction %x added to mempool", tx.ID)
 
 	// notify chain observers of a new transaction added into the mempool. This is required because
 	// although mempool is a separate module, it represents an important part of the chain. Important
