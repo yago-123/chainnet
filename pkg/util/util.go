@@ -144,13 +144,16 @@ func IsValidAddress(_ []byte) bool {
 }
 
 func IsValidHash(hash []byte) bool {
+	// convert raw []byte to a hexadecimal string
+	hexString := fmt.Sprintf("%x", hash)
+
 	// check length constraint
-	if len(hash) < MinLengthHash || len(hash) > MaxLengthHash {
+	if len(hexString) < MinLengthHash || len(hexString) > MaxLengthHash {
 		return false
 	}
 
 	// check each byte to ensure it is either a lowercase letter or a digit
-	for _, b := range hash {
+	for _, b := range hexString {
 		if !(b >= 'a' && b <= 'z') && !(b >= '0' && b <= '9') {
 			return false
 		}
