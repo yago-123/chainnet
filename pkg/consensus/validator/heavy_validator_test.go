@@ -7,10 +7,10 @@ import (
 
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/miner"
 	"github.com/yago-123/chainnet/pkg/script"
+	"github.com/yago-123/chainnet/pkg/util"
 	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
 	mockSign "github.com/yago-123/chainnet/tests/mocks/crypto/sign"
 	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"

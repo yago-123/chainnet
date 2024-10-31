@@ -83,6 +83,8 @@ func (no *NetSubjectController) NotifyUnconfirmedTxReceived(tx kernel.Transactio
 			return err
 		}
 	}
+
+	return nil
 }
 
 // NotifyUnconfirmedTxIDReceived notifies all observers that a new unconfirmed transaction ID has been received
