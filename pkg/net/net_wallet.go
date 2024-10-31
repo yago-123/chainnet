@@ -128,10 +128,6 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to send transaction, response: %d", resp.StatusCode)
-	}
-
 	return nil
 }
 
@@ -160,6 +156,12 @@ func (n *WalletP2P) postRequest(ctx context.Context, url string, payload io.Read
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request for url %s: %w", url, err)
+	}
+
+	// handle response status code to reduce redundancy in the code
+	if resp.StatusCode != http.StatusOK {
+		responseMsg, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("response code %d, message: %s", resp.StatusCode, responseMsg)
 	}
 
 	return resp, nil
