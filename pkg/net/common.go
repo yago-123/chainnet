@@ -1,4 +1,4 @@
-package p2p
+package net
 
 import (
 	"context"
@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	RouterAddressTxs     = "/address/%s/transactions"
-	RouterAddressUTXOs   = "/address/%s/utxos"
-	RouterAddressBalance = "/address/%s/balance"
+	RouterRetrieveAddressTxs     = "/api/v1/address/%s/txs"
+	RouterRetrieveAddressUTXOs   = "/api/v1/address/%s/utxos"
+	RouterRetrieveAddressBalance = "/api/v1/address/%s/balance"
+	RouterSendTx                 = "/api/v1/sendTx"
 
-	// PropagateTxFromWalletToNode is the endpoint used to negotiate tx propagation between wallets and nodes
-	PropagateTxFromWalletToNode = "/propagateTxFromWalletToNode/0.1.0"
+	ContentTypeHeader = "Content-Type"
 )
 
 func extractAddrInfo(addr string, port uint, id string) (*peer.AddrInfo, error) {

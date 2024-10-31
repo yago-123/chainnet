@@ -17,8 +17,8 @@ import (
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/mempool"
+	"github.com/yago-123/chainnet/pkg/net"
 	"github.com/yago-123/chainnet/pkg/observer"
-	"github.com/yago-123/chainnet/pkg/p2p"
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util"
 	"github.com/yago-123/chainnet/pkg/util/mutex"
@@ -55,7 +55,7 @@ type Blockchain struct {
 	blockSubject observer.ChainSubject
 
 	p2pActive    bool
-	p2pNet       *p2p.NodeP2P
+	p2pNet       *net.NodeP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 	p2pEncoder   encoding.Encoding
@@ -130,8 +130,8 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P, error) {
-	var p2pNet *p2p.NodeP2P
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*net.NodeP2P, error) {
+	var p2pNet *net.NodeP2P
 
 	// check if the network is supposed to be enabled
 	if !bc.cfg.P2P.Enabled {
@@ -148,7 +148,7 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P,
 	mempoolExplorer := mempool.NewMemPoolExplorer(bc.mempool)
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
 
-	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
+	p2pNet, err := net.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
 	if err != nil {
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
@@ -381,10 +381,12 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 }
 
 // OnUnconfirmedTxReceived is called when a new transaction is received from the network
-func (bc *Blockchain) OnUnconfirmedTxReceived(_ peer.ID, tx kernel.Transaction) {
+func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) error {
 	if err := bc.AddTransaction(&tx); err != nil {
-		bc.logger.Errorf("error adding transaction %x to the chain: %s", tx.ID, err)
+		return fmt.Errorf("error adding transaction %x to the chain: %w", tx.ID, err)
 	}
+
+	return nil
 }
 
 // OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
