@@ -19,5 +19,5 @@ func (utxo *UTXO) EqualInput(input TxInput) bool {
 
 // UniqueKey represents the unique key for the UTXO
 func (utxo *UTXO) UniqueKey() string {
-	return fmt.Sprintf("%s-%d", utxo.TxID, utxo.OutIdx)
+	return fmt.Sprintf("%x-%d", utxo.TxID, utxo.OutIdx)
 }
