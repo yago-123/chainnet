@@ -13,16 +13,22 @@ type NetObserver interface {
 	ID() string
 	OnNodeDiscovered(peerID peer.ID)
 	OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader)
-	OnUnconfirmedTxReceived(tx kernel.Transaction)
+	OnUnconfirmedTxReceived(tx kernel.Transaction) error
+	OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte)
 }
 
 // NetSubject controller that manages the net observers
 type NetSubject interface {
 	Register(observer NetObserver)
 	Unregister(observer NetObserver)
+	// NotifyNodeDiscovered notifies the chain when a new node has been discovered via pubsub
 	NotifyNodeDiscovered(peerID peer.ID)
+	// NotifyUnconfirmedHeaderReceived notifies the chain when a header is received via pubsub
 	NotifyUnconfirmedHeaderReceived(peer peer.ID, header kernel.BlockHeader)
-	NotifyUnconfirmedTxReceived(tx kernel.Transaction)
+	// NotifyUnconfirmedTxReceived notifies the chain when a transaction is received via stream
+	NotifyUnconfirmedTxReceived(tx kernel.Transaction) error
+	// NotifyUnconfirmedTxIDReceived notifies the chain when a transaction ID is received via pubsub
+	NotifyUnconfirmedTxIDReceived(peer peer.ID, txID []byte)
 }
 
 type NetSubjectController struct {
@@ -69,10 +75,23 @@ func (no *NetSubjectController) NotifyUnconfirmedHeaderReceived(peer peer.ID, he
 }
 
 // NotifyUnconfirmedTxReceived notifies all observers that a new unconfirmed transaction has been received
-func (no *NetSubjectController) NotifyUnconfirmedTxReceived(tx kernel.Transaction) {
+func (no *NetSubjectController) NotifyUnconfirmedTxReceived(tx kernel.Transaction) error {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	for _, observer := range no.observers {
-		observer.OnUnconfirmedTxReceived(tx)
+		if err := observer.OnUnconfirmedTxReceived(tx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// NotifyUnconfirmedTxIDReceived notifies all observers that a new unconfirmed transaction ID has been received
+func (no *NetSubjectController) NotifyUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
+	no.mu.Lock()
+	defer no.mu.Unlock()
+	for _, observer := range no.observers {
+		observer.OnUnconfirmedTxIDReceived(peer, txID)
 	}
 }

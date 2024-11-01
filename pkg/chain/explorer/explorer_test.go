@@ -187,7 +187,7 @@ func TestExplorer_FindUnspentTransactions(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 
-	explorer := NewExplorer(storageInstance, &mockHash.FakeHashing{})
+	explorer := NewChainExplorer(storageInstance, &mockHash.FakeHashing{})
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	txs, err := explorer.FindUnspentTransactions("pubKey-1")
@@ -232,7 +232,7 @@ func TestExplorer_findUnspentOutputs(t *testing.T) {
 	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
 	defer storageInstance.Close()
 
-	explorer := NewExplorer(storageInstance, &mockHash.FakeHashing{})
+	explorer := NewChainExplorer(storageInstance, &mockHash.FakeHashing{})
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	// todo(): add additional checks for the other fields in the TxOutput struct

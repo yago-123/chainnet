@@ -1,4 +1,4 @@
-package p2p
+package net
 
 import (
 	"context"
@@ -12,18 +12,30 @@ import (
 )
 
 const (
-	RouterAddressTxs     = "/address/%s/transactions"
-	RouterAddressUTXOs   = "/address/%s/utxos"
-	RouterAddressBalance = "/address/%s/balance"
+	RouterRetrieveAddressTxs   = "/api/v1/address/%s/txs"
+	RouterRetrieveAddressUTXOs = "/api/v1/address/%s/utxos"
+	RouterSendTx               = "/api/v1/sendTx"
+
+	ContentTypeHeader = "Content-Type"
 )
+
+func extractAddrInfo(addr string, port uint, id string) (*peer.AddrInfo, error) {
+	addrInfo, err := peer.AddrInfoFromString(
+		fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", addr, port, id),
+	)
+	if err != nil {
+		return &peer.AddrInfo{}, fmt.Errorf("failed to parse multiaddress: %w", err)
+	}
+
+	return addrInfo, nil
+}
 
 func connectToSeeds(cfg *config.Config, host host.Host) error {
 	for _, seed := range cfg.SeedNodes {
-		addr, err := peer.AddrInfoFromString(
-			fmt.Sprintf("/dns4/%s/tcp/%d/p2p/%s", seed.Address, seed.Port, seed.PeerID),
-		)
+		addr, err := extractAddrInfo(seed.Address, uint(seed.Port), seed.PeerID)
 		if err != nil {
-			return fmt.Errorf("failed to parse multiaddress: %w", err)
+			cfg.Logger.Errorf("failed to extract address info from seed node %s: %v", seed.Address, err)
+			continue
 		}
 
 		// todo(): provide this context via argument

@@ -5,16 +5,17 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/storage"
 
 	"github.com/yago-123/chainnet/config"
 
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/util"
 )
 
 type TxFunc func(tx *kernel.Transaction) error
@@ -23,19 +24,29 @@ type BlockFunc func(b *kernel.Block) error
 
 type HValidator struct {
 	lv       consensus.LightValidator
-	explorer *explorer.Explorer
+	explorer *explorer.ChainExplorer
 	signer   sign.Signature
 	hasher   hash.Hashing
-	cfg      *config.Config
+
+	interpreter *interpreter.RPNInterpreter
+
+	cfg *config.Config
 }
 
-func NewHeavyValidator(cfg *config.Config, lv consensus.LightValidator, explorer *explorer.Explorer, signer sign.Signature, hasher hash.Hashing) *HValidator {
+func NewHeavyValidator(
+	cfg *config.Config,
+	lv consensus.LightValidator,
+	explorer *explorer.ChainExplorer,
+	signer sign.Signature,
+	hasher hash.Hashing,
+) *HValidator {
 	return &HValidator{
-		lv:       lv,
-		explorer: explorer,
-		signer:   signer,
-		hasher:   hasher,
-		cfg:      cfg,
+		lv:          lv,
+		explorer:    explorer,
+		signer:      signer,
+		hasher:      hasher,
+		interpreter: interpreter.NewScriptInterpreter(signer),
+		cfg:         cfg,
 	}
 }
 
@@ -135,6 +146,7 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 
 	for _, vin := range tx.Vin {
 		// fetch the unspent outputs for the input's public key
+		// todo(): would make sense to add a check via UTXO set?
 		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
 		for _, utxo := range utxos {
 			// if there is match, check that the signature is valid
@@ -142,13 +154,13 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 				// todo(): assume is P2PK only for now
 
 				// check that the signature is valid for unlocking the UTXO
-				sigCheck, err := hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
+				sigCheck, err := hv.interpreter.VerifyScriptPubKey(utxo.Output.ScriptPubKey, vin.ScriptSig, tx)
 				if err != nil {
 					return fmt.Errorf("error verifying signature: %s", err.Error())
 				}
 
 				if !sigCheck {
-					return fmt.Errorf("input with id %s and index %d has invalid signature", vin.Txid, vin.Vout)
+					return fmt.Errorf("input with id %x and index %d has invalid signature", vin.Txid, vin.Vout)
 				}
 
 				// append the balance
@@ -247,6 +259,8 @@ func (hv *HValidator) validateHeaderTarget(bh *kernel.BlockHeader) error {
 		return fmt.Errorf("expected %d target, but header had %d", targetExpected, bh.Target)
 	}
 
+	// todo(): validate the 0s in the hash
+
 	return nil
 }
 
@@ -281,7 +295,7 @@ func (hv *HValidator) validateNoDoubleSpendingInsideBlock(b *kernel.Block) error
 			for _, vin := range b.Transactions[i].Vin {
 				for _, vin2 := range b.Transactions[j].Vin {
 					if vin.EqualInput(vin2) {
-						return fmt.Errorf("transaction %s has input that is also spent in transaction %s", string(b.Transactions[i].ID), vin.Txid)
+						return fmt.Errorf("transaction %x has input that is also spent in transaction %x", b.Transactions[i].ID, vin.Txid)
 					}
 				}
 			}

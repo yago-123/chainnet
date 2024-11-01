@@ -1,27 +1,25 @@
-package p2p
+package net
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
+
+	"github.com/yago-123/chainnet/pkg/mempool"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/julienschmidt/httprouter"
-
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/net/discovery"
+	"github.com/yago-123/chainnet/pkg/net/events"
+	"github.com/yago-123/chainnet/pkg/net/pubsub"
 	"github.com/yago-123/chainnet/pkg/observer"
-	"github.com/yago-123/chainnet/pkg/p2p/discovery"
-	"github.com/yago-123/chainnet/pkg/p2p/events"
-	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
 	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/libp2p/go-libp2p"
 	p2pConfig "github.com/libp2p/go-libp2p/config"
@@ -38,27 +36,37 @@ const (
 
 	AskLastHeaderProtocol    = "/askLastHeader/0.1.0"
 	AskSpecificBlockProtocol = "/askSpecificBlock/0.1.0"
+	AskSpecificTxProtocol    = "/askSpecificTx/0.1.0"
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
-
-	ContentTypeHeader = "Content-Type"
 
 	ServerAPIShutdownTimeout = 10 * time.Second
 )
 
 type nodeP2PHandler struct {
-	logger   *logrus.Logger
-	encoder  encoding.Encoding
-	explorer *explorer.Explorer
+	logger          *logrus.Logger
+	encoder         encoding.Encoding
+	explorer        *explorer.ChainExplorer
+	mempoolExplorer *mempool.MemPoolExplorer
+
+	netSubject observer.NetSubject
 
 	cfg *config.Config
 }
 
-func newNodeP2PHandler(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *nodeP2PHandler {
+func newNodeP2PHandler(
+	cfg *config.Config,
+	encoder encoding.Encoding,
+	explorer *explorer.ChainExplorer,
+	mempoolExplorer *mempool.MemPoolExplorer,
+	netSubject observer.NetSubject,
+) *nodeP2PHandler {
 	return &nodeP2PHandler{
-		logger:   cfg.Logger,
-		encoder:  encoder,
-		explorer: explorer,
-		cfg:      cfg,
+		logger:          cfg.Logger,
+		encoder:         encoder,
+		explorer:        explorer,
+		mempoolExplorer: mempoolExplorer,
+		netSubject:      netSubject,
+		cfg:             cfg,
 	}
 }
 
@@ -108,6 +116,11 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 		return
 	}
 
+	if valid := util.IsValidHash(hash); !valid {
+		h.logger.Errorf("invalid hash %x received from stream %s", hash, stream.ID())
+		return
+	}
+
 	// retrieve block from explorer
 	block, err := h.explorer.GetBlockByHash(hash)
 	if err != nil {
@@ -131,6 +144,45 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 	_, err = timeoutStream.WriteWithTimeout(data)
 	if err != nil {
 		h.logger.Errorf("error writing block with hash %x to stream %s: %s", hash, stream.ID(), err)
+		return
+	}
+}
+
+func (h *nodeP2PHandler) handleAskSpecificTx(stream network.Stream) {
+	// open stream with timeout
+	timeoutStream := AddTimeoutToStream(stream, h.cfg)
+	defer timeoutStream.Close()
+
+	// read hash of transaction that is being requested
+	txID, err := timeoutStream.ReadWithTimeout()
+	if err != nil {
+		h.logger.Errorf("error reading transaction hash from stream %s: %s", stream.ID(), err)
+		return
+	}
+
+	if valid := util.IsValidHash(txID); !valid {
+		h.logger.Errorf("invalid hash %x received from stream %s", txID, stream.ID())
+		return
+	}
+
+	// retrieve transaction from explorer
+	tx, err := h.mempoolExplorer.RetrieveTx(string(txID))
+	if err != nil {
+		h.logger.Errorf("unable to retrieve transaction for stream %s: transaction %x not found", stream.ID(), txID)
+		return
+	}
+
+	// encode transaction
+	data, err := h.encoder.SerializeTransaction(*tx)
+	if err != nil {
+		h.logger.Errorf("error serializing transaction with hash %x for stream %s: %s", txID, stream.ID(), err)
+		return
+	}
+
+	// send transaction encoded to the peer
+	_, err = timeoutStream.WriteWithTimeout(data)
+	if err != nil {
+		h.logger.Errorf("error writing transaction with hash %x to stream %s: %s", txID, stream.ID(), err)
 		return
 	}
 }
@@ -167,138 +219,6 @@ func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
 	}
 }
 
-type HTTPRouter struct {
-	r        *httprouter.Router
-	encoder  encoding.Encoding
-	explorer *explorer.Explorer
-	logger   *logrus.Logger
-
-	isActive bool
-	srv      *http.Server
-
-	cfg *config.Config
-}
-
-func NewHTTPRouter(cfg *config.Config, encoder encoding.Encoding, explorer *explorer.Explorer) *HTTPRouter {
-	router := &HTTPRouter{
-		r:        httprouter.New(),
-		encoder:  encoder,
-		explorer: explorer,
-		logger:   cfg.Logger,
-		cfg:      cfg,
-	}
-
-	router.r.GET(fmt.Sprintf(RouterAddressTxs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		router.listTransactions(w, r, ps)
-	})
-	router.r.GET(fmt.Sprintf(RouterAddressUTXOs, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		router.listUTXOs(w, r, ps)
-	})
-	router.r.GET(fmt.Sprintf(RouterAddressBalance, ":address"), func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		router.getAddressBalance(w, r, ps)
-	})
-
-	return router
-}
-
-func (router *HTTPRouter) Start() error {
-	if router.isActive {
-		return nil
-	}
-
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", router.cfg.P2P.RouterPort),
-		Handler:      router.r,
-		ReadTimeout:  router.cfg.P2P.ReadTimeout,
-		WriteTimeout: router.cfg.P2P.WriteTimeout,
-		IdleTimeout:  router.cfg.P2P.ConnTimeout,
-	}
-
-	router.srv = srv
-	router.isActive = true
-
-	go func() {
-		err := srv.ListenAndServe()
-		if errors.Is(err, http.ErrServerClosed) {
-			router.logger.Infof("HTTP API server stopped successfully")
-		}
-
-		if err != nil {
-			router.logger.Errorf("Failed to start HTTP server: %v", err)
-		}
-	}()
-
-	return nil
-}
-
-func (router *HTTPRouter) Stop() error {
-	if !router.isActive {
-		return nil
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), ServerAPIShutdownTimeout)
-	defer cancel()
-
-	if err := router.srv.Shutdown(ctx); err != nil {
-		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
-	}
-
-	router.isActive = false
-	return nil
-}
-
-func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	address := ps.ByName("address")
-
-	txs, err := router.explorer.FindUnspentTransactions(string(base58.Decode(address)))
-	if err != nil {
-		http.Error(w, "Failed to retrieve transactions", http.StatusInternalServerError)
-	}
-
-	txsEncoded, err := router.encoder.SerializeTransactions(txs)
-	if err != nil {
-		http.Error(w, "Failed to encode transactions", http.StatusInternalServerError)
-	}
-
-	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
-	if _, err = w.Write(txsEncoded); err != nil {
-		router.logger.Errorf("Failed to write response: %v", err)
-	}
-}
-
-func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	address := ps.ByName("address")
-
-	utxos, err := router.explorer.FindUnspentOutputs(string(base58.Decode(address)))
-	if err != nil {
-		http.Error(w, "Failed to retrieve utxos", http.StatusInternalServerError)
-	}
-
-	utxosEncoded, err := router.encoder.SerializeUTXOs(utxos)
-	if err != nil {
-		http.Error(w, "Failed to encode utxos", http.StatusInternalServerError)
-	}
-
-	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
-	if _, err = w.Write(utxosEncoded); err != nil {
-		router.logger.Errorf("Failed to write response: %v", err)
-	}
-}
-
-func (router *HTTPRouter) getAddressBalance(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	address := ps.ByName("address")
-
-	_, err := router.explorer.CalculateAddressBalance(string(base58.Decode(address)))
-	if err != nil {
-		http.Error(w, "Failed to find unspent transactions", http.StatusInternalServerError)
-	}
-
-	// err = json.NewEncoder(w).Encode(balanceResponse)
-	// if err != nil {
-	//	http.Error(w, "Failed to encode balance", http.StatusInternalServerError)
-	// }
-}
-
 type NodeP2P struct {
 	cfg  *config.Config
 	host host.Host
@@ -315,7 +235,7 @@ type NodeP2P struct {
 	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
 	encoder  encoding.Encoding
-	explorer *explorer.Explorer
+	explorer *explorer.ChainExplorer
 
 	router *HTTPRouter
 
@@ -330,7 +250,8 @@ func NewNodeP2P(
 	cfg *config.Config,
 	netSubject observer.NetSubject,
 	encoder encoding.Encoding,
-	explorer *explorer.Explorer,
+	explorer *explorer.ChainExplorer,
+	mempoolExplorer *mempool.MemPoolExplorer,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
 	options := []p2pConfig.Option{}
@@ -405,12 +326,13 @@ func NewNodeP2P(
 	}
 
 	// initialize HTTP router for handling HTTP requests (wallet, information requests...)
-	router := NewHTTPRouter(cfg, encoder, explorer)
+	router := NewHTTPRouter(cfg, encoder, explorer, netSubject)
 
 	// initialize handlers
-	handler := newNodeP2PHandler(cfg, encoder, explorer)
+	handler := newNodeP2PHandler(cfg, encoder, explorer, mempoolExplorer, netSubject)
 	host.SetStreamHandler(AskLastHeaderProtocol, handler.handleAskLastHeader)
 	host.SetStreamHandler(AskSpecificBlockProtocol, handler.handleAskSpecificBlock)
+	host.SetStreamHandler(AskSpecificTxProtocol, handler.handleAskSpecificTx)
 	host.SetStreamHandler(AskAllHeaders, handler.handleAskAllHeaders)
 
 	return &NodeP2P{
@@ -513,6 +435,34 @@ func (n *NodeP2P) AskSpecificBlock(ctx context.Context, peerID peer.ID, hash []b
 	return n.encoder.DeserializeBlock(data)
 }
 
+func (n *NodeP2P) AskSpecificTx(ctx context.Context, peerID peer.ID, txID []byte) (*kernel.Transaction, error) {
+	// open stream to peer with timeout
+	timeoutStream, err := NewTimeoutStream(ctx, n.cfg, n.host, peerID, AskSpecificTxProtocol)
+	if err != nil {
+		return nil, err
+	}
+	defer timeoutStream.Close()
+
+	// write transaction hash required to stream
+	_, err = timeoutStream.WriteWithTimeout(txID)
+	if err != nil {
+		return nil, fmt.Errorf("error writing transaction hash %x to stream: %w", txID, err)
+	}
+	// close write side of the stream so the peer knows we are done writing
+	err = timeoutStream.stream.CloseWrite()
+	if err != nil {
+		return nil, fmt.Errorf("error closing write side of the stream: %w", err)
+	}
+
+	// read and decode transaction retrieved
+	data, err := timeoutStream.ReadWithTimeout()
+	if err != nil {
+		return nil, fmt.Errorf("error reading data from stream: %w", err)
+	}
+
+	return n.encoder.DeserializeTransaction(data)
+}
+
 // AskAllHeaders sends a request to a specific peer to get all headers from the remote chain. The reply contains
 // a list of headers unsorted
 func (n *NodeP2P) AskAllHeaders(ctx context.Context, peerID peer.ID) ([]*kernel.BlockHeader, error) {
@@ -545,6 +495,17 @@ func (n *NodeP2P) OnBlockAddition(block *kernel.Block) {
 	// notify all peers about the new block added
 	if err := n.pubsub.NotifyBlockHeaderAdded(ctx, *block.Header); err != nil {
 		n.logger.Errorf("error notifying block %x: %s", block.Hash, err)
+	}
+}
+
+// OnTxAddition is triggered when a new transaction is added into the MemPool
+func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
+	ctx, cancel := context.WithTimeout(context.Background(), n.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	// notify all peers about the new transaction added
+	if err := n.pubsub.NotifyTransactionAdded(ctx, *tx); err != nil {
+		n.logger.Errorf("error notifying transaction %x: %s", tx.ID, err)
 	}
 }
 

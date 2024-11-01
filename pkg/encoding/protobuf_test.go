@@ -5,7 +5,7 @@ import (
 
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	pb "github.com/yago-123/chainnet/pkg/p2p/protobuf"
+	pb "github.com/yago-123/chainnet/pkg/net/protobuf"
 
 	"github.com/stretchr/testify/require"
 

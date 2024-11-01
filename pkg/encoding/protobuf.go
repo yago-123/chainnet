@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
-	pb "github.com/yago-123/chainnet/pkg/p2p/protobuf"
+	pb "github.com/yago-123/chainnet/pkg/net/protobuf"
 
 	"google.golang.org/protobuf/proto"
 )

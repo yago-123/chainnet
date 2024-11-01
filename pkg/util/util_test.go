@@ -3,6 +3,8 @@ package util //nolint:testpackage // don't create separate package for tests
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -96,4 +98,9 @@ func TestCalculateMiningDifficulty(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsValidHash(t *testing.T) {
+	hash := "0000006484ffdc39a5ba6cebae9e398878f24bcab93f4c32acf81e246fa2474b"
+	assert.True(t, IsValidHash([]byte(hash)))
 }

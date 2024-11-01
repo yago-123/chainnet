@@ -7,14 +7,14 @@ import (
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/p2p"
+	"github.com/yago-123/chainnet/pkg/net"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -29,7 +29,7 @@ type Wallet struct {
 	signer sign.Signature
 
 	p2pActive    bool
-	p2pNet       *p2p.WalletP2P
+	p2pNet       *net.WalletP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 
@@ -96,8 +96,8 @@ func NewWalletWithKeys(
 	}, nil
 }
 
-func (w *Wallet) InitNetwork() (*p2p.WalletP2P, error) {
-	var p2pNet *p2p.WalletP2P
+func (w *Wallet) InitNetwork() (*net.WalletP2P, error) {
+	var p2pNet *net.WalletP2P
 
 	// check if the network has been initialized before
 	if w.p2pActive {
@@ -106,31 +106,47 @@ func (w *Wallet) InitNetwork() (*p2p.WalletP2P, error) {
 
 	// create new P2P node
 	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewWalletP2P(w.p2pCtx, w.cfg, w.encoder)
+	p2pNet, err := net.NewWalletP2P(w.cfg, w.encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
-	}
-
-	// start the p2p node
-	if err = p2pNet.Start(); err != nil {
-		return nil, fmt.Errorf("error starting p2p node: %w", err)
 	}
 
 	w.p2pNet = p2pNet
 	w.p2pActive = true
 
-	if err = p2pNet.ConnectToSeeds(); err != nil {
-		return nil, fmt.Errorf("error connecting to seeds: %w", err)
+	return p2pNet, nil
+}
+
+func (w *Wallet) GetAddresses() ([][]byte, error) {
+	addresses := make([][]byte, 0)
+
+	// retrieve P2PK address
+	addresses = append(addresses, w.GetP2PKAddress())
+
+	// retrieve P2PKH address
+	address, err := w.GetP2PKHAddress()
+	if err != nil {
+		return [][]byte{}, fmt.Errorf("could not get wallet address for P2PKH: %w", err)
 	}
 
-	return p2pNet, nil
+	addresses = append(addresses, address)
+
+	// validate that are between the allowed ranges
+	for _, addr := range addresses {
+		if !util.IsValidAddress(addr) {
+			return [][]byte{}, fmt.Errorf("invalid address format for address %x", addr)
+		}
+	}
+
+	// todo() add more types of addresses when are ready (multisig, etc)
+
+	return addresses, nil
 }
 
 func (w *Wallet) GetP2PKAddress() []byte {
 	return w.PublicKey
 }
 
-// GetAddress returns one wallet address
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 	// hash the public key
@@ -152,27 +168,24 @@ func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 }
 
 func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
-	utxos := []*kernel.UTXO{}
-
-	address := w.GetP2PKAddress()
-	p2pkUtxos, err := w.p2pNet.GetWalletUTXOS(address)
+	addresses, err := w.GetAddresses()
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for P2PK: %w", err)
+		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet addresses: %w", err)
 	}
 
-	address, err = w.GetP2PKHAddress()
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet address for P2PKH: %w", err)
-	}
-	p2pkhUtxos, err := w.p2pNet.GetWalletUTXOS(address)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for P2PKH: %w", err)
-	}
+	utxos := make([]*kernel.UTXO, 0)
+	for _, address := range addresses {
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		defer cancel()
 
-	// todo() add more types of addresses when are ready (multisig, etc)
+		// retrieve UTXOs for each address
+		utxo, errUtxos := w.p2pNet.GetWalletUTXOS(ctx, address)
+		if errUtxos != nil {
+			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+		}
 
-	utxos = append(utxos, p2pkUtxos...)
-	utxos = append(utxos, p2pkhUtxos...)
+		utxos = append(utxos, utxo...)
+	}
 
 	return utxos, nil
 }

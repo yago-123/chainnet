@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/yago-123/chainnet/pkg/consensus/util"
+	"github.com/yago-123/chainnet/pkg/util"
 )
 
 type ECDSASigner struct {
