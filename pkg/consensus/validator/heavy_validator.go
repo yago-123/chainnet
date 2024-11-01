@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/storage"
 
@@ -37,7 +38,6 @@ func NewHeavyValidator(
 	lv consensus.LightValidator,
 	explorer *explorer.ChainExplorer,
 	signer sign.Signature,
-	interpreter *interpreter.RPNInterpreter,
 	hasher hash.Hashing,
 ) *HValidator {
 	return &HValidator{
@@ -45,7 +45,7 @@ func NewHeavyValidator(
 		explorer:    explorer,
 		signer:      signer,
 		hasher:      hasher,
-		interpreter: interpreter,
+		interpreter: interpreter.NewScriptInterpreter(signer),
 		cfg:         cfg,
 	}
 }
