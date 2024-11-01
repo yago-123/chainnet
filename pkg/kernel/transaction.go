@@ -3,8 +3,8 @@ package kernel
 import (
 	"bytes"
 	"fmt"
-
 	"github.com/btcsuite/btcutil/base58"
+	"math/rand/v2"
 
 	"github.com/yago-123/chainnet/pkg/script"
 )
@@ -186,12 +186,18 @@ type TxInput struct {
 // the STXO or Spent Transaction Output. This method is used in the UTXO set in order to remove those
 // utxo that are being spent
 func (in *TxInput) UniqueTxoKey() string {
-	return fmt.Sprintf("%s-%d", in.Txid, in.Vout)
+	return fmt.Sprintf("%x-%d", in.Txid, in.Vout)
 }
 
-// NewCoinbaseInput represents the source of the transactions for paying the miners (comes from nowhere)
+// NewCoinbaseInput creates a special transaction input called a Coinbase input. This type of input represents
+// the source of new coins created during mining (i.e., it does not come from previous transactions). To avoid
+// potential hash collisions (where identical transactions could produce the same hash), some randomness is
+// introduced into the ScriptSig field
 func NewCoinbaseInput() TxInput {
-	return TxInput{}
+	return TxInput{
+		// introduce randomness to prevent hash collisions
+		ScriptSig: fmt.Sprintf("%d", rand.Int64()),
+	}
 }
 
 // NewInput represents the source of the transactions
