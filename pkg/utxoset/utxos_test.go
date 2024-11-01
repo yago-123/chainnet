@@ -1,6 +1,7 @@
 package utxoset //nolint:testpackage // don't create separate package for tests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/yago-123/chainnet/config"
@@ -104,25 +105,25 @@ func TestUTXOSet_AddBlock(t *testing.T) {
 
 	require.Len(t, utxos.utxos, 4)
 
-	val, ok := utxos.utxos["coinbase-transaction-block-2-0"]
+	val, ok := utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-2", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
 	assert.Equal(t, "bob", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
-	val, ok = utxos.utxos["transaction-1-block-2-1"]
+	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-2", 1)]
 	require.True(t, ok)
 	assert.Equal(t, uint(1), val.OutIdx)
 	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(25), val.Output.Amount)
 
-	val, ok = utxos.utxos["coinbase-transaction-block-3-0"]
+	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
 	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
-	val, ok = utxos.utxos["transaction-1-block-3-0"]
+	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
 	assert.Equal(t, "dave", val.Output.PubKey)
@@ -139,25 +140,25 @@ func TestUTXOSet_OnBlockAddition(t *testing.T) {
 
 	require.Len(t, utxos.utxos, 4)
 
-	val, ok := utxos.utxos["coinbase-transaction-block-2-0"]
+	val, ok := utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-2", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
 	assert.Equal(t, "bob", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
-	val, ok = utxos.utxos["transaction-1-block-2-1"]
+	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-2", 1)]
 	require.True(t, ok)
 	assert.Equal(t, uint(1), val.OutIdx)
 	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(25), val.Output.Amount)
 
-	val, ok = utxos.utxos["coinbase-transaction-block-3-0"]
+	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
 	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
-	val, ok = utxos.utxos["transaction-1-block-3-0"]
+	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
 	assert.Equal(t, "dave", val.Output.PubKey)

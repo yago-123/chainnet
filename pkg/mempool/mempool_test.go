@@ -1,6 +1,7 @@
 package mempool //nolint:testpackage // don't create separate package for tests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -147,15 +148,15 @@ func TestMemPoolInputSet(t *testing.T) {
 	require.NoError(t, mempool.AppendTransaction(txIncompatibleWithTx1.Transaction, txIncompatibleWithTx1.Fee))
 
 	expectedInputSet := map[string][]string{
-		"id1-1": []string{
+		fmt.Sprintf("%x-%d", "id1", 1): []string{
 			"tx1",
 			"txIncompatibleWithTx1",
 		},
-		"id2-1": []string{"tx2"},
-		"id3-1": []string{"tx3"},
-		"id4-1": []string{"tx4"},
-		"id5-1": []string{"tx5"},
-		"id6-1": []string{"tx6"},
+		fmt.Sprintf("%x-%d", "id2", 1): []string{"tx2"},
+		fmt.Sprintf("%x-%d", "id3", 1): []string{"tx3"},
+		fmt.Sprintf("%x-%d", "id4", 1): []string{"tx4"},
+		fmt.Sprintf("%x-%d", "id5", 1): []string{"tx5"},
+		fmt.Sprintf("%x-%d", "id6", 1): []string{"tx6"},
 	}
 
 	assert.Equal(t, expectedInputSet, mempool.inputSet)
@@ -193,9 +194,9 @@ func TestMemPoolOnBlockAddition(t *testing.T) {
 	)
 
 	expectedInputSet := map[string][]string{
-		"id3-1": []string{"tx3"},
-		"id4-1": []string{"tx4"},
-		"id5-1": []string{"tx5"},
+		fmt.Sprintf("%x-%d", "id3", 1): []string{"tx3"},
+		fmt.Sprintf("%x-%d", "id4", 1): []string{"tx4"},
+		fmt.Sprintf("%x-%d", "id5", 1): []string{"tx5"},
 	}
 
 	assert.Equal(t, expectedInputSet, mempool.inputSet)

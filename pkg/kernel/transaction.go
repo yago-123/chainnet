@@ -3,8 +3,9 @@ package kernel
 import (
 	"bytes"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"math/rand/v2"
+
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/script"
 )
@@ -196,7 +197,7 @@ func (in *TxInput) UniqueTxoKey() string {
 func NewCoinbaseInput() TxInput {
 	return TxInput{
 		// introduce randomness to prevent hash collisions
-		ScriptSig: fmt.Sprintf("%d", rand.Int64()),
+		ScriptSig: fmt.Sprintf("%d", rand.Int64()), //nolint:gosec // using math/rand in this case is OK
 	}
 }
 
