@@ -221,10 +221,11 @@ func (in *TxInput) EqualInput(input TxInput) bool {
 
 func (in *TxInput) String() string {
 	return fmt.Sprintf(
-		"TxInput: id %x-%d from %s",
+		"TxInput: id %x-%d from %s, scriptSig: %s",
 		in.Txid,
 		in.Vout,
 		base58.Encode([]byte(in.PubKey)),
+		in.ScriptSig,
 	)
 }
 

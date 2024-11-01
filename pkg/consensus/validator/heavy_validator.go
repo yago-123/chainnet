@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
+	"github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/storage"
 
 	"github.com/yago-123/chainnet/config"
@@ -26,7 +26,10 @@ type HValidator struct {
 	explorer *explorer.ChainExplorer
 	signer   sign.Signature
 	hasher   hash.Hashing
-	cfg      *config.Config
+
+	interpreter *interpreter.RPNInterpreter
+
+	cfg *config.Config
 }
 
 func NewHeavyValidator(
@@ -34,14 +37,16 @@ func NewHeavyValidator(
 	lv consensus.LightValidator,
 	explorer *explorer.ChainExplorer,
 	signer sign.Signature,
+	interpreter *interpreter.RPNInterpreter,
 	hasher hash.Hashing,
 ) *HValidator {
 	return &HValidator{
-		lv:       lv,
-		explorer: explorer,
-		signer:   signer,
-		hasher:   hasher,
-		cfg:      cfg,
+		lv:          lv,
+		explorer:    explorer,
+		signer:      signer,
+		hasher:      hasher,
+		interpreter: interpreter,
+		cfg:         cfg,
 	}
 }
 
@@ -149,7 +154,7 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 				// todo(): assume is P2PK only for now
 
 				// check that the signature is valid for unlocking the UTXO
-				sigCheck, err := hv.signer.Verify([]byte(vin.ScriptSig), tx.AssembleForSigning(), []byte(utxo.Output.PubKey))
+				sigCheck, err := hv.interpreter.VerifyScriptPubKey(utxo.Output.ScriptPubKey, vin.ScriptSig, tx)
 				if err != nil {
 					return fmt.Errorf("error verifying signature: %s", err.Error())
 				}
