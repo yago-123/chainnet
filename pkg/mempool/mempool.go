@@ -168,8 +168,10 @@ func (m *MemPool) OnBlockAddition(block *kernel.Block) {
 		}
 	}
 
-	// remove txs that contain inputs in the block that are spent in the block
-	for i, tx := range m.pairs {
+	// remove txs that contain inputs in the block that are spent in the block, do it in reverse
+	// so that there are not out of bounds errors
+	for i := len(m.pairs) - 1; i >= 0; i-- {
+		tx := m.pairs[i]
 		if _, ok := removeTx[string(tx.Transaction.ID)]; ok {
 			m.pairs = append(m.pairs[:i], m.pairs[i+1:]...)
 		}
