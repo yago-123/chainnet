@@ -21,7 +21,7 @@ const (
 	KeyMiningInterval           = "miner.mining-interval"
 	KeyMiningIntervalAdjustment = "miner.adjustment-interval"
 
-	KeyChainMaxTxsMempool = "mempool.max-txs-mempool"
+	KeyChainMaxTxsMempool = "chain.max-txs-mempool"
 
 	KeyPrometheusEnabled = "prometheus.enabled"
 	KeyPrometheusPort    = "prometheus.port"
