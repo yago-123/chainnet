@@ -9,9 +9,9 @@ import (
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -30,7 +30,7 @@ type Miner struct {
 	// hasher type instead of directly hasher because hash generation will be used in high multi-threaded scenario
 	hasherType hash.HasherType
 	chain      *blockchain.Blockchain
-	explorer   *explorer.Explorer
+	explorer   *explorer.ChainExplorer
 
 	minerPubKey []byte
 
@@ -41,7 +41,7 @@ type Miner struct {
 	cfg *config.Config
 }
 
-func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.Explorer) (*Miner, error) {
+func NewMiner(cfg *config.Config, chain *blockchain.Blockchain, hasherType hash.HasherType, explorer *explorer.ChainExplorer) (*Miner, error) {
 	if len(cfg.Miner.PubKey) == 0 {
 		return nil, fmt.Errorf("public key not provided, check the config file")
 	}
@@ -148,6 +148,11 @@ func (m *Miner) ID() string {
 func (m *Miner) OnBlockAddition(_ *kernel.Block) {
 	// cancel previous mining
 	m.CancelMining()
+}
+
+// OnTxAddition is triggered when a new transaction is added into the MemPool
+func (m *Miner) OnTxAddition(_ *kernel.Transaction) {
+	// do nothing
 }
 
 // createCoinbaseTransaction creates a new coinbase transaction with the reward and collected fees

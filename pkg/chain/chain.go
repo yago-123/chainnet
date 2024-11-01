@@ -13,14 +13,14 @@ import (
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/mempool"
+	"github.com/yago-123/chainnet/pkg/net"
 	"github.com/yago-123/chainnet/pkg/observer"
-	"github.com/yago-123/chainnet/pkg/p2p"
 	"github.com/yago-123/chainnet/pkg/storage"
+	"github.com/yago-123/chainnet/pkg/util"
 	"github.com/yago-123/chainnet/pkg/util/mutex"
 
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -55,7 +55,7 @@ type Blockchain struct {
 	blockSubject observer.ChainSubject
 
 	p2pActive    bool
-	p2pNet       *p2p.NodeP2P
+	p2pNet       *net.NodeP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 	p2pEncoder   encoding.Encoding
@@ -130,8 +130,8 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P, error) {
-	var p2pNet *p2p.NodeP2P
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*net.NodeP2P, error) {
+	var p2pNet *net.NodeP2P
 
 	// check if the network is supposed to be enabled
 	if !bc.cfg.P2P.Enabled {
@@ -144,8 +144,11 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*p2p.NodeP2P,
 	}
 
 	// create new P2P node
+	chainExplorer := explorer.NewChainExplorer(bc.store, bc.hasher)
+	mempoolExplorer := mempool.NewMemPoolExplorer(bc.mempool)
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := p2p.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, explorer.NewExplorer(bc.store, bc.hasher))
+
+	p2pNet, err := net.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
 	if err != nil {
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
@@ -189,6 +192,35 @@ func (bc *Blockchain) AddBlock(block *kernel.Block) error {
 
 	// notify observers of a new block added
 	bc.blockSubject.NotifyBlockAdded(block)
+
+	return nil
+}
+
+// AddTransaction adds a new transaction to the mempool. The transaction is validated before being added to the mempool
+func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
+	// make sure that the tx uses proper UTXOs and contains valid signatures
+	if err := bc.validator.ValidateTx(tx); err != nil {
+		return fmt.Errorf("error validating transaction %x: %w", tx.ID, err)
+	}
+
+	// calculate the transaction fee
+	fee, err := bc.calculateTxFee(tx)
+	if err != nil {
+		return fmt.Errorf("error calculating transaction fee for %x: %w", tx.ID, err)
+	}
+
+	// append the transaction to the mempool
+	if errMempool := bc.mempool.AppendTransaction(tx, fee); errMempool != nil {
+		return fmt.Errorf("error appending transaction %x to mempool: %w", tx.ID, errMempool)
+	}
+
+	bc.logger.Debugf("transaction %x added to mempool", tx.ID)
+
+	// notify chain observers of a new transaction added into the mempool. This is required because
+	// although mempool is a separate module, it represents an important part of the chain. Important
+	// modules like the storage and the network (propagates via pubsub to other nodes) need to be
+	// aware of this event
+	bc.blockSubject.NotifyTxAdded(tx)
 
 	return nil
 }
@@ -349,21 +381,35 @@ func (bc *Blockchain) OnUnconfirmedHeaderReceived(peer peer.ID, header kernel.Bl
 }
 
 // OnUnconfirmedTxReceived is called when a new transaction is received from the network
-func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) {
-	if err := bc.validator.ValidateTx(&tx); err != nil {
-		bc.logger.Errorf("error validating transaction: %v", err)
+func (bc *Blockchain) OnUnconfirmedTxReceived(tx kernel.Transaction) error {
+	if err := bc.AddTransaction(&tx); err != nil {
+		return fmt.Errorf("error adding transaction %x to the chain: %w", tx.ID, err)
+	}
+
+	return nil
+}
+
+// OnUnconfirmedTxIDReceived is called when a new transaction ID is received from the network
+func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
+	containsTx := bc.mempool.ContainsTx(string(txID))
+	// if the transaction is already in the mempool, skip execution
+	if containsTx {
 		return
 	}
 
-	fee, err := bc.calculateTxFee(tx)
+	// ask the peer for the transaction
+	ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	// ask the peer for the whole transaction
+	tx, err := bc.p2pNet.AskSpecificTx(ctx, peer, txID)
 	if err != nil {
-		bc.logger.Errorf("error calculating transaction fee: %v", err)
+		bc.logger.Errorf("error asking for transaction %x to %s: %s", txID, peer.String(), err)
 		return
 	}
 
-	if errMempool := bc.mempool.AppendTransaction(&tx, fee); errMempool != nil {
-		bc.logger.Errorf("error appending transaction to mempool: %v", errMempool)
-		return
+	if err = bc.AddTransaction(tx); err != nil {
+		bc.logger.Errorf("error adding transaction %x to the chain: %s", tx.ID, err)
 	}
 }
 
@@ -373,7 +419,7 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
 	})
 }
 
-func (bc *Blockchain) calculateTxFee(tx kernel.Transaction) (uint, error) {
+func (bc *Blockchain) calculateTxFee(tx *kernel.Transaction) (uint, error) {
 	// calculate the funds provided by the inputs
 	inputBalance, err := bc.utxoSet.RetrieveInputsBalance(tx.Vin)
 	if err != nil {

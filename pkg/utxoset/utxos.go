@@ -103,6 +103,11 @@ func (u *UTXOSet) OnBlockAddition(block *kernel.Block) {
 	}
 }
 
+// OnTxAddition is called when a new tx is added to the mempool via the observer pattern
+func (u *UTXOSet) OnTxAddition(_ *kernel.Transaction) {
+	// do nothing
+}
+
 // RegisterMetrics registers the UTXO set metrics to the prometheus registry
 func (u *UTXOSet) RegisterMetrics(register *prometheus.Registry) {
 	monitor.NewMetric(register, monitor.Gauge, "utxo_set_size", "A gauge containing the number of UTXOs in the UTXO set",

@@ -326,6 +326,11 @@ func (bolt *BoltDB) OnBlockAddition(block *kernel.Block) {
 	// }()
 }
 
+// OnTxAddition is called when a new tx is added to the mempool via the observer pattern
+func (bolt *BoltDB) OnTxAddition(_ *kernel.Transaction) {
+	// do nothing
+}
+
 func (bolt *BoltDB) Close() error {
 	return bolt.db.Close()
 }

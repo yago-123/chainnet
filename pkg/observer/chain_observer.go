@@ -10,6 +10,7 @@ import (
 type ChainObserver interface {
 	ID() string
 	OnBlockAddition(block *kernel.Block)
+	OnTxAddition(tx *kernel.Transaction)
 }
 
 // ChainSubject controller that manages the block observers
@@ -17,6 +18,7 @@ type ChainSubject interface {
 	Register(observer ChainObserver)
 	Unregister(observer ChainObserver)
 	NotifyBlockAdded(block *kernel.Block)
+	NotifyTxAdded(tx *kernel.Transaction)
 }
 
 type ChainSubjectController struct {
@@ -50,5 +52,14 @@ func (so *ChainSubjectController) NotifyBlockAdded(block *kernel.Block) {
 	defer so.mu.Unlock()
 	for _, observer := range so.observers {
 		observer.OnBlockAddition(block)
+	}
+}
+
+// NotifyTxAdded notifies all observers that a new transaction has been added
+func (so *ChainSubjectController) NotifyTxAdded(tx *kernel.Transaction) {
+	so.mu.Lock()
+	defer so.mu.Unlock()
+	for _, observer := range so.observers {
+		observer.OnTxAddition(tx)
 	}
 }

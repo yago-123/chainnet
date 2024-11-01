@@ -123,6 +123,12 @@ func TestBlockchain_InitializationRecovery(t *testing.T) {
 	require.NoError(t, boltdb.PersistHeader(block3.Hash, *block3.Header))
 	require.NoError(t, boltdb.PersistHeader(block4.Hash, *block4.Header))
 
+	// persist blocks in store
+	require.NoError(t, boltdb.PersistBlock(*block1))
+	require.NoError(t, boltdb.PersistBlock(*block2))
+	require.NoError(t, boltdb.PersistBlock(*block3))
+	require.NoError(t, boltdb.PersistBlock(*block4))
+
 	mockHashing := &mockHash.MockHashing{}
 	mockHashing.
 		On("Hash", block4.Header.Assemble()).

@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/util"
 )
 
 const (

@@ -51,7 +51,7 @@ func main() {
 	}
 
 	// create explorer instance
-	explorer := expl.NewExplorer(boltdb, hash.GetHasher(consensusHasherType))
+	explorer := expl.NewChainExplorer(boltdb, hash.GetHasher(consensusHasherType))
 
 	// create mempool instance
 	mempool := mempool.NewMemPool(cfg.Chain.MaxTxsMempool)

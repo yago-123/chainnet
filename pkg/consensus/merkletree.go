@@ -3,9 +3,9 @@ package consensus
 import (
 	"fmt"
 
-	"github.com/yago-123/chainnet/pkg/consensus/util"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/util"
 )
 
 // MerkleNode represents a node in the Merkle tree

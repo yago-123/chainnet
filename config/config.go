@@ -21,11 +21,11 @@ const (
 	KeyMiningInterval           = "miner.mining-interval"
 	KeyMiningIntervalAdjustment = "miner.adjustment-interval"
 
-	KeyChainMaxTxsMempool = "mempool.max-txs-mempool"
+	KeyChainMaxTxsMempool = "chain.max-txs-mempool"
 
 	KeyPrometheusEnabled = "prometheus.enabled"
 	KeyPrometheusPort    = "prometheus.port"
-	KeyPrometheusPath    = "prometheus.metrics"
+	KeyPrometheusPath    = "prometheus.path"
 
 	KeyP2PEnabled          = "p2p.enabled"
 	KeyP2PPeerIdentityPath = "p2p.identity-path"

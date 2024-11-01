@@ -1,6 +1,7 @@
-package p2p
+package net
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -10,19 +11,14 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 
-	"github.com/yago-123/chainnet/pkg/consensus/util"
-
-	"github.com/yago-123/chainnet/config"
-	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/observer"
-	"github.com/yago-123/chainnet/pkg/p2p/discovery"
-	"github.com/yago-123/chainnet/pkg/p2p/pubsub"
-
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/sirupsen/logrus"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/net/discovery"
 )
 
 const RequestTimeout = 10 * time.Second
@@ -31,12 +27,9 @@ type WalletP2P struct {
 	cfg *config.Config
 
 	host host.Host
-	ctx  context.Context
 
 	// disco is in charge of setting up the logic for node discovery
 	disco discovery.Discovery
-	// pubsub is in charge of setting up the logic for data propagation
-	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
 	encoder encoding.Encoding
 
@@ -46,7 +39,6 @@ type WalletP2P struct {
 }
 
 func NewWalletP2P(
-	ctx context.Context,
 	cfg *config.Config,
 	encoder encoding.Encoding,
 ) (*WalletP2P, error) {
@@ -75,61 +67,28 @@ func NewWalletP2P(
 		return nil, fmt.Errorf("failed to create DHT discovery module: %w", err)
 	}
 
-	// initialize pubsub module
-	topics := []string{pubsub.TxAddedPubSubTopic}
-	pubsub, err := pubsub.NewGossipPubSub(ctx, cfg, host, encoder, observer.NewNetSubject(), topics, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pubsub module: %w", err)
-	}
-
 	baseURL := net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort))
 
 	return &WalletP2P{
 		cfg:     cfg,
 		host:    host,
-		ctx:     ctx,
 		disco:   disco,
-		pubsub:  pubsub,
 		encoder: encoder,
 		baseurl: baseURL,
 		logger:  cfg.Logger,
 	}, nil
 }
 
-func (n *WalletP2P) Start() error {
-	return n.disco.Start()
-}
-
-func (n *WalletP2P) Stop() error {
-	if err := n.disco.Stop(); err != nil {
-		return err
-	}
-
-	return n.host.Close()
-}
-
-// ConnectToSeeds creates connection with the seed nodes
-func (n *WalletP2P) ConnectToSeeds() error {
-	return connectToSeeds(n.cfg, n.host)
-}
-
 // GetWalletUTXOS returns the UTXOs for a given address
-func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
-	if !util.IsValidAddress(address) {
-		return []*kernel.UTXO{}, fmt.Errorf("invalid address format")
-	}
-
+func (n *WalletP2P) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
 	url := fmt.Sprintf(
 		"http://%s%s",
 		n.baseurl,
-		fmt.Sprintf(RouterAddressUTXOs, base58.Encode(address)),
+		fmt.Sprintf(RouterRetrieveAddressUTXOs, base58.Encode(address)),
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
-	defer cancel()
-
 	// send GET request
-	resp, err := getRequest(ctx, url)
+	resp, err := n.getRequest(ctx, url)
 	if err != nil {
 		return []*kernel.UTXO{}, fmt.Errorf("failed to get UTXO response for address %s: %w", base58.Encode(address), err)
 	}
@@ -150,14 +109,29 @@ func (n *WalletP2P) GetWalletUTXOS(address []byte) ([]*kernel.UTXO, error) {
 	return utxos, nil
 }
 
-// todo(): reestructure this to send transaction to node directly via API. Once the transaction is verified and appended
-// todo(): mempool then notify the network about the transaction (txid via pubsub), after that nodes will ask for the
-// todo(): transaction details to the node that sent the transaction
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
-	return n.pubsub.NotifyTransactionAdded(ctx, tx)
+	url := fmt.Sprintf(
+		"http://%s%s",
+		n.baseurl,
+		RouterSendTx,
+	)
+
+	data, err := n.encoder.SerializeTransaction(tx)
+	if err != nil {
+		return fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	// send request containing the transaction encoded
+	resp, err := n.postRequest(ctx, url, bytes.NewBuffer(data))
+	if err != nil {
+		return fmt.Errorf("failed to send POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
 
-func getRequest(ctx context.Context, url string) (*http.Response, error) {
+func (n *WalletP2P) getRequest(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
@@ -166,6 +140,28 @@ func getRequest(ctx context.Context, url string) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
+	}
+
+	return resp, nil
+}
+
+func (n *WalletP2P) postRequest(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
+	}
+
+	req.Header.Set(ContentTypeHeader, getContentTypeFrom(n.encoder))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request for url %s: %w", url, err)
+	}
+
+	// handle response status code to reduce redundancy in the code
+	if resp.StatusCode != http.StatusOK {
+		responseMsg, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("response code %d, message: %s", resp.StatusCode, responseMsg)
 	}
 
 	return resp, nil
