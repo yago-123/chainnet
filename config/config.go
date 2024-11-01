@@ -40,7 +40,6 @@ const (
 
 	KeyWalletKeyPairPath   = "wallet.key-pair-path"
 	KeyWalletServerAddress = "wallet.server-address"
-	KeyWalletServerPeerID  = "wallet.server-id"
 	KeyWalletServerPort    = "wallet.server-port"
 )
 
@@ -70,7 +69,6 @@ const (
 	DefaultP2PBufferSize   = 8192
 
 	DefaultServerAddress = "seed-1.chainnet.yago.ninja"
-	DefaultServerID      = "QmNXM4W7om3FdYDutuPjYCgTsazRNWhNn6fNyimf7SUHhR"
 	DefaultServerPort    = 8080
 )
 
@@ -118,7 +116,6 @@ type P2PConfig struct {
 type WalletConfig struct {
 	KeyPairPath   string `mapstructure:"key-pair-path"`
 	ServerAddress string `mapstructure:"server-address"`
-	ServerID      string `mapstructure:"server-id"`
 	ServerPort    uint   `mapstructure:"server-port"`
 }
 
@@ -165,7 +162,6 @@ func NewConfig() *Config {
 		},
 		Wallet: WalletConfig{
 			ServerAddress: DefaultServerAddress,
-			ServerID:      DefaultServerID,
 			ServerPort:    DefaultServerPort,
 		},
 	}
@@ -240,7 +236,6 @@ func AddConfigFlags(cmd *cobra.Command) {
 
 	cmd.Flags().String(KeyWalletKeyPairPath, "", "Path to the key pair file")
 	cmd.Flags().String(KeyWalletServerAddress, DefaultServerAddress, "Server address for wallet API requests")
-	cmd.Flags().String(KeyWalletServerPeerID, DefaultServerID, "Peer ID for wallet server")
 	cmd.Flags().Uint(KeyWalletServerPort, DefaultServerPort, "Server port for wallet API requests")
 
 	// bind flags to viper
@@ -271,7 +266,6 @@ func AddConfigFlags(cmd *cobra.Command) {
 
 	_ = viper.BindPFlag(KeyWalletKeyPairPath, cmd.Flags().Lookup(KeyWalletKeyPairPath))
 	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
-	_ = viper.BindPFlag(KeyWalletServerPeerID, cmd.Flags().Lookup(KeyWalletServerPeerID))
 	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
 }
 
@@ -352,9 +346,6 @@ func applyWalletFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyWalletServerAddress) {
 		cfg.Wallet.ServerAddress = viper.GetString(KeyWalletServerAddress)
-	}
-	if cmd.Flags().Changed(KeyWalletServerPeerID) {
-		cfg.Wallet.ServerID = viper.GetString(KeyWalletServerPeerID)
 	}
 	if cmd.Flags().Changed(KeyWalletServerPort) {
 		cfg.Wallet.ServerPort = viper.GetUint(KeyWalletServerPort)
