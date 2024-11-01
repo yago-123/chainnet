@@ -7,7 +7,7 @@
     app_dir: /var/chainnet
     config: 'default-config.yaml'
     repo_url: 'https://github.com/yago-123/chainnet.git'
-    branch: 'reestructure-tx-append-protocol'
+    branch: 'master'
     go_version: '1.23.0'
     go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
     go_code: /usr/local
