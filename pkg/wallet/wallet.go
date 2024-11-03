@@ -191,7 +191,7 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) GenerateNewTransaction(to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
 	inputs, totalBalance, err := generateInputs(utxos, targetAmount+txFee)
 	if err != nil {
@@ -199,7 +199,7 @@ func (w *Wallet) GenerateNewTransaction(to string, targetAmount uint, txFee uint
 	}
 
 	// create the outputs necessary for the transaction
-	outputs := generateOutputs(targetAmount, txFee, totalBalance, to, string(w.PublicKey))
+	outputs := generateOutputs(scriptType, targetAmount, txFee, totalBalance, to, string(w.PublicKey))
 
 	// generate transaction
 	tx := kernel.NewTransaction(
@@ -294,15 +294,15 @@ func generateInputs(utxos []*kernel.UTXO, targetAmount uint) ([]kernel.TxInput, 
 }
 
 // generateOutputs set up the outputs for the transaction
-func generateOutputs(targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
+func generateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
 	change := totalBalance - txFee - targetAmount
 
 	txOutput := []kernel.TxOutput{}
-	txOutput = append(txOutput, kernel.NewOutput(targetAmount, script.P2PK, receiver))
+	txOutput = append(txOutput, kernel.NewOutput(targetAmount, scriptType, receiver))
 
 	// add output corresponding to the spare change
 	if change > 0 {
-		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, script.P2PK, changeReceiver))
+		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, scriptType, changeReceiver))
 	}
 
 	return txOutput

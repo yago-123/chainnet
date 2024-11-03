@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/btcsuite/btcutil/base58"
 
@@ -15,6 +16,15 @@ import (
 	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
 
+const (
+	FlagPayType   = "pay-type"
+	FlagAddress   = "address"
+	FlagAmount    = "amount"
+	FlagFee       = "fee"
+	FlagPrivKey   = "priv-key"
+	FlagWalletKey = "wallet-key-path"
+)
+
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send transaction",
@@ -22,11 +32,12 @@ var sendCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, _ []string) {
 		cfg = config.InitConfig(cmd)
 
-		address, _ := cmd.Flags().GetString("address")
-		amount, _ := cmd.Flags().GetUint("amount")
-		fee, _ := cmd.Flags().GetUint("fee")
-		privKeyCont, _ := cmd.Flags().GetString("priv-key")
-		privKeyPath, _ := cmd.Flags().GetString("wallet-key-path")
+		scriptTypeStr, _ := cmd.Flags().GetString(FlagPayType)
+		address, _ := cmd.Flags().GetString(FlagAddress)
+		amount, _ := cmd.Flags().GetUint(FlagAmount)
+		fee, _ := cmd.Flags().GetUint(FlagFee)
+		privKeyCont, _ := cmd.Flags().GetString(FlagPrivKey)
+		privKeyPath, _ := cmd.Flags().GetString(FlagWalletKey)
 
 		// check if only one private key is provided
 		if (privKeyCont == "") == (privKeyPath == "") {
@@ -35,6 +46,7 @@ var sendCmd = &cobra.Command{
 
 		var err error
 		var privKey, pubKey []byte
+		var payType script.ScriptType
 
 		// process key from path or from content
 		if privKeyCont != "" {
@@ -47,6 +59,10 @@ var sendCmd = &cobra.Command{
 			if err != nil {
 				logger.Fatalf("error reading private key: %v", err)
 			}
+		}
+
+		if scriptTypeStr != "" {
+			payType = script.DetermineScriptTypeFromStringType(scriptTypeStr)
 		}
 
 		// derive public key from private key
@@ -101,14 +117,16 @@ func init() {
 	rootCmd.AddCommand(sendCmd)
 
 	// sub commands
-	sendCmd.Flags().String("address", "", "Destination address to send coins")
-	sendCmd.Flags().Uint("amount", 0, "Amount of coins to send")
-	sendCmd.Flags().Uint("fee", 0, "Amount of fee to send")
-	sendCmd.Flags().String("priv-key", "", "Private key")
+	sendCmd.Flags().String(FlagPayType, "P2PK", "Type of address to send coins to")
+	sendCmd.Flags().String(FlagAddress, "", "Destination address to send coins")
+	sendCmd.Flags().Uint(FlagAmount, 0, "Amount of coins to send")
+	sendCmd.Flags().Uint(FlagFee, 0, "Amount of fee to send")
+	sendCmd.Flags().String(FlagPrivKey, "", "Private key")
+
 	// todo(): reestructure this duplication
-	sendCmd.Flags().String("wallet-key-path", "", "Path to private key")
+	sendCmd.Flags().String(FlagWalletKey, "", "Path to private key")
 
 	// required flags
-	_ = sendCmd.MarkFlagRequired("address")
-	_ = sendCmd.MarkFlagRequired("amount")
+	_ = sendCmd.MarkFlagRequired(FlagAddress)
+	_ = sendCmd.MarkFlagRequired(FlagAmount)
 }

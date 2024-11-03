@@ -33,6 +33,12 @@ var scriptStructure = map[ScriptType]Script{ //nolint:gochecknoglobals // must b
 	UndefinedScriptType: {Undefined},
 }
 
+// scripTypeStrings is a map that contains the string representation of the script types
+var scripTypeStrings = map[string]ScriptType{
+	"P2PK":  P2PK,
+	"P2PKH": P2PKH,
+}
+
 const (
 	// Special elements
 	PubKey ScriptElement = iota
@@ -178,7 +184,7 @@ func (s Script) String(pubKey []byte) string {
 	return strings.Join(rendered, " ")
 }
 
-// StringToScript converts a script string into Script type and array of literals (like pub key, hash pub key, etc)
+// StringToScript converts a script pub key string into Script type and array of literals (like pub key, hash pub key, etc)
 func StringToScript(script string) (Script, []string, error) {
 	scriptTokens := []ScriptElement{}
 	scriptString := []string{}
@@ -211,6 +217,18 @@ func DetermineScriptType(script Script) ScriptType {
 	}
 
 	return UndefinedScriptType
+}
+
+// DetermineScriptTYpeFromStringType returns the script type based on a string representation. For example:
+// - "P2PK" -> P2PK
+// - "P2PKH" -> P2PKH
+func DetermineScriptTypeFromStringType(script string) ScriptType {
+	typ, ok := scripTypeStrings[script]
+	if !ok {
+		return UndefinedScriptType
+	}
+
+	return typ
 }
 
 // scriptsMatch checks if two scripts contain the same script elements in the same order
