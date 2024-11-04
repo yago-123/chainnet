@@ -52,12 +52,6 @@ func TestWallet_SendTransaction(t *testing.T) {
 	signer2.
 		On("NewKeyPair").
 		Return([]byte("pubkey-5"), []byte("privkey-5"), nil)
-	// wallet2, err := NewWallet([]byte("0.0.1"), miner.NewProofOfWork(1, hash.NewSHA256()), validator.NewLightValidator(), &signer2, &mockHash.FakeHashing{})
-	// require.NoError(t, err)
-
-	// todo(): add script signature validator? probably depends on type of wallet: nespv, spv, full node wallet...
-	// _, err = wallet2.NotifyTransactionAdded("pubkey-1", 10, 1, utxos)
-	// require.Error(t, err)
 }
 
 func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
