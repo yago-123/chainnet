@@ -56,7 +56,8 @@ var listTxsCmd = &cobra.Command{
 
 		// print transactions
 		for _, tx := range txs {
-			logger.Infof("%s", tx.String())
+
+			logger.Infof("{\n%s}\n", tx.String())
 		}
 	},
 }

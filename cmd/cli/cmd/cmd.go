@@ -16,7 +16,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func Execute(logger *logrus.Logger) {
+func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		logger.Fatalf("error executing command: %v", err)
 	}
