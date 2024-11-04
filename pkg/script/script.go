@@ -34,7 +34,7 @@ var scriptStructure = map[ScriptType]Script{ //nolint:gochecknoglobals // must b
 }
 
 // scripTypeStrings is a map that contains the string representation of the script types
-var scripTypeStrings = map[string]ScriptType{
+var scripTypeStrings = map[string]ScriptType{ //nolint:gochecknoglobals // it's OK to be a global variable
 	"P2PK":  P2PK,
 	"P2PKH": P2PKH,
 }
@@ -222,8 +222,8 @@ func DetermineScriptType(script Script) ScriptType {
 // DetermineScriptTYpeFromStringType returns the script type based on a string representation. For example:
 // - "P2PK" -> P2PK
 // - "P2PKH" -> P2PKH
-func DetermineScriptTypeFromStringType(script string) ScriptType {
-	typ, ok := scripTypeStrings[script]
+func ReturnScriptTypeFromStringType(scriptType string) ScriptType {
+	typ, ok := scripTypeStrings[scriptType]
 	if !ok {
 		return UndefinedScriptType
 	}

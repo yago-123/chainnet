@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -62,7 +63,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		if scriptTypeStr != "" {
-			payType = script.DetermineScriptTypeFromStringType(scriptTypeStr)
+			payType = script.ReturnScriptTypeFromStringType(scriptTypeStr)
 		}
 
 		// derive public key from private key
@@ -97,7 +98,7 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error getting wallet UTXOS: %v", err)
 		}
 
-		tx, err := wallet.GenerateNewTransaction(address, amount, fee, utxos)
+		tx, err := wallet.GenerateNewTransaction(payType, address, amount, fee, utxos)
 		if err != nil {
 			logger.Fatalf("error generating transaction: %v", err)
 		}
