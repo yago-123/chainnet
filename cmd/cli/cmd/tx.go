@@ -33,7 +33,7 @@ var listTxsCmd = &cobra.Command{
 		)
 
 		// send request
-		resp, err := http.Get(url)
+		resp, err := http.Get(url) //nolint:gosec // this is OK for a CLI tool
 		if err != nil {
 			logger.Fatalf("failed to get transactions: %v", err)
 		}

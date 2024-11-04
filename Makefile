@@ -1,6 +1,6 @@
 # Define directories
 OUTPUT_DIR := bin
-NODE_PROTOBUF_DIR := pkg/net/protobuf
+NODE_PROTOBUF_DIR := pkg/network/protobuf
 
 CLI_BINARY_NAME   := chainnet-cli
 MINER_BINARY_NAME := chainnet-miner
