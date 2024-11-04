@@ -17,7 +17,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/mempool"
-	"github.com/yago-123/chainnet/pkg/net"
+	"github.com/yago-123/chainnet/pkg/network"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util"
@@ -55,7 +55,7 @@ type Blockchain struct {
 	blockSubject observer.ChainSubject
 
 	p2pActive    bool
-	p2pNet       *net.NodeP2P
+	p2pNet       *network.NodeP2P
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 	p2pEncoder   encoding.Encoding
@@ -130,8 +130,8 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*net.NodeP2P, error) {
-	var p2pNet *net.NodeP2P
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*network.NodeP2P, error) {
+	var p2pNet *network.NodeP2P
 
 	// check if the network is supposed to be enabled
 	if !bc.cfg.P2P.Enabled {
@@ -148,7 +148,7 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*net.NodeP2P,
 	mempoolExplorer := mempool.NewMemPoolExplorer(bc.mempool)
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
 
-	p2pNet, err := net.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
+	p2pNet, err := network.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
 	if err != nil {
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}

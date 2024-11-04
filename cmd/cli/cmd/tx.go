@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+
 	"github.com/spf13/cobra"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/net"
-	"io"
-	"net/http"
+	"github.com/yago-123/chainnet/pkg/network"
 )
 
 const FlagAddress = "address"
@@ -15,20 +17,19 @@ const FlagAddress = "address"
 var listTxsCmd = &cobra.Command{
 	Use:   "list-txs",
 	Short: "List all transactions",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cfg = config.InitConfig(cmd)
 
 		address, _ := cmd.Flags().GetString(FlagAddress)
 
 		if len(address) == 0 {
-			logger.Fatalf("address is required")
+			logger.Fatalf("address must be provided")
 		}
 
 		url := fmt.Sprintf(
-			"http://%s:%d/%s",
-			cfg.Wallet.ServerAddress,
-			cfg.Wallet.ServerPort,
-			fmt.Sprintf(net.RouterRetrieveAddressTxs, address),
+			"http://%s/%s",
+			net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort)),
+			fmt.Sprintf(network.RouterRetrieveAddressTxs, address),
 		)
 
 		// send request
