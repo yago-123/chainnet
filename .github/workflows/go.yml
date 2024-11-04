@@ -43,6 +43,9 @@ jobs:
 
       - name: Build NESPV
         run: make nespv
+      
+      - name: Build CLI
+        run: make cli
 
       - name: Test code
         run: make test
