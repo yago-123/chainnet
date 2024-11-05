@@ -1,18 +1,20 @@
 # Define directories
 OUTPUT_DIR := bin
-NODE_PROTOBUF_DIR := pkg/net/protobuf
+NODE_PROTOBUF_DIR := pkg/network/protobuf
 
+CLI_BINARY_NAME   := chainnet-cli
 MINER_BINARY_NAME := chainnet-miner
 NESPV_BINARY_NAME := chainnet-nespv
 NODE_BINARY_NAME  := chainnet-node
 
 # Define the source file for the CLI application
+CLI_SOURCE   := $(wildcard cmd/cli/*.go)
 MINER_SOURCE := $(wildcard cmd/miner/*.go)
 NESPV_SOURCE := $(wildcard cmd/nespv/*go)
-NODE_SOURCE := $(wildcard cmd/node/*.go)
+NODE_SOURCE  := $(wildcard cmd/node/*.go)
 
 # Define the source files for other files
-NODE_PROTOBUF_SOURCE := $(wildcard $(NODE_PROTOBUF_DIR)/*.proto)
+NODE_PROTOBUF_SOURCE    := $(wildcard $(NODE_PROTOBUF_DIR)/*.proto)
 NODE_PROTOBUF_PB_SOURCE := $(wildcard $(NODE_PROTOBUF_DIR)/*.pb.go)
 
 # Define build flags
@@ -25,7 +27,7 @@ DOCKERFILE_MINER   := ./build/docker/miner/Dockerfile
 DOCKERFILE_NODE    := ./build/docker/node/Dockerfile
 
 .PHONY: all
-all: test lint miner node nespv
+all: test lint miner node nespv cli
 
 .PHONY: miner
 miner: protobuf output-dir
@@ -41,6 +43,11 @@ node: protobuf output-dir
 nespv: protobuf output-dir
 	@echo "Building chainnet nespv..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NESPV_BINARY_NAME) $(NESPV_SOURCE)
+
+.PHONY: cli 
+cli: protobuf output-dir
+	@echo "Building chainnet CLI..."
+	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
 
 .PHONY: protobuf
 protobuf:

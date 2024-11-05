@@ -1,4 +1,4 @@
-package net
+package network
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ import (
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/net/discovery"
+	"github.com/yago-123/chainnet/pkg/network/discovery"
 )
 
 const RequestTimeout = 10 * time.Second

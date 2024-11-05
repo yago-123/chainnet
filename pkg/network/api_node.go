@@ -1,4 +1,4 @@
-package net
+package network
 
 import (
 	"context"
@@ -111,7 +111,7 @@ func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Reques
 		return
 	}
 
-	txs, err := router.explorer.FindUnspentTransactions(addr)
+	txs, err := router.explorer.FindAllTransactions(addr)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to retrieve transactions: %s", err.Error()), http.StatusInternalServerError, err)
 		return
