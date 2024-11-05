@@ -104,3 +104,11 @@ func TestIsValidHash(t *testing.T) {
 	hash := "0000006484ffdc39a5ba6cebae9e398878f24bcab93f4c32acf81e246fa2474b"
 	assert.True(t, IsValidHash([]byte(hash)))
 }
+
+func TestGenerateP2PKHAddrFromPubKey(t *testing.T) {
+	GenerateP2PKHAddrFromPubKey()
+}
+
+func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
+	ExtractPubKeyHashedFromP2PKHAddr()
+}

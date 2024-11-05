@@ -15,8 +15,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/util"
-
-	"github.com/btcsuite/btcutil/base58"
 )
 
 type Wallet struct {
@@ -149,22 +147,7 @@ func (w *Wallet) GetP2PKAddress() []byte {
 
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
-	// hash the public key
-	pubKeyHash, err := w.hasherP2PKH.Hash(w.PublicKey)
-	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
-	}
-
-	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append([]byte{w.version}, pubKeyHash...)
-	checksum, err := w.hasherP2PKH.Hash(versionedPayload)
-	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
-	}
-
-	// return the base58 of the versioned payload and the checksum
-	payload := append(versionedPayload, checksum[:4]...) //nolint:gocritic // we need to append the checksum to the payload
-	return []byte(base58.Encode(payload)), nil
+	return util.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version, w.hasherP2PKH)
 }
 
 func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {

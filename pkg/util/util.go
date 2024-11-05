@@ -1,11 +1,13 @@
 package util
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"io"
 	"math"
 	"os"
@@ -25,6 +27,8 @@ const (
 
 	MinLengthHash = 16
 	MaxLengthHash = 256
+
+	P2PKHAddressLength = 1 + 20 + 4 // version + pubKeyHash + checksum
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -109,6 +113,73 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	}
 
 	return true
+}
+
+func verifyP2PKHChecksum(version byte, pubKeyHash, checksum []byte, hasherP2PKH hash.Hashing) (bool, error) {
+	versionPayload := append([]byte{version}, pubKeyHash...)
+	calculatedChecksum, err := hasherP2PKH.Hash(versionPayload)
+	if err != nil {
+		return false, fmt.Errorf("could not hash the versioned payload: %w", err)
+	}
+
+	return bytes.Equal(checksum, calculatedChecksum[:4]), nil
+}
+
+// GenerateP2PKHAddrFromPubKey generates a P2PKH address from a public key (including a checksum for error detection).
+// Returns the P2PKH address as a base58 encoded string.
+func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte, hasherP2PKH hash.Hashing) ([]byte, error) {
+	// hash the public key
+	pubKeyHash, err := hasherP2PKH.Hash(pubKey)
+	if err != nil {
+		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
+	}
+
+	// add the version to the hashed public key in order to hash again and obtain the checksum
+	versionedPayload := append([]byte{version}, pubKeyHash...)
+	// todo() checksum must be a double SHA-256 hash, instead of SHA-256 + RIPEMD-160, but for now is OK
+	checksum, err := hasherP2PKH.Hash(versionedPayload)
+	if err != nil {
+		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
+	}
+
+	// return the base58 of the versioned payload and the checksum
+	payload := append(versionedPayload, checksum[:4]...) //nolint:gocritic // we need to append the checksum to the payload
+	return []byte(base58.Encode(payload)), nil
+}
+
+// ExtractPubKeyHashedFromP2PKHAddr extracts the public key hash from a P2PKH address
+func ExtractPubKeyHashedFromP2PKHAddr(address []byte, hasherP2PKH hash.Hashing) ([]byte, byte, error) {
+	// decode the Base58 address to get the raw bytes
+	decodedP2PKHAddress := base58.Decode(string(address))
+
+	// check that the decoded byte slice has at least the minimum valid length (1 version + 1 pubKeyHash + 4 checksum)
+	// we know that the address should be 20 bytes because it is a RIPEMD hash, but for now this is OK
+	if len(decodedP2PKHAddress) != P2PKHAddressLength {
+		return nil, 0, fmt.Errorf("invalid P2PKH address length: got %d, want at least %d", len(decodedP2PKHAddress), P2PKHAddressLength)
+	}
+
+	version := decodedP2PKHAddress[0]
+
+	// extract the public key hash (remaining bytes except for the last 4, if available)
+	pubKeyHash := decodedP2PKHAddress[1 : len(decodedP2PKHAddress)-4]
+
+	// Ensure that the public key hash is not empty
+	if len(pubKeyHash) < 1 {
+		return nil, 0, fmt.Errorf("invalid public key hash length: got %d, want at least 1", len(pubKeyHash))
+	}
+
+	// verify the checksum
+	checksum := decodedP2PKHAddress[len(decodedP2PKHAddress)-4:]
+	match, err := verifyP2PKHChecksum(version, pubKeyHash, checksum, hasherP2PKH)
+	if err != nil {
+		return nil, 0, fmt.Errorf("could not verify the checksum: %w", err)
+	}
+
+	if !match {
+		return nil, 0, fmt.Errorf("error validating checksum")
+	}
+
+	return pubKeyHash, version, nil
 }
 
 // CalculateMiningTarget calculates the new mining target based on the time required for mining the blocks
