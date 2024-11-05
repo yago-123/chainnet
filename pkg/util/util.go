@@ -7,10 +7,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"io"
 	"math"
 	"os"
+
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -28,7 +29,8 @@ const (
 	MinLengthHash = 16
 	MaxLengthHash = 256
 
-	P2PKHAddressLength = 1 + 20 + 4 // version + pubKeyHash + checksum
+	P2PKHAddressLength    = 1 + 20 + 4 // version + pubKeyHash + checksum
+	P2PKHPubKeyHashLength = 20
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -115,14 +117,18 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	return true
 }
 
-func verifyP2PKHChecksum(version byte, pubKeyHash, checksum []byte, hasherP2PKH hash.Hashing) (bool, error) {
+func verifyP2PKHChecksum(version byte, pubKeyHash, checksum []byte, hasherP2PKH hash.Hashing) error {
 	versionPayload := append([]byte{version}, pubKeyHash...)
 	calculatedChecksum, err := hasherP2PKH.Hash(versionPayload)
 	if err != nil {
-		return false, fmt.Errorf("could not hash the versioned payload: %w", err)
+		return fmt.Errorf("could not hash the versioned payload: %w", err)
 	}
 
-	return bytes.Equal(checksum, calculatedChecksum[:4]), nil
+	if !bytes.Equal(checksum, calculatedChecksum[:4]) {
+		return fmt.Errorf("error validating checksum, expected %x, got %x", checksum, calculatedChecksum[:4])
+	}
+
+	return nil
 }
 
 // GenerateP2PKHAddrFromPubKey generates a P2PKH address from a public key (including a checksum for error detection).
@@ -164,19 +170,15 @@ func ExtractPubKeyHashedFromP2PKHAddr(address []byte, hasherP2PKH hash.Hashing) 
 	pubKeyHash := decodedP2PKHAddress[1 : len(decodedP2PKHAddress)-4]
 
 	// Ensure that the public key hash is not empty
-	if len(pubKeyHash) < 1 {
-		return nil, 0, fmt.Errorf("invalid public key hash length: got %d, want at least 1", len(pubKeyHash))
+	if len(pubKeyHash) != P2PKHPubKeyHashLength {
+		return nil, 0, fmt.Errorf("invalid public key hash length: got %d, want %d", len(pubKeyHash), P2PKHPubKeyHashLength)
 	}
 
 	// verify the checksum
 	checksum := decodedP2PKHAddress[len(decodedP2PKHAddress)-4:]
-	match, err := verifyP2PKHChecksum(version, pubKeyHash, checksum, hasherP2PKH)
+	err := verifyP2PKHChecksum(version, pubKeyHash, checksum, hasherP2PKH)
 	if err != nil {
-		return nil, 0, fmt.Errorf("could not verify the checksum: %w", err)
-	}
-
-	if !match {
-		return nil, 0, fmt.Errorf("error validating checksum")
+		return nil, 0, err
 	}
 
 	return pubKeyHash, version, nil

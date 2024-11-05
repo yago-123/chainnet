@@ -1,7 +1,12 @@
-package util //nolint:testpackage // don't create separate package for tests
+package util_test
 
 import (
 	"testing"
+
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/stretchr/testify/assert"
 
@@ -11,17 +16,17 @@ import (
 func TestIsFirstNBytesZero(t *testing.T) {
 	hash := []byte{0x0, 0xFF, 0xFF}
 
-	require.True(t, IsFirstNBitsZero(hash, 8))
-	require.False(t, IsFirstNBitsZero(hash, 16))
-	require.False(t, IsFirstNBitsZero(hash, 256))
+	require.True(t, util.IsFirstNBitsZero(hash, 8))
+	require.False(t, util.IsFirstNBitsZero(hash, 16))
+	require.False(t, util.IsFirstNBitsZero(hash, 256))
 
 	hash = []byte{0x7F, 0xFF, 0xFF}
-	require.True(t, IsFirstNBitsZero(hash, 1))
-	require.False(t, IsFirstNBitsZero(hash, 2))
+	require.True(t, util.IsFirstNBitsZero(hash, 1))
+	require.False(t, util.IsFirstNBitsZero(hash, 2))
 
 	hash = []byte{0x0, 0x7F, 0xFF}
-	require.True(t, IsFirstNBitsZero(hash, 9))
-	require.False(t, IsFirstNBitsZero(hash, 10))
+	require.True(t, util.IsFirstNBitsZero(hash, 9))
+	require.False(t, util.IsFirstNBitsZero(hash, 10))
 }
 
 func TestCalculateMiningDifficulty(t *testing.T) {
@@ -93,7 +98,7 @@ func TestCalculateMiningDifficulty(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CalculateMiningTarget(tt.args.currentTarget, tt.args.targetTimeSpan, tt.args.actualTimeSpan); got != tt.want {
+			if got := util.CalculateMiningTarget(tt.args.currentTarget, tt.args.targetTimeSpan, tt.args.actualTimeSpan); got != tt.want {
 				t.Errorf("CalculateMiningDifficulty() = %v, want %v", got, tt.want)
 			}
 		})
@@ -102,13 +107,44 @@ func TestCalculateMiningDifficulty(t *testing.T) {
 
 func TestIsValidHash(t *testing.T) {
 	hash := "0000006484ffdc39a5ba6cebae9e398878f24bcab93f4c32acf81e246fa2474b"
-	assert.True(t, IsValidHash([]byte(hash)))
+	assert.True(t, util.IsValidHash([]byte(hash)))
 }
 
 func TestGenerateP2PKHAddrFromPubKey(t *testing.T) {
-	GenerateP2PKHAddrFromPubKey()
+	p2pkhAddr, err := util.GenerateP2PKHAddrFromPubKey(
+		base58.Decode("aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJdddpT9aV3HbEPRuBpyEXFktCPCgrdp3FEXrfqjz2xoeQwTCqBs8qJtUFNmCLRTyVaTYuy7G8RZnHkABrMpH2cCG"),
+		1,
+		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
+	)
+
+	require.NoError(t, err)
+	require.Len(t, base58.Decode(string(p2pkhAddr)), 25)
+	assert.Equal(t, "agr72ArMnsmdm9XTScgCpXnwkhAANyBCd", string(p2pkhAddr))
 }
 
 func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
-	ExtractPubKeyHashedFromP2PKHAddr()
+	pubKeyHash, version, err := util.ExtractPubKeyHashedFromP2PKHAddr(
+		[]byte("agr72ArMnsmdm9XTScgCpXnwkhAANyBCd"),
+		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
+	)
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, int(version))
+	assert.Equal(t, "2ajHyKQLikZqXV9rpaSfnV6mh7a5", base58.Encode(pubKeyHash))
+	assert.Len(t, pubKeyHash, 20)
+
+	// modify byte to test checksum validation
+	_, _, err = util.ExtractPubKeyHashedFromP2PKHAddr(
+		[]byte("agr72ArMnsmd99XTScgCpXnwkhAANyBCd"),
+		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
+	)
+
+	require.Error(t, err)
+
+	// make sure that length is checked
+	_, _, err = util.ExtractPubKeyHashedFromP2PKHAddr(
+		[]byte("agr72ArMnsmd9XTScgCpXnwkhAANyBCd"),
+		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
+	)
+	require.Error(t, err)
 }

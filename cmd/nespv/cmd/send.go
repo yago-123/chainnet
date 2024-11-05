@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	"github.com/yago-123/chainnet/pkg/crypto"
 
 	"github.com/yago-123/chainnet/pkg/script"
