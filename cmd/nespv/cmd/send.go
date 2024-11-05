@@ -75,7 +75,7 @@ var sendCmd = &cobra.Command{
 		// create wallet
 		wallet, err := wallt.NewWalletWithKeys(
 			cfg,
-			[]byte("1"),
+			1,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
 			walletHasher,

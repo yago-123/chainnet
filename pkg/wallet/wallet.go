@@ -20,7 +20,7 @@ import (
 )
 
 type Wallet struct {
-	version    []byte
+	version    byte
 	PrivateKey []byte
 	PublicKey  []byte
 
@@ -46,7 +46,7 @@ type Wallet struct {
 
 func NewWallet(
 	cfg *config.Config,
-	version []byte,
+	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
 	walletHasher hash.Hashing,
@@ -73,7 +73,7 @@ func NewWallet(
 
 func NewWalletWithKeys(
 	cfg *config.Config,
-	version []byte,
+	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
 	walletHasher hash.Hashing,
@@ -156,14 +156,14 @@ func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 	}
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
+	versionedPayload := append([]byte{w.version}, pubKeyHash...)
 	checksum, err := w.walletHasher.Hash(versionedPayload)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
 	}
 
 	// return the base58 of the versioned payload and the checksum
-	payload := append(versionedPayload, checksum...) //nolint:gocritic // we need to append the checksum to the payload
+	payload := append(versionedPayload, checksum[:4]...) //nolint:gocritic // we need to append the checksum to the payload
 	return []byte(base58.Encode(payload)), nil
 }
 
