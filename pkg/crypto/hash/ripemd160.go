@@ -20,7 +20,12 @@ func (r *Ripemd160) Hash(payload []byte) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	return r.ripe.Sum(payload), nil
+	_, err := r.ripe.Write(payload)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return r.ripe.Sum(nil), nil
 }
 
 func (r *Ripemd160) Verify(hash []byte, payload []byte) (bool, error) {
