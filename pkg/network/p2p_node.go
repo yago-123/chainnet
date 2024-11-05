@@ -1,4 +1,4 @@
-package net
+package network
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/net/discovery"
-	"github.com/yago-123/chainnet/pkg/net/events"
-	"github.com/yago-123/chainnet/pkg/net/pubsub"
+	"github.com/yago-123/chainnet/pkg/network/discovery"
+	"github.com/yago-123/chainnet/pkg/network/events"
+	"github.com/yago-123/chainnet/pkg/network/pubsub"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util"

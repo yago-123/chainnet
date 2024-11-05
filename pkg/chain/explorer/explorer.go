@@ -356,6 +356,54 @@ func (explorer *ChainExplorer) FindAmountSpendableOutputs(pubKey string, amount 
 	return accumulated, unspentOutputs, nil
 }
 
+func (explorer *ChainExplorer) FindAllTransactions(pubKey string) ([]*kernel.Transaction, error) {
+	return explorer.findAllTransactions(pubKey, iterator.NewReverseBlockIterator(explorer.store))
+}
+
+func (explorer *ChainExplorer) findAllTransactions(pubKey string, it iterator.BlockIterator) ([]*kernel.Transaction, error) {
+	var nextBlock *kernel.Block
+	var unspentTXs []*kernel.Transaction
+
+	lastBlock, err := explorer.store.GetLastBlock()
+	if err != nil {
+		return []*kernel.Transaction{}, err
+	}
+
+	// get the blockchain revIterator
+	_ = it.Initialize(lastBlock.Hash)
+
+	for it.HasNext() {
+		// get the next block using the revIterator
+		nextBlock, err = it.GetNextBlock()
+		if err != nil {
+			return []*kernel.Transaction{}, err
+		}
+
+		// skip the genesis block
+		if nextBlock.IsGenesisBlock() {
+			continue
+		}
+
+		// iterate through each transaction in the block
+		for _, tx := range nextBlock.Transactions {
+			for _, out := range tx.Vout {
+				// check if the output can be unlocked with the given pubKey
+				if out.CanBeUnlockedWith(pubKey) {
+					unspentTXs = append(unspentTXs, tx)
+				}
+			}
+
+			// we skip the coinbase transactions inputs
+			if tx.IsCoinbase() {
+				continue
+			}
+		}
+	}
+
+	// return the list of unspent transactions
+	return unspentTXs, nil
+}
+
 func (explorer *ChainExplorer) FindUnspentTransactionsOutputs(pubKey string) ([]kernel.TxOutput, error) {
 	unspentTransactions, err := explorer.FindUnspentTransactions(pubKey)
 	if err != nil {

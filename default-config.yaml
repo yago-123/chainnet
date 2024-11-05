@@ -13,7 +13,7 @@ storage-file: "bin/miner-storage"         # File used for persisting the chain s
 miner:
   pub-key-reward:                         # Public wallet key encoded in base58, used for receiving mining rewards
     "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJVEyUnnaMDSRgUZKJzwFAdWKhSv8HTtbQbecee5xew2DPfqm467oef3KEW7bT54WdDWbvEqEhFv1YT3aPZZVqgKc"
-  mining-interval: "10m"                  # Interval between block creation
+  mining-interval: "30s"                  # Interval between block creation
   adjustment-interval: 6                  # Number of blocks before adjusting the difficulty
 
 chain:
