@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/yago-123/chainnet/pkg/crypto"
 
 	"github.com/yago-123/chainnet/pkg/script"
 
@@ -79,7 +80,7 @@ var sendCmd = &cobra.Command{
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
 			walletHasher,
-			hash.GetHasher(consensusHasherType),
+			crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
 			encoding.NewProtobufEncoder(),
 			privKey,
 			pubKey,

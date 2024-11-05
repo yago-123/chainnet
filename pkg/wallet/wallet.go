@@ -36,7 +36,7 @@ type Wallet struct {
 	encoder encoding.Encoding
 
 	// hasher used for deriving wallet related values
-	walletHasher hash.Hashing
+	hasherP2PKH hash.Hashing
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
 	interpreter     *rpnInter.RPNInterpreter
@@ -49,7 +49,7 @@ func NewWallet(
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
-	walletHasher hash.Hashing,
+	hasherP2PKH hash.Hashing,
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 ) (*Wallet, error) {
@@ -63,7 +63,7 @@ func NewWallet(
 		version,
 		validator,
 		signer,
-		walletHasher,
+		hasherP2PKH,
 		consensusHasher,
 		encoder,
 		privateKey,
@@ -76,7 +76,7 @@ func NewWalletWithKeys(
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
-	walletHasher hash.Hashing,
+	hasherP2PKH hash.Hashing,
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 	privateKey []byte,
@@ -90,7 +90,7 @@ func NewWalletWithKeys(
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
-		walletHasher:    walletHasher,
+		hasherP2PKH:     hasherP2PKH,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
 	}, nil
@@ -150,14 +150,14 @@ func (w *Wallet) GetP2PKAddress() []byte {
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 	// hash the public key
-	pubKeyHash, err := w.walletHasher.Hash(w.PublicKey)
+	pubKeyHash, err := w.hasherP2PKH.Hash(w.PublicKey)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
 	}
 
 	// add the version to the hashed public key in order to hash again and obtain the checksum
 	versionedPayload := append([]byte{w.version}, pubKeyHash...)
-	checksum, err := w.walletHasher.Hash(versionedPayload)
+	checksum, err := w.hasherP2PKH.Hash(versionedPayload)
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
 	}
