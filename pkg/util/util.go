@@ -7,11 +7,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/crypto"
 	"io"
 	"math"
 	"os"
-
-	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -133,7 +132,9 @@ func verifyP2PKHChecksum(version byte, pubKeyHash, checksum []byte, hasherP2PKH 
 
 // GenerateP2PKHAddrFromPubKey generates a P2PKH address from a public key (including a checksum for error detection).
 // Returns the P2PKH address as a base58 encoded string.
-func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte, hasherP2PKH hash.Hashing) ([]byte, error) {
+func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte) ([]byte, error) {
+	hasherP2PKH := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+
 	// hash the public key
 	pubKeyHash, err := hasherP2PKH.Hash(pubKey)
 	if err != nil {
@@ -148,26 +149,26 @@ func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte, hasherP2PKH hash.H
 		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
 	}
 
-	// return the base58 of the versioned payload and the checksum
+	// add checksum to generate address
 	payload := append(versionedPayload, checksum[:4]...) //nolint:gocritic // we need to append the checksum to the payload
-	return []byte(base58.Encode(payload)), nil
+
+	return payload, nil
 }
 
 // ExtractPubKeyHashedFromP2PKHAddr extracts the public key hash from a P2PKH address
-func ExtractPubKeyHashedFromP2PKHAddr(address []byte, hasherP2PKH hash.Hashing) ([]byte, byte, error) {
-	// decode the Base58 address to get the raw bytes
-	decodedP2PKHAddress := base58.Decode(string(address))
+func ExtractPubKeyHashedFromP2PKHAddr(address []byte) ([]byte, byte, error) {
+	hasherP2PKH := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
 
-	// check that the decoded byte slice has at least the minimum valid length (1 version + 1 pubKeyHash + 4 checksum)
+	// check that address has at least the minimum valid length (1 version + 1 pubKeyHash + 4 checksum)
 	// we know that the address should be 20 bytes because it is a RIPEMD hash, but for now this is OK
-	if len(decodedP2PKHAddress) != P2PKHAddressLength {
-		return nil, 0, fmt.Errorf("invalid P2PKH address length: got %d, want at least %d", len(decodedP2PKHAddress), P2PKHAddressLength)
+	if len(address) != P2PKHAddressLength {
+		return nil, 0, fmt.Errorf("invalid P2PKH address length: got %d, want at least %d", len(address), P2PKHAddressLength)
 	}
 
-	version := decodedP2PKHAddress[0]
+	version := address[0]
 
 	// extract the public key hash (remaining bytes except for the last 4, if available)
-	pubKeyHash := decodedP2PKHAddress[1 : len(decodedP2PKHAddress)-4]
+	pubKeyHash := address[1 : len(address)-4]
 
 	// Ensure that the public key hash is not empty
 	if len(pubKeyHash) != P2PKHPubKeyHashLength {
@@ -175,7 +176,7 @@ func ExtractPubKeyHashedFromP2PKHAddr(address []byte, hasherP2PKH hash.Hashing) 
 	}
 
 	// verify the checksum
-	checksum := decodedP2PKHAddress[len(decodedP2PKHAddress)-4:]
+	checksum := address[len(address)-4:]
 	err := verifyP2PKHChecksum(version, pubKeyHash, checksum, hasherP2PKH)
 	if err != nil {
 		return nil, 0, err
