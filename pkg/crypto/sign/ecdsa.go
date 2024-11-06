@@ -4,8 +4,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	"math/big"
+
+	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
 type ECDSASigner struct {

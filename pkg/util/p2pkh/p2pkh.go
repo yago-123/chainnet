@@ -3,6 +3,7 @@ package util_p2pkh
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 )

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -147,7 +149,7 @@ func (w *Wallet) GetP2PKAddress() []byte {
 
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
-	return util.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version, w.hasherP2PKH)
+	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
 }
 
 func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {

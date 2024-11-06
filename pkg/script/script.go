@@ -2,8 +2,9 @@ package script
 
 import (
 	"fmt"
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"strings"
+
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/btcsuite/btcutil/base58"
 )
