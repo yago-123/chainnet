@@ -1,19 +1,11 @@
 package util
 
 import (
-	"bytes"
-	"crypto/ecdsa"
-	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/yago-123/chainnet/pkg/crypto"
-	"io"
-	"math"
-	"os"
-
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"math"
 )
 
 const (
@@ -27,9 +19,6 @@ const (
 
 	MinLengthHash = 16
 	MaxLengthHash = 256
-
-	P2PKHAddressLength    = 1 + 20 + 4 // version + pubKeyHash + checksum
-	P2PKHPubKeyHashLength = 20
 )
 
 // CalculateTxHash calculates the hash of a transaction
@@ -116,75 +105,6 @@ func IsFirstNBitsZero(arr []byte, n uint) bool {
 	return true
 }
 
-func verifyP2PKHChecksum(version byte, pubKeyHash, checksum []byte, hasherP2PKH hash.Hashing) error {
-	versionPayload := append([]byte{version}, pubKeyHash...)
-	calculatedChecksum, err := hasherP2PKH.Hash(versionPayload)
-	if err != nil {
-		return fmt.Errorf("could not hash the versioned payload: %w", err)
-	}
-
-	if !bytes.Equal(checksum, calculatedChecksum[:4]) {
-		return fmt.Errorf("error validating checksum, expected %x, got %x", checksum, calculatedChecksum[:4])
-	}
-
-	return nil
-}
-
-// GenerateP2PKHAddrFromPubKey generates a P2PKH address from a public key (including a checksum for error detection).
-// Returns the P2PKH address as a base58 encoded string.
-func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte) ([]byte, error) {
-	hasherP2PKH := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-
-	// hash the public key
-	pubKeyHash, err := hasherP2PKH.Hash(pubKey)
-	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
-	}
-
-	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append([]byte{version}, pubKeyHash...)
-	// todo() checksum must be a double SHA-256 hash, instead of SHA-256 + RIPEMD-160, but for now is OK
-	checksum, err := hasherP2PKH.Hash(versionedPayload)
-	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
-	}
-
-	// add checksum to generate address
-	payload := append(versionedPayload, checksum[:4]...) //nolint:gocritic // we need to append the checksum to the payload
-
-	return payload, nil
-}
-
-// ExtractPubKeyHashedFromP2PKHAddr extracts the public key hash from a P2PKH address
-func ExtractPubKeyHashedFromP2PKHAddr(address []byte) ([]byte, byte, error) {
-	hasherP2PKH := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
-
-	// check that address has at least the minimum valid length (1 version + 1 pubKeyHash + 4 checksum)
-	// we know that the address should be 20 bytes because it is a RIPEMD hash, but for now this is OK
-	if len(address) != P2PKHAddressLength {
-		return nil, 0, fmt.Errorf("invalid P2PKH address length: got %d, want at least %d", len(address), P2PKHAddressLength)
-	}
-
-	version := address[0]
-
-	// extract the public key hash (remaining bytes except for the last 4, if available)
-	pubKeyHash := address[1 : len(address)-4]
-
-	// Ensure that the public key hash is not empty
-	if len(pubKeyHash) != P2PKHPubKeyHashLength {
-		return nil, 0, fmt.Errorf("invalid public key hash length: got %d, want %d", len(pubKeyHash), P2PKHPubKeyHashLength)
-	}
-
-	// verify the checksum
-	checksum := address[len(address)-4:]
-	err := verifyP2PKHChecksum(version, pubKeyHash, checksum, hasherP2PKH)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return pubKeyHash, version, nil
-}
-
 // CalculateMiningTarget calculates the new mining target based on the time required for mining the blocks
 // vs. the time expected to mine the blocks:
 //   - if required > expected -> decrease the target by 1 unit
@@ -227,114 +147,4 @@ func IsValidHash(hash []byte) bool {
 	}
 
 	return true
-}
-
-func ConvertECDSAKeysToBytes(pubKey *ecdsa.PublicKey, privKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
-	publicKey, err := ConvertECDSAPubToBytes(pubKey)
-	if err != nil {
-		return []byte{}, []byte{}, err
-	}
-
-	privateKey, err := ConvertECDSAPrivToBytes(privKey)
-	if err != nil {
-		return []byte{}, []byte{}, err
-	}
-
-	return publicKey, privateKey, nil
-}
-
-func ConvertECDSAPrivToBytes(privKey *ecdsa.PrivateKey) ([]byte, error) {
-	// convert the private key to ASN.1/DER encoded form
-	return x509.MarshalECPrivateKey(privKey)
-}
-
-func ConvertECDSAPubToBytes(pubKey *ecdsa.PublicKey) ([]byte, error) {
-	// convert the public key to ASN.1/DER encoded form
-	return x509.MarshalPKIXPublicKey(pubKey)
-}
-
-func DeriveECDSAPubFromPrivate(privKey []byte) ([]byte, error) {
-	privateKeyECDSA, err := ConvertBytesToECDSAPriv(privKey)
-	if err != nil {
-		return nil, fmt.Errorf("error converting private key: %w", err)
-	}
-
-	if privateKeyECDSA == nil {
-		return nil, fmt.Errorf("private key is nil")
-	}
-
-	pubkey, err := ConvertECDSAPubToBytes(&privateKeyECDSA.PublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("error deriving public key: %w", err)
-	}
-
-	return pubkey, nil
-}
-
-func ConvertBytesToECDSAPriv(privKey []byte) (*ecdsa.PrivateKey, error) {
-	// parse the DER encoded private key to get ecdsa.PrivateKey
-	return x509.ParseECPrivateKey(privKey)
-}
-
-func ConvertBytesToECDSAPub(pubKey []byte) (*ecdsa.PublicKey, error) {
-	// parse the DER encoded public key to get ecdsa.PublicKey
-	pub, err := x509.ParsePKIXPublicKey(pubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	publicKey, ok := pub.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, errors.New("error deserializing ECDSA public key")
-	}
-
-	return publicKey, nil
-}
-
-// ReadECDSAPemPrivateKey reads an ECDSA private key from a PEM file
-func ReadECDSAPemPrivateKey(path string) ([]byte, error) {
-	privateKeyBytes, err := ReadFile(path)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error reading private key file: %w", err)
-	}
-
-	// decode the PEM block
-	block, _ := pem.Decode(privateKeyBytes)
-	if block == nil {
-		return []byte{}, fmt.Errorf("failed to decode PEM block containing private key")
-	}
-
-	return block.Bytes, nil
-}
-
-// ReadECDSAPemPublicKeyBytes reads an ECDSA public key from a PEM file and returns the raw DER encoded bytes.
-func ReadECDSAPemPublicKeyBytes(path string) ([]byte, error) {
-	publicKeyBytes, err := ReadFile(path)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error reading private key file: %w", err)
-	}
-
-	// decode the PEM block
-	block, _ := pem.Decode(publicKeyBytes)
-	if block == nil {
-		return nil, errors.New("failed to decode PEM block containing public key")
-	}
-
-	// return the raw DER encoded public key bytes
-	return block.Bytes, nil
-}
-
-func ReadFile(path string) ([]byte, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error opening file: %w", err)
-	}
-	defer file.Close()
-
-	privateKeyBytes, err := io.ReadAll(file)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error reading file: %w", err)
-	}
-
-	return privateKeyBytes, nil
 }

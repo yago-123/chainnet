@@ -2,10 +2,8 @@ package script
 
 import (
 	"fmt"
-	"github.com/yago-123/chainnet/pkg/util"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"strings"
-
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
 
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -143,6 +141,7 @@ func NewScript(scriptType ScriptType, arg []byte) string {
 func (s Script) String(arg []byte) string {
 	var err error
 	var rendered []string
+	var pubKeyHash []byte
 
 	for _, element := range s {
 		toRender := ""
@@ -161,15 +160,13 @@ func (s Script) String(arg []byte) string {
 			}
 
 			if element == PubKeyHash {
-				util.ExtractPubKeyHashedFromP2PKHAddr()
-
-				ripemd160 := hash.NewRipemd160()
-				literalRendered, err = ripemd160.Hash(arg)
+				pubKeyHash, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(arg)
 				if err != nil {
-					// highly unlikely that hash initialization will fail, but if it does, abort the operation by
-					// returning undefined, no point in making the code more unintelligible by returning an error
+					// an error may happen if the checksum is invalid or the address is not a P2PKH address
 					return Undefined.String()
 				}
+
+				literalRendered = pubKeyHash
 			}
 
 			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(literalRendered))
