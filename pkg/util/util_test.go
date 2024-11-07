@@ -117,12 +117,12 @@ func TestGenerateP2PKHAddrFromPubKey(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, string(p2pkhAddr), util_p2pkh.P2PKHAddressLength)
-	assert.Equal(t, "agr72ArMnsmdm9XTScgCpXnwkhAANyBCd", string(p2pkhAddr))
+	assert.Equal(t, "agr72ArMnsmdm9XTScgCpXnwkhAANyBCd", base58.Encode(p2pkhAddr))
 }
 
 func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
 	pubKeyHash, version, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
-		[]byte("agr72ArMnsmdm9XTScgCpXnwkhAANyBCd"),
+		base58.Decode("agr72ArMnsmdm9XTScgCpXnwkhAANyBCd"),
 	)
 
 	require.NoError(t, err)
@@ -132,14 +132,14 @@ func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
 
 	// modify byte to test checksum validation
 	_, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
-		[]byte("agr72ArMnsmd99XTScgCpXnwkhAANyBCd"),
+		base58.Decode("agr72ArMnsmd99XTScgCpXnwkhAANyBCd"),
 	)
 
 	require.Error(t, err)
 
 	// make sure that length is checked
 	_, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
-		[]byte("agr72ArMnsmd9XTScgCpXnwkhAANyBCd"),
+		base58.Decode("agr72ArMnsmd9XTScgCpXnwkhAANyBCd"),
 	)
 	require.Error(t, err)
 }
