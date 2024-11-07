@@ -1,11 +1,10 @@
 package util_test
 
 import (
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"testing"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/yago-123/chainnet/pkg/crypto"
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/stretchr/testify/assert"
@@ -111,21 +110,19 @@ func TestIsValidHash(t *testing.T) {
 }
 
 func TestGenerateP2PKHAddrFromPubKey(t *testing.T) {
-	p2pkhAddr, err := util.GenerateP2PKHAddrFromPubKey(
+	p2pkhAddr, err := util_p2pkh.GenerateP2PKHAddrFromPubKey(
 		base58.Decode("aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJdddpT9aV3HbEPRuBpyEXFktCPCgrdp3FEXrfqjz2xoeQwTCqBs8qJtUFNmCLRTyVaTYuy7G8RZnHkABrMpH2cCG"),
 		1,
-		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
 	)
 
 	require.NoError(t, err)
-	require.Len(t, base58.Decode(string(p2pkhAddr)), 25)
+	require.Len(t, string(p2pkhAddr), util_p2pkh.P2PKHAddressLength)
 	assert.Equal(t, "agr72ArMnsmdm9XTScgCpXnwkhAANyBCd", string(p2pkhAddr))
 }
 
 func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
-	pubKeyHash, version, err := util.ExtractPubKeyHashedFromP2PKHAddr(
+	pubKeyHash, version, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
 		[]byte("agr72ArMnsmdm9XTScgCpXnwkhAANyBCd"),
-		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
 	)
 
 	require.NoError(t, err)
@@ -134,17 +131,15 @@ func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
 	assert.Len(t, pubKeyHash, 20)
 
 	// modify byte to test checksum validation
-	_, _, err = util.ExtractPubKeyHashedFromP2PKHAddr(
+	_, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
 		[]byte("agr72ArMnsmd99XTScgCpXnwkhAANyBCd"),
-		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
 	)
 
 	require.Error(t, err)
 
 	// make sure that length is checked
-	_, _, err = util.ExtractPubKeyHashedFromP2PKHAddr(
+	_, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
 		[]byte("agr72ArMnsmd9XTScgCpXnwkhAANyBCd"),
-		crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
 	)
 	require.Error(t, err)
 }
