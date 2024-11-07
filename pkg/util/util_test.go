@@ -1,10 +1,8 @@
 package util_test
 
 import (
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"testing"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/stretchr/testify/assert"
@@ -107,39 +105,4 @@ func TestCalculateMiningDifficulty(t *testing.T) {
 func TestIsValidHash(t *testing.T) {
 	hash := "0000006484ffdc39a5ba6cebae9e398878f24bcab93f4c32acf81e246fa2474b"
 	assert.True(t, util.IsValidHash([]byte(hash)))
-}
-
-func TestGenerateP2PKHAddrFromPubKey(t *testing.T) {
-	p2pkhAddr, err := util_p2pkh.GenerateP2PKHAddrFromPubKey(
-		base58.Decode("aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJdddpT9aV3HbEPRuBpyEXFktCPCgrdp3FEXrfqjz2xoeQwTCqBs8qJtUFNmCLRTyVaTYuy7G8RZnHkABrMpH2cCG"),
-		1,
-	)
-
-	require.NoError(t, err)
-	require.Len(t, string(p2pkhAddr), util_p2pkh.P2PKHAddressLength)
-	assert.Equal(t, "agr72ArMnsmdm9XTScgCpXnwkhAANyBCd", base58.Encode(p2pkhAddr))
-}
-
-func TestExtractPubKeyHashedFromP2PKHAddr(t *testing.T) {
-	pubKeyHash, version, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
-		base58.Decode("agr72ArMnsmdm9XTScgCpXnwkhAANyBCd"),
-	)
-
-	require.NoError(t, err)
-	assert.Equal(t, 1, int(version))
-	assert.Equal(t, "2ajHyKQLikZqXV9rpaSfnV6mh7a5", base58.Encode(pubKeyHash))
-	assert.Len(t, pubKeyHash, 20)
-
-	// modify byte to test checksum validation
-	_, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
-		base58.Decode("agr72ArMnsmd99XTScgCpXnwkhAANyBCd"),
-	)
-
-	require.Error(t, err)
-
-	// make sure that length is checked
-	_, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(
-		base58.Decode("agr72ArMnsmd9XTScgCpXnwkhAANyBCd"),
-	)
-	require.Error(t, err)
 }

@@ -2,6 +2,7 @@ package interpreter //nolint:testpackage // don't create separate package for te
 
 import (
 	"fmt"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/crypto"
@@ -220,9 +221,12 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 	pubKey, privKey, err := signer.NewKeyPair()
 	require.NoError(t, err)
 
+	addressP2PKH, err := util_p2pkh.GenerateP2PKHAddrFromPubKey(pubKey, 1)
+	require.NoError(t, err)
+
 	// generate the scriptSig to unlock the input
 	signature, err := interpreter.GenerateScriptSig(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		pubKey,
 		privKey,
 		tx1P2PKH,
@@ -231,7 +235,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 
 	// check that the scriptSig generated is correct
 	valid, err := interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		signature,
 		tx1P2PKH,
 	)
@@ -242,7 +246,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 	modifiedScriptSig := []rune(signature)
 	modifiedScriptSig[0] = 'a'
 	valid, err = interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		string(modifiedScriptSig),
 		tx1P2PKH,
 	)
