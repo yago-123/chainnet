@@ -2,10 +2,9 @@ package script //nolint:testpackage // don't create separate package for tests
 
 import (
 	"fmt"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"reflect"
 	"testing"
-
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
@@ -35,29 +34,28 @@ func TestNewScript_P2PK(t *testing.T) {
 }
 
 func TestNewScript_P2PKH(t *testing.T) {
-	ripemd160 := hash.NewRipemd160()
-	pubKeyHash, err := ripemd160.Hash([]byte("public-key"))
+	addressP2PKH, err := util_p2pkh.GenerateP2PKHAddrFromPubKey([]byte("public-key"), 1)
 	require.NoError(t, err)
 
-	tokenIdentifierHashed, err := ripemd160.Hash([]byte(fmt.Sprintf("%d", PubKeyHash)))
+	pubKeyHash, _, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(addressP2PKH)
 	require.NoError(t, err)
 
 	type args struct {
-		scriptType ScriptType
-		pubKey     []byte
+		scriptType   ScriptType
+		addressP2PKH []byte
 	}
 	tests := []struct {
 		name string
 		args args
 		want string
 	}{
-		{"regular script generation for P2PKH", args{scriptType: P2PKH, pubKey: []byte("public-key")}, fmt.Sprintf("OP_DUP OP_HASH160 %c%s OP_EQUALVERIFY OP_CHECKSIG", PubKeyHash, base58.Encode(pubKeyHash))},
-		{"generation of P2PKH with empty public key", args{scriptType: P2PKH, pubKey: []byte{}}, Undefined.String()},
-		{"P2PKH with pubkey equal to PubKeyHash token identifier", args{scriptType: P2PKH, pubKey: []byte(fmt.Sprintf("%d", PubKeyHash))}, fmt.Sprintf("OP_DUP OP_HASH160 %c%s OP_EQUALVERIFY OP_CHECKSIG", PubKeyHash, base58.Encode(tokenIdentifierHashed))},
+		{"regular script generation for P2PKH", args{scriptType: P2PKH, addressP2PKH: addressP2PKH}, fmt.Sprintf("OP_DUP OP_HASH160 %c%s OP_EQUALVERIFY OP_CHECKSIG", PubKeyHash, base58.Encode(pubKeyHash))},
+		{"generation of P2PKH with empty public key", args{scriptType: P2PKH, addressP2PKH: []byte{}}, Undefined.String()},
+		{"generation of P2PKH with short P2PKH address (trim 1 character)", args{scriptType: P2PKH, addressP2PKH: addressP2PKH[:24]}, Undefined.String()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewScript(tt.args.scriptType, tt.args.pubKey); got != tt.want {
+			if got := NewScript(tt.args.scriptType, tt.args.addressP2PKH); got != tt.want {
 				t.Errorf("NewScript() = %v, want %v", got, tt.want)
 			}
 		})

@@ -45,7 +45,7 @@ func ExtractPubKeyHashedFromP2PKHAddr(address []byte) ([]byte, byte, error) {
 	// check that address has at least the minimum valid length (1 version + 1 pubKeyHash + 4 checksum)
 	// we know that the address should be 20 bytes because it is a RIPEMD hash, but for now this is OK
 	if len(address) != P2PKHAddressLength {
-		return nil, 0, fmt.Errorf("invalid P2PKH address length: got %d, want at least %d", len(address), P2PKHAddressLength)
+		return nil, 0, fmt.Errorf("invalid P2PKH address length: got %d, want %d", len(string(address)), P2PKHAddressLength)
 	}
 
 	version := address[0]
@@ -53,9 +53,9 @@ func ExtractPubKeyHashedFromP2PKHAddr(address []byte) ([]byte, byte, error) {
 	// extract the public key hash (remaining bytes except for the last 4, if available)
 	pubKeyHash := address[1 : len(address)-4]
 
-	// Ensure that the public key hash is not empty
+	// ensure that the public key hash is not empty
 	if len(pubKeyHash) != P2PKHPubKeyHashLength {
-		return nil, 0, fmt.Errorf("invalid public key hash length: got %d, want %d", len(pubKeyHash), P2PKHPubKeyHashLength)
+		return nil, 0, fmt.Errorf("invalid public key hash length: got %d, want %d", len(string(pubKeyHash)), P2PKHPubKeyHashLength)
 	}
 
 	// verify the checksum
