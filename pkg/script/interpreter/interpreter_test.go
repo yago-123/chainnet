@@ -2,8 +2,9 @@ package interpreter //nolint:testpackage // don't create separate package for te
 
 import (
 	"fmt"
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"testing"
+
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"

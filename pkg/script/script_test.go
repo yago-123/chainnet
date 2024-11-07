@@ -2,9 +2,10 @@ package script //nolint:testpackage // don't create separate package for tests
 
 import (
 	"fmt"
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"reflect"
 	"testing"
+
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"

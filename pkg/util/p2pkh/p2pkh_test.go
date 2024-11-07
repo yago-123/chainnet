@@ -1,10 +1,11 @@
 package util_p2pkh
 
 import (
+	"testing"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestGenerateP2PKHAddrFromPubKey(t *testing.T) {
