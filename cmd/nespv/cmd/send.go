@@ -3,14 +3,14 @@ package cmd
 import (
 	"context"
 
-	"github.com/yago-123/chainnet/pkg/script"
+	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 
 	"github.com/btcsuite/btcutil/base58"
-
-	"github.com/yago-123/chainnet/config"
-	"github.com/yago-123/chainnet/pkg/util"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/spf13/cobra"
+	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/encoding"
@@ -56,7 +56,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		if privKeyPath != "" {
-			privKey, err = util.ReadECDSAPemPrivateKey(privKeyPath)
+			privKey, err = util_crypto.ReadECDSAPemPrivateKey(privKeyPath)
 			if err != nil {
 				logger.Fatalf("error reading private key: %v", err)
 			}
@@ -67,7 +67,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		// derive public key from private key
-		pubKey, err = util.DeriveECDSAPubFromPrivate(privKey)
+		pubKey, err = util_crypto.DeriveECDSAPubFromPrivate(privKey)
 		if err != nil {
 			logger.Fatalf("error deriving public key from private key: %v", err)
 		}
@@ -75,11 +75,11 @@ var sendCmd = &cobra.Command{
 		// create wallet
 		wallet, err := wallt.NewWalletWithKeys(
 			cfg,
-			[]byte("1"),
+			1,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
 			walletHasher,
-			hash.GetHasher(consensusHasherType),
+			crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()}),
 			encoding.NewProtobufEncoder(),
 			privKey,
 			pubKey,

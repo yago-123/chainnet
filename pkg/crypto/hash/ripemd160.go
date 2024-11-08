@@ -3,12 +3,14 @@ package hash
 import (
 	"bytes"
 	"hash"
+	"sync"
 
 	"golang.org/x/crypto/ripemd160" //nolint:staticcheck,gosec // need this lib as part of the specification
 )
 
 type Ripemd160 struct {
 	ripe hash.Hash
+	mu   sync.Mutex
 }
 
 func NewRipemd160() *Ripemd160 {
@@ -20,7 +22,18 @@ func (r *Ripemd160) Hash(payload []byte) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	return r.ripe.Sum(payload), nil
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// reset the hasher state
+	r.ripe.Reset()
+
+	_, err := r.ripe.Write(payload)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return r.ripe.Sum(nil), nil
 }
 
 func (r *Ripemd160) Verify(hash []byte, payload []byte) (bool, error) {

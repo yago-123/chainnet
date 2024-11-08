@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
+
 	"github.com/yago-123/chainnet/pkg/mempool"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -271,12 +273,12 @@ func NewNodeP2P(
 
 	// add identity if the keys exists
 	if cfg.P2P.IdentityPath != "" {
-		privKeyBytes, errKey := util.ReadECDSAPemPrivateKey(cfg.P2P.IdentityPath)
+		privKeyBytes, errKey := util_crypto.ReadECDSAPemPrivateKey(cfg.P2P.IdentityPath)
 		if errKey != nil {
 			return nil, fmt.Errorf("error reading private key: %w", errKey)
 		}
 
-		priv, errKey := util.ConvertBytesToECDSAPriv(privKeyBytes)
+		priv, errKey := util_crypto.ConvertBytesToECDSAPriv(privKeyBytes)
 		if errKey != nil {
 			return nil, fmt.Errorf("error converting private key: %w", errKey)
 		}

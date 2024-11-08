@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/yago-123/chainnet/pkg/util"
+	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
 type ECDSASigner struct {
@@ -23,7 +23,7 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 		return []byte{}, []byte{}, err
 	}
 
-	return util.ConvertECDSAKeysToBytes(&private.PublicKey, private)
+	return util_crypto.ConvertECDSAKeysToBytes(&private.PublicKey, private)
 }
 
 func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
@@ -31,7 +31,7 @@ func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, erro
 		return []byte{}, err
 	}
 
-	privateKey, err := util.ConvertBytesToECDSAPriv(privKey)
+	privateKey, err := util_crypto.ConvertBytesToECDSAPriv(privKey)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -53,7 +53,7 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 		return false, err
 	}
 
-	publicKey, err := util.ConvertBytesToECDSAPub(pubKey)
+	publicKey, err := util_crypto.ConvertBytesToECDSAPub(pubKey)
 	if err != nil {
 		return false, err
 	}

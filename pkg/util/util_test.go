@@ -1,7 +1,9 @@
-package util //nolint:testpackage // don't create separate package for tests
+package util_test
 
 import (
 	"testing"
+
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/stretchr/testify/assert"
 
@@ -11,17 +13,17 @@ import (
 func TestIsFirstNBytesZero(t *testing.T) {
 	hash := []byte{0x0, 0xFF, 0xFF}
 
-	require.True(t, IsFirstNBitsZero(hash, 8))
-	require.False(t, IsFirstNBitsZero(hash, 16))
-	require.False(t, IsFirstNBitsZero(hash, 256))
+	require.True(t, util.IsFirstNBitsZero(hash, 8))
+	require.False(t, util.IsFirstNBitsZero(hash, 16))
+	require.False(t, util.IsFirstNBitsZero(hash, 256))
 
 	hash = []byte{0x7F, 0xFF, 0xFF}
-	require.True(t, IsFirstNBitsZero(hash, 1))
-	require.False(t, IsFirstNBitsZero(hash, 2))
+	require.True(t, util.IsFirstNBitsZero(hash, 1))
+	require.False(t, util.IsFirstNBitsZero(hash, 2))
 
 	hash = []byte{0x0, 0x7F, 0xFF}
-	require.True(t, IsFirstNBitsZero(hash, 9))
-	require.False(t, IsFirstNBitsZero(hash, 10))
+	require.True(t, util.IsFirstNBitsZero(hash, 9))
+	require.False(t, util.IsFirstNBitsZero(hash, 10))
 }
 
 func TestCalculateMiningDifficulty(t *testing.T) {
@@ -93,7 +95,7 @@ func TestCalculateMiningDifficulty(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CalculateMiningTarget(tt.args.currentTarget, tt.args.targetTimeSpan, tt.args.actualTimeSpan); got != tt.want {
+			if got := util.CalculateMiningTarget(tt.args.currentTarget, tt.args.targetTimeSpan, tt.args.actualTimeSpan); got != tt.want {
 				t.Errorf("CalculateMiningDifficulty() = %v, want %v", got, tt.want)
 			}
 		})
@@ -102,5 +104,5 @@ func TestCalculateMiningDifficulty(t *testing.T) {
 
 func TestIsValidHash(t *testing.T) {
 	hash := "0000006484ffdc39a5ba6cebae9e398878f24bcab93f4c32acf81e246fa2474b"
-	assert.True(t, IsValidHash([]byte(hash)))
+	assert.True(t, util.IsValidHash([]byte(hash)))
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -119,11 +119,13 @@ func (op ScriptElement) ToUint() uint {
 	return uint(op)
 }
 
-// NewScript generates a new script based on the type and public key
-func NewScript(scriptType ScriptType, pubKey []byte) string {
+// NewScript generates a new script based on the type and the argument provided. The argument content changes
+// based on the script type. In the case of P2PK the argument will be the public key, in the case of P2PKH the
+// argument will be the P2PKH address
+func NewScript(scriptType ScriptType, arg []byte) string {
 	// if there is no public key, return undefined directly
-	if len(pubKey) == 0 {
-		return scriptStructure[UndefinedScriptType].String(pubKey)
+	if len(arg) == 0 {
+		return scriptStructure[UndefinedScriptType].String(arg)
 	}
 
 	// generate script based on type
@@ -131,13 +133,16 @@ func NewScript(scriptType ScriptType, pubKey []byte) string {
 
 	// todo() the render will switch to a hex string eventually
 	// render script to string
-	return script.String(pubKey)
+	return script.String(arg)
 }
 
-// String returns the string representation of the script
-func (s Script) String(pubKey []byte) string {
+// String returns the string representation of the script. The argument content changes based on the script type,
+// in the case of P2PK the argument arg will be the public key, in the case of P2PKH the argument will be the P2PKH
+// address
+func (s Script) String(arg []byte) string {
 	var err error
 	var rendered []string
+	var pubKeyHash []byte
 
 	for _, element := range s {
 		toRender := ""
@@ -147,22 +152,22 @@ func (s Script) String(pubKey []byte) string {
 		}
 
 		// render special cases adding the preffix so we can later know which type of literal was written. This
-		// includes pubKey, pubHashKey, signature...
+		// includes arg, pubHashKey, signature...
 		if element.IsLiteral() {
 			literalRendered := []byte{}
 
 			if element == PubKey {
-				literalRendered = pubKey
+				literalRendered = arg
 			}
 
 			if element == PubKeyHash {
-				ripemd160 := hash.NewRipemd160()
-				literalRendered, err = ripemd160.Hash(pubKey)
+				pubKeyHash, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(arg)
 				if err != nil {
-					// highly unlikely that hash initialization will fail, but if it does, abort the operation by
-					// returning undefined, no point in making the code more unintelligible by returning an error
+					// an error may happen if the checksum is invalid or the address is not a P2PKH address
 					return Undefined.String()
 				}
+
+				literalRendered = pubKeyHash
 			}
 
 			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(literalRendered))
