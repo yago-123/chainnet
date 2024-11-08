@@ -38,7 +38,6 @@ var testBlock = kernel.Block{ //nolint:gochecknoglobals // ignore linter in this
 				{
 					Amount:       100,
 					ScriptPubKey: "scriptpubkey1",
-					PubKey:       "pubkey1",
 				},
 			},
 		},
@@ -164,7 +163,6 @@ var expectedUTXO = &kernel.UTXO{ //nolint:gochecknoglobals // data that is used 
 	Output: kernel.TxOutput{
 		Amount:       50,
 		ScriptPubKey: "scriptpubkey1",
-		PubKey:       "pubkey1",
 	},
 }
 
@@ -174,7 +172,6 @@ var expectedUTXO2 = kernel.UTXO{ //nolint:gochecknoglobals // data that is used 
 	Output: kernel.TxOutput{
 		Amount:       50,
 		ScriptPubKey: "sampleScriptPubKey",
-		PubKey:       "pubkey1", // decoded hex representation
 	},
 }
 
@@ -231,7 +228,6 @@ var expectedUTXOs2 = []*kernel.UTXO{ //nolint:gochecknoglobals // data that is u
 		Output: kernel.TxOutput{
 			Amount:       50,
 			ScriptPubKey: "scriptpubkey1",
-			PubKey:       "pubkey1",
 		},
 	},
 	{
@@ -240,7 +236,6 @@ var expectedUTXOs2 = []*kernel.UTXO{ //nolint:gochecknoglobals // data that is u
 		Output: kernel.TxOutput{
 			Amount:       100,
 			ScriptPubKey: "scriptpubkey2",
-			PubKey:       "pubkey2",
 		},
 	},
 }
@@ -427,7 +422,6 @@ func TestSerializeUTXOs(t *testing.T) {
 			Output: kernel.TxOutput{
 				Amount:       50,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "pubkey1",
 			},
 		},
 		{
@@ -436,7 +430,6 @@ func TestSerializeUTXOs(t *testing.T) {
 			Output: kernel.TxOutput{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey2",
-				PubKey:       "pubkey2",
 			},
 		},
 	}
@@ -643,7 +636,6 @@ func TestConvertToProtobufUTXO(t *testing.T) {
 		Output: kernel.TxOutput{
 			Amount:       50,
 			ScriptPubKey: "sampleScriptPubKey",
-			PubKey:       "pubkey1", // hex representation
 		},
 	}
 
@@ -682,7 +674,6 @@ func TestConvertToAndFromProtobufUTXO(t *testing.T) {
 		Output: kernel.TxOutput{
 			Amount:       100,
 			ScriptPubKey: "anotherScriptPubKey",
-			PubKey:       "7075626b657932", // hex representation
 		},
 	}
 

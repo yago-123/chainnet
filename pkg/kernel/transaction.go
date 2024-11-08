@@ -74,7 +74,6 @@ func (tx *Transaction) Assemble() []byte {
 		data = append(data, input.Txid...)
 		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
 		data = append(data, []byte(input.ScriptSig)...)
-		data = append(data, []byte(input.PubKey)...)
 	}
 
 	if len(tx.Vout) > 0 {
@@ -175,10 +174,6 @@ type TxInput struct {
 
 	// ScriptSig is the solved challenge presented by the output in order to unlock the funds
 	ScriptSig string
-
-	// PubKey is the public key that unlocked the ScriptSig
-	// todo() eventually remove once we cleared ScriptSig
-	PubKey string
 }
 
 // UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be
@@ -205,7 +200,6 @@ func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
 		Txid:      txid,
 		Vout:      vout,
 		ScriptSig: scriptSig,
-		PubKey:    pubKey,
 	}
 }
 

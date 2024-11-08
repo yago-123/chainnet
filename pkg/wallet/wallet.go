@@ -269,7 +269,7 @@ func generateInputs(utxos []*kernel.UTXO, targetAmount uint) ([]kernel.TxInput, 
 
 	for _, utxo := range utxos {
 		balance += utxo.Output.Amount
-		inputs = append(inputs, kernel.NewInput(utxo.TxID, utxo.OutIdx, "", utxo.Output.PubKey))
+		inputs = append(inputs, kernel.NewInput(utxo.TxID, utxo.OutIdx, ""))
 		if balance >= targetAmount {
 			return inputs, balance, nil
 		}

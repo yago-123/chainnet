@@ -50,14 +50,12 @@ var b2 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 			},
 			Vout: []kernel.TxOutput{
 				{
-					Amount:       25,
+					Amount:       25, // <- spent by transaction-1-block-3
 					ScriptPubKey: "",
-					PubKey:       "mike", // <- spent by transaction-1-block-3
 				},
 				{
-					Amount:       25,
+					Amount:       25, // <- unspent
 					ScriptPubKey: "",
-					PubKey:       "chris", // <- unspent
 				},
 			},
 		},
@@ -87,9 +85,8 @@ var b3 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 			},
 			Vout: []kernel.TxOutput{
 				{
-					Amount:       25,
+					Amount:       25, // <- unspent
 					ScriptPubKey: "",
-					PubKey:       "dave", // <- unspent
 				},
 			},
 		},
@@ -108,25 +105,21 @@ func TestUTXOSet_AddBlock(t *testing.T) {
 	val, ok := utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-2", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
-	assert.Equal(t, "bob", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
 	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-2", 1)]
 	require.True(t, ok)
 	assert.Equal(t, uint(1), val.OutIdx)
-	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(25), val.Output.Amount)
 
 	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
-	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
 	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
-	assert.Equal(t, "dave", val.Output.PubKey)
 	assert.Equal(t, uint(25), val.Output.Amount)
 }
 
@@ -143,25 +136,21 @@ func TestUTXOSet_OnBlockAddition(t *testing.T) {
 	val, ok := utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-2", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
-	assert.Equal(t, "bob", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
 	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-2", 1)]
 	require.True(t, ok)
 	assert.Equal(t, uint(1), val.OutIdx)
-	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(25), val.Output.Amount)
 
 	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "coinbase-transaction-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
-	assert.Equal(t, "chris", val.Output.PubKey)
 	assert.Equal(t, uint(50), val.Output.Amount)
 
 	val, ok = utxos.utxos[fmt.Sprintf("%x-%d", "transaction-1-block-3", 0)]
 	require.True(t, ok)
 	assert.Equal(t, uint(0), val.OutIdx)
-	assert.Equal(t, "dave", val.Output.PubKey)
 	assert.Equal(t, uint(25), val.Output.Amount)
 }
 

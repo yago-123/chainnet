@@ -351,20 +351,13 @@ func convertToProtobufTxOutput(txout kernel.TxOutput) *pb.TxOutput {
 	return &pb.TxOutput{
 		Amount:       uint64(txout.Amount),
 		ScriptPubKey: txout.ScriptPubKey,
-		PubKey:       fmt.Sprintf("%x", txout.PubKey),
 	}
 }
 
 func convertFromProtobufTxOutput(pbOutput *pb.TxOutput) (kernel.TxOutput, error) {
-	decodedPubKey, err := hex.DecodeString(pbOutput.GetPubKey())
-	if err != nil {
-		return kernel.TxOutput{}, fmt.Errorf("error decoding pubkey %s: %w", pbOutput.GetPubKey(), err)
-	}
-
 	return kernel.TxOutput{
 		Amount:       uint(pbOutput.GetAmount()),
 		ScriptPubKey: pbOutput.GetScriptPubKey(),
-		PubKey:       string(decodedPubKey),
 	}, nil
 }
 
