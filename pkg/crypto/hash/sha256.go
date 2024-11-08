@@ -3,13 +3,19 @@ package hash
 import (
 	"bytes"
 	"crypto/sha256"
+	"hash"
+	"sync"
 )
 
 type Sha256 struct {
+	sha hash.Hash
+	mu  sync.Mutex
 }
 
 func NewSHA256() *Sha256 {
-	return &Sha256{}
+	return &Sha256{
+		sha: sha256.New(),
+	}
 }
 
 func (s *Sha256) Hash(payload []byte) ([]byte, error) {
@@ -17,8 +23,18 @@ func (s *Sha256) Hash(payload []byte) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	ret := sha256.Sum256(payload)
-	return ret[:], nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// reset the hasher state
+	s.sha.Reset()
+
+	_, err := s.sha.Write(payload)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return s.sha.Sum(nil), nil
 }
 
 func (s *Sha256) Verify(hash []byte, payload []byte) (bool, error) {

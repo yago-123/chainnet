@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
+
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
@@ -220,9 +222,12 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 	pubKey, privKey, err := signer.NewKeyPair()
 	require.NoError(t, err)
 
+	addressP2PKH, err := util_p2pkh.GenerateP2PKHAddrFromPubKey(pubKey, 1)
+	require.NoError(t, err)
+
 	// generate the scriptSig to unlock the input
 	signature, err := interpreter.GenerateScriptSig(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		pubKey,
 		privKey,
 		tx1P2PKH,
@@ -231,7 +236,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 
 	// check that the scriptSig generated is correct
 	valid, err := interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		signature,
 		tx1P2PKH,
 	)
@@ -242,7 +247,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 	modifiedScriptSig := []rune(signature)
 	modifiedScriptSig[0] = 'a'
 	valid, err = interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		string(modifiedScriptSig),
 		tx1P2PKH,
 	)
@@ -290,8 +295,11 @@ func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
 	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
 
+	addressP2PKH, err := util_p2pkh.GenerateP2PKHAddrFromPubKey(pubKey, 1)
+	require.NoError(t, err)
+
 	signature, err := interpreter.GenerateScriptSig(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		pubKey,
 		privKey,
 		tx1P2PK,
@@ -300,7 +308,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx1P2PK.AssembleForSigning()))), base58.Encode(pubKey)), signature)
 
 	signature, err = interpreter.GenerateScriptSig(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		pubKey,
 		privKey,
 		tx2P2PK,
@@ -309,7 +317,7 @@ func TestRPNInterpreter_GenerateScriptSigP2PKHMocked(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx2P2PK.AssembleForSigning()))), base58.Encode(pubKey)), signature)
 
 	signature, err = interpreter.GenerateScriptSig(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		pubKey,
 		privKey,
 		tx3P2PK,
@@ -355,8 +363,11 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 	pubKey, _, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
 
+	addressP2PKH, err := util_p2pkh.GenerateP2PKHAddrFromPubKey(pubKey, 1)
+	require.NoError(t, err)
+
 	valid, err := interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx1P2PKH.AssembleForSigning()))), base58.Encode(pubKey)),
 		tx1P2PKH,
 	)
@@ -364,7 +375,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 	assert.True(t, valid)
 
 	valid, err = interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx2P2PKH.AssembleForSigning()))), base58.Encode(pubKey)),
 		tx2P2PKH,
 	)
@@ -372,7 +383,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 	assert.True(t, valid)
 
 	valid, err = interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3P2PKH.AssembleForSigning()))), base58.Encode(pubKey)),
 		tx3P2PKH,
 	)
@@ -381,7 +392,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyP2PKHMocked(t *testing.T) {
 
 	// verify scriptSig with different pubKey than expected
 	valid, err = interpreter.VerifyScriptPubKey(
-		script.NewScript(script.P2PKH, pubKey),
+		script.NewScript(script.P2PKH, addressP2PKH),
 		fmt.Sprintf("%s %s", base58.Encode([]byte(fmt.Sprintf("%s-hashed-signed", tx3P2PKH.AssembleForSigning()))), base58.Encode([]byte("differentpubkey"))),
 		tx1P2PKH,
 	)

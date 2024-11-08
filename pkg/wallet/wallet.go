@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -15,12 +17,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/util"
-
-	"github.com/btcsuite/btcutil/base58"
 )
 
 type Wallet struct {
-	version    []byte
+	version    byte
 	PrivateKey []byte
 	PublicKey  []byte
 
@@ -36,7 +36,7 @@ type Wallet struct {
 	encoder encoding.Encoding
 
 	// hasher used for deriving wallet related values
-	walletHasher hash.Hashing
+	hasherP2PKH hash.Hashing
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
 	interpreter     *rpnInter.RPNInterpreter
@@ -46,10 +46,10 @@ type Wallet struct {
 
 func NewWallet(
 	cfg *config.Config,
-	version []byte,
+	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
-	walletHasher hash.Hashing,
+	hasherP2PKH hash.Hashing,
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 ) (*Wallet, error) {
@@ -63,7 +63,7 @@ func NewWallet(
 		version,
 		validator,
 		signer,
-		walletHasher,
+		hasherP2PKH,
 		consensusHasher,
 		encoder,
 		privateKey,
@@ -73,10 +73,10 @@ func NewWallet(
 
 func NewWalletWithKeys(
 	cfg *config.Config,
-	version []byte,
+	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
-	walletHasher hash.Hashing,
+	hasherP2PKH hash.Hashing,
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 	privateKey []byte,
@@ -90,7 +90,7 @@ func NewWalletWithKeys(
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
-		walletHasher:    walletHasher,
+		hasherP2PKH:     hasherP2PKH,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
 	}, nil
@@ -149,22 +149,7 @@ func (w *Wallet) GetP2PKAddress() []byte {
 
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
-	// hash the public key
-	pubKeyHash, err := w.walletHasher.Hash(w.PublicKey)
-	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the public key: %w", err)
-	}
-
-	// add the version to the hashed public key in order to hash again and obtain the checksum
-	versionedPayload := append(w.version, pubKeyHash...) //nolint:gocritic // we need to append the version to the payload
-	checksum, err := w.walletHasher.Hash(versionedPayload)
-	if err != nil {
-		return []byte{}, fmt.Errorf("could not hash the versioned payload: %w", err)
-	}
-
-	// return the base58 of the versioned payload and the checksum
-	payload := append(versionedPayload, checksum...) //nolint:gocritic // we need to append the checksum to the payload
-	return []byte(base58.Encode(payload)), nil
+	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
 }
 
 func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {

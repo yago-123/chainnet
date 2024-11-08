@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/yago-123/chainnet/pkg/crypto"
+
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -116,7 +118,9 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 
 				var hashedVal []byte
 				val := stack.Pop()
-				hashedVal, err = hash.NewRipemd160().Hash([]byte(val))
+
+				hasher := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+				hashedVal, err = hasher.Hash([]byte(val))
 				if err != nil {
 					return false, fmt.Errorf("couldn't hash value: %w", err)
 				}
