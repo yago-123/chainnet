@@ -1,4 +1,4 @@
-package crypto
+package utilcrypto
 
 import (
 	"crypto/ecdsa"
