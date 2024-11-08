@@ -236,13 +236,16 @@ func CanBeUnlockedWith(scriptPubKey, address string) bool {
 
 	switch scriptType {
 	case P2PK:
+		// compare pub key with the address provided
 		return literals[0] == address
 	case P2PKH:
+		// extract the pub key hash from the address provided
 		pubKeyHash, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr([]byte(address))
 		if err != nil {
 			return false
 		}
 
+		// compare the pub key hash with the one extracted from the address
 		return bytes.Equal([]byte(literals[2]), pubKeyHash)
 	case UndefinedScriptType:
 	default:
