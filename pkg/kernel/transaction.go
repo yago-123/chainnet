@@ -256,9 +256,9 @@ func NewOutput(amount uint, scriptType script.ScriptType, scriptArg string) TxOu
 	}
 }
 
-// canBeUnlockedWith checks if the output can be unlocked with the given public key
-func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
-	return out.PubKey == pubKey
+// CanBeUnlockedWith checks if the output can be unlocked with the given address
+func (out *TxOutput) CanBeUnlockedWith(address string) bool {
+	return script.CanBeUnlockedWith(out.ScriptPubKey, address)
 }
 
 func (out *TxOutput) String() string {

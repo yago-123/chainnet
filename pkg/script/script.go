@@ -1,6 +1,7 @@
 package script
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -122,10 +123,10 @@ func (op ScriptElement) ToUint() uint {
 // NewScript generates a new script based on the type and the argument provided. The argument content changes
 // based on the script type. In the case of P2PK the argument will be the public key, in the case of P2PKH the
 // argument will be the P2PKH address
-func NewScript(scriptType ScriptType, arg []byte) string {
+func NewScript(scriptType ScriptType, address []byte) string {
 	// if there is no public key, return undefined directly
-	if len(arg) == 0 {
-		return scriptStructure[UndefinedScriptType].String(arg)
+	if len(address) == 0 {
+		return scriptStructure[UndefinedScriptType].String(address)
 	}
 
 	// generate script based on type
@@ -133,7 +134,7 @@ func NewScript(scriptType ScriptType, arg []byte) string {
 
 	// todo() the render will switch to a hex string eventually
 	// render script to string
-	return script.String(arg)
+	return script.String(address)
 }
 
 // String returns the string representation of the script. The argument content changes based on the script type,
@@ -190,11 +191,11 @@ func (s Script) String(arg []byte) string {
 }
 
 // StringToScript converts a script pub key string into Script type and array of literals (like pub key, hash pub key, etc)
-func StringToScript(script string) (Script, []string, error) {
+func StringToScript(scriptPubKey string) (Script, []string, error) {
 	scriptTokens := []ScriptElement{}
 	scriptString := []string{}
 
-	for _, element := range strings.Split(script, scriptSeparator) {
+	for _, element := range strings.Split(scriptPubKey, scriptSeparator) {
 		var token ScriptElement
 		var literal string
 
@@ -211,6 +212,44 @@ func StringToScript(script string) (Script, []string, error) {
 	}
 
 	return scriptTokens, scriptString, nil
+}
+
+// CanBeUnlockedWith retrieves the receiver address from the script pub key
+func CanBeUnlockedWith(scriptPubKey, address string) bool {
+	var pubKeyHash []byte
+
+	// process script pub key and extract the structure of the script
+	script, literals, err := StringToScript(scriptPubKey)
+	if err != nil {
+		return false
+	}
+
+	// determine the script type
+	scriptType := DetermineScriptType(script)
+
+	// ensure that the number of literals matches the number of elements in the script. This helps prevent
+	// out-of-bounds access in each script type below. Although this is already handled inside the StringToScript function,
+	// we include this check as an extra precaution.
+	if len(scriptStructure[scriptType]) != len(literals) {
+		return false
+	}
+
+	switch scriptType {
+	case P2PK:
+		return literals[0] == address
+	case P2PKH:
+		pubKeyHash, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr([]byte(address))
+		if err != nil {
+			return false
+		}
+
+		return bytes.Equal([]byte(literals[2]), pubKeyHash)
+	case UndefinedScriptType:
+	default:
+		break
+	}
+
+	return false
 }
 
 // DetermineScriptType tries to derive the script type based on a set of elements that form a script
