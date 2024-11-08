@@ -85,7 +85,6 @@ func (tx *Transaction) Assemble() []byte {
 	for _, output := range tx.Vout {
 		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
 		data = append(data, []byte(output.ScriptPubKey)...)
-		data = append(data, []byte(output.PubKey)...)
 	}
 
 	return data
@@ -115,7 +114,6 @@ func (tx *Transaction) AssembleForSigning() []byte {
 	for _, output := range tx.Vout {
 		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
 		data = append(data, []byte(output.ScriptPubKey)...)
-		data = append(data, []byte(output.PubKey)...)
 	}
 
 	return data
@@ -243,10 +241,6 @@ type TxOutput struct {
 
 	// ScriptPubKey is the challenge that must be proved in order to unlock the output
 	ScriptPubKey string
-
-	// PubKey temporary field, must be extracted from ScriptPubKey directly
-	// todo() use PubKeyHash eventually once the tests are migrated
-	PubKey string
 }
 
 // NewCoinbaseOutput creates a new output for the coinbase transaction
@@ -255,11 +249,10 @@ func NewCoinbaseOutput(amount uint, scriptType script.ScriptType, pubKey string)
 }
 
 // NewOutput creates a new output for the transaction
-func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
+func NewOutput(amount uint, scriptType script.ScriptType, scriptArg string) TxOutput {
 	return TxOutput{
 		Amount:       amount,
-		ScriptPubKey: script.NewScript(scriptType, []byte(pubKey)),
-		PubKey:       pubKey,
+		ScriptPubKey: script.NewScript(scriptType, []byte(scriptArg)),
 	}
 }
 
@@ -270,9 +263,8 @@ func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 
 func (out *TxOutput) String() string {
 	return fmt.Sprintf(
-		"TxOutput: %d to %s, unlocking script %s",
+		"TxOutput: amount %d, unlocking script %s",
 		out.Amount,
-		base58.Encode([]byte(out.PubKey)),
 		out.ScriptPubKey,
 	)
 }
