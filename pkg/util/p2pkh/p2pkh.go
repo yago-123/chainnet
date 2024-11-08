@@ -1,4 +1,4 @@
-package util_p2pkh
+package utilp2pkh
 
 import (
 	"bytes"
