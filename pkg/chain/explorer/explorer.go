@@ -213,7 +213,7 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 
 		// iterate through each transaction in the block
 		for _, tx := range nextBlock.Transactions {
-			txID := hex.EncodeToString(tx.ID)
+			txID := fmt.Sprintf("%x", tx.ID)
 
 			for outIdx, out := range tx.Vout {
 				// in case is already spent, continue
@@ -235,7 +235,7 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 			// if not coinbase, iterate through inputs and save the already spent outputs
 			for _, in := range tx.Vin {
 				if in.CanUnlockOutputWith(address) {
-					inTxID := hex.EncodeToString(in.Txid)
+					inTxID := fmt.Sprintf("%x", in.Txid)
 
 					// mark the output as spent
 					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
@@ -269,7 +269,7 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 	_ = it.Initialize(lastBlock.Hash)
 
 	for it.HasNext() {
-		// get the next block using the revIterator
+		// get the next block using the reverted Iterator
 		nextBlock, err = it.GetNextBlock()
 		if err != nil {
 			return []*kernel.UTXO{}, err

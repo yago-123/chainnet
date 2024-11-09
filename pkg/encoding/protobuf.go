@@ -1,7 +1,6 @@
 package encoding
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -329,21 +328,14 @@ func convertToProtobufTxInput(txin kernel.TxInput) *pb.TxInput {
 		Txid:      txin.Txid,
 		Vout:      uint64(txin.Vout),
 		ScriptSig: txin.ScriptSig,
-		PubKey:    fmt.Sprintf("%x", txin.PubKey),
 	}
 }
 
 func convertFromProtobufTxInput(pbInput *pb.TxInput) (kernel.TxInput, error) {
-	decodedPubKey, err := hex.DecodeString(pbInput.GetPubKey())
-	if err != nil {
-		return kernel.TxInput{}, fmt.Errorf("error decoding pubkey %s: %w", pbInput.GetPubKey(), err)
-	}
-
 	return kernel.TxInput{
 		Txid:      pbInput.GetTxid(),
 		Vout:      uint(pbInput.GetVout()),
 		ScriptSig: pbInput.GetScriptSig(),
-		PubKey:    string(decodedPubKey),
 	}, nil
 }
 

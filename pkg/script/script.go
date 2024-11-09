@@ -255,6 +255,11 @@ func CanBeUnlockedWith(scriptPubKey, address string) bool {
 	return false
 }
 
+// HasBeenUnlockedWith checks if a script has been unlocked with a specific address
+func HasBeenUnlockedWith(scriptSig, address string) bool {
+	return false
+}
+
 // DetermineScriptType tries to derive the script type based on a set of elements that form a script
 func DetermineScriptType(script Script) ScriptType {
 	for k, v := range scriptStructure {

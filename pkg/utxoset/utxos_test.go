@@ -45,7 +45,6 @@ var b2 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 					Txid:      []byte("coinbase-transaction-block-1"),
 					Vout:      0,
 					ScriptSig: "",
-					PubKey:    "",
 				},
 			},
 			Vout: []kernel.TxOutput{
@@ -80,7 +79,6 @@ var b3 = &kernel.Block{ //nolint:gochecknoglobals // ignore linter in this case
 					Txid:      []byte("transaction-1-block-2"),
 					Vout:      0,
 					ScriptSig: "",
-					PubKey:    "",
 				},
 			},
 			Vout: []kernel.TxOutput{

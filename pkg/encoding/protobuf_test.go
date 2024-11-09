@@ -31,7 +31,6 @@ var testBlock = kernel.Block{ //nolint:gochecknoglobals // ignore linter in this
 					Txid:      []byte("txid0"),
 					Vout:      0,
 					ScriptSig: "sig1",
-					PubKey:    "pubkey1",
 				},
 			},
 			Vout: []kernel.TxOutput{
@@ -63,14 +62,12 @@ var expectedPbBlock = &pb.Block{ //nolint:gochecknoglobals // ignore linter in t
 					Txid:      []byte("txid0"),
 					Vout:      0,
 					ScriptSig: "sig1",
-					PubKey:    "7075626b657931", // hexadecimal encoded to prevent UTF-8 issues
 				},
 			},
 			Vout: []*pb.TxOutput{
 				{
 					Amount:       100,
 					ScriptPubKey: "scriptpubkey1",
-					PubKey:       "7075626b657931", // hexadecimal encoded to prevent UTF-8 issues
 				},
 			},
 		},
@@ -134,14 +131,12 @@ var expectedPbTransactions = []*pb.Transaction{ //nolint:gochecknoglobals // dat
 				Txid:      []byte("txid0"),
 				Vout:      0,
 				ScriptSig: "sig1",
-				PubKey:    "7075626b657931", // Hex encoded to avoid UTF-8 issues
 			},
 		},
 		Vout: []*pb.TxOutput{
 			{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "7075626b657931", // Hex encoded to avoid UTF-8 issues
 			},
 		},
 	},
@@ -153,7 +148,6 @@ var expectedPbUTXO = &pb.UTXO{ //nolint:gochecknoglobals // data that is used ac
 	Output: &pb.TxOutput{
 		Amount:       50,
 		ScriptPubKey: "scriptpubkey1",
-		PubKey:       "7075626b657931", // Hex encoded PubKey
 	},
 }
 
@@ -183,7 +177,6 @@ var expectedPbUTXOs = &pb.UTXOs{ //nolint:gochecknoglobals // data that is used 
 			Output: &pb.TxOutput{
 				Amount:       50,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "7075626b657931", // Hex encoded PubKey
 			},
 		},
 		{
@@ -192,7 +185,6 @@ var expectedPbUTXOs = &pb.UTXOs{ //nolint:gochecknoglobals // data that is used 
 			Output: &pb.TxOutput{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey2",
-				PubKey:       "7075626b657932", // Hex encoded PubKey
 			},
 		},
 	},
@@ -206,7 +198,6 @@ var expectedPbUTXOs2 = &pb.UTXOs{ //nolint:gochecknoglobals // data that is used
 			Output: &pb.TxOutput{
 				Amount:       50,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "7075626b657931", // Hex encoded PubKey
 			},
 		},
 		{
@@ -215,7 +206,6 @@ var expectedPbUTXOs2 = &pb.UTXOs{ //nolint:gochecknoglobals // data that is used
 			Output: &pb.TxOutput{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey2",
-				PubKey:       "7075626b657932", // Hex encoded PubKey
 			},
 		},
 	},
@@ -246,7 +236,6 @@ var expectedPbUTXO2 = &pb.UTXO{ //nolint:gochecknoglobals // data that is used a
 	Output: &pb.TxOutput{
 		Amount:       50,
 		ScriptPubKey: "sampleScriptPubKey",
-		PubKey:       "7075626b657931", // hex encoded
 	},
 }
 
@@ -381,7 +370,6 @@ func TestSerializeUTXO(t *testing.T) {
 		Output: kernel.TxOutput{
 			Amount:       50,
 			ScriptPubKey: "scriptpubkey1",
-			PubKey:       "pubkey1",
 		},
 	}
 
@@ -513,14 +501,12 @@ func TestConvertTopbTransaction(t *testing.T) {
 				Txid:      []byte("txid0"),
 				Vout:      0,
 				ScriptSig: "sig1",
-				PubKey:    "7075626b657931",
 			},
 		},
 		Vout: []*pb.TxOutput{
 			{
 				Amount:       100,
 				ScriptPubKey: "scriptpubkey1",
-				PubKey:       "7075626b657931",
 			},
 		},
 	}
@@ -544,7 +530,6 @@ func TestConvertTopbTxInput(t *testing.T) {
 		Txid:      []byte("txid0"),
 		Vout:      0,
 		ScriptSig: "sig1",
-		PubKey:    "7075626b657931",
 	}
 	result := convertToProtobufTxInput(input)
 
@@ -564,7 +549,6 @@ func TestConvertTopbTxOutput(t *testing.T) {
 	expected := &pb.TxOutput{
 		Amount:       100,
 		ScriptPubKey: "scriptpubkey1",
-		PubKey:       "7075626b657931",
 	}
 	result := convertToProtobufTxOutput(output)
 
@@ -587,7 +571,6 @@ func TestConvertTopbTxInputs(t *testing.T) {
 			Txid:      []byte("txid0"),
 			Vout:      0,
 			ScriptSig: "sig1",
-			PubKey:    "7075626b657931",
 		},
 	}
 	result := convertToProtobufTxInputs(inputs)
@@ -611,7 +594,6 @@ func TestConvertTopbTxOutputs(t *testing.T) {
 		{
 			Amount:       100,
 			ScriptPubKey: "scriptpubkey1",
-			PubKey:       "7075626b657931",
 		},
 	}
 	result := convertToProtobufTxOutputs(outputs)
@@ -654,7 +636,6 @@ func TestConvertFromProtobufUTXO(t *testing.T) {
 		Output: &pb.TxOutput{
 			Amount:       50,
 			ScriptPubKey: "sampleScriptPubKey",
-			PubKey:       "7075626b657931", // hex encoded
 		},
 	}
 

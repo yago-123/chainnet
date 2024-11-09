@@ -52,7 +52,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, pubKey, privKe
 
 	switch scriptType {
 	case script.P2PK:
-		scriptSig = append(scriptSig, signature)
+		scriptSig = append(scriptSig, signature, pubKey)
 	case script.P2PKH:
 		scriptSig = append(scriptSig, signature, pubKey)
 	case script.UndefinedScriptType:

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math/rand/v2"
 
-	"github.com/btcsuite/btcutil/base58"
-
 	"github.com/yago-123/chainnet/pkg/script"
 )
 
@@ -195,7 +193,7 @@ func NewCoinbaseInput() TxInput {
 }
 
 // NewInput represents the source of the transactions
-func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
+func NewInput(txid []byte, vout uint, scriptSig string) TxInput {
 	return TxInput{
 		Txid:      txid,
 		Vout:      vout,
@@ -204,8 +202,8 @@ func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
 }
 
 // CanUnlockOutputWith checks if the input can unlock the output
-func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
-	return in.PubKey == pubKey
+func (in *TxInput) CanUnlockOutputWith(address string) bool {
+	return script.HasBeenUnlockedWith(in.ScriptSig, address)
 }
 
 // UnlockWith solves the challenge presented by the output in order to unlock the funds
@@ -220,10 +218,9 @@ func (in *TxInput) EqualInput(input TxInput) bool {
 
 func (in *TxInput) String() string {
 	return fmt.Sprintf(
-		"TxInput: id %x-%d from %s, scriptSig: %s",
+		"TxInput: id %x-%d, scriptSig: %s",
 		in.Txid,
 		in.Vout,
-		base58.Encode([]byte(in.PubKey)),
 		in.ScriptSig,
 	)
 }

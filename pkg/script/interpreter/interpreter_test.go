@@ -23,7 +23,7 @@ import (
 // tx1P2PK contains a single input and a single output
 var tx1P2PK = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter in this case
 	[]kernel.TxInput{
-		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
+		kernel.NewInput([]byte("transaction-1"), 1, ""),
 	},
 	[]kernel.TxOutput{
 		kernel.NewOutput(50, script.P2PK, "pubKey-1"),
@@ -33,8 +33,8 @@ var tx1P2PK = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter 
 // tx2P2PK contains multiple inputs with same public key
 var tx2P2PK = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter in this case
 	[]kernel.TxInput{
-		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
-		kernel.NewInput([]byte("transaction-2"), 1, "", "pubKey-1"),
+		kernel.NewInput([]byte("transaction-1"), 1, ""),
+		kernel.NewInput([]byte("transaction-2"), 1, ""),
 	},
 	[]kernel.TxOutput{
 		kernel.NewOutput(50, script.P2PK, "pubKey-1"),
@@ -45,9 +45,9 @@ var tx2P2PK = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter 
 // tx3P2PK contains multiple inputs with different public keys
 var tx3P2PK = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter in this case
 	[]kernel.TxInput{
-		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
-		kernel.NewInput([]byte("transaction-2"), 3, "", "pubKey-2"),
-		kernel.NewInput([]byte("transaction-3"), 0, "", "pubKey-3"),
+		kernel.NewInput([]byte("transaction-1"), 1, ""),
+		kernel.NewInput([]byte("transaction-2"), 3, ""),
+		kernel.NewInput([]byte("transaction-3"), 0, ""),
 	},
 	[]kernel.TxOutput{
 		kernel.NewOutput(50, script.P2PK, "pubKey-1"),
@@ -58,7 +58,7 @@ var tx3P2PK = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter 
 // tx1P2PKH contains a single input and a single output
 var tx1P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter in this case
 	[]kernel.TxInput{
-		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
+		kernel.NewInput([]byte("transaction-1"), 1, ""),
 	},
 	[]kernel.TxOutput{
 		kernel.NewOutput(50, script.P2PKH, "pubKey-1"),
@@ -68,8 +68,8 @@ var tx1P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter
 // tx2P2PKH contains multiple inputs with same public key
 var tx2P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter in this case
 	[]kernel.TxInput{
-		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
-		kernel.NewInput([]byte("transaction-2"), 1, "", "pubKey-1"),
+		kernel.NewInput([]byte("transaction-1"), 1, ""),
+		kernel.NewInput([]byte("transaction-2"), 1, ""),
 	},
 	[]kernel.TxOutput{
 		kernel.NewOutput(50, script.P2PKH, "pubKey-1"),
@@ -80,9 +80,9 @@ var tx2P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter
 // tx3P2PKH contains multiple inputs with different public keys
 var tx3P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter in this case
 	[]kernel.TxInput{
-		kernel.NewInput([]byte("transaction-1"), 1, "", "pubKey-1"),
-		kernel.NewInput([]byte("transaction-2"), 3, "", "pubKey-2"),
-		kernel.NewInput([]byte("transaction-3"), 0, "", "pubKey-3"),
+		kernel.NewInput([]byte("transaction-1"), 1, ""),
+		kernel.NewInput([]byte("transaction-2"), 3, ""),
+		kernel.NewInput([]byte("transaction-3"), 0, ""),
 	},
 	[]kernel.TxOutput{
 		kernel.NewOutput(50, script.P2PKH, "pubKey-1"),
