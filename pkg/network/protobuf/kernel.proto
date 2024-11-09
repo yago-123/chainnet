@@ -16,13 +16,11 @@ message TxInput {
   bytes txid = 1;
   uint64 vout = 2;
   string script_sig = 3;
-  string pub_key = 4;
 }
 
 message TxOutput {
   uint64 amount = 1;
   string script_pub_key = 2;
-  string pub_key = 3;
 }
 
 message UTXO {
