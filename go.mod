@@ -1,4 +1,4 @@
-module "github.com/yago-123/chainnet"
+module github.com/yago-123/chainnet
 
 go 1.23
 
@@ -12,13 +12,14 @@ require (
 	github.com/libp2p/go-libp2p v0.36.2
 	github.com/libp2p/go-libp2p-kad-dht v0.26.1
 	github.com/libp2p/go-libp2p-pubsub v0.12.0
+	github.com/prometheus/client_golang v1.20.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	github.com/yago-123/minikube-testing v0.0.0-20240826204523-3f7ac36e34cb
 	golang.org/x/crypto v0.27.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.35.2
 )
 
 require (
@@ -136,7 +137,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/polydawn/refmt v0.89.0 // indirect
-	github.com/prometheus/client_golang v1.20.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
