@@ -3,6 +3,7 @@ package script
 import (
 	"bytes"
 	"fmt"
+	util_script "github.com/yago-123/chainnet/pkg/util/script"
 	"strings"
 
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
@@ -214,6 +215,23 @@ func StringToScript(scriptPubKey string) (Script, []string, error) {
 	return scriptTokens, scriptString, nil
 }
 
+// ExtractAddressFromScriptSig analyzes a script signature and returns the corresponding address that unblocks the
+// script
+func ExtractAddressFromScriptSig(scriptSig string) string {
+	scriptSigElems := util_script.DecodeScriptSig(scriptSig)
+	// as part of GenerateScriptSig function we know that scriptSig for P2PK and P2PKH is based on
+	// signature + pubKey, for know we can afford this simple implementation
+
+	// todo(): enable sciptSig type detection once new payment types are enabled
+	// return empty if the number of elements is different than expected (signature + pubKey)
+	if len(scriptSigElems) != 2 {
+		return ""
+	}
+
+	// pub key is stored in clear (even for P2PKH) in scriptSig
+	return string(scriptSigElems[1])
+}
+
 // CanBeUnlockedWith retrieves the receiver address from the script pub key
 func CanBeUnlockedWith(scriptPubKey, address string) bool {
 	var pubKeyHash []byte
@@ -257,6 +275,7 @@ func CanBeUnlockedWith(scriptPubKey, address string) bool {
 
 // HasBeenUnlockedWith checks if a script has been unlocked with a specific address
 func HasBeenUnlockedWith(scriptSig, address string) bool {
+	// todo(): add code here
 	return false
 }
 

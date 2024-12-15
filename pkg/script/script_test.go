@@ -3,6 +3,7 @@ package script //nolint:testpackage // don't create separate package for tests
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	util_script "github.com/yago-123/chainnet/pkg/util/script"
 	"reflect"
 	"testing"
 
@@ -166,6 +167,26 @@ func TestCanBeUnlockedWithForP2PKH(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equalf(t, tt.want, CanBeUnlockedWith(tt.args.scriptPubKey, tt.args.address), "CanBeUnlockedWith(%v, %v)", tt.args.scriptPubKey, tt.args.address)
+		})
+	}
+}
+
+func TestExtractAddressFromScriptSig(t *testing.T) {
+	type args struct {
+		scriptSig string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"extract pub key from P2PK scriptSig", args{util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubkey-1")})}, "pubkey-1"},
+		{"extract pub key from P2PKH scriptSig", args{util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubkey-2")})}, "pubkey-2"},
+		{"handle case for empty scriptSig", args{""}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, ExtractAddressFromScriptSig(tt.args.scriptSig), "ExtractAddressFromScriptSig(%v)", tt.args.scriptSig)
 		})
 	}
 }

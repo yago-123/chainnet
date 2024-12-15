@@ -2,17 +2,14 @@ package interpreter
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-
 	"github.com/yago-123/chainnet/pkg/crypto"
+	util_script "github.com/yago-123/chainnet/pkg/util/script"
+	"strconv"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
-
-	"github.com/btcsuite/btcutil/base58"
 )
 
 const (
@@ -61,7 +58,7 @@ func (rpn *RPNInterpreter) GenerateScriptSig(scriptPubKey string, pubKey, privKe
 		return "", fmt.Errorf("unsupported script type %d", scriptType)
 	}
 
-	return encodeScriptSig(scriptSig), nil
+	return util_script.EncodeScriptSig(scriptSig), nil
 }
 
 // VerifyScriptPubKey verifies the scriptPubKey by reconstructing the script and evaluating it
@@ -75,7 +72,7 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 	}
 
 	// iterate over the scriptSig and push values to the stack
-	for _, element := range decodeScriptSig(scriptSig) {
+	for _, element := range util_script.DecodeScriptSig(scriptSig) {
 		stack.Push(string(element))
 	}
 
@@ -151,22 +148,4 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 	}
 
 	return stack.Pop() == "true", nil
-}
-
-func encodeScriptSig(scriptSig [][]byte) string {
-	ret := []string{}
-	for _, val := range scriptSig {
-		ret = append(ret, base58.Encode(val))
-	}
-
-	return strings.Join(ret, " ")
-}
-
-func decodeScriptSig(scriptSig string) [][]byte {
-	ret := [][]byte{}
-	for _, val := range strings.Fields(scriptSig) {
-		ret = append(ret, base58.Decode(val))
-	}
-
-	return ret
 }
