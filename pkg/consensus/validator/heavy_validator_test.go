@@ -1,6 +1,7 @@
 package validator //nolint:testpackage // don't create separate package for tests
 
 import (
+	util_script "github.com/yago-123/chainnet/pkg/util/script"
 	"testing"
 
 	"github.com/yago-123/chainnet/config"
@@ -32,7 +33,7 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 	blockWithoutCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
 			kernel.NewTransaction(
-				[]kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")},
+				[]kernel.TxInput{kernel.NewInput([]byte("txid"), 0, util_script.EncodeScriptSig([][]byte{[]byte("scriptSig"), []byte("pubKey")}))},
 				[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "scriptPubKey")},
 			),
 		},
@@ -61,17 +62,17 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 func TestHValidator_validateNoDoubleSpendingInsideBlock(t *testing.T) {
 	blockWithDoubleSpending := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")}},
-			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 1, "scriptSig", "pubKey")}},
-			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")}},
+			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubKey")}))}},
+			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 1, util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubKey")}))}},
+			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubKey")}))}},
 		},
 	}
 
 	blockWithoutDoubleSpending := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")}},
-			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 1, "scriptSig", "pubKey")}},
-			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid2"), 0, "scriptSig", "pubKey")}},
+			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubKey")}))}},
+			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid"), 1, util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubKey")}))}},
+			{Vin: []kernel.TxInput{kernel.NewInput([]byte("txid2"), 0, util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubKey")}))}},
 		},
 	}
 
@@ -168,11 +169,11 @@ func TestHValidator_validateBlockHeight(t *testing.T) {
 func TestHValidator_validateMerkleTree(t *testing.T) {
 	txs := []*kernel.Transaction{
 		kernel.NewTransaction(
-			[]kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")},
+			[]kernel.TxInput{kernel.NewInput([]byte("txid"), 0, util_script.EncodeScriptSig([][]byte{[]byte("scriptSig"), []byte("pubKey")}))},
 			[]kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "scriptPubKey")},
 		),
 		kernel.NewTransaction(
-			[]kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, "scriptSig2", "pubKey2")},
+			[]kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, util_script.EncodeScriptSig([][]byte{[]byte("scriptSig2"), []byte("pubKey2")}))},
 			[]kernel.TxOutput{
 				kernel.NewOutput(2, script.P2PK, "scriptPubKey2"),
 				kernel.NewOutput(2, script.P2PK, "scriptPubKey3"),
@@ -180,11 +181,11 @@ func TestHValidator_validateMerkleTree(t *testing.T) {
 		),
 		kernel.NewTransaction(
 			[]kernel.TxInput{
-				kernel.NewInput([]byte("txid3"), 2, "scriptSig3", "pubKey3"),
-				kernel.NewInput([]byte("txid4"), 3, "scriptSig4", "pubKey4"),
+				kernel.NewInput([]byte("txid3"), 2, util_script.EncodeScriptSig([][]byte{[]byte("scriptSig3"), []byte("pubKey3")})),
+				kernel.NewInput([]byte("txid3"), 3, util_script.EncodeScriptSig([][]byte{[]byte("scriptSig4"), []byte("pubKey4")})),
 			},
 			[]kernel.TxOutput{
-				kernel.NewOutput(3, script.P2PK, "scriptPubKey3"),
+				kernel.NewOutput(2, script.P2PK, "scriptPubKey3"),
 			},
 		),
 	}
