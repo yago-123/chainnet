@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/storage"
@@ -147,7 +148,15 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 	for _, vin := range tx.Vin {
 		// fetch the unspent outputs for the input's public key
 		// todo(): would make sense to add a check via UTXO set?
-		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
+
+		address := script.ExtractAddressFromScriptSig(vin.ScriptSig)
+		// todo(): this check if GARBAGE, add some sort of error handing for ExtractAddressFromScriptSig
+		if address != "" {
+			// todo(): revisit this, do we really need to return an error?
+			return fmt.Errorf("unable to extract address from script signature")
+		}
+
+		utxos, _ := hv.explorer.FindUnspentOutputs(address)
 		for _, utxo := range utxos {
 			// if there is match, check that the signature is valid
 			if utxo.EqualInput(vin) {

@@ -26,22 +26,22 @@ var testBlock = &kernel.Block{ //nolint:gochecknoglobals // data that is used ac
 		{
 			ID: []byte("tx1"),
 			Vin: []kernel.TxInput{
-				{Txid: []byte("tx0"), Vout: 0, ScriptSig: "script1", PubKey: "pubkey1"},
-				{Txid: []byte("tx0"), Vout: 1, ScriptSig: "script2", PubKey: "pubkey2"},
+				{Txid: []byte("tx0"), Vout: 0, ScriptSig: "script1"},
+				{Txid: []byte("tx0"), Vout: 1, ScriptSig: "script2"},
 			},
 			Vout: []kernel.TxOutput{
-				{Amount: 50, ScriptPubKey: "scriptpubkey1", PubKey: "pubkey1"},
-				{Amount: 30, ScriptPubKey: "scriptpubkey2", PubKey: "pubkey2"},
+				{Amount: 50, ScriptPubKey: "scriptpubkey1"},
+				{Amount: 30, ScriptPubKey: "scriptpubkey2"},
 			},
 		},
 		{
 			ID: []byte("tx2"),
 			Vin: []kernel.TxInput{
-				{Txid: []byte("tx1"), Vout: 0, ScriptSig: "script3", PubKey: "pubkey3"},
+				{Txid: []byte("tx1"), Vout: 0, ScriptSig: "script3"},
 			},
 			Vout: []kernel.TxOutput{
-				{Amount: 20, ScriptPubKey: "scriptpubkey3", PubKey: "pubkey3"},
-				{Amount: 10, ScriptPubKey: "scriptpubkey4", PubKey: "pubkey4"},
+				{Amount: 20, ScriptPubKey: "scriptpubkey3"},
+				{Amount: 10, ScriptPubKey: "scriptpubkey4"},
 			},
 		},
 	},
@@ -51,12 +51,12 @@ var testBlock = &kernel.Block{ //nolint:gochecknoglobals // data that is used ac
 var testTransaction = kernel.Transaction{ //nolint:gochecknoglobals // data that is used across all test funcs
 	ID: []byte("tx1"),
 	Vin: []kernel.TxInput{
-		{Txid: []byte("tx0"), Vout: 0, ScriptSig: "script1", PubKey: "pubkey1"},
-		{Txid: []byte("tx0"), Vout: 1, ScriptSig: "script2", PubKey: "pubkey2"},
+		{Txid: []byte("tx0"), Vout: 0, ScriptSig: "script1"},
+		{Txid: []byte("tx0"), Vout: 1, ScriptSig: "script2"},
 	},
 	Vout: []kernel.TxOutput{
-		{Amount: 50, ScriptPubKey: "scriptpubkey1", PubKey: "pubkey1"},
-		{Amount: 30, ScriptPubKey: "scriptpubkey2", PubKey: "pubkey2"},
+		{Amount: 50, ScriptPubKey: "scriptpubkey1"},
+		{Amount: 30, ScriptPubKey: "scriptpubkey2"},
 	},
 }
 
