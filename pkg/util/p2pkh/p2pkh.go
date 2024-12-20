@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/yago-123/chainnet/pkg/crypto"
