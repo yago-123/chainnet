@@ -1,6 +1,14 @@
 package hash
 
-import "errors"
+import (
+	"bytes"
+	"crypto/sha256"
+	"errors"
+	"hash"
+	"sync"
+
+	"golang.org/x/crypto/ripemd160"
+)
 
 const (
 	SHA256 HasherType = iota
@@ -11,7 +19,7 @@ type HasherType uint
 
 type Hashing interface {
 	Hash(payload []byte) ([]byte, error)
-	Verify(hash []byte, payload []byte) (bool, error)
+	Verify(hashedPayload []byte, payload []byte) (bool, error)
 }
 
 // GetHasher represents a factory function that returns the hashing algorithm. This
@@ -20,12 +28,55 @@ type Hashing interface {
 func GetHasher(i HasherType) Hashing {
 	switch i {
 	case SHA256:
-		return NewSHA256()
+		return NewHasher(sha256.New())
 	case RipeMD160:
-		return NewRipemd160()
+		return NewHasher(ripemd160.New())
 	default:
 		return NewVoidHasher()
 	}
+}
+
+type Hash struct {
+	h  hash.Hash
+	mu sync.Mutex
+}
+
+func NewHasher(hashAlgo hash.Hash) *Hash {
+	return &Hash{
+		h: hashAlgo,
+	}
+}
+
+func (hash *Hash) Hash(payload []byte) ([]byte, error) {
+	if err := hashInputValidator(payload); err != nil {
+		return []byte{}, err
+	}
+
+	hash.mu.Lock()
+	defer hash.mu.Unlock()
+
+	// reset the hasher state
+	hash.h.Reset()
+
+	_, err := hash.h.Write(payload)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return hash.h.Sum(nil), nil
+}
+
+func (hash *Hash) Verify(hashedPayload []byte, payload []byte) (bool, error) {
+	if err := verifyInputValidator(hashedPayload, payload); err != nil {
+		return false, err
+	}
+
+	h, err := hash.Hash(payload)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(hashedPayload, h), nil
 }
 
 func hashInputValidator(payload []byte) error {
