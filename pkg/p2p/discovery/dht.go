@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"context"
+
 	"github.com/ipfs/go-datastore"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/host"

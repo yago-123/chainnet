@@ -2,9 +2,10 @@ package interpreter
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/yago-123/chainnet/pkg/crypto"
 	util_script "github.com/yago-123/chainnet/pkg/util/script"
-	"strconv"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"

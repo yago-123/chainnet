@@ -3,8 +3,9 @@ package script
 import (
 	"bytes"
 	"fmt"
-	util_script "github.com/yago-123/chainnet/pkg/util/script"
 	"strings"
+
+	util_script "github.com/yago-123/chainnet/pkg/util/script"
 
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 

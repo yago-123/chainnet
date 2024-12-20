@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/yago-123/chainnet/pkg/script/interpreter"

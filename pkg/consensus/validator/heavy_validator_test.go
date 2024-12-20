@@ -1,8 +1,9 @@
 package validator //nolint:testpackage // don't create separate package for tests
 
 import (
-	util_script "github.com/yago-123/chainnet/pkg/util/script"
 	"testing"
+
+	util_script "github.com/yago-123/chainnet/pkg/util/script"
 
 	"github.com/yago-123/chainnet/config"
 
