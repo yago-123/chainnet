@@ -1,6 +1,7 @@
 package interpreter //nolint:testpackage // don't create separate package for tests
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"testing"
 
@@ -92,7 +93,7 @@ var tx3P2PKH = kernel.NewTransaction( //nolint:gochecknoglobals // ignore linter
 
 func TestRPNInterpreter_GenerateScriptSigWithErrors(t *testing.T) {
 	signer := sign.NewECDSASignature()
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewHasher(sha256.New())))
 
 	pubKey, privKey, err := sign.NewECDSASignature().NewKeyPair()
 	require.NoError(t, err)
@@ -127,7 +128,7 @@ func TestRPNInterpreter_GenerateScriptSigWithErrors(t *testing.T) {
 
 func TestRPNInterpreter_VerifyScriptPubKeyWithErrors(t *testing.T) {
 	signer := sign.NewECDSASignature()
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewHasher(sha256.New())))
 
 	pubKey, privKey, err := signer.NewKeyPair()
 	require.NoError(t, err)
@@ -180,7 +181,7 @@ func TestRPNInterpreter_VerifyScriptPubKeyWithErrors(t *testing.T) {
 
 func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PK(t *testing.T) {
 	signer := sign.NewECDSASignature()
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewHasher(sha256.New())))
 
 	pubKey, privKey, err := signer.NewKeyPair()
 	require.NoError(t, err)
@@ -217,7 +218,7 @@ func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PK(t *testing.T) {
 
 func TestRPNInterpreter_GenerationAndVerificationRealKeysP2PKH(t *testing.T) {
 	signer := sign.NewECDSASignature()
-	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewSHA256()))
+	interpreter := NewScriptInterpreter(crypto.NewHashedSignature(signer, hash.NewHasher(sha256.New())))
 
 	pubKey, privKey, err := signer.NewKeyPair()
 	require.NoError(t, err)

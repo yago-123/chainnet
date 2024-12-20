@@ -2,6 +2,7 @@ package miner //nolint:testpackage // don't create separate package for tests
 
 import (
 	"context"
+	"crypto/sha256"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/utxoset"
@@ -92,7 +93,7 @@ func TestMiner_MineBlock(t *testing.T) {
 
 	mempool := mempool.NewMemPool(1000)
 	for _, v := range txs {
-		txID, err := util.CalculateTxHash(v.Transaction, hash.NewSHA256())
+		txID, err := util.CalculateTxHash(v.Transaction, hash.NewHasher(sha256.New()))
 		require.NoError(t, err)
 
 		v.Transaction.SetID(txID)
@@ -105,7 +106,7 @@ func TestMiner_MineBlock(t *testing.T) {
 		store,
 		mempool,
 		utxoset.NewUTXOSet(cfg),
-		hash.NewSHA256(),
+		hash.NewHasher(sha256.New()),
 		consensus.NewMockHeavyValidator(),
 		observer.NewChainSubject(),
 		encoding.NewGobEncoder(),
@@ -153,7 +154,7 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 		store,
 		mempool.NewMemPool(1000),
 		utxoset.NewUTXOSet(cfg),
-		hash.NewSHA256(),
+		hash.NewHasher(sha256.New()),
 		consensus.NewMockHeavyValidator(),
 		observer.NewChainSubject(),
 		encoding.NewGobEncoder(),
