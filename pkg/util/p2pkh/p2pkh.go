@@ -2,7 +2,10 @@ package utilp2pkh
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
+
+	"golang.org/x/crypto/ripemd160"
 
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -16,7 +19,9 @@ const (
 // GenerateP2PKHAddrFromPubKey generates a P2PKH address from a public key (including a checksum for error detection).
 // Returns the P2PKH address as a base58 encoded string.
 func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte) ([]byte, error) {
-	hasherP2PKH := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+	hasherP2PKH := crypto.NewMultiHash(
+		[]hash.Hashing{hash.NewHasher(sha256.New()), hash.NewHasher(ripemd160.New())},
+	)
 
 	// hash the public key
 	pubKeyHash, err := hasherP2PKH.Hash(pubKey)
@@ -40,7 +45,9 @@ func GenerateP2PKHAddrFromPubKey(pubKey []byte, version byte) ([]byte, error) {
 
 // ExtractPubKeyHashedFromP2PKHAddr extracts the public key hash from a P2PKH address
 func ExtractPubKeyHashedFromP2PKHAddr(address []byte) ([]byte, byte, error) {
-	hasherP2PKH := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+	hasherP2PKH := crypto.NewMultiHash(
+		[]hash.Hashing{hash.NewHasher(sha256.New()), hash.NewHasher(ripemd160.New())},
+	)
 
 	// check that address has at least the minimum valid length (1 version + 1 pubKeyHash + 4 checksum)
 	// we know that the address should be 20 bytes because it is a RIPEMD hash, but for now this is OK

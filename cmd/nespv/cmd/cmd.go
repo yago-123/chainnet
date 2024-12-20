@@ -1,12 +1,15 @@
 package cmd
 
 import (
+	"crypto/sha256"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"golang.org/x/crypto/ripemd160"
 )
 
 var cfg *config.Config
@@ -19,12 +22,12 @@ var (
 	// general consensus signer (tx)
 	consensusSigner = crypto.NewHashedSignature(
 		sign.NewECDSASignature(),
-		hash.NewSHA256(),
+		hash.NewHasher(sha256.New()),
 	)
 
 	// hasher used for generating wallet addresses in P2PKH
 	walletHasher = crypto.NewMultiHash(
-		[]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()},
+		[]hash.Hashing{hash.NewHasher(sha256.New()), hash.NewHasher(ripemd160.New())},
 	)
 )
 
