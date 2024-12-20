@@ -27,7 +27,7 @@ import (
 var txFeePair1 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id1"),
-		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig", "pubKey")},
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid"), 0, "scriptSig")},
 		Vout: []kernel.TxOutput{kernel.NewOutput(1, script.P2PK, "scriptPubKey")},
 	},
 	Fee: 10,
@@ -36,7 +36,7 @@ var txFeePair1 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lin
 var txFeePair2 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id2"),
-		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, "scriptSig", "pubKey")},
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid2"), 1, "scriptSig")},
 		Vout: []kernel.TxOutput{kernel.NewOutput(2, script.P2PK, "scriptPubKey")},
 	},
 	Fee: 2,
@@ -45,7 +45,7 @@ var txFeePair2 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lin
 var txFeePair3 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id3"),
-		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid3"), 2, "scriptSig", "pubKey")},
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid3"), 2, "scriptSig")},
 		Vout: []kernel.TxOutput{kernel.NewOutput(3, script.P2PK, "scriptPubKey")},
 	},
 }
@@ -53,7 +53,7 @@ var txFeePair3 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lin
 var txFeePair4 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id4"),
-		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid4"), 3, "scriptSig", "pubKey")},
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid4"), 3, "scriptSig")},
 		Vout: []kernel.TxOutput{kernel.NewOutput(4, script.P2PK, "scriptPubKey")},
 	},
 	Fee: 1,
@@ -62,7 +62,7 @@ var txFeePair4 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lin
 var txFeePair5 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id5"),
-		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid5"), 4, "scriptSig", "pubKey")},
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid5"), 4, "scriptSig")},
 		Vout: []kernel.TxOutput{kernel.NewOutput(5, script.P2PK, "scriptPubKey")},
 	},
 	Fee: 9,
@@ -71,7 +71,7 @@ var txFeePair5 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lin
 var txFeePair6 = mempool.TxFeePair{ //nolint: gochecknoglobals // no need to lint this global variable
 	Transaction: &kernel.Transaction{
 		ID:   []byte("id6"),
-		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid6"), 5, "scriptSig", "pubKey")},
+		Vin:  []kernel.TxInput{kernel.NewInput([]byte("txid6"), 5, "scriptSig")},
 		Vout: []kernel.TxOutput{kernel.NewOutput(6, script.P2PK, "scriptPubKey")},
 	},
 	Fee: 6,
