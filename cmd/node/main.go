@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
@@ -26,7 +28,7 @@ var (
 	// general consensus signer (tx)
 	consensusSigner = crypto.NewHashedSignature(
 		sign.NewECDSASignature(),
-		hash.NewSHA256(),
+		hash.NewHasher(sha256.New()),
 	)
 )
 

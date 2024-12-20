@@ -1,9 +1,12 @@
 package interpreter
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"golang.org/x/crypto/ripemd160"
 
 	"github.com/yago-123/chainnet/pkg/crypto"
 
@@ -119,7 +122,9 @@ func (rpn *RPNInterpreter) VerifyScriptPubKey(scriptPubKey string, scriptSig str
 				var hashedVal []byte
 				val := stack.Pop()
 
-				hasher := crypto.NewMultiHash([]hash.Hashing{hash.NewSHA256(), hash.NewRipemd160()})
+				hasher := crypto.NewMultiHash(
+					[]hash.Hashing{hash.NewHasher(sha256.New()), hash.NewHasher(ripemd160.New())},
+				)
 				hashedVal, err = hasher.Hash([]byte(val))
 				if err != nil {
 					return false, fmt.Errorf("couldn't hash value: %w", err)
