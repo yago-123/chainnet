@@ -1,0 +1,21 @@
+- name: Setup Certbot and Configure SSL
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure package lists are updated
+      apt:
+        update_cache: yes
+
+    - name: Install Certbot and the Nginx plugin
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+
+    - name: Generate SSL certificate for dashboard.chainnet.yago.ninja
+      command: >
+        certbot --nginx -d dashboard.chainnet.yago.ninja
+      args:
+        creates: /etc/letsencrypt/live/dashboard.chainnet.yago.ninja/fullchain.pem

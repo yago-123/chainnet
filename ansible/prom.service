@@ -1,0 +1,11 @@
+[Unit]
+Description=Prometheus Monitoring
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/local/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --web.listen-address="0.0.0.0:9092"
+[Install]
+WantedBy=multi-user.target
