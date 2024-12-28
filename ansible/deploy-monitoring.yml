@@ -1,6 +1,6 @@
 - name: Install Prometheus, Grafana, and Nginx
-  hosts: all
   become: true
+  hosts: all
 
   tasks:
     # Install dependencies

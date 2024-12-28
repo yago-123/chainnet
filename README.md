@@ -172,6 +172,21 @@ Generate a ECDSA `secp256r1` private key in PEM format:
 $ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
 ```
 
+## Setting up monitoring with Prometheus and Grafana
+In order to provide monitoring Grafana, Prometheus and Nginx must be installed. You can do so by running the following 
+Ansible playbook: 
+```bash
+$ ansible-playbook -i <specific-host> ansible/deploy-monitoring.yml
+```
+
+Once the monitoring stack is installed and you have configured the domain requested to the correct IP, you can access 
+the Grafana dashboard at `URL` and admin credentials. 
+
+If you need to enable HTTPS, you can use `Certbot` to generate the keys and certificates for the domain via the following 
+playbook: 
+```bash
+$ ansible-playbook -i <your-host> ansible/deploy-monitoring-TLS.yml
+```
 
 ## Architecture
 ```ascii

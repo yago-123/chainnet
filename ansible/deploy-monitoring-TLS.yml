@@ -1,6 +1,6 @@
 - name: Setup Certbot and Configure SSL
-  hosts: all
   become: yes
+  hosts: all
 
   tasks:
     - name: Ensure package lists are updated

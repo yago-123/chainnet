@@ -99,7 +99,7 @@
 
     - name: Template systemd service file
       template:
-        src: "systemd.service"
+        src: "systemd-chain.service"
         dest: "/etc/systemd/system/{{ target }}.service"
         mode: '0644'
 
