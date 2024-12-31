@@ -138,7 +138,7 @@ func (hv *HValidator) ValidateBlockWithoutHash(b *kernel.Block) error {
 }
 
 // validateOwnershipAndBalanceOfInputs checks that the inputs of a transaction are owned by the spender and that the
-// balance of the inputs is greater or equal than the balance of the outputs
+// balance of the outputs is equal or smaller than the balance of the outputs
 func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction) error {
 	// assume that we only use P2PK for now
 	inputBalance := uint(0)
@@ -175,9 +175,9 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 		outputBalance += vout.Amount
 	}
 
-	// make sure that the input balance is greater than the output balance (can be equal)
-	if inputBalance > outputBalance {
-		return fmt.Errorf("input balance %d is greater than output balance %d", inputBalance, outputBalance)
+	// input balance can't be smaller than the output balance, otherwise return error
+	if inputBalance < outputBalance {
+		return fmt.Errorf("output balance %d is greater than output balance %d", outputBalance, inputBalance)
 	}
 
 	return nil
