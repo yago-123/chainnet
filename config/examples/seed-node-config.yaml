@@ -16,6 +16,11 @@ miner:
   mining-interval: "10m"                    # Interval between block creation
   adjustment-interval: 6                    # Number of blocks before adjusting the difficulty
 
+prometheus:
+  enabled: true                           # Enable or disable prometheus metrics
+  port: 9091                              # Port exposed for prometheus metrics
+  path: "/metrics"                        # Path for prometheus metrics endpoint
+
 p2p:
   enabled: true                           # Enable or disable network communication
   identity-path: "/var/chainnet/identity.pem"  # ECDSA peer private key path in PEM format (leave empty to generate a random identity)

@@ -65,7 +65,7 @@ func (prom *PromExporter) Start() error {
 	}
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", prom.cfg.Prometheus.Port),
+		Addr:         fmt.Sprintf("127.0.0.1:%d", prom.cfg.Prometheus.Port),
 		Handler:      prom.r,
 		ReadTimeout:  ReadWriteTimeout,
 		WriteTimeout: ReadWriteTimeout,
