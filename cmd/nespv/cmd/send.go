@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 
 	"github.com/btcsuite/btcutil/base58"

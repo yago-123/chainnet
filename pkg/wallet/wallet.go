@@ -35,8 +35,6 @@ type Wallet struct {
 
 	encoder encoding.Encoding
 
-	// hasher used for deriving wallet related values
-	hasherP2PKH hash.Hashing
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
 	interpreter     *rpnInter.RPNInterpreter
