@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -43,6 +44,17 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 			Timeout:       ReadWriteTimeout,
 			ErrorHandling: promhttp.ContinueOnError,
 		}).ServeHTTP(w, req)
+	})
+
+	// set dummy build info so that Grafana does not complain about missing endpoint
+	r.GET("/api/v1/status/buildinfo", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buildInfo := map[string]string{
+			"version":  "v1.0.0",
+			"revision": "abcd1234",
+			"branch":   "main",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(buildInfo)
 	})
 
 	// register the metrics for each monitor
