@@ -100,6 +100,8 @@ You can use this wallet by running the `chainnet-nespv` wallet to send transacti
 $ ./bin/chainnet-nespv send --config default-config.yaml --address random --amount 1 --fee 10 --wallet-key-path <wallet.pem>
 ```
 
+`todo()`: add example with P2PKH payment too  
+
 ### Step 3: Extract the Public Key in Base58 Format
 To receive rewards, you'll need to extract the public key from the wallet in `base58` format. This can be done as follows:
 ```bash
