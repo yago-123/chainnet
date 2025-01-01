@@ -1,0 +1,7 @@
+---
+- name: Install Prometheus, Grafana, and Nginx
+  hosts: all
+  become: true
+  become_method: sudo
+  roles:
+    - monitoring

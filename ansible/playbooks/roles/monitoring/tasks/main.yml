@@ -1,0 +1,12 @@
+---
+- name: Install dependencies
+  include_tasks: 01_install_dependencies.yml
+
+- name: Install and configure Prometheus
+  include_tasks: 02_install_prometheus.yml
+
+- name: Install and configure Grafana
+  include_tasks: 03_install_grafana.yml
+
+- name: Install and configure Nginx
+  include_tasks: 04_install_nginx.yml

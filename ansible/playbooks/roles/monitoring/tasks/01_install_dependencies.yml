@@ -1,0 +1,12 @@
+---
+- name: Install prerequisites
+  apt:
+    name:
+      - wget
+      - curl
+      - gnupg
+      - apt-transport-https
+      - software-properties-common
+      - nginx
+    state: present
+    update_cache: yes

@@ -1,0 +1,32 @@
+---
+- name: Add Grafana GPG key
+  get_url:
+    url: https://packages.grafana.com/gpg.key
+    dest: /etc/apt/trusted.gpg.d/grafana.asc
+  become: true
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: "deb https://packages.grafana.com/oss/deb stable main"
+    state: present
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+
+- name: Configure Grafana service
+  template:
+    src: templates/grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+
+- name: Configure Grafana data source
+  template:
+    src: templates/data-source.yaml.j2
+    dest: /etc/grafana/provisioning/datasources/data-source.yaml
+
+- name: Start Grafana service
+  systemd:
+    name: grafana-server
+    enabled: true
+    state: started

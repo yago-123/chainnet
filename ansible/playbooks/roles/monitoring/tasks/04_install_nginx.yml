@@ -1,0 +1,24 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Start Nginx service
+  systemd:
+    name: nginx
+    enabled: true
+    state: started
+
+- name: Deploy Nginx configuration for Grafana
+  template:
+    src: templates/dashboard-nginx.j2
+    dest: /etc/nginx/sites-available/dashboard
+  notify: Reload Nginx
+
+- name: Enable the dashboard site
+  file:
+    src: /etc/nginx/sites-available/dashboard
+    dest: /etc/nginx/sites-enabled/dashboard
+    state: link
+    force: yes

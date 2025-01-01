@@ -100,6 +100,8 @@ You can use this wallet by running the `chainnet-nespv` wallet to send transacti
 $ ./bin/chainnet-nespv send --config default-config.yaml --address random --amount 1 --fee 10 --wallet-key-path <wallet.pem>
 ```
 
+`todo()`: add example with P2PKH payment too  
+
 ### Step 3: Extract the Public Key in Base58 Format
 To receive rewards, you'll need to extract the public key from the wallet in `base58` format. This can be done as follows:
 ```bash
@@ -147,12 +149,12 @@ $ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:80
 ### Remote nodes with Ansible
 Running the `chainnet-node` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=node config=../config/examples/seed-node-config.yaml"
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/node-seed.yml ansible/playbooks/blockchain.yml
 ```
 
 Running the `chainnet-miner` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml -e "target=miner config=../config/examples/seed-node-config.yaml"
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/miner-seed.yml ansible/playbooks/blockchain.yml
 ```
 
 ### Run in Kubernetes 
@@ -172,7 +174,21 @@ Generate a ECDSA `secp256r1` private key in PEM format:
 $ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
 ```
 
+## Setting up monitoring with Prometheus and Grafana
+In order to provide monitoring Grafana, Prometheus and Nginx must be installed. You can do so by running the following 
+Ansible playbook: 
+```bash
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/monitoring.yml
+```
 
+Once the monitoring stack is installed and you have configured the domain requested to the correct IP, you can access 
+the Grafana dashboard at `URL` and admin credentials. 
+
+If you need to enable HTTPS, you can use `Certbot` to generate the keys and certificates for the domain via the following 
+playbook: 
+```bash
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini -l seed-1.chainnet.yago.ninja ansible/playbooks/monitoringTLS.yml -e "certificate_domain=dashboard.chainnet.yago.ninja certificate_email=me@yago.ninja"
+```
 ## Architecture
 ```ascii
 ┌──────────────────┐                 ┌──────────────────┐

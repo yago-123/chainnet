@@ -1,0 +1,8 @@
+- name: Setup Certbot and Configure SSL
+  become: yes
+  hosts: all
+  vars:
+    certificate_domain: dashboard.chainnet.yago.ninja
+    certificate_email: me@yago.ninja
+  roles:
+    - monitoringTLS

@@ -2,14 +2,10 @@ package cmd
 
 import (
 	"context"
-	"crypto/sha256"
-
-	"golang.org/x/crypto/ripemd160"
 
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/spf13/cobra"
@@ -81,8 +77,7 @@ var sendCmd = &cobra.Command{
 			1,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
-			walletHasher,
-			crypto.NewMultiHash([]hash.Hashing{hash.NewHasher(sha256.New()), hash.NewHasher(ripemd160.New())}),
+			hash.GetHasher(consensusHasherType),
 			encoding.NewProtobufEncoder(),
 			privKey,
 			pubKey,

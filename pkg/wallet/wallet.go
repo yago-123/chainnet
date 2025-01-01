@@ -35,8 +35,6 @@ type Wallet struct {
 
 	encoder encoding.Encoding
 
-	// hasher used for deriving wallet related values
-	hasherP2PKH hash.Hashing
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
 	interpreter     *rpnInter.RPNInterpreter
@@ -49,7 +47,6 @@ func NewWallet(
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
-	hasherP2PKH hash.Hashing,
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 ) (*Wallet, error) {
@@ -63,7 +60,6 @@ func NewWallet(
 		version,
 		validator,
 		signer,
-		hasherP2PKH,
 		consensusHasher,
 		encoder,
 		privateKey,
@@ -76,7 +72,6 @@ func NewWalletWithKeys(
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
-	hasherP2PKH hash.Hashing,
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 	privateKey []byte,
@@ -90,7 +85,6 @@ func NewWalletWithKeys(
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
-		hasherP2PKH:     hasherP2PKH,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
 	}, nil
