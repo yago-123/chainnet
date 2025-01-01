@@ -81,6 +81,12 @@
         dest: /etc/grafana/grafana.ini
       # notify: Restart Grafana
 
+    - name: Configure Grafana data source
+      template:
+        src: data-source.yaml
+        dest: /etc/grafana/provisioning/datasources/data-source.yaml
+      # notify: Restart Grafana
+
     - name: Start Grafana service
       systemd:
         name: grafana-server
