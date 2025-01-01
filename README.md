@@ -181,6 +181,11 @@ Ansible playbook:
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/monitoring.yml
 ```
 
+In order to install logging: 
+```bash 
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/logging.yml
+```
+
 Once the monitoring stack is installed and you have configured the domain requested to the correct IP, you can access 
 the Grafana dashboard at `URL` and admin credentials. 
 
@@ -189,6 +194,7 @@ playbook:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini -l seed-1.chainnet.yago.ninja ansible/playbooks/monitoringTLS.yml -e "certificate_domain=dashboard.chainnet.yago.ninja certificate_email=me@yago.ninja"
 ```
+
 ## Architecture
 ```ascii
 ┌──────────────────┐                 ┌──────────────────┐

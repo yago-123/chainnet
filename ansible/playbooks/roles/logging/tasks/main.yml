@@ -20,12 +20,6 @@
     dest: "/usr/local/bin/"
     remote_src: yes
 
-- name: Make Loki executable
-  file:
-    path: "/usr/local/bin/loki-linux-amd64"
-    dest: "/usr/local/bin/loki"
-    state: link
-
 - name: Create Loki config directory
   file:
     path: "/etc/loki"
@@ -33,7 +27,7 @@
 
 - name: Copy Loki config file
   template:
-    src: templates/loki-config.yaml
+    src: files/loki-config.yaml
     dest: /etc/loki/loki-config.yaml
 
 - name: Download and install Promtail binary
@@ -48,12 +42,6 @@
     dest: "/usr/local/bin/"
     remote_src: yes
 
-- name: Make Promtail executable
-  file:
-    path: "/usr/local/bin/promtail-linux-amd64"
-    dest: "/usr/local/bin/promtail"
-    state: link
-
 - name: Create Promtail config directory
   file:
     path: "/etc/promtail"
@@ -61,22 +49,40 @@
 
 - name: Copy Promtail config file
   template:
-    src: templates/promtail-config.yaml
+    src: files/promtail-config.yaml
     dest: /etc/promtail/promtail-config.yaml
 
-- name: Start Loki service
-  systemd:
-    name: loki
-    enabled: yes
-    state: started
-    daemon_reload: yes
-    exec_start: /usr/local/bin/loki -config.file=/etc/loki/loki-config.yaml
+- name: Provision Loki service
+  copy:
+    src: files/loki.service
+    dest: /etc/systemd/system/loki.service
+    mode: '0644'
 
-- name: Start Promtail service
+- name: Enable Loki service
   systemd:
-    name: promtail
+    name: "loki"
     enabled: yes
-    state: started
-    daemon_reload: yes
-    exec_start: /usr/local/bin/promtail -config.file=/etc/promtail/promtail-config.yaml
 
+- name: Restart Loki service
+  systemd:
+    name: "loki"
+    state: restarted
+
+- name: Provision Promtail service
+  copy:
+    src: files/promtail.service
+    dest: /etc/systemd/system/promtail.service
+    mode: '0644'
+
+- name: Enable Promtail service
+  systemd:
+    name: "promtail"
+    enabled: yes
+
+- name: Restart Promtail service
+  systemd:
+      name: "promtail"
+      state: restarted
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload

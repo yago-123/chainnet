@@ -6,4 +6,4 @@
   vars:
     prometheus_version: '2.47.0'
   roles:
-    - monitoring
+    - monitoring #grafana

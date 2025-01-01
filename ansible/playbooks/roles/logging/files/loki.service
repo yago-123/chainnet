@@ -1,0 +1,10 @@
+[Unit]
+Description=Loki service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/loki-linux-amd64 -config.file=/etc/loki/loki-config.yaml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

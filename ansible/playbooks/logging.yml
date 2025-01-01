@@ -1,7 +1,9 @@
 ---
-- name: Install Loki, Promtail, and Grafana as binaries
+- name: Install Loki and Promtail
   hosts: all
   become: yes
   vars:
     loki_version: "v2.8.0"
     promtail_version: "v2.8.0"
+  roles:
+    - logging #grafana
