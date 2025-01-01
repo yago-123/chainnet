@@ -3,5 +3,7 @@
   hosts: all
   become: true
   become_method: sudo
+  vars:
+    prometheus_version: '2.47.0'
   roles:
     - monitoring

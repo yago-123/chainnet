@@ -1,0 +1,82 @@
+---
+- name: Install dependencies (wget, unzip, curl)
+  apt:
+    name:
+      - wget
+      - unzip
+      - curl
+    state: present
+    update_cache: yes
+
+- name: Download and install Loki binary
+  get_url:
+    url: "https://github.com/grafana/loki/releases/download/{{ loki_version }}/loki-linux-amd64.zip"
+    dest: "/tmp/loki-linux-amd64.zip"
+    mode: '0644'
+
+- name: Unzip Loki binary
+  unarchive:
+    src: "/tmp/loki-linux-amd64.zip"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+
+- name: Make Loki executable
+  file:
+    path: "/usr/local/bin/loki-linux-amd64"
+    dest: "/usr/local/bin/loki"
+    state: link
+
+- name: Create Loki config directory
+  file:
+    path: "/etc/loki"
+    state: directory
+
+- name: Copy Loki config file
+  template:
+    src: templates/loki-config.yaml
+    dest: /etc/loki/loki-config.yaml
+
+- name: Download and install Promtail binary
+  get_url:
+    url: "https://github.com/grafana/loki/releases/download/{{ promtail_version }}/promtail-linux-amd64.zip"
+    dest: "/tmp/promtail-linux-amd64.zip"
+    mode: '0644'
+
+- name: Unzip Promtail binary
+  unarchive:
+    src: "/tmp/promtail-linux-amd64.zip"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+
+- name: Make Promtail executable
+  file:
+    path: "/usr/local/bin/promtail-linux-amd64"
+    dest: "/usr/local/bin/promtail"
+    state: link
+
+- name: Create Promtail config directory
+  file:
+    path: "/etc/promtail"
+    state: directory
+
+- name: Copy Promtail config file
+  template:
+    src: templates/promtail-config.yaml
+    dest: /etc/promtail/promtail-config.yaml
+
+- name: Start Loki service
+  systemd:
+    name: loki
+    enabled: yes
+    state: started
+    daemon_reload: yes
+    exec_start: /usr/local/bin/loki -config.file=/etc/loki/loki-config.yaml
+
+- name: Start Promtail service
+  systemd:
+    name: promtail
+    enabled: yes
+    state: started
+    daemon_reload: yes
+    exec_start: /usr/local/bin/promtail -config.file=/etc/promtail/promtail-config.yaml
+
