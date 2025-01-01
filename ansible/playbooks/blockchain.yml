@@ -1,8 +1,8 @@
-- name: Deploy application from Git
+---
+- name: Deploy Chainnet blockchain on the network
   hosts: nodes
-  become: yes
+  become: true  # Use sudo privileges
   become_method: sudo
-
   vars:
     app_dir: /var/chainnet
     config: 'default-config.yaml'
@@ -13,105 +13,5 @@
     go_code: /usr/local
     go_bin_path: "{{ go_code }}/go/bin"
     target: "{{ node }}"
-
-  tasks:
-    - name: Ensure apt is up to date and install necessary packages
-      apt:
-        update_cache: yes
-        name:
-          - make
-          - protobuf-compiler
-        state: present
-      tags:
-        - update
-        - packages
-
-    - name: Create application directory
-      file:
-        path: "{{ app_dir }}"
-        state: directory
-        mode: '0755'
-      tags:
-        - directory
-
-    - name: Clone the repository
-      git:
-        repo: "{{ repo_url }}"
-        dest: "{{ app_dir }}"
-        version: "{{ branch }}"
-        force: yes
-        update: yes
-      tags:
-        - git
-
-    - name: Download and install Go binary
-      block:
-        - name: Download Go binary
-          get_url:
-            url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
-            dest: "{{ go_tar }}"
-
-        - name: Extract Go binary
-          unarchive:
-            src: "{{ go_tar }}"
-            dest: "{{ go_code }}"
-            remote_src: yes
-      tags:
-        - go
-
-    - name: Install Go tools
-      block:
-        - name: Install protoc-gen-go and protoc-gen-go-grpc
-          shell: |
-            go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
-            go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-          environment:
-            PATH: "{{ go_bin_path }}"
-      tags:
-        - go-tools
-
-    - name: Build the application with make
-      shell: make {{ target }}
-      args:
-        chdir: "{{ app_dir }}"
-      environment:
-        PATH: "/usr/bin:{{ ansible_env.PATH }}:{{ go_bin_path }}:{{ ansible_env.HOME }}/go/bin"
-      tags:
-        - build
-
-    - name: Copy the configuration file
-      copy:
-        src: "{{ config }}"
-        dest: "{{ app_dir }}/config.yaml"
-        mode: '0644'
-
-    - name: Check if identity file path is defined
-      debug:
-        msg: "The identity file path is not defined for this host."
-      when: identity_path is not defined
-
-    - name: Copy identity file to the target machine
-      copy:
-        src: "{{ identity_path }}"
-        dest: "{{ app_dir }}/identity.pem"
-        mode: '0600'
-      when: identity_path is defined
-
-    - name: Template systemd service file
-      template:
-        src: "systemd-chain.service"
-        dest: "/etc/systemd/system/{{ target }}.service"
-        mode: '0644'
-
-    - name: Reload systemd daemon
-      command: systemctl daemon-reload
-
-    - name: Enable service
-      systemd:
-        name: "{{ target }}"
-        enabled: yes
-
-    - name: Restart service
-      systemd:
-        name: "{{ target }}"
-        state: restarted
+  roles:
+    - blockchain

@@ -149,12 +149,12 @@ $ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:80
 ### Remote nodes with Ansible
 Running the `chainnet-node` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy-chainnet.yml -e "target=node config=../config/examples/seed-node-config.yaml"
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/node-seed.yml ansible/playbooks/blockchain.yml
 ```
 
 Running the `chainnet-miner` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/hosts.ini ansible/deploy-chainnet.yml -e "target=miner config=../config/examples/seed-node-config.yaml"
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/miner-seed.yml ansible/playbooks/blockchain.yml
 ```
 
 ### Run in Kubernetes 

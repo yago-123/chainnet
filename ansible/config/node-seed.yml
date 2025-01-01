@@ -1,0 +1,2 @@
+target: node
+config: ../../config/examples/seed-node-config.yaml
