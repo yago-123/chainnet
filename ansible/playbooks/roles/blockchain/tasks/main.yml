@@ -67,6 +67,14 @@
     dest: "{{ app_dir }}/config.yaml"
     mode: '0644'
 
+- name: Create logging directory
+  file:
+    path: "/var/log/chainnet"
+    state: directory
+    mode: '0755'
+  tags:
+    - directory
+
 - name: Check if identity file path is defined
   debug:
     msg: "The identity file path is not defined for this host."
