@@ -1,6 +1,6 @@
 ---
 - name: Deploy Chainnet blockchain on the network
-  hosts: nodes
+  hosts: all
   become: true  # Use sudo privileges
   become_method: sudo
   vars:

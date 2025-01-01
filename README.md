@@ -178,7 +178,7 @@ $ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
 In order to provide monitoring Grafana, Prometheus and Nginx must be installed. You can do so by running the following 
 Ansible playbook: 
 ```bash
-$ ansible-playbook -i <specific-host> ansible/deploy-monitoring.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/monitoring.yml
 ```
 
 Once the monitoring stack is installed and you have configured the domain requested to the correct IP, you can access 

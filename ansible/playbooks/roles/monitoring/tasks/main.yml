@@ -1,20 +1,20 @@
-- name: Install Prometheus, Grafana, and Nginx
-  become: true
-  hosts: all
+---
+# Install dependencies
+- name: Install prerequisites
+  apt:
+    name:
+      - wget
+      - curl
+      - gnupg
+      - apt-transport-https
+      - software-properties-common
+      - nginx
+    state: present
+    update_cache: yes
 
-  tasks:
-    # Install dependencies
-    - name: Install prerequisites
-      apt:
-        name:
-          - wget
-          - curl
-          - gnupg
-          - apt-transport-https
-          - software-properties-common
-        state: present
-        update_cache: yes
-
+# Install and configure Prometheus
+- name: Install and configure Prometheus
+  block:
     - name: Download Prometheus binary
       get_url:
         url: "https://github.com/prometheus/prometheus/releases/download/v2.47.0/prometheus-2.47.0.linux-amd64.tar.gz"
@@ -28,28 +28,22 @@
 
     - name: Move Prometheus binaries
       command: mv /opt/prometheus-2.47.0.linux-amd64/prometheus /usr/local/bin/
-      args:
-        removes: /opt/prometheus-2.47.0.linux-amd64/prometheus
 
     - name: Move Prometheus related files
       copy:
         src: /opt/prometheus-2.47.0.linux-amd64/
         dest: /etc/prometheus/
         remote_src: yes
-      with_items:
-        - consoles
-        - console_libraries
-        - prometheus.yml
 
     - name: Provide Prometheus configuration
       template:
-        src: prometheus.yml.j2
+        src: templates/prometheus.yml.j2
         dest: /etc/prometheus/prometheus.yml
         mode: '0644'
 
     - name: Create Prometheus systemd service file
       template:
-        src: prom.service
+        src: files/prom.service
         dest: /etc/systemd/system/prometheus.service
         mode: '0644'
 
@@ -59,12 +53,15 @@
         enabled: true
         state: started
 
+# Install Grafana
+- name: Install and configure Grafana
+  block:
     - name: Add Grafana GPG key
-      ansible.builtin.apt_key:
+      get_url:
         url: https://packages.grafana.com/gpg.key
-        state: present
+        dest: /etc/apt/trusted.gpg.d/grafana.asc
+      become: true
 
-    # Install Grafana
     - name: Add Grafana repository
       apt_repository:
         repo: "deb https://packages.grafana.com/oss/deb stable main"
@@ -77,15 +74,13 @@
 
     - name: Configure Grafana service
       template:
-        src: grafana.ini.j2
+        src: templates/grafana.ini.j2
         dest: /etc/grafana/grafana.ini
-      # notify: Restart Grafana
 
     - name: Configure Grafana data source
       template:
-        src: data-source.yaml.j2
+        src: templates/data-source.yaml.j2
         dest: /etc/grafana/provisioning/datasources/data-source.yaml
-      # notify: Restart Grafana
 
     - name: Start Grafana service
       systemd:
@@ -93,7 +88,9 @@
         enabled: true
         state: started
 
-    # Install Nginx
+# Install and configure Nginx
+- name: Install and configure Nginx
+  block:
     - name: Install Nginx
       apt:
         name: nginx
@@ -107,7 +104,7 @@
 
     - name: Deploy Nginx configuration for Grafana
       template:
-        src: dashboard-nginx.j2
+        src: templates/dashboard-nginx.j2
         dest: /etc/nginx/sites-available/dashboard
       notify: Reload Nginx
 
@@ -118,16 +115,4 @@
         state: link
         force: yes
 
-    # Remove the default Nginx configuration (optional)
-    - name: Remove default Nginx configuration
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
-      notify: Reload Nginx
 
-  handlers:
-    # Reload Nginx to apply changes
-    - name: Reload Nginx
-      systemd:
-        name: nginx
-        state: reloaded
