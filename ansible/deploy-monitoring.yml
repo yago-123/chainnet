@@ -83,7 +83,7 @@
 
     - name: Configure Grafana data source
       template:
-        src: data-source.yaml
+        src: data-source.yaml.j2
         dest: /etc/grafana/provisioning/datasources/data-source.yaml
       # notify: Restart Grafana
 
