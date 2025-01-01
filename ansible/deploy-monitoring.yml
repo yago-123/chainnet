@@ -41,6 +41,12 @@
         - console_libraries
         - prometheus.yml
 
+    - name: Provide Prometheus configuration
+      template:
+        src: prometheus.yml.j2
+        dest: /etc/prometheus/prometheus.yml
+        mode: '0644'
+
     - name: Create Prometheus systemd service file
       template:
         src: prom.service
@@ -68,6 +74,12 @@
       apt:
         name: grafana
         state: present
+
+    - name: Configure Grafana service
+      template:
+        src: grafana.ini.j2
+        dest: /etc/grafana/grafana.ini
+      # notify: Restart Grafana
 
     - name: Start Grafana service
       systemd:
