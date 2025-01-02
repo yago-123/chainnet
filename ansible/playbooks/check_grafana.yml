@@ -1,0 +1,11 @@
+---
+- name: Check if Grafana is running
+  ansible.builtin.systemd:
+    name: grafana-server
+    state: started
+  register: grafana_status
+  ignore_errors: true
+
+- name: Set flag to indicate if Grafana is not running
+  set_fact:
+    grafana_installed: "{{ grafana_status.failed }}"

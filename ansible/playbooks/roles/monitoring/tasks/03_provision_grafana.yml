@@ -1,0 +1,10 @@
+---
+- name: Configure Grafana data source
+  template:
+    src: files/prometheus-source.yaml
+    dest: /etc/grafana/provisioning/datasources/prometheus-source.yaml
+
+- name: Restart Grafana service
+  systemd:
+    name: grafana-server
+    state: restarted

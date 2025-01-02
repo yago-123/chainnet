@@ -20,11 +20,6 @@
     src: templates/grafana.ini.j2
     dest: /etc/grafana/grafana.ini
 
-- name: Configure Grafana data source
-  template:
-    src: files/prometheus-source.yaml
-    dest: /etc/grafana/provisioning/datasources/prometheus-source.yaml
-
 - name: Start Grafana service
   systemd:
     name: grafana-server

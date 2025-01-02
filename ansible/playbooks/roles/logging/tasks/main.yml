@@ -1,92 +1,12 @@
 ---
-- name: Install dependencies (wget, unzip, curl)
-  apt:
-    name:
-      - wget
-      - unzip
-      - curl
-    state: present
-    update_cache: yes
+- name: Install dependencies
+  include_tasks: 01_install_dependencies.yml
 
-- name: Download and install Loki binary
-  get_url:
-    url: "https://github.com/grafana/loki/releases/download/{{ loki_version }}/loki-linux-amd64.zip"
-    dest: "/tmp/loki-linux-amd64.zip"
-    mode: '0644'
+- name: Install and configure Loki
+  include_tasks: 02_install_loki.yml
 
-- name: Unzip Loki binary
-  unarchive:
-    src: "/tmp/loki-linux-amd64.zip"
-    dest: "/usr/local/bin/"
-    remote_src: yes
+- name: Install and configure Promtail
+  include_tasks: 03_install_promtail.yml
 
-- name: Create Loki config directory
-  file:
-    path: "/etc/loki"
-    state: directory
-
-- name: Copy Loki config file
-  template:
-    src: files/loki-config.yaml
-    dest: /etc/loki/loki-config.yaml
-
-- name: Download and install Promtail binary
-  get_url:
-    url: "https://github.com/grafana/loki/releases/download/{{ promtail_version }}/promtail-linux-amd64.zip"
-    dest: "/tmp/promtail-linux-amd64.zip"
-    mode: '0644'
-
-- name: Unzip Promtail binary
-  unarchive:
-    src: "/tmp/promtail-linux-amd64.zip"
-    dest: "/usr/local/bin/"
-    remote_src: yes
-
-- name: Create Promtail config directory
-  file:
-    path: "/etc/promtail"
-    state: directory
-
-- name: Copy Promtail config file
-  template:
-    src: files/promtail-config.yaml
-    dest: /etc/promtail/promtail-config.yaml
-
-- name: Provision Loki service
-  copy:
-    src: files/loki.service
-    dest: /etc/systemd/system/loki.service
-    mode: '0644'
-
-- name: Reload systemd daemon
-  command: systemctl daemon-reload
-
-- name: Enable Loki service
-  systemd:
-    name: "loki"
-    enabled: yes
-
-- name: Restart Loki service
-  systemd:
-    name: "loki"
-    state: restarted
-
-- name: Provision Promtail service
-  copy:
-    src: files/promtail.service
-    dest: /etc/systemd/system/promtail.service
-    mode: '0644'
-
-- name: Reload systemd daemon
-  command: systemctl daemon-reload
-
-- name: Enable Promtail service
-  systemd:
-    name: "promtail"
-    enabled: yes
-
-- name: Restart Promtail service
-  systemd:
-      name: "promtail"
-      state: restarted
-
+- name: Provision Grafana files for Loki
+  include_tasks: 04_provision_grafana.yml

@@ -1,4 +1,6 @@
 ---
-- name: Do nothing task
-  debug:
-    msg: "This task does nothing"
+- name: Install Grafana
+  include_tasks: 01_install_grafana.yml
+
+- name: Install reverse proxy via Nginx
+  include_tasks: 02_install_nginx.yml

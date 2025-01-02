@@ -1,0 +1,10 @@
+---
+- name: Configure Grafana data source
+  template:
+    src: files/loki-source.yaml
+    dest: /etc/grafana/provisioning/datasources/loki-source.yaml
+
+- name: Restart Grafana service
+  systemd:
+    name: grafana-server
+    state: restarted

@@ -1,10 +1,19 @@
 ---
-- name: Install Prometheus, Grafana, and Nginx
+- name: Setup Chainnet monitoring
   hosts: all
   become: true
   become_method: sudo
   vars:
     prometheus_version: '2.47.0'
-  roles:
-    - grafana
-    - monitoring
+  tasks:
+    - name: Check if Grafana is running
+      import_tasks: check_grafana.yml
+
+    - name: Install and start Grafana if not running
+      include_role:
+        name: grafana
+      when: grafana_installed
+
+    - name: Set up monitoring
+      include_role:
+        name: monitoring

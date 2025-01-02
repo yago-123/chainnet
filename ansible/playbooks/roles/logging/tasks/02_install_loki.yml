@@ -1,0 +1,41 @@
+---
+- name: Download and install Loki binary
+  get_url:
+    url: "https://github.com/grafana/loki/releases/download/{{ loki_version }}/loki-linux-amd64.zip"
+    dest: "/tmp/loki-linux-amd64.zip"
+    mode: '0644'
+
+- name: Unzip Loki binary
+  unarchive:
+    src: "/tmp/loki-linux-amd64.zip"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+
+- name: Create Loki config directory
+  file:
+    path: "/etc/loki"
+    state: directory
+
+- name: Copy Loki config file
+  template:
+    src: files/loki-config.yaml
+    dest: /etc/loki/loki-config.yaml
+
+- name: Provision Loki service
+  copy:
+    src: files/loki.service
+    dest: /etc/systemd/system/loki.service
+    mode: '0644'
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
+- name: Enable Loki service
+  systemd:
+    name: "loki"
+    enabled: yes
+
+- name: Restart Loki service
+  systemd:
+    name: "loki"
+    state: restarted

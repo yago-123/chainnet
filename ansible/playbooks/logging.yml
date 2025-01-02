@@ -1,10 +1,20 @@
 ---
 - name: Install Loki and Promtail
   hosts: all
-  become: yes
+  become: true
+  become_method: sudo
   vars:
     loki_version: "v2.8.0"
     promtail_version: "v2.8.0"
-  roles:
-    - grafana
-    - logging
+  tasks:
+    - name: Check if Grafana is running
+      import_tasks: check_grafana.yml
+
+    - name: Install and start Grafana if not running
+      include_role:
+        name: grafana
+      when: grafana_installed
+
+    - name: Set up monitoring
+      include_role:
+        name: logging
