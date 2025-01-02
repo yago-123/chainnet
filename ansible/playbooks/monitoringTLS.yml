@@ -2,7 +2,7 @@
   become: yes
   hosts: all
   vars:
-    certificate_domain: dashboard.chainnet.yago.ninja
+    domain: dashboard.chainnet.yago.ninja
     certificate_email: me@yago.ninja
   roles:
     - monitoringTLS

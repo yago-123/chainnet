@@ -6,7 +6,7 @@
   vars:
     loki_version: "v2.8.0"
     promtail_version: "v2.8.0"
-    certificate_domain: "dashboard.chainnet.yago.ninja"
+    domain: "dashboard.chainnet.yago.ninja"
   tasks:
     - name: Check if Grafana is running
       import_tasks: check_grafana.yml

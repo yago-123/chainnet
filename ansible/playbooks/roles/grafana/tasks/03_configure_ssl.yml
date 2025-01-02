@@ -13,6 +13,6 @@
 
 - name: Generate SSL certificate
   command: >
-    certbot --nginx -d {{ certificate_domain }} --non-interactive --agree-tos --email {{ certificate_email }}
+    certbot --nginx -d {{ domain }} --non-interactive --agree-tos --email {{ certificate_email }}
   args:
-    creates: /etc/letsencrypt/live/{{ certificate_domain }}/fullchain.pem
+    creates: /etc/letsencrypt/live/{{ domain }}/fullchain.pem

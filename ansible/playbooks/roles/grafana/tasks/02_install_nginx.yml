@@ -6,7 +6,7 @@
 
 - name: Check if the certificate file exists
   stat:
-    path: "/etc/letsencrypt/live/{{ certificate_domain }}/fullchain.pem"
+    path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
   register: cert_file_stat
 
 - name: Copy Nginx configuration for SSL reverse proxy if the certificate file exists

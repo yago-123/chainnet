@@ -192,7 +192,7 @@ the Grafana dashboard at `URL` and admin credentials.
 If you need to enable HTTPS, you can use `Certbot` to generate the keys and certificates for the domain via the following 
 playbook: 
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini -l seed-1.chainnet.yago.ninja ansible/playbooks/monitoringTLS.yml -e "certificate_domain=dashboard.chainnet.yago.ninja certificate_email=me@yago.ninja"
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini -l seed-1.chainnet.yago.ninja ansible/playbooks/monitoringTLS.yml -e "domain=dashboard.chainnet.yago.ninja certificate_email=me@yago.ninja"
 ```
 
 ## Architecture

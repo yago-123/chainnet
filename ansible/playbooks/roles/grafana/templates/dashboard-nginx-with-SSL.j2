@@ -1,7 +1,7 @@
 # HTTP server block (for redirecting HTTP to HTTPS)
 server {
     listen 80;
-    server_name {{ certificate_domain }};
+    server_name {{ domain }};
 
     # Redirect all HTTP requests to HTTPS
     return 301 https://$host$request_uri;
@@ -10,11 +10,11 @@ server {
 # HTTPS server block
 server {
     listen 443 ssl;
-    server_name {{ certificate_domain }};
+    server_name {{ domain }};
 
     # SSL certificate and key paths (Let's Encrypt)
-    ssl_certificate /etc/letsencrypt/live/{{ certificate_domain }}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/{{ certificate_domain }}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/{{ domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem;
 
     # Recommended SSL settings (optional, but recommended)
     #ssl_protocols TLSv1.2 TLSv1.3;

@@ -4,6 +4,6 @@
   become: true  # Use sudo privileges
   become_method: sudo
   vars:
-    certificate_domain: dashboard.chainnet.yago.ninja
+    domain: dashboard.chainnet.yago.ninja
   roles:
     - grafana
