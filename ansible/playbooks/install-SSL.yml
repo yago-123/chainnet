@@ -1,5 +1,5 @@
 ---
-- name: Deploy Grafana and Nginx
+- name: Install SSL certificates for the dashboard server
   hosts: all
   become: true
   become_method: sudo
