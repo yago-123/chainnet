@@ -6,4 +6,5 @@
     loki_version: "v2.8.0"
     promtail_version: "v2.8.0"
   roles:
-    - logging #grafana
+    - grafana
+    - logging

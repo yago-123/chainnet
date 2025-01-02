@@ -58,6 +58,9 @@
     dest: /etc/systemd/system/loki.service
     mode: '0644'
 
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
 - name: Enable Loki service
   systemd:
     name: "loki"
@@ -74,6 +77,9 @@
     dest: /etc/systemd/system/promtail.service
     mode: '0644'
 
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
 - name: Enable Promtail service
   systemd:
     name: "promtail"
@@ -84,5 +90,3 @@
       name: "promtail"
       state: restarted
 
-- name: Reload systemd daemon
-  command: systemctl daemon-reload

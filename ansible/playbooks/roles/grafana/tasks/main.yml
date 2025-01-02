@@ -1,0 +1,4 @@
+---
+- name: Do nothing task
+  debug:
+    msg: "This task does nothing"

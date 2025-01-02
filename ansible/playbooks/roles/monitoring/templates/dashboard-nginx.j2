@@ -1,12 +1,35 @@
+# HTTP server block (for redirecting HTTP to HTTPS)
 server {
     listen 80;
     server_name dashboard.chainnet.yago.ninja;
 
+    # Redirect all HTTP requests to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS server block
+server {
+    listen 443 ssl;
+    server_name dashboard.chainnet.yago.ninja;
+
+    # SSL certificate and key paths (Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/dashboard.chainnet.yago.ninja/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dashboard.chainnet.yago.ninja/privkey.pem;
+
+    # Recommended SSL settings (optional, but recommended)
+    #ssl_protocols TLSv1.2 TLSv1.3;
+    #ssl_ciphers 'TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384';
+    #ssl_prefer_server_ciphers on;
+    # ssl_dhparam /etc/ssl/certs/dhparam.pem;
+
+    # Your proxy settings
     location / {
         proxy_pass http://localhost:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
     }
 }
