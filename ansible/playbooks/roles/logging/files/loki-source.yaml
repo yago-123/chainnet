@@ -4,7 +4,7 @@ datasources:
     type: loki
     access: proxy
     url: http://127.0.0.1:3100
-    isDefault: true
+    isDefault: false
     jsonData:
       maxLines: 1000
       timeInterval: 60s

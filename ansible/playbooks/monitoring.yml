@@ -5,6 +5,7 @@
   become_method: sudo
   vars:
     prometheus_version: '2.47.0'
+    certificate_domain: 'dashboard.chainnet.yago.ninja'
   tasks:
     - name: Check if Grafana is running
       import_tasks: check_grafana.yml

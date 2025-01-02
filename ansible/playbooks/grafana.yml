@@ -1,0 +1,9 @@
+---
+- name: Deploy Grafana and Nginx
+  hosts: all
+  become: true  # Use sudo privileges
+  become_method: sudo
+  vars:
+    certificate_domain: dashboard.chainnet.yago.ninja
+  roles:
+    - grafana

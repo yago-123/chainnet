@@ -4,6 +4,30 @@
     src: files/loki-source.yaml
     dest: /etc/grafana/provisioning/datasources/loki-source.yaml
 
+- name: Ensure the provisioning directory exists
+  file:
+    path: /etc/grafana/provisioning/dashboards/custom
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+
+- name: Copy the dashboard provisioning YAML
+  copy:
+    src: files/dashboard_provision_logging.yml
+    dest: /etc/grafana/provisioning/dashboards/dashboard_provision_logging.yml
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Copy the dashboard JSON file
+  copy:
+    src: files/dashboard-logging.json
+    dest: /etc/grafana/provisioning/dashboards/custom/dashboard-logging.json
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
 - name: Restart Grafana service
   systemd:
     name: grafana-server

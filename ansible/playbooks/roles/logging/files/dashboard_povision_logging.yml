@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: 'Logging Dashboard'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/provisioning/dashboards/custom/dashboard-logging.json
