@@ -10,6 +10,7 @@
     enabled: true
     state: started
 
+# set HTTPS config for reverse proxy if TLS exist
 - name: Deploy Nginx configuration for Grafana
   template:
     src: templates/dashboard-nginx.j2
