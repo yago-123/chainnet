@@ -1,7 +1,7 @@
 ---
 - name: Download Prometheus binary
   get_url:
-    url: "https://github.com/prometheus/prometheus/releases/download/v2.47.0/prometheus-2.47.0.linux-amd64.tar.gz"
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
     dest: /tmp/prometheus.tar.gz
 
 - name: Extract Prometheus binary
@@ -11,11 +11,11 @@
     remote_src: yes
 
 - name: Move Prometheus binaries
-  command: mv /opt/prometheus-2.47.0.linux-amd64/prometheus /usr/local/bin/
+  command: mv /opt/prometheus-{{ prometheus_version }}.linux-amd64/prometheus /usr/local/bin/
 
 - name: Move Prometheus related files
   copy:
-    src: /opt/prometheus-2.47.0.linux-amd64/
+    src: /opt/prometheus-{{ prometheus_version }}.linux-amd64/
     dest: /etc/prometheus/
     remote_src: yes
 

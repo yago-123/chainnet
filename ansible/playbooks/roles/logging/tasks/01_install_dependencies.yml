@@ -1,0 +1,9 @@
+---
+- name: Install dependencies (wget, unzip, curl)
+  apt:
+    name:
+      - wget
+      - unzip
+      - curl
+    state: present
+    update_cache: yes

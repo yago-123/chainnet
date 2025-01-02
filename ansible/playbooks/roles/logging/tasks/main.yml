@@ -1,0 +1,12 @@
+---
+- name: Install dependencies
+  include_tasks: 01_install_dependencies.yml
+
+- name: Install and configure Loki
+  include_tasks: 02_install_loki.yml
+
+- name: Install and configure Promtail
+  include_tasks: 03_install_promtail.yml
+
+- name: Provision Grafana files for Loki
+  include_tasks: 04_provision_grafana.yml

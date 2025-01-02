@@ -1,0 +1,33 @@
+---
+- name: Install SSL certificates for the dashboard server
+  hosts: all
+  become: true
+  become_method: sudo
+  vars:
+    domain: dashboard.chainnet.yago.ninja
+    certificate_email: me@yago.ninja
+  tasks:
+  - name: Check if the certificate file exists
+    stat:
+      path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+    register: cert_file_stat
+
+  - name: Ensure package lists are updated
+    apt:
+      update_cache: yes
+    when: not cert_file_stat.stat.exists
+
+  - name: Install Certbot and the Nginx plugin
+    apt:
+      name:
+        - certbot
+        - python3-certbot-nginx
+      state: present
+    when: not cert_file_stat.stat.exists
+
+  - name: Generate SSL certificate
+    command: >
+      certbot --nginx -d {{ domain }} --non-interactive --agree-tos --email {{ certificate_email }}
+    args:
+      creates: /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+    when: not cert_file_stat.stat.exists

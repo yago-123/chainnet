@@ -1,0 +1,40 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Check if the certificate file exists
+  stat:
+    path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+  register: cert_file_stat
+
+- name: Copy Nginx configuration for SSL reverse proxy if the certificate file exists
+  template:
+    src: "templates/dashboard-nginx-with-SSL.j2"
+    dest: "/etc/nginx/sites-available/dashboard"
+  when: cert_file_stat.stat.exists
+
+- name: Copy Nginx configuration without SSL reverse proxy if the certificate file does not exist
+  template:
+    src: "templates/dashboard-nginx.j2"
+    dest: "/etc/nginx/sites-available/dashboard"
+  when: not cert_file_stat.stat.exists
+
+- name: Start Nginx service
+  systemd:
+    name: nginx
+    enabled: true
+    state: started
+
+- name: Enable the dashboard site
+  file:
+    src: /etc/nginx/sites-available/dashboard
+    dest: /etc/nginx/sites-enabled/dashboard
+    state: link
+    force: yes
+
+- name: Reload Nginx
+  systemd:
+    name: nginx
+    state: reloaded

@@ -20,11 +20,6 @@
     src: templates/grafana.ini.j2
     dest: /etc/grafana/grafana.ini
 
-- name: Configure Grafana data source
-  template:
-    src: templates/data-source.yaml.j2
-    dest: /etc/grafana/provisioning/datasources/data-source.yaml
-
 - name: Start Grafana service
   systemd:
     name: grafana-server

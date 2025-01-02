@@ -5,6 +5,8 @@ After=network.target
 [Service]
 ExecStart={{ app_dir }}/bin/chainnet-{{ target }} --config {{ app_dir }}/config.yaml
 Restart=always
+StandardOutput=append:/var/log/chainnet/service.log
+StandardError=append:/var/log/chainnet/service.err.log
 
 [Install]
 WantedBy=multi-user.target

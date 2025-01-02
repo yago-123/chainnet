@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name dashboard.chainnet.yago.ninja;
+    server_name {{ domain }};
 
     location / {
         proxy_pass http://localhost:3000;
