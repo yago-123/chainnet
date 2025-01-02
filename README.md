@@ -146,16 +146,41 @@ $ cp config/examples/docker-config.yaml /path/to/data/config.yaml
 $ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-miner:latest
 ```
 
-### Remote nodes with Ansible
-Running the `chainnet-node` on a remote node:
+### Remote Nodes with Ansible
+To run the `chainnet-node` on a remote node:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/node-seed.yml ansible/playbooks/blockchain.yml
 ```
 
-Running the `chainnet-miner` on a remote node:
+To run the `chainnet-miner` on a remote node:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/miner-seed.yml ansible/playbooks/blockchain.yml
 ```
+
+After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this, 
+you must first install Grafana:
+```bash
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/grafana.yml
+```
+
+Once Grafana is installed, you can configure your domain or access the Grafana instance via `http://localhost:3000` and 
+enter the new password (default credentials: `admin`/`admin`). If you need to install HTTPS certificates for the domain, 
+you can run `Certbot` using the following playbook and then rerun the Grafana playbook to ensure the reverse proxy 
+updates the HTTPS endpoint:
+```bash
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/install-SSL.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/grafana.yml
+```
+
+Once the chain is running and Grafana is up and accessible, you can install monitoring and/or logging via the following
+playbooks:
+```bash
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/monitoring.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/logging.yml
+```
+
+There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
+loading real data.
 
 ### Run in Kubernetes 
 Deploy the helm chart:
