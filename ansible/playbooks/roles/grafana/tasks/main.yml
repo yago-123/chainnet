@@ -4,6 +4,3 @@
 
 - name: Install reverse proxy via Nginx
   include_tasks: 02_install_nginx.yml
-
-#- name: Configure SSL for reverse proxy
-#  include_tasks: 03_configure_ssl.yml
