@@ -33,12 +33,12 @@
     - name: Download Go binary
       get_url:
         url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
-        dest: "{{ go_tar }}"
+        dest: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
 
     - name: Extract Go binary
       unarchive:
-        src: "{{ go_tar }}"
-        dest: "{{ go_code }}"
+        src: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
+        dest: "/usr/local"
         remote_src: yes
   tags:
     - go
@@ -48,7 +48,7 @@
     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
   environment:
-    PATH: "{{ go_bin_path }}"
+    PATH: "/usr/local/go/bin"
   tags:
     - go-tools
 
@@ -57,7 +57,7 @@
   args:
     chdir: "{{ app_dir }}"
   environment:
-    PATH: "/usr/bin:{{ ansible_env.PATH }}:{{ go_bin_path }}:{{ ansible_env.HOME }}/go/bin"
+    PATH: "/usr/bin:{{ ansible_env.PATH }}:/usr/local/go/bin:{{ ansible_env.HOME }}/go/bin"
   tags:
     - build
 

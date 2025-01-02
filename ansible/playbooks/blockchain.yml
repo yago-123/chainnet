@@ -9,9 +9,6 @@
     repo_url: 'https://github.com/yago-123/chainnet.git'
     branch: 'add-Loki-logging'
     go_version: '1.23.0'
-    go_tar: "/tmp/go{{ go_version }}.linux-amd64.tar.gz"
-    go_code: /usr/local
-    go_bin_path: "{{ go_code }}/go/bin"
     target: "{{ node }}"
   roles:
     - blockchain
