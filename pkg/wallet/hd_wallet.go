@@ -1,8 +1,6 @@
 package wallet
 
 import (
-	"crypto/hmac"
-	"crypto/sha512"
 	"fmt"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -50,10 +48,10 @@ func NewHDWalletWithKeys(
 	publicKey []byte,
 ) (*HDWallet, error) {
 	// this represents a variant of BIP-44 by skipping BIP-39
-	h := hmac.New(sha512.New, []byte(HMACKeyStandard))
-	h.Write(privateKey)
-
-	masterInfo := h.Sum(nil)
+	masterInfo, err := util_crypto.CalculateHMACSha512([]byte(HMACKeyStandard), privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("error calculating HMAC-SHA512 for master private key: %v", err)
+	}
 
 	masterPrivateKey := masterInfo[:32]
 	masterChainCode := masterInfo[32:]
@@ -100,25 +98,27 @@ func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index ui
 	data = append(data, byte(index>>24), byte(index>>16), byte(index>>8), byte(index))
 
 	// apply initial hmac
-	h := hmac.New(sha512.New, chainCode)
-	h.Write(data)
-	hmacOutput := h.Sum(nil)
+	hmacOutput, err := util_crypto.CalculateHMACSha512(chainCode, data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error calculating HMAC-SHA512 while deriving child key: %v", err)
+	}
 
-	// split the result into two 256-bit parts (left and right)
 	childPrivateKey := hmacOutput[:32]
 	childChainCode := hmacOutput[32:]
 
-	// compute the child private key (using elliptic curve addition)
+	// transform keys into big.Int to perform arithmetic operations
 	childPrivateKeyInt := new(big.Int).SetBytes(childPrivateKey)
 	masterPrivateKeyInt := new(big.Int).SetBytes(privateKey)
 
 	// add the child key to the master key (mod curve order)
 	childPrivateKeyInt.Add(childPrivateKeyInt, masterPrivateKeyInt)
+
+	// ensure key is within valid range for elliptic curve operations
 	curveOrder := btcec.S256().N
 	childPrivateKeyInt.Mod(childPrivateKeyInt, curveOrder)
-
 	// if the result is >= curve order, re-derive the key (this should not happen often)
 	if childPrivateKeyInt.Cmp(curveOrder) >= 0 {
+		// todo(): retrieve custom error
 		return nil, nil, fmt.Errorf("child private key is invalid")
 	}
 

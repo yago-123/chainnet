@@ -2,6 +2,8 @@ package utilcrypto
 
 import (
 	"crypto/ecdsa"
+	"crypto/hmac"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -103,6 +105,16 @@ func ReadECDSAPemPublicKeyBytes(path string) ([]byte, error) {
 
 	// return the raw DER encoded public key bytes
 	return block.Bytes, nil
+}
+
+func CalculateHMACSha512(key []byte, data []byte) ([]byte, error) {
+	h := hmac.New(sha512.New, key)
+	_, err := h.Write(data)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error writing data to HMAC: %w", err)
+	}
+
+	return h.Sum(nil), nil
 }
 
 func ReadFile(path string) ([]byte, error) {
