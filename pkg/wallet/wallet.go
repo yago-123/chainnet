@@ -279,7 +279,7 @@ func generateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBal
 	txOutput := []kernel.TxOutput{}
 	txOutput = append(txOutput, kernel.NewOutput(targetAmount, scriptType, receiver))
 
-	// add output corresponding to the spare change
+	// add output corresponding to the spare changeType
 	if change > 0 {
 		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, scriptType, changeReceiver))
 	}

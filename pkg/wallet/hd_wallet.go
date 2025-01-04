@@ -13,24 +13,21 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 )
 
-const (
-	HMACKeyStandard    = "ChainNet seed"
-	HardenedIndex      = 0x80000000
-	HardenedKeyPrefix  = 0x00
-	HDPurposeBIP44     = 44
-	HDChainNetCoinType = 0
-
-	GapLimit = 5
-)
-
 // HDWallet represents a Hierarchical Deterministic wallet
 type HDWallet struct {
 	version    byte
 	PrivateKey []byte // should be replaced by seed when BIP-39 is implemented
 
-	masterPrivKey, masterPubKey, masterChainCode []byte
+	masterPrivKey, masterPubKey []byte
 
-	// walletIndex represents the index of the wallet in the HD wallet
+	// masterChainCode is a 32-byte value used in the derivation of child keys. Prevents
+	// an attacker from easily reconstructing the master private key from a child key or
+	// from seeing the private key in the derivation process
+	masterChainCode []byte
+
+	accountIndex uint32
+	changeIndex  uint32
+	// walletIndex represents the current index of the wallets generated via HD wallet
 	walletIndex uint32
 
 	validator consensus.LightValidator
@@ -113,17 +110,46 @@ func (hd *HDWallet) CreateNewWallet() (*Wallet, error) {
 	)
 }
 
+func (hd *HDWallet) GetNewAccount() uint {
+	return 0
+}
+
+func (hd *HDWallet) GetNewAddress(accountIndex uint) {
+
+}
+
+func (hd *HDWallet) GetAccount(accountIndex uint) {
+
+}
+
+func (hd *HDWallet) GetAddress(accountIndex uint, addressIndex uint) {
+
+}
+
+func (hd *HDWallet) ListAccounts() {
+
+}
+
+func (hd *HDWallet) reconstructHDWalletHistory() {
+
+}
+
 // generateChildKey generates a child key based on the provided arguments
-func (hd *HDWallet) generateChildKey(purpose uint32, coinType uint32, account uint32, change uint32, index uint32) ([]byte, []byte, error) {
+func (hd *HDWallet) generateChildKey(purpose uint32, account uint32, change changeType, index uint32) ([]byte, []byte, error) {
 	var err error
 
-	// derive the child key step by step, following the BIP44 path
-	indexes := []uint32{purpose, coinType, account, change, index}
+	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index
+	// where ' denotes hardened keys. The first three levels require hardened key by BIP44, the last two are variable
+	// and don't expose sensitive data
+	indexes := []uint32{HardenedIndex + purpose, HardenedIndex + uint32(TypeChainNet), HardenedIndex + account, uint32(change), index}
 	derivedPrivateKey, derivedChainCode := hd.masterPrivKey, hd.masterChainCode
 
 	// for each index in the derivation path, derive the child key
 	for _, idx := range indexes {
-		derivedPrivateKey, derivedChainCode, err = hd.deriveChildKey(derivedPrivateKey, derivedChainCode, idx+HardenedIndex)
+		// todo(): this implementation is not 100% correct, one of the reasons for hardened vs. non-hardened is the fact
+		// todo(): that there is not a need of exposing the private key every time a child key is derived. In this case
+		// todo(): we use the private key in all instances
+		derivedPrivateKey, derivedChainCode, err = hd.deriveChildKey(derivedPrivateKey, derivedChainCode, idx)
 		if err != nil {
 			return nil, nil, err
 		}
