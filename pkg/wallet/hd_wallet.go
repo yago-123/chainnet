@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	HMACKeyStandard = "ChainNet seed"
-	HardenedIndex   = 0x80000000
+	HMACKeyStandard   = "ChainNet seed"
+	HardenedIndex     = 0x80000000
+	HardenedKeyPrefix = 0x00
 )
 
 // HDWallet represents a Hierarchical Deterministic wallet
@@ -74,15 +75,41 @@ func NewHDWalletWithKeys(
 	}, nil
 }
 
+// GenerateChildKey generates a child key based on the provided arguments
+func (hd *HDWallet) GenerateChildKey(purpose uint32, coinType uint32, account uint32, change uint32, index uint32) ([]byte, []byte, error) {
+	var err error
+
+	// derive the child key step by step, following the BIP44 path
+	indexes := []uint32{purpose, coinType, account, change, index}
+	derivedPrivateKey, derivedChainCode := hd.masterPrivKey, hd.masterChainCode
+
+	// for each index in the derivation path, derive the child key
+	for _, idx := range indexes {
+		derivedPrivateKey, derivedChainCode, err = hd.deriveChildKey(derivedPrivateKey, derivedChainCode, idx+HardenedIndex)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// return the final child private key and chain code
+	return derivedPrivateKey, derivedChainCode, nil
+}
+
 // deriveChildKey derives a child key based on a master private key, master chain code and index
 func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index uint32) ([]byte, []byte, error) {
 	// prepare the data for HMAC
 	var data []byte
+
+	// if corresponds to a hardened key, prepend 0x00 to the master private key
 	if index >= HardenedIndex {
 		// hardened key, prepend 0x00 to the master private key
-		data = append([]byte{0x00}, privateKey...)
-	} else {
+		data = append([]byte{HardenedKeyPrefix}, privateKey...)
+	}
+
+	// if corresponds to a non-hardened key, prepend the master public key
+	if index < HardenedIndex {
 		// non-hardened key, prepend the master public key (public key is derived from private key)
+		// todo(): may be worth to just pass the public key as argument
 		privKey, err := util_crypto.ConvertBytesToECDSAPriv(privateKey)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error converting private key: %w", err)
@@ -92,9 +119,9 @@ func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index ui
 		if err != nil {
 			return nil, nil, fmt.Errorf("error deriving public key: %w", err)
 		}
-		data = append([]byte{0x00}, pubKey...)
+		data = pubKey
 	}
-	// append index (big-endian)
+	// serialize index value as a 4-byte big-endian representation in byte array form
 	data = append(data, byte(index>>24), byte(index>>16), byte(index>>8), byte(index))
 
 	// apply initial hmac
@@ -124,24 +151,4 @@ func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index ui
 
 	// return the child private key (as bytes) and child chain code
 	return childPrivateKeyInt.Bytes(), childChainCode, nil
-}
-
-// GenerateChildKey generates a child key based on the provided arguments
-func (hd *HDWallet) GenerateChildKey(purpose uint32, coinType uint32, account uint32, change uint32, index uint32) ([]byte, []byte, error) {
-	var err error
-
-	// derive the child key step by step, following the BIP44 path
-	indexes := []uint32{purpose, coinType, account, change, index}
-	derivedPrivateKey, derivedChainCode := hd.masterPrivKey, hd.masterChainCode
-
-	// for each index in the derivation path, derive the child key
-	for _, idx := range indexes {
-		derivedPrivateKey, derivedChainCode, err = hd.deriveChildKey(derivedPrivateKey, derivedChainCode, idx+HardenedIndex)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	// return the final child private key and chain code
-	return derivedPrivateKey, derivedChainCode, nil
 }
