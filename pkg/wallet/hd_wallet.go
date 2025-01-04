@@ -14,9 +14,13 @@ import (
 )
 
 const (
-	HMACKeyStandard   = "ChainNet seed"
-	HardenedIndex     = 0x80000000
-	HardenedKeyPrefix = 0x00
+	HMACKeyStandard    = "ChainNet seed"
+	HardenedIndex      = 0x80000000
+	HardenedKeyPrefix  = 0x00
+	HDPurposeBIP44     = 44
+	HDChainNetCoinType = 0
+
+	GapLimit = 5
 )
 
 // HDWallet represents a Hierarchical Deterministic wallet
@@ -25,6 +29,9 @@ type HDWallet struct {
 	PrivateKey []byte // should be replaced by seed when BIP-39 is implemented
 
 	masterPrivKey, masterPubKey, masterChainCode []byte
+
+	// walletIndex represents the index of the wallet in the HD wallet
+	walletIndex uint32
 
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
@@ -36,6 +43,10 @@ type HDWallet struct {
 	consensusHasher hash.Hashing
 
 	cfg *config.Config
+}
+
+func NewHDWallet() *HDWallet {
+	return &HDWallet{}
 }
 
 func NewHDWalletWithKeys(
@@ -61,6 +72,7 @@ func NewHDWalletWithKeys(
 		return nil, fmt.Errorf("error deriving public key from private key: %v", err)
 	}
 
+	// todo(): find out how many wallets are already created and update walletIndex
 	return &HDWallet{
 		cfg:             cfg,
 		version:         version,
@@ -68,6 +80,7 @@ func NewHDWalletWithKeys(
 		masterPrivKey:   masterPrivateKey,
 		masterPubKey:    masterPubKey,
 		masterChainCode: masterChainCode,
+		walletIndex:     0,
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
@@ -75,8 +88,33 @@ func NewHDWalletWithKeys(
 	}, nil
 }
 
-// GenerateChildKey generates a child key based on the provided arguments
-func (hd *HDWallet) GenerateChildKey(purpose uint32, coinType uint32, account uint32, change uint32, index uint32) ([]byte, []byte, error) {
+func (hd *HDWallet) CreateNewWallet() (*Wallet, error) {
+	// todo(): add mutex?
+	childPrivKey, _, err := hd.generateChildKey(HDPurposeBIP44, HDChainNetCoinType, 0, 0, hd.walletIndex)
+	if err != nil {
+		return nil, fmt.Errorf("error generating child key: %v", err)
+	}
+	hd.walletIndex++
+
+	childPubKey, err := util_crypto.DeriveECDSAPubFromPrivate(childPrivKey)
+	if err != nil {
+		return nil, fmt.Errorf("error deriving public key from private key: %v", err)
+	}
+
+	return NewWalletWithKeys(
+		hd.cfg,
+		hd.version,
+		hd.validator,
+		hd.signer,
+		hd.consensusHasher,
+		hd.encoder,
+		childPrivKey,
+		childPubKey,
+	)
+}
+
+// generateChildKey generates a child key based on the provided arguments
+func (hd *HDWallet) generateChildKey(purpose uint32, coinType uint32, account uint32, change uint32, index uint32) ([]byte, []byte, error) {
 	var err error
 
 	// derive the child key step by step, following the BIP44 path
@@ -100,7 +138,8 @@ func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index ui
 	// prepare the data for HMAC
 	var data []byte
 
-	// if corresponds to a hardened key, prepend 0x00 to the master private key
+	// if corresponds to a hardened key, prepend 0x00 to the master private key. Hardened keys are more secure in theory
+	// due to the fact that even the master pub key being compromised the child wallets are still secure
 	if index >= HardenedIndex {
 		// hardened key, prepend 0x00 to the master private key
 		data = append([]byte{HardenedKeyPrefix}, privateKey...)
@@ -109,16 +148,12 @@ func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index ui
 	// if corresponds to a non-hardened key, prepend the master public key
 	if index < HardenedIndex {
 		// non-hardened key, prepend the master public key (public key is derived from private key)
-		// todo(): may be worth to just pass the public key as argument
-		privKey, err := util_crypto.ConvertBytesToECDSAPriv(privateKey)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error converting private key: %w", err)
-		}
-
-		pubKey, err := util_crypto.ConvertECDSAPubToBytes(&privKey.PublicKey)
+		pubKey, err := util_crypto.DeriveECDSAPubFromPrivate(privateKey)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error deriving public key: %w", err)
 		}
+
+		// in this case we don't need to prepend 0x00 to the public key
 		data = pubKey
 	}
 	// serialize index value as a 4-byte big-endian representation in byte array form
@@ -144,6 +179,7 @@ func (hd *HDWallet) deriveChildKey(privateKey []byte, chainCode []byte, index ui
 	curveOrder := btcec.S256().N
 	childPrivateKeyInt.Mod(childPrivateKeyInt, curveOrder)
 	// if the result is >= curve order, re-derive the key (this should not happen often)
+	// todo(): add predefined error
 	if childPrivateKeyInt.Cmp(curveOrder) >= 0 {
 		// todo(): retrieve custom error
 		return nil, nil, fmt.Errorf("child private key is invalid")
