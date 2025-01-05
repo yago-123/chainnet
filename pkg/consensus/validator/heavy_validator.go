@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
-	"github.com/yago-123/chainnet/pkg/script/interpreter"
-	"github.com/yago-123/chainnet/pkg/storage"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/script/interpreter"
 
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -221,11 +220,11 @@ func (hv *HValidator) validateGenesisHeader(bh *kernel.BlockHeader) error {
 
 	// if is genesis block, check that there is not any existent header
 	_, err := hv.explorer.GetLastHeader()
-	if !errors.Is(err, storage.ErrNotFound) {
+	if !errors.Is(err, cerror.ErrStorageElementNotFound) {
 		return fmt.Errorf("genesis block already exists")
 	}
 
-	// if the error is storage.ErrNotFound, then the genesis block is valid
+	// if the error is storage.ErrStorageElementNotFound, then the genesis block is valid
 	return nil
 }
 

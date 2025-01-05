@@ -7,6 +7,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
@@ -63,7 +64,7 @@ func NewHDWalletWithKeys(
 	masterChainCode := masterInfo[32:]
 	masterPubKey, err := util_crypto.DeriveECDSAPubFromPrivate(masterPrivateKey)
 	if err != nil {
-		return nil, fmt.Errorf("error deriving public key from private key: %w", err)
+		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
 
 	if len(metadata) > 0 {

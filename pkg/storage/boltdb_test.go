@@ -1,6 +1,7 @@
 package storage //nolint:testpackage // don't create separate package for tests
 
 import (
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	"os"
 	"testing"
 
@@ -19,17 +20,17 @@ func TestBoltDB_NotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = bolt.GetLastBlock()
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, cerror.ErrStorageElementNotFound, err)
 
 	_, err = bolt.GetGenesisBlock()
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, cerror.ErrStorageElementNotFound, err)
 
 	_, err = bolt.GetGenesisHeader()
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, cerror.ErrStorageElementNotFound, err)
 
 	_, err = bolt.RetrieveBlockByHash([]byte(""))
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, cerror.ErrStorageElementNotFound, err)
 
 	_, err = bolt.RetrieveHeaderByHash([]byte(""))
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, cerror.ErrStorageElementNotFound, err)
 }

@@ -3,6 +3,7 @@ package hd
 import (
 	"fmt"
 	"github.com/btcsuite/btcd/btcec"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	"math/big"
 )
@@ -173,10 +174,8 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 	curveOrder := btcec.S256().N
 	childPrivateKeyInt.Mod(childPrivateKeyInt, curveOrder)
 	// if the result is >= curve order, re-derive the key (this should not happen often)
-	// todo(): add predefined error
 	if childPrivateKeyInt.Cmp(curveOrder) >= 0 {
-		// todo(): retrieve custom error
-		return nil, nil, fmt.Errorf("child private key is invalid")
+		return nil, nil, fmt.Errorf("%w: key exceeds curve order", cerror.ErrWalletInvalidChildPrivateKey)
 	}
 
 	// return the child private key (as bytes) and child chain code

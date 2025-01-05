@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	"time"
 
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
@@ -20,7 +21,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/network/events"
 	"github.com/yago-123/chainnet/pkg/network/pubsub"
 	"github.com/yago-123/chainnet/pkg/observer"
-	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/libp2p/go-libp2p"
@@ -81,7 +81,7 @@ func (h *nodeP2PHandler) handleAskLastHeader(stream network.Stream) {
 	// get last block header
 	header, err := h.explorer.GetLastHeader()
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, cerror.ErrStorageElementNotFound) {
 			h.logger.Infof("unable to retrieve last header for stream %s: no headers in the chain", stream.ID())
 			return
 		}
@@ -126,7 +126,7 @@ func (h *nodeP2PHandler) handleAskSpecificBlock(stream network.Stream) {
 	// retrieve block from explorer
 	block, err := h.explorer.GetBlockByHash(hash)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, cerror.ErrStorageElementNotFound) {
 			h.logger.Infof("unable to retrieve block for stream %s: block %x not found", stream.ID(), hash)
 			return
 		}
@@ -198,7 +198,7 @@ func (h *nodeP2PHandler) handleAskAllHeaders(stream network.Stream) {
 	// retrieve headers from explorer
 	headers, err := h.explorer.GetAllHeaders()
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, cerror.ErrStorageElementNotFound) {
 			h.logger.Infof("unable to retrieve headers for stream %s: no headers in the chain", stream.ID())
 		}
 

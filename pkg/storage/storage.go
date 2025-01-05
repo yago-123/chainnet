@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"errors"
-
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
@@ -16,8 +14,6 @@ const (
 
 	StorageObserverID = "storage-observer"
 )
-
-var ErrNotFound = errors.New("not found")
 
 type Storage interface {
 	// PersistBlock stores a new block and updates LastBlockKey

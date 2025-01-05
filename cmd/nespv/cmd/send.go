@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 
@@ -68,7 +69,7 @@ var sendCmd = &cobra.Command{
 		// derive public key from private key
 		pubKey, err = util_crypto.DeriveECDSAPubFromPrivate(privKey)
 		if err != nil {
-			logger.Fatalf("error deriving public key from private key: %v", err)
+			logger.Fatalf("%v: %v", cerror.ErrCryptoPublicKeyDerivation, err)
 		}
 
 		// create wallet

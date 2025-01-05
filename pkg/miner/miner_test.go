@@ -3,6 +3,7 @@ package miner //nolint:testpackage // don't create separate package for tests
 import (
 	"context"
 	"crypto/sha256"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/utxoset"
@@ -16,7 +17,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/mempool"
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/script"
-	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util"
 	"github.com/yago-123/chainnet/tests/mocks/consensus"
 	mockStorage "github.com/yago-123/chainnet/tests/mocks/storage"
@@ -84,10 +84,10 @@ func TestMiner_MineBlock(t *testing.T) {
 	store := &mockStorage.MockStorage{}
 	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
+		Return(&kernel.BlockHeader{}, cerror.ErrStorageElementNotFound)
 	store.
 		On("GetLastBlockHash").
-		Return([]byte{}, storage.ErrNotFound)
+		Return([]byte{}, cerror.ErrStorageElementNotFound)
 
 	explorer := expl.NewChainExplorer(store, hash.GetHasher(hash.SHA256))
 
@@ -141,10 +141,10 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	store := &mockStorage.MockStorage{}
 	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
+		Return(&kernel.BlockHeader{}, cerror.ErrStorageElementNotFound)
 	store.
 		On("GetLastBlockHash").
-		Return([]byte{}, storage.ErrNotFound)
+		Return([]byte{}, cerror.ErrStorageElementNotFound)
 
 	explorer := expl.NewChainExplorer(store, hash.GetHasher(hash.SHA256))
 
