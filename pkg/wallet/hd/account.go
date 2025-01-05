@@ -1,11 +1,14 @@
 package hd
 
 import (
+	"fmt"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
+	cerror "github.com/yago-123/chainnet/pkg/error"
+	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
 
@@ -15,8 +18,8 @@ type HDAccount struct {
 	derivedPubAccountKey []byte
 	// derivedChainAccountCode chain code derived from the original master private key to be used for this account
 	derivedChainAccountCode []byte
-	// accountNum represents the number that corresponds to this account (constant for each account)
-	accountNum uint
+	// accountID represents the number that corresponds to this account (constant for each account)
+	accountID uint
 	// walletIndex represents the current index of the wallets generated via HD wallet
 	walletIndex uint32
 
@@ -52,7 +55,7 @@ func NewHDAccount(
 		encoder:                 encoder,
 		derivedPubAccountKey:    derivedPubAccountKey,
 		derivedChainAccountCode: derivedChainAccountCode,
-		accountNum:              accountNum,
+		accountID:               accountNum,
 	}
 }
 
@@ -60,13 +63,63 @@ func NewHDAccountFromMetadata() {
 
 }
 
-func (hda *HDAccount) GetAccountNum() uint {
-	return hda.accountNum
+func (hda *HDAccount) GetAccountID() uint {
+	return hda.accountID
 }
+
+// NewWallet generates a new wallet based on the HD wallet derivation path. Although this method is called NewWallet,
+// it should be called NewAddress according to BIP-44, but given that all the code is already written for a simple
+// wallet, it's better to keep it this way for now and reuse the code related to wallet. Also have the advantage that
+// it will isolate the network traces
+func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
+	var err error
+	var derivedPrivateKey []byte
+
+	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index
+	// where ' denotes hardened keys. The first three levels require hardened key by BIP44, in this case we are deriving
+	// the account, so we only need the first three levels
+	indexes := []uint32{
+		uint32(ExternalChangeType),
+		hda.walletIndex,
+	}
+
+	derivedPublicKey, derivedChainCode := hda.derivedPubAccountKey, hda.derivedChainAccountCode
+
+	// for each index in the derivation path, derive the child key
+	for _, idx := range indexes {
+		// the derivedKey field is a public key, but the return value will be a private and chain code key
+		derivedPrivateKey, derivedChainCode, err = DeriveChildStepHardened(derivedPublicKey, derivedChainCode, idx)
+		if err != nil {
+			return nil, fmt.Errorf("error deriving child key: %w", err)
+		}
+
+		// extract public key from derived key to be used for the subsequent non-hardened indexes OR the wallet creation
+		derivedPublicKey, err = util_crypto.DeriveECDSAPubFromPrivate(derivedPrivateKey)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
+		}
+	}
+
+	// increment the wallet index and return the new wallet
+	hda.walletIndex++
+
+	wallet, err := wallt.NewWalletWithKeys(
+		hda.cfg,
+		hda.walletVersion,
+		hda.validator,
+		hda.signer,
+		hda.consensusHasher,
+		hda.encoder,
+		derivedPrivateKey,
+		derivedPublicKey,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error setting up wallet: %w", err)
+	}
+
+	return wallet, nil
+}
+
 func (hda *HDAccount) ConsolidateChange() {
 
-}
-
-func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
-	return nil, nil
 }
