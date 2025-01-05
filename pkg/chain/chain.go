@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	"sort"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -83,12 +84,12 @@ func NewBlockchain(
 	// retrieve the last header stored
 	lastHeader, err := store.GetLastHeader()
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, cerror.ErrStorageElementNotFound) {
 			// there is no genesis block yet, start chain from scratch
 			cfg.Logger.Debugf("no previous block headers found, starting chain from scratch")
 		}
 
-		if !errors.Is(err, storage.ErrNotFound) {
+		if !errors.Is(err, cerror.ErrStorageElementNotFound) {
 			return nil, fmt.Errorf("error retrieving last header: %w", err)
 		}
 	}

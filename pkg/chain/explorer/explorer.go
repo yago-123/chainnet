@@ -3,6 +3,7 @@ package explorer
 import (
 	"encoding/hex"
 	"fmt"
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	"time"
 
 	"github.com/yago-123/chainnet/pkg/util"
@@ -171,7 +172,7 @@ func (explorer *ChainExplorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	}
 
 	if len(headers) == 0 {
-		return []*kernel.BlockHeader{}, storage.ErrNotFound
+		return []*kernel.BlockHeader{}, cerror.ErrStorageElementNotFound
 	}
 
 	return headers, nil

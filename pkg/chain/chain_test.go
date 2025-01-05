@@ -1,5 +1,6 @@
 package blockchain //nolint:testpackage // don't create separate package for tests
 import (
+	cerror "github.com/yago-123/chainnet/pkg/error"
 	"os"
 	"testing"
 
@@ -90,7 +91,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 	store := &mockStorage.MockStorage{}
 	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
+		Return(&kernel.BlockHeader{}, cerror.ErrStorageElementNotFound)
 
 	cfg := &config.Config{Logger: logrus.New()}
 
