@@ -6,12 +6,14 @@ CLI_BINARY_NAME   := chainnet-cli
 MINER_BINARY_NAME := chainnet-miner
 NESPV_BINARY_NAME := chainnet-nespv
 NODE_BINARY_NAME  := chainnet-node
+BOT_BINARY_NAME   := chainnet-bot
 
 # Define the source file for the CLI application
 CLI_SOURCE   := $(wildcard cmd/cli/*.go)
 MINER_SOURCE := $(wildcard cmd/miner/*.go)
 NESPV_SOURCE := $(wildcard cmd/nespv/*go)
 NODE_SOURCE  := $(wildcard cmd/node/*.go)
+BOT_SOURCE   := $(wildcard cmd/bot/*.go)
 
 # Define the source files for other files
 NODE_PROTOBUF_SOURCE    := $(wildcard $(NODE_PROTOBUF_DIR)/*.proto)
@@ -27,7 +29,7 @@ DOCKERFILE_MINER   := ./build/docker/miner/Dockerfile
 DOCKERFILE_NODE    := ./build/docker/node/Dockerfile
 
 .PHONY: all
-all: test lint miner node nespv cli
+all: test lint miner node nespv cli bot
 
 .PHONY: miner
 miner: protobuf output-dir
@@ -48,6 +50,11 @@ nespv: protobuf output-dir
 cli: protobuf output-dir
 	@echo "Building chainnet CLI..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
+
+.PHONY: bot
+bot: protobuf output-dir
+	@echo "Building chainnet bot..."
+	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(BOT_BINARY_NAME) $(BOT_SOURCE)
 
 .PHONY: protobuf
 protobuf:
