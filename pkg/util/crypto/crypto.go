@@ -124,10 +124,10 @@ func ReadFile(path string) ([]byte, error) {
 	}
 	defer file.Close()
 
-	privateKeyBytes, err := io.ReadAll(file)
+	fileContent, err := io.ReadAll(file)
 	if err != nil {
 		return []byte{}, fmt.Errorf("error reading file: %w", err)
 	}
 
-	return privateKeyBytes, nil
+	return fileContent, nil
 }

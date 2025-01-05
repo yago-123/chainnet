@@ -79,7 +79,7 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 	// where ' denotes hardened keys. The first three levels require hardened key by BIP44, in this case we are deriving
 	// the account, so we only need the first three levels
 	indexes := []uint32{
-		uint32(ExternalChangeType),
+		uint32(ExternalChangeType), // given that the wallet does not have funds yet, the change type is external by default
 		hda.walletIndex,
 	}
 
@@ -118,6 +118,10 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 	}
 
 	return wallet, nil
+}
+
+func (hda *HDAccount) GetWalletIndex() uint32 {
+	return hda.walletIndex
 }
 
 func (hda *HDAccount) ConsolidateChange() {

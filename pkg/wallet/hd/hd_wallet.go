@@ -51,8 +51,7 @@ func NewHDWalletWithKeys(
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 	privateKey []byte,
-	publicKey []byte,
-	metadata []byte,
+	metadata *HDMetadata,
 ) (*HDWallet, error) {
 	// this represents a variant of BIP-44 by skipping BIP-39
 	masterInfo, err := util_crypto.CalculateHMACSha512([]byte(HMACKeyStandard), privateKey)
@@ -67,14 +66,12 @@ func NewHDWalletWithKeys(
 		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
 
-	if len(metadata) > 0 {
-		// todo(): implement metadata parsing
-		reconstructHDWalletHistory() // linter
+	if metadata == nil {
+		resyncHDFromNetwork()
 	}
 
-	if len(metadata) == 0 {
-		// todo(): find out how many wallets are already created and update fields
-		reconstructHDWalletHistory()
+	if metadata != nil {
+		resyncHDFromMetadata()
 	}
 
 	return &HDWallet{
@@ -139,6 +136,23 @@ func (hd *HDWallet) GetAccount(accountIndex uint) (*HDAccount, error) {
 	return hd.accounts[accountIndex], nil
 }
 
-func reconstructHDWalletHistory() {
+// GetMetadata returns the metadata of the HD wallet so that the state can be recovered without the need of resyncing
+func (hd *HDWallet) GetMetadata() *HDMetadata {
+	m := HDMetadata{}
+	m.AccountIndex = hd.accountIndex
 
+	for _, account := range hd.accounts {
+		m.Accounts = append(m.Accounts, HDAccountMetadata{
+			WalletIndex: account.GetWalletIndex(),
+		})
+	}
+
+	return &m
+}
+
+func resyncHDFromNetwork() {
+
+}
+
+func resyncHDFromMetadata(metadata *HDMetadata) {
 }
