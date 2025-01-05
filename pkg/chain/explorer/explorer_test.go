@@ -86,7 +86,7 @@ var Block2 = Block{ //nolint:gochecknoglobals // data that is used across all te
 		{
 			ID: []byte("regular-transaction-block-2-id"),
 			Vin: []TxInput{
-				NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2", "pubKey-2"),
+				NewInput([]byte("coinbase-transaction-block-1-id"), 0, "pubKey-2"),
 			},
 			Vout: []TxOutput{
 				NewOutput(2, script.P2PK, "pubKey-3"),
@@ -119,8 +119,8 @@ var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all te
 		{
 			ID: []byte("regular-transaction-block-3-id"),
 			Vin: []TxInput{
-				NewInput([]byte("regular-transaction-block-2-id"), 1, "pubKey-4", "pubKey-4"),
-				NewInput([]byte("regular-transaction-block-2-id"), 2, "pubKey-5", "pubKey-5"),
+				NewInput([]byte("regular-transaction-block-2-id"), 1, "pubKey-4"),
+				NewInput([]byte("regular-transaction-block-2-id"), 2, "pubKey-5"),
 			},
 			Vout: []TxOutput{
 				NewOutput(4, script.P2PK, "pubKey-2"),
@@ -131,7 +131,7 @@ var Block3 = Block{ //nolint:gochecknoglobals // data that is used across all te
 		{
 			ID: []byte("regular-transaction-2-block-3-id"),
 			Vin: []TxInput{
-				NewInput([]byte("regular-transaction-block-2-id"), 0, "pubKey-3", "pubKey-3"),
+				NewInput([]byte("regular-transaction-block-2-id"), 0, "pubKey-3"),
 			},
 			Vout: []TxOutput{
 				NewOutput(1, script.P2PK, "pubKey-6"),

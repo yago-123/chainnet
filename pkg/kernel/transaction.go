@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math/rand/v2"
 
-	"github.com/btcsuite/btcutil/base58"
-
 	"github.com/yago-123/chainnet/pkg/script"
 )
 
@@ -74,7 +72,6 @@ func (tx *Transaction) Assemble() []byte {
 		data = append(data, input.Txid...)
 		data = append(data, []byte(fmt.Sprintf("%d", input.Vout))...)
 		data = append(data, []byte(input.ScriptSig)...)
-		data = append(data, []byte(input.PubKey)...)
 	}
 
 	if len(tx.Vout) > 0 {
@@ -85,7 +82,6 @@ func (tx *Transaction) Assemble() []byte {
 	for _, output := range tx.Vout {
 		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
 		data = append(data, []byte(output.ScriptPubKey)...)
-		data = append(data, []byte(output.PubKey)...)
 	}
 
 	return data
@@ -115,7 +111,6 @@ func (tx *Transaction) AssembleForSigning() []byte {
 	for _, output := range tx.Vout {
 		data = append(data, []byte(fmt.Sprintf("%d", output.Amount))...)
 		data = append(data, []byte(output.ScriptPubKey)...)
-		data = append(data, []byte(output.PubKey)...)
 	}
 
 	return data
@@ -177,10 +172,6 @@ type TxInput struct {
 
 	// ScriptSig is the solved challenge presented by the output in order to unlock the funds
 	ScriptSig string
-
-	// PubKey is the public key that unlocked the ScriptSig
-	// todo() eventually remove once we cleared ScriptSig
-	PubKey string
 }
 
 // UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be
@@ -202,18 +193,17 @@ func NewCoinbaseInput() TxInput {
 }
 
 // NewInput represents the source of the transactions
-func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
+func NewInput(txid []byte, vout uint, scriptSig string) TxInput {
 	return TxInput{
 		Txid:      txid,
 		Vout:      vout,
 		ScriptSig: scriptSig,
-		PubKey:    pubKey,
 	}
 }
 
 // CanUnlockOutputWith checks if the input can unlock the output
-func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
-	return in.PubKey == pubKey
+func (in *TxInput) CanUnlockOutputWith(address string) bool {
+	return script.HasBeenUnlockedWith(in.ScriptSig, address)
 }
 
 // UnlockWith solves the challenge presented by the output in order to unlock the funds
@@ -228,10 +218,9 @@ func (in *TxInput) EqualInput(input TxInput) bool {
 
 func (in *TxInput) String() string {
 	return fmt.Sprintf(
-		"TxInput: id %x-%d from %s, scriptSig: %s",
+		"TxInput: id %x-%d, scriptSig: %s",
 		in.Txid,
 		in.Vout,
-		base58.Encode([]byte(in.PubKey)),
 		in.ScriptSig,
 	)
 }
@@ -243,10 +232,6 @@ type TxOutput struct {
 
 	// ScriptPubKey is the challenge that must be proved in order to unlock the output
 	ScriptPubKey string
-
-	// PubKey temporary field, must be extracted from ScriptPubKey directly
-	// todo() use PubKeyHash eventually once the tests are migrated
-	PubKey string
 }
 
 // NewCoinbaseOutput creates a new output for the coinbase transaction
@@ -255,24 +240,22 @@ func NewCoinbaseOutput(amount uint, scriptType script.ScriptType, pubKey string)
 }
 
 // NewOutput creates a new output for the transaction
-func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutput {
+func NewOutput(amount uint, scriptType script.ScriptType, scriptArg string) TxOutput {
 	return TxOutput{
 		Amount:       amount,
-		ScriptPubKey: script.NewScript(scriptType, []byte(pubKey)),
-		PubKey:       pubKey,
+		ScriptPubKey: script.NewScript(scriptType, []byte(scriptArg)),
 	}
 }
 
-// canBeUnlockedWith checks if the output can be unlocked with the given public key
-func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
-	return out.PubKey == pubKey
+// CanBeUnlockedWith checks if the output can be unlocked with the given address
+func (out *TxOutput) CanBeUnlockedWith(address string) bool {
+	return script.CanBeUnlockedWith(out.ScriptPubKey, address)
 }
 
 func (out *TxOutput) String() string {
 	return fmt.Sprintf(
-		"TxOutput: %d to %s, unlocking script %s",
+		"TxOutput: amount %d, unlocking script %s",
 		out.Amount,
-		base58.Encode([]byte(out.PubKey)),
 		out.ScriptPubKey,
 	)
 }
