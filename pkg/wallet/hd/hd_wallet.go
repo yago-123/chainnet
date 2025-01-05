@@ -152,7 +152,7 @@ func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, 
 	for _, idx := range indexes {
 		derivedPrivateKey, derivedChainCode, err = DeriveChildStepHardened(derivedPrivateKey, derivedChainCode, idx)
 		if err != nil {
-			return 0, nil, err
+			return uint32(0), nil, err
 		}
 	}
 

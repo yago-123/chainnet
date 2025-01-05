@@ -61,5 +61,4 @@ func main() {
 
 		logger.Infof("account number: %d, account: %v", accountNum, hda)
 	}
-
 }

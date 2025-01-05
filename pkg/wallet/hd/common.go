@@ -136,7 +136,6 @@ func DeriveChildStepHardened(privateKey []byte, chainCode []byte, index uint32) 
 	// hardened key requires prepending a constant to the private key before derivation starts
 	derivedKey := append([]byte{HardenedKeyPrefix}, privateKey...)
 	return deriveChildStep(derivedKey, chainCode, index)
-
 }
 
 // DeriveChildStepNonHardened derives a child key based on a master public key, unlike DeriveChildStepHardened this func
