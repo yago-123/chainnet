@@ -23,8 +23,8 @@ type HDWallet struct {
 	// from seeing the private key in the derivation process
 	masterChainCode []byte
 
-	accounts     []*HDAccount
-	accountIndex uint32
+	accounts   []*HDAccount
+	accountNum uint32
 
 	// todo(): maybe encapsulate these fields in a struct?
 	// walletVersion represents the version of the wallet being used
@@ -39,10 +39,6 @@ type HDWallet struct {
 	cfg             *config.Config
 }
 
-func NewHDWallet() *HDWallet {
-	return &HDWallet{}
-}
-
 func NewHDWalletWithKeys(
 	cfg *config.Config,
 	version byte,
@@ -51,8 +47,9 @@ func NewHDWalletWithKeys(
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 	privateKey []byte,
-	metadata *HDMetadata,
 ) (*HDWallet, error) {
+	var accountIndex uint32
+
 	// this represents a variant of BIP-44 by skipping BIP-39
 	masterInfo, err := util_crypto.CalculateHMACSha512([]byte(HMACKeyStandard), privateKey)
 	if err != nil {
@@ -66,14 +63,6 @@ func NewHDWalletWithKeys(
 		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
 
-	if metadata == nil {
-		resyncHDFromNetwork()
-	}
-
-	if metadata != nil {
-		resyncHDFromMetadata()
-	}
-
 	return &HDWallet{
 		cfg:             cfg,
 		walletVersion:   version,
@@ -81,6 +70,7 @@ func NewHDWalletWithKeys(
 		masterPrivKey:   masterPrivateKey,
 		masterPubKey:    masterPubKey,
 		masterChainCode: masterChainCode,
+		accountNum:      accountIndex,
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
@@ -88,8 +78,62 @@ func NewHDWalletWithKeys(
 	}, nil
 }
 
-// NewAccount derives a new account from the HD wallet
-func (hd *HDWallet) NewAccount() (uint, *HDAccount, error) {
+// Sync synchronizes the HD wallet fields so that all accounts and addresses are up to date
+func (hd *HDWallet) Sync(metadata *HDMetadata) error {
+	// if no metadata is provided, try to connect to the network and find which was the previous state
+	if metadata == nil {
+		return hd.resyncHDFromNetwork()
+	}
+
+	// if metadata is provided, try to resync the wallet from the metadata provided. Even if the metadata was wrong
+	// this would not represent a danger to the funds, but could create privacy issues
+	return hd.resyncHDFromMetadata(metadata)
+}
+
+// GetNewAccount derives a new account from the HD wallet by incrementing the account index
+func (hd *HDWallet) GetNewAccount() (uint, *HDAccount, error) {
+	// we create a new
+	_, account, err := hd.createAccount(hd.accountNum, 0)
+	if err != nil {
+		return 0, nil, fmt.Errorf("error creating account: %w", err)
+	}
+
+	hd.accounts = append(hd.accounts, account)
+	hd.accountNum++
+
+	return uint(hd.accountNum), account, nil
+}
+
+// GetAccount returns an account from the HD wallet by its index
+func (hd *HDWallet) GetAccount(accountIdx uint) (*HDAccount, error) {
+	if uint32(accountIdx) >= hd.accountNum {
+		return nil, fmt.Errorf("account index %d does not exist", accountIdx)
+	}
+
+	return hd.accounts[accountIdx], nil
+}
+
+// GetMetadata returns the metadata of the HD wallet so that the state can be recovered without the need of resyncing
+func (hd *HDWallet) GetMetadata() *HDMetadata {
+	m := HDMetadata{}
+	m.AccountNum = hd.accountNum
+
+	for _, account := range hd.accounts {
+		m.Accounts = append(m.Accounts, HDAccountMetadata{
+			WalletNum: account.GetWalletIndex(),
+		})
+	}
+
+	return &m
+}
+
+// createAccount creates a new account from the HD wallet with a given account number
+// Arguments:
+// - accountIndex: the index of the account to be created
+// - walletNum: the number of wallets CREATED SO FAR! This is different from walletIndex. We use this field
+// for restoring the HD wallet from the metadata, it does not affect in any way the key derivation in this part
+// of the code. In the case of creating a new account, the walletNum will always be 0
+func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, *HDAccount, error) {
 	var err error
 
 	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index
@@ -98,7 +142,7 @@ func (hd *HDWallet) NewAccount() (uint, *HDAccount, error) {
 	indexes := []uint32{
 		HardenedIndex | HDPurposeBIP44,
 		HardenedIndex | uint32(TypeChainNet),
-		HardenedIndex | hd.accountIndex,
+		HardenedIndex | accountIdx,
 	}
 
 	derivedPrivateKey, derivedChainCode := hd.masterPrivKey, hd.masterChainCode
@@ -120,39 +164,28 @@ func (hd *HDWallet) NewAccount() (uint, *HDAccount, error) {
 		hd.encoder,
 		derivedPrivateKey,
 		derivedChainCode,
-		uint(hd.accountIndex),
+		accountIdx,
+		walletNum,
 	)
-	hd.accounts = append(hd.accounts, hdAccount)
-	hd.accountIndex++
 
-	return uint(hd.accountIndex), hdAccount, nil
+	return accountIdx, hdAccount, nil
 }
 
-func (hd *HDWallet) GetAccount(accountIndex uint) (*HDAccount, error) {
-	if uint32(accountIndex) >= hd.accountIndex {
-		return nil, fmt.Errorf("account index %d does not exist", accountIndex)
+// resyncHDFromNetwork resyncs the HD wallet from the network
+func (hd *HDWallet) resyncHDFromNetwork() error {
+	// todo() implement
+	return nil
+}
+
+// resyncHDFromMetadata resyncs the HD wallet from the metadata
+func (hd *HDWallet) resyncHDFromMetadata(metadata *HDMetadata) error {
+	for accountIdx, accountMetadata := range metadata.Accounts {
+		_, account, err := hd.createAccount(uint32(accountIdx), accountMetadata.WalletNum)
+		if err != nil {
+			return fmt.Errorf("error syncing account %d: %w", accountIdx, err)
+		}
+
+		hd.accounts = append(hd.accounts, account)
+		hd.accountNum++
 	}
-
-	return hd.accounts[accountIndex], nil
-}
-
-// GetMetadata returns the metadata of the HD wallet so that the state can be recovered without the need of resyncing
-func (hd *HDWallet) GetMetadata() *HDMetadata {
-	m := HDMetadata{}
-	m.AccountIndex = hd.accountIndex
-
-	for _, account := range hd.accounts {
-		m.Accounts = append(m.Accounts, HDAccountMetadata{
-			WalletIndex: account.GetWalletIndex(),
-		})
-	}
-
-	return &m
-}
-
-func resyncHDFromNetwork() {
-
-}
-
-func resyncHDFromMetadata(metadata *HDMetadata) {
 }

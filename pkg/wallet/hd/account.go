@@ -19,9 +19,9 @@ type HDAccount struct {
 	// derivedChainAccountCode chain code derived from the original master private key to be used for this account
 	derivedChainAccountCode []byte
 	// accountID represents the number that corresponds to this account (constant for each account)
-	accountID uint
-	// walletIndex represents the current index of the wallets generated via HD wallet
-	walletIndex uint32
+	accountID uint32
+	// walletNum represents the current index of the wallets generated via HD wallet
+	walletNum uint32
 
 	// todo(): maybe encapsulate these fields in a struct?
 	walletVersion byte
@@ -44,7 +44,8 @@ func NewHDAccount(
 	encoder encoding.Encoding,
 	derivedPubAccountKey []byte,
 	derivedChainAccountCode []byte,
-	accountNum uint,
+	accountNum uint32,
+	walletNum uint32,
 ) *HDAccount {
 	return &HDAccount{
 		cfg:                     cfg,
@@ -56,14 +57,11 @@ func NewHDAccount(
 		derivedPubAccountKey:    derivedPubAccountKey,
 		derivedChainAccountCode: derivedChainAccountCode,
 		accountID:               accountNum,
+		walletNum:               walletNum, // this field will be 0 for new accounts and X during HD restoration
 	}
 }
 
-func NewHDAccountFromMetadata() {
-
-}
-
-func (hda *HDAccount) GetAccountID() uint {
+func (hda *HDAccount) GetAccountID() uint32 {
 	return hda.accountID
 }
 
@@ -80,7 +78,7 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 	// the account, so we only need the first three levels
 	indexes := []uint32{
 		uint32(ExternalChangeType), // given that the wallet does not have funds yet, the change type is external by default
-		hda.walletIndex,
+		hda.walletNum,
 	}
 
 	derivedPublicKey, derivedChainCode := hda.derivedPubAccountKey, hda.derivedChainAccountCode
@@ -88,7 +86,7 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 	// for each index in the derivation path, derive the child key
 	for _, idx := range indexes {
 		// the derivedKey field is a public key, but the return value will be a private and chain code key
-		derivedPrivateKey, derivedChainCode, err = DeriveChildStepHardened(derivedPublicKey, derivedChainCode, idx)
+		derivedPrivateKey, derivedChainCode, err = DeriveChildStepNonHardened(derivedPublicKey, derivedChainCode, idx)
 		if err != nil {
 			return nil, fmt.Errorf("error deriving child key: %w", err)
 		}
@@ -101,7 +99,7 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 	}
 
 	// increment the wallet index and return the new wallet
-	hda.walletIndex++
+	hda.walletNum++
 
 	wallet, err := wallt.NewWalletWithKeys(
 		hda.cfg,
@@ -121,7 +119,7 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 }
 
 func (hda *HDAccount) GetWalletIndex() uint32 {
-	return hda.walletIndex
+	return hda.walletNum
 }
 
 func (hda *HDAccount) ConsolidateChange() {

@@ -7,12 +7,12 @@ import (
 )
 
 type HDAccountMetadata struct {
-	WalletIndex uint32
+	WalletNum uint32
 }
 
 type HDMetadata struct {
-	AccountIndex uint32
-	Accounts     []HDAccountMetadata
+	AccountNum uint32
+	Accounts   []HDAccountMetadata
 }
 
 func SerializeHDMetadata(metadata *HDMetadata) ([]byte, error) {
