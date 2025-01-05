@@ -3,9 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
-	"io"
 	"math"
-	"os"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -150,19 +148,4 @@ func IsValidHash(hash []byte) bool {
 	}
 
 	return true
-}
-
-func ReadFile(path string) ([]byte, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error opening file: %w", path, err)
-	}
-	defer file.Close()
-
-	fileContent, err := io.ReadAll(file)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error reading file: %w", err)
-	}
-
-	return fileContent, nil
 }

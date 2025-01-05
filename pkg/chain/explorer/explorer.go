@@ -3,8 +3,9 @@ package explorer
 import (
 	"encoding/hex"
 	"fmt"
-	cerror "github.com/yago-123/chainnet/pkg/error"
 	"time"
+
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	"github.com/yago-123/chainnet/pkg/util"
 

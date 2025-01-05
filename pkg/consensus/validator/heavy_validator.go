@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	"github.com/yago-123/chainnet/config"

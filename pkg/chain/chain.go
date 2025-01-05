@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cerror "github.com/yago-123/chainnet/pkg/error"
 	"sort"
+
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/monitor"

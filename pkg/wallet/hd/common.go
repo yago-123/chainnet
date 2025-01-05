@@ -2,10 +2,11 @@ package hd
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/btcsuite/btcd/btcec"
 	cerror "github.com/yago-123/chainnet/pkg/error"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
-	"math/big"
 )
 
 // General constants for HD wallet implementation

@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	cerror "github.com/yago-123/chainnet/pkg/error"
 	"time"
+
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	"github.com/prometheus/client_golang/prometheus"
 

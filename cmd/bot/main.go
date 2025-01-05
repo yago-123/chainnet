@@ -1,5 +1,65 @@
 package main
 
+import (
+	"crypto/sha256"
+
+	"github.com/sirupsen/logrus"
+	"github.com/yago-123/chainnet/config"
+	"github.com/yago-123/chainnet/pkg/consensus/validator"
+	"github.com/yago-123/chainnet/pkg/crypto"
+	"github.com/yago-123/chainnet/pkg/crypto/hash"
+	"github.com/yago-123/chainnet/pkg/crypto/sign"
+	"github.com/yago-123/chainnet/pkg/encoding"
+	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
+	"github.com/yago-123/chainnet/pkg/wallet/hd"
+)
+
+var (
+	// general consensus hasher (tx, block hashes...)
+	consensusHasherType = hash.SHA256
+
+	// general consensus signer (tx)
+	consensusSigner = crypto.NewHashedSignature(
+		sign.NewECDSASignature(),
+		hash.NewHasher(sha256.New()),
+	)
+)
+
+var logger = logrus.New()
+var cfg = config.NewConfig()
+
 func main() {
+	privKeyPath := "wallet.pem"
+
+	privKey, err := util_crypto.ReadECDSAPemPrivateKey(privKeyPath)
+	if err != nil {
+		logger.Fatalf("error reading private key: %v", err)
+	}
+
+	hdWallet, err := hd.NewHDWalletWithKeys(
+		cfg,
+		1,
+		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+		consensusSigner,
+		hash.GetHasher(consensusHasherType),
+		encoding.NewProtobufEncoder(),
+		privKey,
+	)
+	if err != nil {
+		logger.Fatalf("error setting up wallet: %v", err)
+	}
+
+	if err = hdWallet.Sync(nil); err != nil {
+		logger.Fatalf("error syncing wallet: %v", err)
+	}
+
+	for _ = range [10]int{} {
+		accountNum, hda, errHda := hdWallet.GetNewAccount()
+		if errHda != nil {
+			logger.Fatalf("error getting new account: %v", errHda)
+		}
+
+		logger.Infof("account number: %d, account: %v", accountNum, hda)
+	}
 
 }

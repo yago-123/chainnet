@@ -2,6 +2,7 @@ package hd
 
 import (
 	"fmt"
+
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -188,4 +189,6 @@ func (hd *HDWallet) resyncHDFromMetadata(metadata *HDMetadata) error {
 		hd.accounts = append(hd.accounts, account)
 		hd.accountNum++
 	}
+
+	return nil
 }

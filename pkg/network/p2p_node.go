@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cerror "github.com/yago-123/chainnet/pkg/error"
 	"time"
+
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 

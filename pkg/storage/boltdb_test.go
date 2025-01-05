@@ -1,9 +1,10 @@
 package storage //nolint:testpackage // don't create separate package for tests
 
 import (
-	cerror "github.com/yago-123/chainnet/pkg/error"
 	"os"
 	"testing"
+
+	cerror "github.com/yago-123/chainnet/pkg/error"
 
 	"github.com/yago-123/chainnet/pkg/encoding"
 

@@ -224,7 +224,7 @@ func DetermineScriptType(script Script) ScriptType {
 	return UndefinedScriptType
 }
 
-// DetermineScriptTYpeFromStringType returns the script type based on a string representation. For example:
+// DetermineScriptTypeFromStringType returns the script type based on a string representation. For example:
 // - "P2PK" -> P2PK
 // - "P2PKH" -> P2PKH
 func ReturnScriptTypeFromStringType(scriptType string) ScriptType {
