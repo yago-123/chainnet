@@ -134,7 +134,7 @@ func DecodeDERBytesToRawPrivateKey(derPrivateBytes []byte) ([]byte, error) {
 	// parse the DER-encoded private key
 	privKeyECDSA, err := x509.ParseECPrivateKey(derPrivateBytes)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing DER bytes: %w", err)
+		return nil, fmt.Errorf("error parsing DER bytes for private key: %w", err)
 	}
 
 	// ensure the curve is P-256, so far is the only curve supported
@@ -152,7 +152,7 @@ func DecodeDERBytesToRawPublicKey(derPublicBytes []byte) ([]byte, error) {
 	// parse the DER-encoded public key
 	pubKey, err := x509.ParsePKIXPublicKey(derPublicBytes)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing DER bytes: %w", err)
+		return nil, fmt.Errorf("error parsing DER bytes for public key: %w", err)
 	}
 
 	// assert the parsed public key is an ECDSA public key

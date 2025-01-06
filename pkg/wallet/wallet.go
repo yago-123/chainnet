@@ -138,11 +138,13 @@ func (w *Wallet) GetAddresses() ([][]byte, error) {
 }
 
 func (w *Wallet) GetP2PKAddress() []byte {
+	// todo() fix this, this is not a raw public key, is a DER encoded public key
 	return w.PublicKey
 }
 
 // todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
+	// todo(): fix this, this is not a correct P2PKH address, is a DER encoded public key
 	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
 }
 

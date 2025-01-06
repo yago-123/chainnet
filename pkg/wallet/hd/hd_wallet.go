@@ -165,6 +165,12 @@ func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, 
 		}
 	}
 
+	// derive the public key from the private key and pass paste it into the new account
+	derivedPublicKey, err := util_crypto.DeriveECDSAPubFromPrivateDERBytes(derivedPrivateKey)
+	if err != nil {
+		return uint32(0), nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
+	}
+
 	hdAccount := NewHDAccount(
 		hd.cfg,
 		hd.walletVersion,
@@ -172,7 +178,7 @@ func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, 
 		hd.signer,
 		hd.consensusHasher,
 		hd.encoder,
-		derivedPrivateKey,
+		derivedPublicKey,
 		derivedChainCode,
 		accountIdx,
 		walletNum,
