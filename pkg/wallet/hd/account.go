@@ -93,7 +93,7 @@ func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
 		}
 
 		// extract public key from derived key to be used for the subsequent non-hardened indexes OR the wallet creation
-		derivedPublicKey, err = util_crypto.DeriveECDSAPubFromPrivate(derivedPrivateKey)
+		derivedPublicKey, err = util_crypto.DeriveECDSAPubFromPrivateDERBytes(derivedPrivateKey)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 		}

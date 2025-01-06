@@ -57,7 +57,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		if privKeyPath != "" {
-			privKey, err = util_crypto.ReadECDSAPemPrivateKey(privKeyPath)
+			privKey, err = util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 			if err != nil {
 				logger.Fatalf("error reading private key: %v", err)
 			}
@@ -68,7 +68,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		// derive public key from private key
-		pubKey, err = util_crypto.DeriveECDSAPubFromPrivate(privKey)
+		pubKey, err = util_crypto.DeriveECDSAPubFromPrivateDERBytes(privKey)
 		if err != nil {
 			logger.Fatalf("%v: %v", cerror.ErrCryptoPublicKeyDerivation, err)
 		}

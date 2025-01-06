@@ -31,7 +31,7 @@ var cfg = config.NewConfig()
 func main() {
 	privKeyPath := "wallet.pem"
 
-	privKey, err := util_crypto.ReadECDSAPemPrivateKey(privKeyPath)
+	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
 	}
@@ -46,7 +46,7 @@ func main() {
 		privKey,
 	)
 	if err != nil {
-		logger.Fatalf("error setting up wallet: %v", err)
+		logger.Fatalf("error initializing HD wallet: %v", err)
 	}
 
 	if err = hdWallet.Sync(nil); err != nil {
@@ -59,6 +59,6 @@ func main() {
 			logger.Fatalf("error getting new account: %v", errHda)
 		}
 
-		logger.Infof("account number: %d, account: %v", accountNum, hda)
+		logger.Infof("account number: %d, account: %x", accountNum, hda)
 	}
 }

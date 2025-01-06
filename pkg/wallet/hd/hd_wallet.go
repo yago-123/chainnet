@@ -59,7 +59,13 @@ func NewHDWalletWithKeys(
 
 	masterPrivateKey := masterInfo[:32]
 	masterChainCode := masterInfo[32:]
-	masterPubKey, err := util_crypto.DeriveECDSAPubFromPrivate(masterPrivateKey)
+
+	masterPrivateKeyDER, err := util_crypto.EncodeRawPrivateKeyToDERBytes(masterPrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("error encoding master private key to DER: %w", err)
+	}
+
+	masterPubKey, err := util_crypto.DeriveECDSAPubFromPrivateDERBytes(masterPrivateKeyDER)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
@@ -68,7 +74,7 @@ func NewHDWalletWithKeys(
 		cfg:             cfg,
 		walletVersion:   version,
 		PrivateKey:      privateKey,
-		masterPrivKey:   masterPrivateKey,
+		masterPrivKey:   masterPrivateKeyDER,
 		masterPubKey:    masterPubKey,
 		masterChainCode: masterChainCode,
 		accountNum:      accountIndex,

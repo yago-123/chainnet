@@ -23,7 +23,7 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 		return []byte{}, []byte{}, err
 	}
 
-	return util_crypto.ConvertECDSAKeysToBytes(&private.PublicKey, private)
+	return util_crypto.ConvertECDSAKeysToDERBytes(&private.PublicKey, private)
 }
 
 func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
@@ -31,7 +31,7 @@ func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, erro
 		return []byte{}, err
 	}
 
-	privateKey, err := util_crypto.ConvertBytesToECDSAPriv(privKey)
+	privateKey, err := util_crypto.ConvertDERBytesToECDSAPriv(privKey)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -53,7 +53,7 @@ func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []
 		return false, err
 	}
 
-	publicKey, err := util_crypto.ConvertBytesToECDSAPub(pubKey)
+	publicKey, err := util_crypto.ConvertDERBytesToECDSAPub(pubKey)
 	if err != nil {
 		return false, err
 	}

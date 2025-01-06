@@ -274,12 +274,12 @@ func NewNodeP2P(
 
 	// add identity if the keys exists
 	if cfg.P2P.IdentityPath != "" {
-		privKeyBytes, errKey := util_crypto.ReadECDSAPemPrivateKey(cfg.P2P.IdentityPath)
+		privKeyBytes, errKey := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(cfg.P2P.IdentityPath)
 		if errKey != nil {
 			return nil, fmt.Errorf("error reading private key: %w", errKey)
 		}
 
-		priv, errKey := util_crypto.ConvertBytesToECDSAPriv(privKeyBytes)
+		priv, errKey := util_crypto.ConvertDERBytesToECDSAPriv(privKeyBytes)
 		if errKey != nil {
 			return nil, fmt.Errorf("error converting private key: %w", errKey)
 		}

@@ -94,6 +94,8 @@ $ openssl ecparam -name prime256v1 -genkey -noout -out <wallet.pem>
 ```
 This `wallet.pem` file will contain both the private and public keys.
 
+**IMPORTANT:** this code is only compatible with `prime256v1` elliptic curves.
+
 ### Step 2: Use the Wallet to Send Transactions
 You can use this wallet by running the `chainnet-nespv` wallet to send transactions as follows:
 ```bash
