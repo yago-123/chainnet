@@ -9,14 +9,14 @@ import (
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
-type ECDSASigner struct {
+type ECDSAP256Signer struct {
 }
 
-func NewECDSASignature() *ECDSASigner {
-	return &ECDSASigner{}
+func NewECDSASignature() *ECDSAP256Signer {
+	return &ECDSAP256Signer{}
 }
 
-func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
+func (ecdsaSign *ECDSAP256Signer) NewKeyPair() ([]byte, []byte, error) {
 	curve := elliptic.P256()
 	private, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
@@ -26,7 +26,7 @@ func (ecdsaSign *ECDSASigner) NewKeyPair() ([]byte, []byte, error) {
 	return util_crypto.ConvertECDSAKeysToDERBytes(&private.PublicKey, private)
 }
 
-func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, error) {
+func (ecdsaSign *ECDSAP256Signer) Sign(payload []byte, privKey []byte) ([]byte, error) {
 	if err := signInputValidator(payload, privKey); err != nil {
 		return []byte{}, err
 	}
@@ -48,7 +48,7 @@ func (ecdsaSign *ECDSASigner) Sign(payload []byte, privKey []byte) ([]byte, erro
 	return signature, nil
 }
 
-func (ecdsaSign *ECDSASigner) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
+func (ecdsaSign *ECDSAP256Signer) Verify(signature []byte, payload []byte, pubKey []byte) (bool, error) {
 	if err := verifyInputValidator(signature, payload, pubKey); err != nil {
 		return false, err
 	}

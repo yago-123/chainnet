@@ -66,11 +66,11 @@ func (hda *HDAccount) GetAccountID() uint32 {
 	return hda.accountID
 }
 
-// NewWallet generates a new wallet based on the HD wallet derivation path. Although this method is called NewWallet,
+// GetNewWallet generates a new wallet based on the HD wallet derivation path. Although this method is called GetNewWallet,
 // it should be called NewAddress according to BIP-44, but given that all the code is already written for a simple
 // wallet, it's better to keep it this way for now and reuse the code related to wallet. Also have the advantage that
 // it will isolate the network traces
-func (hda *HDAccount) NewWallet() (*wallt.Wallet, error) {
+func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
 	var err error
 	var derivedPrivateKey []byte
 

@@ -131,23 +131,88 @@ const (
 // difference between this function and DeriveChildStepNonHardened is that this function prepends a constant to the
 // private key before derivation starts. Hardened keys are more secure in theory due to the fact that even the master
 // pub key being compromised the child wallets are still secure. Based on BIP-44 standard the first 3 levels of
-// the derivation path (purpose, coin type and account) are hardened keys due to security reasons
+// the derivation path (purpose, coin type and account) are hardened keys due to security reasons.
+// Arguments:
+// - privateKey: the private key in DER format (will be decoded to raw format during the operation)
+// - chainCode: raw chain code used for derivation
+// - index: the index of the child key to be derived (in general: purpose, coin type, account)
+// Returns:
+// - the derived private key in DER format
+// - the derived chain code
+// - an error if any
 func DeriveChildStepHardened(privateKey []byte, chainCode []byte, index uint32) ([]byte, []byte, error) {
+	// decode the DER format into raw so that the derivation can be performed
+	privateKeyRaw, err := util_crypto.DecodeDERBytesToRawPrivateKey(privateKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error decoding private key while deriving child: %w", err)
+	}
+
 	// hardened key requires prepending a constant to the private key before derivation starts
-	derivedKey := append([]byte{HardenedKeyPrefix}, privateKey...)
-	return deriveChildStep(derivedKey, chainCode, index)
+	derivedKey := append([]byte{HardenedKeyPrefix}, privateKeyRaw...)
+
+	// derive the new child key
+	privateKeyRawDerived, chainCodeDerived, err := deriveChildStep(derivedKey, chainCode, index)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// convert the derived private key to DER format given that is the regular encoding in the whole codebase
+	privateKeyDERDerived, err := util_crypto.EncodeRawPrivateKeyToDERBytes(privateKeyRawDerived)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error encoding private key to DER format: %w", err)
+	}
+
+	return privateKeyDERDerived, chainCodeDerived, nil
 }
 
 // DeriveChildStepNonHardened derives a child key based on a master public key, unlike DeriveChildStepHardened this func
 // does not require prepending a constant to the private key before derivation starts. This is because non-hardened keys
 // are less secure than hardened keys, but they are still secure. Based on BIP-44 standard the last 2 levels of the
 // derivation path (change and index) are non-hardened keys (but is not a requirement)
+// Arguments:
+// - publicKey: the public key in DER format (will be decoded to raw format during the operation)
+// - chainCode: raw chain code used for derivation
+// - index: the index of the child key to be derived (in general: change, index)
+// Returns:
+// - the derived private key in DER format
+// - the derived chain code
+// - an error if any
 func DeriveChildStepNonHardened(publicKey []byte, chainCode []byte, index uint32) ([]byte, []byte, error) {
-	// non hardened key is just prepended and not modified
-	return deriveChildStep(publicKey, chainCode, index)
+	// decode the DER format into raw so that the derivation can be performed
+	publicKeyRaw, err := util_crypto.DecodeDERBytesToRawPublicKey(publicKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error decoding private key while deriving child: %w", err)
+	}
+
+	// hardened key requires prepending a constant to the private key before derivation starts
+	derivedKey := append([]byte{HardenedKeyPrefix}, publicKeyRaw...)
+
+	// derive the new child key
+	privateKeyRawDerived, chainCodeDerived, err := deriveChildStep(derivedKey, chainCode, index)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// convert the derived private key to DER format given that is the regular encoding in the whole codebase
+	privateKeyDERDerived, err := util_crypto.EncodeRawPrivateKeyToDERBytes(privateKeyRawDerived)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error encoding private key to DER format: %w", err)
+	}
+
+	return privateKeyDERDerived, chainCodeDerived, nil
 }
 
-// deriveChildStep derives a child key based on a master private key, master chain code and index
+// deriveChildStep derives a child key based on a key, chain code and index. Must always be handled by a function like
+// DeriveChildStepNonHardened or DeriveChildStepHardened to ensure the key is properly encoded/decoded and the hardening
+// is correctly applied
+// Arguments:
+// - derivedKey: the key to be derived, can be private or public depending on hardening
+// - chainCode: the chain code used for derivation
+// - index: the index of the child key to be derived (one field: purpose, coin type, account, change, index)
+// Returns:
+// - the derived private key in raw format
+// - the derived chain code
+// - an error if any
 func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte, []byte, error) {
 	var data []byte
 
@@ -171,6 +236,7 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 	childPrivateKeyInt.Add(childPrivateKeyInt, parentPrivateKeyInt)
 
 	// ensure key is within valid range for elliptic curve operations
+	// todo(): add support for other curves in the future
 	curveOrder := btcec.S256().N
 	childPrivateKeyInt.Mod(childPrivateKeyInt, curveOrder)
 	// if the result is >= curve order, re-derive the key (this should not happen often)

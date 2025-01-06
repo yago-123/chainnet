@@ -106,8 +106,9 @@ func ReadECDSAPemToPrivateKeyDerBytes(path string) ([]byte, error) {
 // EncodeRawPrivateKeyToDERBytes encodes a private key to DER format. DER is the binary format used for managing keys
 // because the portability of the keys across different systems is valued in this project
 func EncodeRawPrivateKeyToDERBytes(privKey []byte) ([]byte, error) {
+	// todo(): include support more crypto curves for ECDSA
 	if len(privKey) != Secp256r1KeyLength {
-		return nil, fmt.Errorf("invalid private key length: only P-256 curve (32 bytes) is supported, got %d", len(privKey))
+		return nil, fmt.Errorf("invalid private key length: only P-256 curve (32 bytes) is supported so far, got %d", len(privKey))
 	}
 
 	// create the ECDSA private key structure
@@ -125,6 +126,51 @@ func EncodeRawPrivateKeyToDERBytes(privKey []byte) ([]byte, error) {
 	}
 
 	return privKeyDER, nil
+}
+
+// DecodeDERBytesToRawPrivateKey decodes a DER encoded private key to raw bytes. DER is the binary format used for
+// managing keys because the portability of the keys across different systems is valued in this project
+func DecodeDERBytesToRawPrivateKey(derPrivateBytes []byte) ([]byte, error) {
+	// parse the DER-encoded private key
+	privKeyECDSA, err := x509.ParseECPrivateKey(derPrivateBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing DER bytes: %w", err)
+	}
+
+	// ensure the curve is P-256, so far is the only curve supported
+	// todo(): implement support for more curves in ECDSA
+	if privKeyECDSA.Curve != elliptic.P256() {
+		return nil, fmt.Errorf("unsupported curve: only P-256 is supported")
+	}
+
+	// return the raw private key bytes
+	return privKeyECDSA.D.Bytes(), nil
+}
+
+// DecodeDERBytesToRawPublicKey decodes a DER-encoded public key to raw bytes. Only P-256 curve is supported for now
+func DecodeDERBytesToRawPublicKey(derPublicBytes []byte) ([]byte, error) {
+	// parse the DER-encoded public key
+	pubKey, err := x509.ParsePKIXPublicKey(derPublicBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing DER bytes: %w", err)
+	}
+
+	// assert the parsed public key is an ECDSA public key
+	pubKeyECDSA, ok := pubKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("key is not an ECDSA public key")
+	}
+
+	// ensure the curve is P-256, so far is the only curve supported
+	// todo(): implement support for more curves in ECDSA
+	if pubKeyECDSA.Curve != elliptic.P256() {
+		return nil, fmt.Errorf("unsupported curve: only P-256 is supported")
+	}
+
+	// concatenate X and Y coordinates to form the raw public key bytes
+	rawPubKey := append(pubKeyECDSA.X.Bytes(), pubKeyECDSA.Y.Bytes()...)
+
+	return rawPubKey, nil
 }
 
 func CalculateHMACSha512(key []byte, data []byte) ([]byte, error) {

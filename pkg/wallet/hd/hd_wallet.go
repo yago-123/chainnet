@@ -51,6 +51,7 @@ func NewHDWalletWithKeys(
 ) (*HDWallet, error) {
 	var accountIndex uint32
 
+	// todo(): enclose the master key derivation into a separate function
 	// this represents a variant of BIP-44 by skipping BIP-39
 	masterInfo, err := util_crypto.CalculateHMACSha512([]byte(HMACKeyStandard), privateKey)
 	if err != nil {
@@ -60,11 +61,13 @@ func NewHDWalletWithKeys(
 	masterPrivateKey := masterInfo[:32]
 	masterChainCode := masterInfo[32:]
 
+	// the master private key is retrieved in raw format, convert to DER
 	masterPrivateKeyDER, err := util_crypto.EncodeRawPrivateKeyToDERBytes(masterPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("error encoding master private key to DER: %w", err)
 	}
 
+	// derive the public key from the master private key
 	masterPubKey, err := util_crypto.DeriveECDSAPubFromPrivateDERBytes(masterPrivateKeyDER)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
@@ -98,17 +101,17 @@ func (hd *HDWallet) Sync(metadata *HDMetadata) error {
 }
 
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index
-func (hd *HDWallet) GetNewAccount() (uint, *HDAccount, error) {
+func (hd *HDWallet) GetNewAccount() (*HDAccount, error) {
 	// we create a new
 	_, account, err := hd.createAccount(hd.accountNum, 0)
 	if err != nil {
-		return 0, nil, fmt.Errorf("error creating account: %w", err)
+		return nil, fmt.Errorf("error creating account: %w", err)
 	}
 
 	hd.accounts = append(hd.accounts, account)
 	hd.accountNum++
 
-	return uint(hd.accountNum), account, nil
+	return account, nil
 }
 
 // GetAccount returns an account from the HD wallet by its index

@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
@@ -30,6 +31,7 @@ var cfg = config.NewConfig()
 
 func main() {
 	privKeyPath := "wallet.pem"
+	var utxos []*kernel.UTXO
 
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
@@ -53,12 +55,31 @@ func main() {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
 
-	for _ = range [10]int{} {
-		accountNum, hda, errHda := hdWallet.GetNewAccount()
+	for idx := range [10]int{} {
+		// create a new account
+		hda, errHda := hdWallet.GetNewAccount()
 		if errHda != nil {
 			logger.Fatalf("error getting new account: %v", errHda)
 		}
 
-		logger.Infof("account number: %d, account: %x", accountNum, hda)
+		// create a new wallet
+		wallet, errWallet := hda.GetNewWallet()
+		if errWallet != nil {
+			logger.Fatalf("error generating wallet for account %d new wallet: %v", idx, errWallet)
+		}
+
+		// initialize the network for the wallet
+		_, err = wallet.InitNetwork()
+		if err != nil {
+			logger.Fatalf("error setting up wallet network: %v", err)
+		}
+
+		// get the wallet UTXOS
+		utxos, err = wallet.GetWalletUTXOS()
+		if err != nil {
+			logger.Fatalf("error getting wallet UTXOS: %v", err)
+		}
+
+		logger.Infof("account number: %d, account: %x, number of utxos: %d", idx, hda, len(utxos))
 	}
 }
