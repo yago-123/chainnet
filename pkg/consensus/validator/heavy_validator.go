@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	cerror "github.com/yago-123/chainnet/pkg/error"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/script/interpreter"

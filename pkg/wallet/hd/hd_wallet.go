@@ -9,12 +9,12 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
-	cerror "github.com/yago-123/chainnet/pkg/error"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
-// HDWallet represents a Hierarchical Deterministic wallet
-type HDWallet struct {
+// Wallet represents a Hierarchical Deterministic wallet
+type Wallet struct {
 	PrivateKey []byte // todo(): should be replaced by seed when BIP-39 is implemented
 
 	// masterPrivKey and masterPubKey are the private and public keys used to derive child keys obtained from the seed
@@ -25,7 +25,7 @@ type HDWallet struct {
 	// from seeing the private key in the derivation process
 	masterChainCode []byte
 
-	accounts   []*HDAccount
+	accounts   []*Account
 	accountNum uint32
 
 	// mu mutex used to synchronize the access to the HD wallet fields
@@ -52,7 +52,7 @@ func NewHDWalletWithKeys(
 	consensusHasher hash.Hashing,
 	encoder encoding.Encoding,
 	privateKey []byte,
-) (*HDWallet, error) {
+) (*Wallet, error) {
 	var accountIndex uint32
 
 	// todo(): enclose the master key derivation into a separate function
@@ -77,7 +77,7 @@ func NewHDWalletWithKeys(
 		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
 
-	return &HDWallet{
+	return &Wallet{
 		cfg:             cfg,
 		walletVersion:   version,
 		PrivateKey:      privateKey,
@@ -93,11 +93,11 @@ func NewHDWalletWithKeys(
 }
 
 // Sync synchronizes the HD wallet fields so that all accounts and addresses are up to date
-func (hd *HDWallet) Sync() (uint, error) {
+func (hd *Wallet) Sync() (uint, error) {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	tmpAccounts := []*HDAccount{}
+	tmpAccounts := []*Account{}
 	gaugeAccountsWithoutActivity := 0
 	for {
 		// generate accounts and check if had any activity (transactions)
@@ -131,13 +131,13 @@ func (hd *HDWallet) Sync() (uint, error) {
 
 	// store the accounts that are in use and update the account number
 	hd.accounts = tmpAccounts[:len(tmpAccounts)-AccountGapLimit]
-	hd.accountNum = uint32(len(hd.accounts))
+	hd.accountNum = uint32(len(hd.accounts)) ///nolint:gosec // possibility of integer overflow is OK here
 
 	return uint(hd.accountNum), nil
 }
 
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index
-func (hd *HDWallet) GetNewAccount() (*HDAccount, error) {
+func (hd *Wallet) GetNewAccount() (*Account, error) {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
@@ -154,11 +154,11 @@ func (hd *HDWallet) GetNewAccount() (*HDAccount, error) {
 }
 
 // GetAccount returns an account from the HD wallet by its index
-func (hd *HDWallet) GetAccount(accountIdx uint) (*HDAccount, error) {
+func (hd *Wallet) GetAccount(accountIdx uint) (*Account, error) {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	if uint32(accountIdx) >= hd.accountNum {
+	if uint32(accountIdx) >= hd.accountNum { ///nolint:gosec // possibility of integer overflow is OK here
 		return nil, fmt.Errorf("account index %d does not exist", accountIdx)
 	}
 
@@ -169,7 +169,7 @@ func (hd *HDWallet) GetAccount(accountIdx uint) (*HDAccount, error) {
 // account in the HD wallet, it's the responsibility of the caller to do so if needed.
 // Arguments:
 // - accountIndex: the index of the account to be created
-func (hd *HDWallet) createAccount(accountIdx uint32) (uint32, *HDAccount, error) {
+func (hd *Wallet) createAccount(accountIdx uint32) (uint32, *Account, error) {
 	var err error
 
 	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index

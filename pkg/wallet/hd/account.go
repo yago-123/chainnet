@@ -9,12 +9,12 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
-	cerror "github.com/yago-123/chainnet/pkg/error"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	wallt "github.com/yago-123/chainnet/pkg/wallet"
 )
 
-type HDAccount struct {
+type Account struct {
 	// derivedPubAccountKey public key derived from the master private key to be used for this account
 	// in other words, level 3 of the HD wallet derivation path
 	derivedPubAccountKey []byte
@@ -50,8 +50,8 @@ func NewHDAccount(
 	derivedPubAccountKey []byte,
 	derivedChainAccountCode []byte,
 	accountNum uint32,
-) *HDAccount {
-	return &HDAccount{
+) *Account {
+	return &Account{
 		cfg:                     cfg,
 		walletVersion:           walletVersion,
 		validator:               validator,
@@ -71,7 +71,7 @@ func NewHDAccount(
 // no funds (empty wallet) for the specified gap limit, the syncing process halts, and the number of active wallets
 // is recorded.
 // Returns the number of active wallets found during the sync process and an error if any
-func (hda *HDAccount) Sync() (uint32, error) {
+func (hda *Account) Sync() (uint32, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
@@ -119,12 +119,12 @@ func (hda *HDAccount) Sync() (uint32, error) {
 	return hda.walletNum, nil
 }
 
-func (hda *HDAccount) GetAccountID() uint32 {
+func (hda *Account) GetAccountID() uint32 {
 	return hda.accountID
 }
 
 // GetNewWallet generates a new wallet based on the HD wallet derivation path
-func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
+func (hda *Account) GetNewWallet() (*wallt.Wallet, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
@@ -138,14 +138,14 @@ func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
 	return wallet, nil
 }
 
-func (hda *HDAccount) GetWalletIndex() uint32 {
+func (hda *Account) GetWalletIndex() uint32 {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
 	return hda.walletNum
 }
 
-func (hda *HDAccount) ConsolidateChange() {
+func (hda *Account) ConsolidateChange() {
 
 }
 
@@ -153,8 +153,8 @@ func (hda *HDAccount) ConsolidateChange() {
 // method is called createWallet, it should be called createAddress according to BIP-44, but given that all the code
 // is already written for a simple wallet, it's better to keep it this way for now and reuse the code related to wallet.
 // Also have the advantage that it will isolate the network traces. This method does not persist the wallet in the
-// HDAccount object itself, it's the responsibility of the caller to do so if needed
-func (hda *HDAccount) createWallet(walletNum uint32) (*wallt.Wallet, error) {
+// Account object itself, it's the responsibility of the caller to do so if needed
+func (hda *Account) createWallet(walletNum uint32) (*wallt.Wallet, error) {
 	var err error
 	var derivedPrivateKey []byte
 

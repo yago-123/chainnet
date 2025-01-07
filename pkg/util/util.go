@@ -3,9 +3,10 @@ package util
 import (
 	"errors"
 	"fmt"
+	"math"
+
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"math"
 )
 
 const (

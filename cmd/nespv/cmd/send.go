@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 
-	cerror "github.com/yago-123/chainnet/pkg/error"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 

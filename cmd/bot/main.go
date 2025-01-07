@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+
 	"github.com/yago-123/chainnet/pkg/kernel"
 
 	"github.com/sirupsen/logrus"
@@ -55,10 +56,10 @@ func main() {
 	if err != nil {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
-	
-	for i := uint(0); i < numAccounts; i++ {
+
+	for i := 0; i < int(numAccounts); i++ { //nolint:gosec,intrange // possibility of integer overflow is OK here
 		// create a new account
-		hda, errHda := hdWallet.GetAccount(i)
+		hda, errHda := hdWallet.GetAccount(uint(i))
 		if errHda != nil {
 			logger.Fatalf("error getting new account: %v", errHda)
 		}

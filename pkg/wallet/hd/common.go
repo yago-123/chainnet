@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
-	cerror "github.com/yago-123/chainnet/pkg/error"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
@@ -217,7 +217,8 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 	var data []byte
 
 	// serialize index value as a 4-byte big-endian representation in byte array form
-	data = append(derivedKey, byte(index>>24), byte(index>>16), byte(index>>8), byte(index))
+	data = append(data, derivedKey...)
+	data = append(data, byte(index>>24), byte(index>>16), byte(index>>8), byte(index)) //nolint:mnd // 4 bytes, no const needed
 
 	// apply initial hmac
 	hmacOutput, err := util_crypto.CalculateHMACSha512(chainCode, data)
@@ -246,9 +247,4 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 
 	// return the child private key (as bytes) and child chain code
 	return childPrivateKeyInt.Bytes(), childChainCode, nil
-}
-
-// isHardened checks if the index contains the hardened bit activated
-func isHardened(index uint32) bool {
-	return index&HardenedIndex != 0
 }

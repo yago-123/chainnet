@@ -3,7 +3,7 @@ import (
 	"os"
 	"testing"
 
-	cerror "github.com/yago-123/chainnet/pkg/error"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 
 	"github.com/yago-123/chainnet/pkg/utxoset"
 
