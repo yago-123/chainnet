@@ -142,7 +142,6 @@ func (w *Wallet) GetP2PKAddress() []byte {
 	return w.PublicKey
 }
 
-// todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 	// todo(): fix this, this is not a correct P2PKH address, is a DER encoded public key
 	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
@@ -169,6 +168,11 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 	}
 
 	return utxos, nil
+}
+
+// GetWalletTxs retrieves all the transactions that are related to the wallet
+func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
+	return []*kernel.Transaction{}, nil
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network

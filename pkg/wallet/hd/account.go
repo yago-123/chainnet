@@ -2,6 +2,7 @@ package hd
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -23,6 +24,9 @@ type HDAccount struct {
 	accountID uint32
 	// walletNum represents the current index of the wallets generated via HD wallet
 	walletNum uint32
+
+	// mu mutex used to synchronize the access to the account fields
+	mu sync.Mutex
 
 	// todo(): maybe encapsulate these fields in a struct?
 	walletVersion byte
@@ -62,15 +66,95 @@ func NewHDAccount(
 	}
 }
 
+// Sync scans and updates the account by generating a series of wallets based on the default gap limit.
+// It checks each wallet for funds by syncing with the network and looking for transactions. The gap limit
+// defines the maximum number of consecutive empty wallets that can be generated before stopping the sync process.
+// If a wallet contains transactions, it is considered active, and the process continues. If an account has
+// no funds (empty wallet) for the specified gap limit, the syncing process halts, and the number of active wallets
+// is recorded.
+func (hda *HDAccount) Sync() error {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
+	gaugeWalletsWithoutFunds := 0
+	counterWalletsChecked := uint32(0)
+	for {
+		// generate wallet and check if had any activity (transactions)
+		wallet, err := hda.createWallet(counterWalletsChecked)
+		if err != nil {
+			return fmt.Errorf("error creating wallet: %w", err)
+		}
+
+		_, err = wallet.InitNetwork()
+		if err != nil {
+			return fmt.Errorf("error setting up wallet network: %w", err)
+		}
+
+		txs, err := wallet.GetWalletTxs()
+		if err != nil {
+			return fmt.Errorf("error getting wallet transactions: %w", err)
+		}
+
+		counterWalletsChecked++
+
+		// if does not have funds increment the gauge,
+		if len(txs) == 0 {
+			gaugeWalletsWithoutFunds++
+		}
+
+		// if does have funds reset the gauge
+		if len(txs) > 0 {
+			gaugeWalletsWithoutFunds = 0
+		}
+
+		// when the gauge is bigger than the gap limit, it means that we have reached the maximum number of consecutive
+		// empty wallets, so we stop the syncing process
+		if gaugeWalletsWithoutFunds >= GapLimit {
+			break
+		}
+	}
+
+	hda.walletNum = counterWalletsChecked - GapLimit
+
+	return nil
+}
+
 func (hda *HDAccount) GetAccountID() uint32 {
 	return hda.accountID
 }
 
-// GetNewWallet generates a new wallet based on the HD wallet derivation path. Although this method is called GetNewWallet,
-// it should be called NewAddress according to BIP-44, but given that all the code is already written for a simple
-// wallet, it's better to keep it this way for now and reuse the code related to wallet. Also have the advantage that
-// it will isolate the network traces
+// GetNewWallet generates a new wallet based on the HD wallet derivation path
 func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
+	wallet, err := hda.createWallet(hda.walletNum)
+	if err != nil {
+		return nil, fmt.Errorf("error creating new wallet: %w", err)
+	}
+
+	// increment the wallet index and return the new wallet
+	hda.walletNum++
+	return wallet, nil
+}
+
+func (hda *HDAccount) GetWalletIndex() uint32 {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
+	return hda.walletNum
+}
+
+func (hda *HDAccount) ConsolidateChange() {
+
+}
+
+// createWallet generates a new wallet by deriving by default the external and the wallet number selected. Although this
+// method is called createWallet, it should be called createAddress according to BIP-44, but given that all the code
+// is already written for a simple wallet, it's better to keep it this way for now and reuse the code related to wallet.
+// Also have the advantage that it will isolate the network traces. This method does not persist the wallet in the
+// HDAccount object itself, it's the responsibility of the caller to do so if needed
+func (hda *HDAccount) createWallet(walletNum uint32) (*wallt.Wallet, error) {
 	var err error
 	var derivedPrivateKey []byte
 
@@ -79,7 +163,7 @@ func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
 	// the account, so we only need the first three levels
 	indexes := []uint32{
 		uint32(ExternalChangeType), // given that the wallet does not have funds yet, the change type is external by default
-		hda.walletNum,
+		walletNum,
 	}
 
 	derivedPublicKey, derivedChainCode := hda.derivedPubAccountKey, hda.derivedChainAccountCode
@@ -99,9 +183,7 @@ func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
 		}
 	}
 
-	// increment the wallet index and return the new wallet
-	hda.walletNum++
-
+	// generate new wallet with the derived keys
 	wallet, err := wallt.NewWalletWithKeys(
 		hda.cfg,
 		hda.walletVersion,
@@ -117,12 +199,4 @@ func (hda *HDAccount) GetNewWallet() (*wallt.Wallet, error) {
 	}
 
 	return wallet, nil
-}
-
-func (hda *HDAccount) GetWalletIndex() uint32 {
-	return hda.walletNum
-}
-
-func (hda *HDAccount) ConsolidateChange() {
-
 }

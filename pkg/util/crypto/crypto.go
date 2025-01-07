@@ -103,9 +103,9 @@ func ReadECDSAPemToPrivateKeyDerBytes(path string) ([]byte, error) {
 	return block.Bytes, nil
 }
 
-// EncodeRawPrivateKeyToDERBytes encodes a private key to DER format. DER is the binary format used for managing keys
-// because the portability of the keys across different systems is valued in this project
-func EncodeRawPrivateKeyToDERBytes(privKey []byte) ([]byte, error) {
+// EncodeRawECDSAP256PrivateKeyToDERBytes encodes a private key to DER format. DER is the binary format used for managing keys
+// because the portability of the keys and the variety of them across different systems is valued in this project
+func EncodeRawECDSAP256PrivateKeyToDERBytes(privKey []byte) ([]byte, error) {
 	// todo(): include support more crypto curves for ECDSA
 	if len(privKey) != Secp256r1KeyLength {
 		return nil, fmt.Errorf("invalid private key length: only P-256 curve (32 bytes) is supported so far, got %d", len(privKey))

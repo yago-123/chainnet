@@ -11,13 +11,12 @@ import (
 
 // General constants for HD wallet implementation
 const (
-	HMACKeyStandard           = "ChainNet seed"
-	HardenedIndex      uint32 = 1 << 31
-	HardenedKeyPrefix         = 0x00
-	HDPurposeBIP44            = 44
-	HDChainNetCoinType        = 0
+	HMACKeyStandard          = "ChainNet seed"
+	HardenedIndex     uint32 = 1 << 31
+	HardenedKeyPrefix        = 0x00
+	HDPurposeBIP44           = 44
 
-	GapLimit = 1
+	GapLimit = 10
 )
 
 type coinType uint32
@@ -157,7 +156,7 @@ func DeriveChildStepHardened(privateKey []byte, chainCode []byte, index uint32) 
 	}
 
 	// convert the derived private key to DER format given that is the regular encoding in the whole codebase
-	privateKeyDERDerived, err := util_crypto.EncodeRawPrivateKeyToDERBytes(privateKeyRawDerived)
+	privateKeyDERDerived, err := util_crypto.EncodeRawECDSAP256PrivateKeyToDERBytes(privateKeyRawDerived)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error encoding private key to DER format: %w", err)
 	}
@@ -194,7 +193,7 @@ func DeriveChildStepNonHardened(publicKey []byte, chainCode []byte, index uint32
 	}
 
 	// convert the derived private key to DER format given that is the regular encoding in the whole codebase
-	privateKeyDERDerived, err := util_crypto.EncodeRawPrivateKeyToDERBytes(privateKeyRawDerived)
+	privateKeyDERDerived, err := util_crypto.EncodeRawECDSAP256PrivateKeyToDERBytes(privateKeyRawDerived)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error encoding private key to DER format: %w", err)
 	}

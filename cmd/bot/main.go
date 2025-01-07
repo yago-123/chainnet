@@ -51,7 +51,7 @@ func main() {
 		logger.Fatalf("error initializing HD wallet: %v", err)
 	}
 
-	if err = hdWallet.Sync(nil); err != nil {
+	if err = hdWallet.Sync(); err != nil {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
 
@@ -80,6 +80,10 @@ func main() {
 			logger.Fatalf("error getting wallet UTXOS: %v", err)
 		}
 
-		logger.Infof("account number: %d, account: %x, number of utxos: %d", idx, hda, len(utxos))
+		rawPubKey, errRaw := util_crypto.DecodeDERBytesToRawPublicKey(wallet.GetP2PKAddress())
+		if errRaw != nil {
+			logger.Fatalf("error getting raw public key: %v", err)
+		}
+		logger.Infof("account number: %d, account first wallet address: %x, number of utxos: %d", hda.GetAccountID(), rawPubKey, len(utxos))
 	}
 }

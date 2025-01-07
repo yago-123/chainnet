@@ -2,6 +2,7 @@ package hd
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
@@ -26,6 +27,9 @@ type HDWallet struct {
 
 	accounts   []*HDAccount
 	accountNum uint32
+
+	// mu mutex used to synchronize the access to the HD wallet fields
+	mu sync.Mutex
 
 	// todo(): maybe encapsulate these fields in a struct?
 	// walletVersion represents the version of the wallet being used
@@ -62,7 +66,7 @@ func NewHDWalletWithKeys(
 	masterChainCode := masterInfo[32:]
 
 	// the master private key is retrieved in raw format, convert to DER
-	masterPrivateKeyDER, err := util_crypto.EncodeRawPrivateKeyToDERBytes(masterPrivateKey)
+	masterPrivateKeyDER, err := util_crypto.EncodeRawECDSAP256PrivateKeyToDERBytes(masterPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("error encoding master private key to DER: %w", err)
 	}
@@ -89,19 +93,18 @@ func NewHDWalletWithKeys(
 }
 
 // Sync synchronizes the HD wallet fields so that all accounts and addresses are up to date
-func (hd *HDWallet) Sync(metadata *HDMetadata) error {
-	// if no metadata is provided, try to connect to the network and find which was the previous state
-	if metadata == nil {
-		return hd.resyncHDFromNetwork()
-	}
+func (hd *HDWallet) Sync() error {
+	hd.mu.Lock()
+	defer hd.mu.Unlock()
 
-	// if metadata is provided, try to resync the wallet from the metadata provided. Even if the metadata was wrong
-	// this would not represent a danger to the funds, but could create privacy issues
-	return hd.resyncHDFromMetadata(metadata)
+	return nil
 }
 
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index
 func (hd *HDWallet) GetNewAccount() (*HDAccount, error) {
+	hd.mu.Lock()
+	defer hd.mu.Unlock()
+
 	// we create a new
 	_, account, err := hd.createAccount(hd.accountNum, 0)
 	if err != nil {
@@ -116,25 +119,14 @@ func (hd *HDWallet) GetNewAccount() (*HDAccount, error) {
 
 // GetAccount returns an account from the HD wallet by its index
 func (hd *HDWallet) GetAccount(accountIdx uint) (*HDAccount, error) {
+	hd.mu.Lock()
+	defer hd.mu.Unlock()
+
 	if uint32(accountIdx) >= hd.accountNum {
 		return nil, fmt.Errorf("account index %d does not exist", accountIdx)
 	}
 
 	return hd.accounts[accountIdx], nil
-}
-
-// GetMetadata returns the metadata of the HD wallet so that the state can be recovered without the need of resyncing
-func (hd *HDWallet) GetMetadata() *HDMetadata {
-	m := HDMetadata{}
-	m.AccountNum = hd.accountNum
-
-	for _, account := range hd.accounts {
-		m.Accounts = append(m.Accounts, HDAccountMetadata{
-			WalletNum: account.GetWalletIndex(),
-		})
-	}
-
-	return &m
 }
 
 // createAccount creates a new account from the HD wallet with a given account number
@@ -185,25 +177,4 @@ func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, 
 	)
 
 	return accountIdx, hdAccount, nil
-}
-
-// resyncHDFromNetwork resyncs the HD wallet from the network
-func (hd *HDWallet) resyncHDFromNetwork() error {
-	// todo() implement
-	return nil
-}
-
-// resyncHDFromMetadata resyncs the HD wallet from the metadata
-func (hd *HDWallet) resyncHDFromMetadata(metadata *HDMetadata) error {
-	for accountIdx, accountMetadata := range metadata.Accounts {
-		_, account, err := hd.createAccount(uint32(accountIdx), accountMetadata.WalletNum)
-		if err != nil {
-			return fmt.Errorf("error syncing account %d: %w", accountIdx, err)
-		}
-
-		hd.accounts = append(hd.accounts, account)
-		hd.accountNum++
-	}
-
-	return nil
 }
