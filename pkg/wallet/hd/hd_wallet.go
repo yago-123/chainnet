@@ -93,7 +93,7 @@ func NewHDWalletWithKeys(
 }
 
 // Sync synchronizes the HD wallet fields so that all accounts and addresses are up to date
-func (hd *HDWallet) Sync() error {
+func (hd *HDWallet) Sync() (uint, error) {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
@@ -103,12 +103,12 @@ func (hd *HDWallet) Sync() error {
 		// generate accounts and check if had any activity (transactions)
 		idx, account, err := hd.createAccount(hd.accountNum)
 		if err != nil {
-			return fmt.Errorf("error creating account %d: %w", idx, err)
+			return 0, fmt.Errorf("error creating account %d: %w", idx, err)
 		}
 
 		numWallets, err := account.Sync()
 		if err != nil {
-			return fmt.Errorf("error syncing account %d: %w", idx, err)
+			return 0, fmt.Errorf("error syncing account %d: %w", idx, err)
 		}
 
 		tmpAccounts = append(tmpAccounts, account)
@@ -133,7 +133,7 @@ func (hd *HDWallet) Sync() error {
 	hd.accounts = tmpAccounts[:len(tmpAccounts)-AccountGapLimit]
 	hd.accountNum = uint32(len(hd.accounts))
 
-	return nil
+	return uint(hd.accountNum), nil
 }
 
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index

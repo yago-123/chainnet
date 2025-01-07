@@ -51,13 +51,14 @@ func main() {
 		logger.Fatalf("error initializing HD wallet: %v", err)
 	}
 
-	if err = hdWallet.Sync(); err != nil {
+	numAccounts, err := hdWallet.Sync()
+	if err != nil {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
-
-	for idx := range [10]int{} {
+	
+	for i := uint(0); i < numAccounts; i++ {
 		// create a new account
-		hda, errHda := hdWallet.GetNewAccount()
+		hda, errHda := hdWallet.GetAccount(i)
 		if errHda != nil {
 			logger.Fatalf("error getting new account: %v", errHda)
 		}
@@ -65,7 +66,7 @@ func main() {
 		// create a new wallet
 		wallet, errWallet := hda.GetNewWallet()
 		if errWallet != nil {
-			logger.Fatalf("error generating wallet for account %d new wallet: %v", idx, errWallet)
+			logger.Fatalf("error generating wallet for account %d new wallet: %v", i, errWallet)
 		}
 
 		// initialize the network for the wallet
