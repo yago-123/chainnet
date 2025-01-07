@@ -109,6 +109,36 @@ func (n *WalletP2P) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kern
 	return utxos, nil
 }
 
+// GetWalletTxs returns the transactions for a given address
+func (n *WalletP2P) GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error) {
+	url := fmt.Sprintf(
+		"http://%s%s",
+		n.baseurl,
+		fmt.Sprintf(RouterRetrieveAddressTxs, base58.Encode(address)),
+	)
+
+	// send GET request
+	resp, err := n.getRequest(ctx, url)
+	if err != nil {
+		return []*kernel.Transaction{}, fmt.Errorf("failed to get transaction response for address %s: %w", base58.Encode(address), err)
+	}
+	defer resp.Body.Close()
+
+	// read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []*kernel.Transaction{}, fmt.Errorf("failed to read list of transactions response for address %s: %w", base58.Encode(address), err)
+	}
+
+	// decode txs
+	txs, err := n.encoder.DeserializeTransactions(body)
+	if err != nil {
+		return []*kernel.Transaction{}, fmt.Errorf("failed to unmarshal transactions response for address %s: %w", address, err)
+	}
+
+	return txs, nil
+}
+
 func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	url := fmt.Sprintf(
 		"http://%s%s",

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/yago-123/chainnet/config"
@@ -172,7 +171,26 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 
 // GetWalletTxs retrieves all the transactions that are related to the wallet
 func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
-	return []*kernel.Transaction{}, nil
+	addresses, err := w.GetAddresses()
+	if err != nil {
+		return []*kernel.Transaction{}, fmt.Errorf("could not get wallet addresses: %w", err)
+	}
+
+	txs := make([]*kernel.Transaction, 0)
+	for _, address := range addresses {
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		defer cancel()
+
+		// retrieve txs for each address
+		tx, errUtxos := w.p2pNet.GetWalletTxs(ctx, address)
+		if errUtxos != nil {
+			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+		}
+
+		txs = append(txs, tx...)
+	}
+
+	return txs, nil
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
