@@ -97,6 +97,42 @@ func (hd *HDWallet) Sync() error {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
+	tmpAccounts := []*HDAccount{}
+	gaugeAccountsWithoutActivity := 0
+	for {
+		// generate accounts and check if had any activity (transactions)
+		idx, account, err := hd.createAccount(hd.accountNum)
+		if err != nil {
+			return fmt.Errorf("error creating account %d: %w", idx, err)
+		}
+
+		numWallets, err := account.Sync()
+		if err != nil {
+			return fmt.Errorf("error syncing account %d: %w", idx, err)
+		}
+
+		tmpAccounts = append(tmpAccounts, account)
+
+		// if the account has no addresses in use, increment the gauge
+		if numWallets == 0 {
+			gaugeAccountsWithoutActivity++
+		}
+
+		// if the account has addresses in use, reset the gauge
+		if numWallets > 0 {
+			gaugeAccountsWithoutActivity = 0
+		}
+
+		// if the gap limit is reached, stop the sync process
+		if gaugeAccountsWithoutActivity >= AccountGapLimit {
+			break
+		}
+	}
+
+	// store the accounts that are in use and update the account number
+	hd.accounts = tmpAccounts[:len(tmpAccounts)-AccountGapLimit]
+	hd.accountNum = uint32(len(hd.accounts))
+
 	return nil
 }
 
@@ -106,7 +142,7 @@ func (hd *HDWallet) GetNewAccount() (*HDAccount, error) {
 	defer hd.mu.Unlock()
 
 	// we create a new
-	_, account, err := hd.createAccount(hd.accountNum, 0)
+	_, account, err := hd.createAccount(hd.accountNum)
 	if err != nil {
 		return nil, fmt.Errorf("error creating account: %w", err)
 	}
@@ -129,13 +165,11 @@ func (hd *HDWallet) GetAccount(accountIdx uint) (*HDAccount, error) {
 	return hd.accounts[accountIdx], nil
 }
 
-// createAccount creates a new account from the HD wallet with a given account number
+// createAccount creates an  account from the HD wallet with a given account number. This method does not persist the
+// account in the HD wallet, it's the responsibility of the caller to do so if needed.
 // Arguments:
 // - accountIndex: the index of the account to be created
-// - walletNum: the number of wallets CREATED SO FAR! This is different from walletIndex. We use this field
-// for restoring the HD wallet from the metadata, it does not affect in any way the key derivation in this part
-// of the code. In the case of creating a new account, the walletNum will always be 0
-func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, *HDAccount, error) {
+func (hd *HDWallet) createAccount(accountIdx uint32) (uint32, *HDAccount, error) {
 	var err error
 
 	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index
@@ -173,7 +207,6 @@ func (hd *HDWallet) createAccount(accountIdx uint32, walletNum uint32) (uint32, 
 		derivedPublicKey,
 		derivedChainCode,
 		accountIdx,
-		walletNum,
 	)
 
 	return accountIdx, hdAccount, nil

@@ -50,7 +50,6 @@ func NewHDAccount(
 	derivedPubAccountKey []byte,
 	derivedChainAccountCode []byte,
 	accountNum uint32,
-	walletNum uint32,
 ) *HDAccount {
 	return &HDAccount{
 		cfg:                     cfg,
@@ -62,7 +61,6 @@ func NewHDAccount(
 		derivedPubAccountKey:    derivedPubAccountKey,
 		derivedChainAccountCode: derivedChainAccountCode,
 		accountID:               accountNum,
-		walletNum:               walletNum, // this field will be 0 for new accounts and X during HD restoration
 	}
 }
 
@@ -72,51 +70,53 @@ func NewHDAccount(
 // If a wallet contains transactions, it is considered active, and the process continues. If an account has
 // no funds (empty wallet) for the specified gap limit, the syncing process halts, and the number of active wallets
 // is recorded.
-func (hda *HDAccount) Sync() error {
+// Returns the number of active wallets found during the sync process and an error if any
+func (hda *HDAccount) Sync() (uint32, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
-	gaugeWalletsWithoutFunds := 0
+	gaugeWalletsWithoutActivity := 0
 	counterWalletsChecked := uint32(0)
 	for {
 		// generate wallet and check if had any activity (transactions)
 		wallet, err := hda.createWallet(counterWalletsChecked)
 		if err != nil {
-			return fmt.Errorf("error creating wallet: %w", err)
+			return 0, fmt.Errorf("error creating wallet: %w", err)
 		}
 
 		_, err = wallet.InitNetwork()
 		if err != nil {
-			return fmt.Errorf("error setting up wallet network: %w", err)
+			return 0, fmt.Errorf("error setting up wallet network: %w", err)
 		}
 
 		txs, err := wallet.GetWalletTxs()
 		if err != nil {
-			return fmt.Errorf("error getting wallet transactions: %w", err)
+			return 0, fmt.Errorf("error getting wallet transactions: %w", err)
 		}
 
 		counterWalletsChecked++
 
-		// if does not have funds increment the gauge,
+		// if does not have funds increment the gauge
 		if len(txs) == 0 {
-			gaugeWalletsWithoutFunds++
+			gaugeWalletsWithoutActivity++
 		}
 
 		// if does have funds reset the gauge
 		if len(txs) > 0 {
-			gaugeWalletsWithoutFunds = 0
+			gaugeWalletsWithoutActivity = 0
 		}
 
 		// when the gauge is bigger than the gap limit, it means that we have reached the maximum number of consecutive
 		// empty wallets, so we stop the syncing process
-		if gaugeWalletsWithoutFunds >= GapLimit {
+		if gaugeWalletsWithoutActivity >= AddressGapLimit {
 			break
 		}
 	}
 
-	hda.walletNum = counterWalletsChecked - GapLimit
+	// update the account number and return the number of active wallets found
+	hda.walletNum = counterWalletsChecked - AddressGapLimit
 
-	return nil
+	return hda.walletNum, nil
 }
 
 func (hda *HDAccount) GetAccountID() uint32 {

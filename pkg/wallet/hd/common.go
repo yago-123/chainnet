@@ -16,7 +16,8 @@ const (
 	HardenedKeyPrefix        = 0x00
 	HDPurposeBIP44           = 44
 
-	GapLimit = 10
+	AddressGapLimit = 10
+	AccountGapLimit = 1
 )
 
 type coinType uint32
