@@ -19,10 +19,12 @@ import (
 	"github.com/yago-123/chainnet/pkg/util"
 )
 
+type derKey byte
+
 type Wallet struct {
 	version    byte
-	PrivateKey []byte
-	PublicKey  []byte
+	PrivateKey []derKey
+	PublicKey  []derKey
 
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
