@@ -23,7 +23,13 @@ import (
 
 const RequestTimeout = 10 * time.Second
 
-type WalletP2P struct {
+type WalletNetwork interface {
+	GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error)
+	GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error)
+	SendTransaction(ctx context.Context, tx kernel.Transaction) error
+}
+
+type WalletHTTPConn struct {
 	cfg *config.Config
 
 	host host.Host
@@ -38,10 +44,10 @@ type WalletP2P struct {
 	logger *logrus.Logger
 }
 
-func NewWalletP2P(
+func NewWalletHTTPConn(
 	cfg *config.Config,
 	encoder encoding.Encoding,
-) (*WalletP2P, error) {
+) (WalletNetwork, error) {
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2P.MinNumConn), //nolint:gosec // this overflowing is OK
@@ -69,7 +75,7 @@ func NewWalletP2P(
 
 	baseURL := net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort))
 
-	return &WalletP2P{
+	return &WalletHTTPConn{
 		cfg:     cfg,
 		host:    host,
 		disco:   disco,
@@ -80,7 +86,7 @@ func NewWalletP2P(
 }
 
 // GetWalletUTXOS returns the UTXOs for a given address
-func (n *WalletP2P) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
+func (n *WalletHTTPConn) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
 	url := fmt.Sprintf(
 		"http://%s%s",
 		n.baseurl,
@@ -110,7 +116,7 @@ func (n *WalletP2P) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kern
 }
 
 // GetWalletTxs returns the transactions for a given address
-func (n *WalletP2P) GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error) {
+func (n *WalletHTTPConn) GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error) {
 	url := fmt.Sprintf(
 		"http://%s%s",
 		n.baseurl,
@@ -139,7 +145,7 @@ func (n *WalletP2P) GetWalletTxs(ctx context.Context, address []byte) ([]*kernel
 	return txs, nil
 }
 
-func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+func (n *WalletHTTPConn) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	url := fmt.Sprintf(
 		"http://%s%s",
 		n.baseurl,
@@ -161,7 +167,7 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	return nil
 }
 
-func (n *WalletP2P) getRequest(ctx context.Context, url string) (*http.Response, error) {
+func (n *WalletHTTPConn) getRequest(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
@@ -175,7 +181,7 @@ func (n *WalletP2P) getRequest(ctx context.Context, url string) (*http.Response,
 	return resp, nil
 }
 
-func (n *WalletP2P) postRequest(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
+func (n *WalletHTTPConn) postRequest(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)

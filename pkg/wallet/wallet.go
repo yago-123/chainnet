@@ -28,7 +28,7 @@ type Wallet struct {
 	signer sign.Signature
 
 	p2pActive    bool
-	p2pNet       *network.WalletP2P
+	p2pNet       network.WalletNetwork
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 
@@ -89,8 +89,8 @@ func NewWalletWithKeys(
 	}, nil
 }
 
-func (w *Wallet) InitNetwork() (*network.WalletP2P, error) {
-	var p2pNet *network.WalletP2P
+func (w *Wallet) InitNetwork() (network.WalletNetwork, error) {
+	var p2pNet network.WalletNetwork
 
 	// check if the network has been initialized before
 	if w.p2pActive {
@@ -99,7 +99,7 @@ func (w *Wallet) InitNetwork() (*network.WalletP2P, error) {
 
 	// create new P2P node
 	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := network.NewWalletP2P(w.cfg, w.encoder)
+	p2pNet, err := network.NewWalletHTTPConn(w.cfg, w.encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
 	}
