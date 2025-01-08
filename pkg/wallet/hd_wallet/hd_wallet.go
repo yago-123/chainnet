@@ -1,4 +1,4 @@
-package hd
+package hd_wallet
 
 import (
 	"fmt"
@@ -125,7 +125,7 @@ func (hd *Wallet) Sync() (uint, error) {
 
 		// if the account has addresses in use, reset the gauge
 		if numWallets > 0 {
-			hd.logger.Debugf("syncing account %d: have %d active wallets", account.GetAccountID(), numWallets)
+			hd.logger.Debugf("syncing account %d: have %d active externalWallets", account.GetAccountID(), numWallets)
 			gaugeAccountsWithoutActivity = 0
 		}
 
@@ -137,7 +137,7 @@ func (hd *Wallet) Sync() (uint, error) {
 
 	// store the accounts that are in use and update the account number
 	hd.accounts = tmpAccounts[:len(tmpAccounts)-AccountGapLimit]
-	hd.accountNum = uint32(len(hd.accounts)) ///nolint:gosec // possibility of integer overflow is OK here
+	hd.accountNum = uint32(len(hd.accounts)) //nolint:gosec // possibility of integer overflow is OK here
 
 	return uint(hd.accountNum), nil
 }

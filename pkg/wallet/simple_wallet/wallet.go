@@ -1,9 +1,9 @@
-package wallet
+package simple_wallet
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	common "github.com/yago-123/chainnet/pkg/wallet"
 
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
@@ -195,13 +195,13 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
 func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
-	inputs, totalBalance, err := generateInputs(utxos, targetAmount+txFee)
+	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
 
 	// create the outputs necessary for the transaction
-	outputs := generateOutputs(scriptType, targetAmount, txFee, totalBalance, to, string(w.PublicKey))
+	outputs := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, string(w.PublicKey))
 
 	// generate transaction
 	tx := kernel.NewTransaction(
@@ -275,37 +275,4 @@ func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) er
 	}
 
 	return nil
-}
-
-// generateInputs set up the inputs for the transaction and returns the total balance of the UTXOs that are going to be
-// spent in the transaction
-func generateInputs(utxos []*kernel.UTXO, targetAmount uint) ([]kernel.TxInput, uint, error) {
-	// for now simple FIFO method, first outputs are the first to be spent
-	balance := uint(0)
-	inputs := []kernel.TxInput{}
-
-	for _, utxo := range utxos {
-		balance += utxo.Output.Amount
-		inputs = append(inputs, kernel.NewInput(utxo.TxID, utxo.OutIdx, "", utxo.Output.PubKey))
-		if balance >= targetAmount {
-			return inputs, balance, nil
-		}
-	}
-
-	return []kernel.TxInput{}, balance, errors.New("not enough funds to perform the transaction")
-}
-
-// generateOutputs set up the outputs for the transaction
-func generateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
-	change := totalBalance - txFee - targetAmount
-
-	txOutput := []kernel.TxOutput{}
-	txOutput = append(txOutput, kernel.NewOutput(targetAmount, scriptType, receiver))
-
-	// add output corresponding to the spare changeType
-	if change > 0 {
-		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, scriptType, changeReceiver))
-	}
-
-	return txOutput
 }

@@ -21,3 +21,8 @@ func (utxo *UTXO) EqualInput(input TxInput) bool {
 func (utxo *UTXO) UniqueKey() string {
 	return fmt.Sprintf("%x-%d", utxo.TxID, utxo.OutIdx)
 }
+
+// GetAmount returns the balance value contained in the UTXO ($$$)
+func (utxo *UTXO) GetAmount() uint {
+	return utxo.Output.Amount
+}

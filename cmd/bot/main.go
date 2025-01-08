@@ -13,7 +13,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
-	"github.com/yago-123/chainnet/pkg/wallet/hd"
+	"github.com/yago-123/chainnet/pkg/wallet/hd_wallet"
 )
 
 var (
@@ -42,7 +42,7 @@ func main() {
 		logger.Fatalf("error reading private key: %v", err)
 	}
 
-	hdWallet, err := hd.NewHDWalletWithKeys(
+	hdWallet, err := hd_wallet.NewHDWalletWithKeys(
 		cfg,
 		1,
 		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
@@ -61,7 +61,7 @@ func main() {
 	}
 
 	acc, _ := hdWallet.GetNewAccount()
-	wll, _ := acc.GetNewWallet()
+	wll, _ := acc.GetNewExternalWallet()
 	logger.Infof("brrr %s", base58.Encode(wll.GetP2PKAddress()))
 
 	logger.Infof("wallet has %d accounts", numAccounts)
@@ -74,7 +74,7 @@ func main() {
 		}
 
 		// create a new wallet
-		wallet, errWallet := hda.GetNewWallet()
+		wallet, errWallet := hda.GetNewExternalWallet()
 		if errWallet != nil {
 			logger.Fatalf("error generating wallet for account %d new wallet: %v", i, errWallet)
 		}
