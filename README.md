@@ -110,7 +110,7 @@ To receive rewards, you'll need to extract the public key from the wallet in `ba
 $ openssl ec -in <wallet.pem> -pubout -outform DER 2>/dev/null | base58
 ```
 
-Note: You can copy and paste the key obtained for using the wallet directly into the configuration file. The chain uses 
+**Note:** You can copy and paste the key obtained for using the wallet directly into the configuration file. The chain uses 
 the encoded DER format for keys, as it remains unclear which signing algorithm will be used in the future.
 
 ### Step 4: Configure the Miner for Rewards
