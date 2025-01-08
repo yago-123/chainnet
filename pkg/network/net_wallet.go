@@ -87,62 +87,26 @@ func NewWalletHTTPConn(
 
 // GetWalletUTXOS returns the UTXOs for a given address
 func (n *WalletHTTPConn) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
-	url := fmt.Sprintf(
-		"http://%s%s",
+	return fetchAndDecode(
+		ctx,
 		n.baseurl,
-		fmt.Sprintf(RouterRetrieveAddressUTXOs, base58.Encode(address)),
+		address,
+		RouterRetrieveAddressUTXOs,
+		n.getRequest,
+		n.encoder.DeserializeUTXOs,
 	)
-
-	// send GET request
-	resp, err := n.getRequest(ctx, url)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to get UTXO response for address %s: %w", base58.Encode(address), err)
-	}
-	defer resp.Body.Close()
-
-	// read response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %w", base58.Encode(address), err)
-	}
-
-	// decode UTXOs
-	utxos, err := n.encoder.DeserializeUTXOs(body)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to unmarshal UTXO response for address %s: %w", address, err)
-	}
-
-	return utxos, nil
 }
 
 // GetWalletTxs returns the transactions for a given address
 func (n *WalletHTTPConn) GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error) {
-	url := fmt.Sprintf(
-		"http://%s%s",
+	return fetchAndDecode(
+		ctx,
 		n.baseurl,
-		fmt.Sprintf(RouterRetrieveAddressTxs, base58.Encode(address)),
+		address,
+		RouterRetrieveAddressTxs,
+		n.getRequest,
+		n.encoder.DeserializeTransactions,
 	)
-
-	// send GET request
-	resp, err := n.getRequest(ctx, url)
-	if err != nil {
-		return []*kernel.Transaction{}, fmt.Errorf("failed to get transaction response for address %s: %w", base58.Encode(address), err)
-	}
-	defer resp.Body.Close()
-
-	// read response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return []*kernel.Transaction{}, fmt.Errorf("failed to read list of transactions response for address %s: %w", base58.Encode(address), err)
-	}
-
-	// decode txs
-	txs, err := n.encoder.DeserializeTransactions(body)
-	if err != nil {
-		return []*kernel.Transaction{}, fmt.Errorf("failed to unmarshal transactions response for address %s: %w", address, err)
-	}
-
-	return txs, nil
 }
 
 func (n *WalletHTTPConn) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
@@ -165,6 +129,44 @@ func (n *WalletHTTPConn) SendTransaction(ctx context.Context, tx kernel.Transact
 	defer resp.Body.Close()
 
 	return nil
+}
+
+// helper function to send HTTP request and decode response with URL in error messages
+func fetchAndDecode[T any](
+	ctx context.Context,
+	baseurl string,
+	address []byte,
+	routeFormat string,
+	getRequest func(context.Context, string) (*http.Response, error),
+	decodeFunc func([]byte) ([]T, error),
+) ([]T, error) {
+	// construct the URL
+	url := fmt.Sprintf(
+		"http://%s%s",
+		baseurl,
+		fmt.Sprintf(routeFormat, base58.Encode(address)),
+	)
+
+	// send GET request
+	resp, err := getRequest(ctx, url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GET from URL %s for address %s: %w", url, base58.Encode(address), err)
+	}
+	defer resp.Body.Close()
+
+	// read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body from URL %s for address %s: %w", url, base58.Encode(address), err)
+	}
+
+	// decode response
+	data, err := decodeFunc(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response from URL %s for address %s: %w", url, base58.Encode(address), err)
+	}
+
+	return data, nil
 }
 
 func (n *WalletHTTPConn) getRequest(ctx context.Context, url string) (*http.Response, error) {
