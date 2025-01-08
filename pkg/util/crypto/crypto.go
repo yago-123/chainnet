@@ -175,19 +175,22 @@ func DecodeDERBytesToRawPublicKey(derPublicBytes []byte) ([]byte, error) {
 	return rawPubKey, nil
 }
 
-// ValidateECDSAP256PrivateKey ensures the private key is within the valid range for elliptic curve operations
-func ValidateECDSAP256PrivateKey(privateKeyInt *big.Int) error {
-	// ensure key is within valid range for elliptic curve operations
+// NormalizeECDSAP256PrivateKey ensure the private key is within valid range for elliptic curve operations
+func NormalizeECDSAP256PrivateKey(privateKeyInt big.Int) (*big.Int, error) {
+	// get elliptic curve parameters for P-256 (N = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551)
 	curve := elliptic.P256()
 	curveOrder := curve.Params().N
 
-	// ensure the key is within the valid range
-	privateKeyInt.Mod(privateKeyInt, curveOrder)
-	if privateKeyInt.Cmp(curveOrder) >= 0 {
-		return fmt.Errorf("%w: key exceeds curve order", cerror.ErrWalletInvalidChildPrivateKey)
+	// reduce the key to a valid range [0, N-1] so that it can be used for elliptic curve operations
+	privateKeyInt.Mod(&privateKeyInt, curveOrder)
+
+	// if key is zero or exceeds the curve order, it's invalid. The comparation is kind of redundant, because
+	// the mod has already been applied in reality
+	if privateKeyInt.Sign() == 0 || privateKeyInt.Cmp(curveOrder) >= 0 {
+		return nil, fmt.Errorf("%w: key exceeds curve order", cerror.ErrWalletInvalidChildPrivateKey)
 	}
 
-	return nil
+	return &privateKeyInt, nil
 }
 
 func CalculateHMACSha512(key []byte, data []byte) ([]byte, error) {

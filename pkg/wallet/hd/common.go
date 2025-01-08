@@ -233,8 +233,9 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 
 	// ensure key is within valid range for elliptic curve operations
 	// todo(): implement support for more curves in ECDSA
-	if errKey := util_crypto.ValidateECDSAP256PrivateKey(childPrivateKeyInt); errKey != nil {
-		return []byte{}, []byte{}, errKey
+	childPrivateKeyInt, err = util_crypto.NormalizeECDSAP256PrivateKey(*childPrivateKeyInt)
+	if err != nil {
+		return []byte{}, []byte{}, err
 	}
 
 	// return the child private key (as bytes) and child chain code
