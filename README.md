@@ -94,6 +94,8 @@ $ openssl ecparam -name prime256v1 -genkey -noout -out <wallet.pem>
 ```
 This `wallet.pem` file will contain both the private and public keys.
 
+**IMPORTANT:** this code is only compatible with `prime256v1` elliptic curves (so far).
+
 ### Step 2: Use the Wallet to Send Transactions
 You can use this wallet by running the `chainnet-nespv` wallet to send transactions as follows:
 ```bash
@@ -107,6 +109,9 @@ To receive rewards, you'll need to extract the public key from the wallet in `ba
 ```bash
 $ openssl ec -in <wallet.pem> -pubout -outform DER 2>/dev/null | base58
 ```
+
+**Note:** You can copy and paste the key obtained for using the wallet directly into the configuration file. The chain uses 
+the encoded DER format for keys, as it remains unclear which signing algorithm will be used in the future.
 
 ### Step 4: Configure the Miner for Rewards
 Once you have the public key, paste it into the `config.yaml` file of the miner to receive mining rewards:

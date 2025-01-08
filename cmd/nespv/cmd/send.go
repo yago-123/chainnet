@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	cerror "github.com/yago-123/chainnet/pkg/errs"
+
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -55,7 +57,7 @@ var sendCmd = &cobra.Command{
 		}
 
 		if privKeyPath != "" {
-			privKey, err = util_crypto.ReadECDSAPemPrivateKey(privKeyPath)
+			privKey, err = util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 			if err != nil {
 				logger.Fatalf("error reading private key: %v", err)
 			}
@@ -66,9 +68,9 @@ var sendCmd = &cobra.Command{
 		}
 
 		// derive public key from private key
-		pubKey, err = util_crypto.DeriveECDSAPubFromPrivate(privKey)
+		pubKey, err = util_crypto.DeriveECDSAPubFromPrivateDERBytes(privKey)
 		if err != nil {
-			logger.Fatalf("error deriving public key from private key: %v", err)
+			logger.Fatalf("%v: %v", cerror.ErrCryptoPublicKeyDerivation, err)
 		}
 
 		// create wallet

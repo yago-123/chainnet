@@ -29,7 +29,7 @@ type Wallet struct {
 	signer sign.Signature
 
 	p2pActive    bool
-	p2pNet       *network.WalletP2P
+	p2pNet       network.WalletNetwork
 	p2pCtx       context.Context
 	p2pCancelCtx context.CancelFunc
 
@@ -90,8 +90,8 @@ func NewWalletWithKeys(
 	}, nil
 }
 
-func (w *Wallet) InitNetwork() (*network.WalletP2P, error) {
-	var p2pNet *network.WalletP2P
+func (w *Wallet) InitNetwork() (network.WalletNetwork, error) {
+	var p2pNet network.WalletNetwork
 
 	// check if the network has been initialized before
 	if w.p2pActive {
@@ -100,7 +100,7 @@ func (w *Wallet) InitNetwork() (*network.WalletP2P, error) {
 
 	// create new P2P node
 	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := network.NewWalletP2P(w.cfg, w.encoder)
+	p2pNet, err := network.NewWalletHTTPConn(w.cfg, w.encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
 	}
@@ -141,7 +141,6 @@ func (w *Wallet) GetP2PKAddress() []byte {
 	return w.PublicKey
 }
 
-// todo() implement hierarchically deterministic HD wallet
 func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
 	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
 }
@@ -167,6 +166,30 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 	}
 
 	return utxos, nil
+}
+
+// GetWalletTxs retrieves all the transactions that are related to the wallet
+func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
+	addresses, err := w.GetAddresses()
+	if err != nil {
+		return []*kernel.Transaction{}, fmt.Errorf("could not get wallet addresses: %w", err)
+	}
+
+	txs := make([]*kernel.Transaction, 0)
+	for _, address := range addresses {
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		defer cancel()
+
+		// retrieve txs for each address
+		tx, errUtxos := w.p2pNet.GetWalletTxs(ctx, address)
+		if errUtxos != nil {
+			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+		}
+
+		txs = append(txs, tx...)
+	}
+
+	return txs, nil
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
@@ -279,7 +302,7 @@ func generateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBal
 	txOutput := []kernel.TxOutput{}
 	txOutput = append(txOutput, kernel.NewOutput(targetAmount, scriptType, receiver))
 
-	// add output corresponding to the spare change
+	// add output corresponding to the spare changeType
 	if change > 0 {
 		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, scriptType, changeReceiver))
 	}

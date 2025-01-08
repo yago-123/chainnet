@@ -23,7 +23,13 @@ import (
 
 const RequestTimeout = 10 * time.Second
 
-type WalletP2P struct {
+type WalletNetwork interface {
+	GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error)
+	GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error)
+	SendTransaction(ctx context.Context, tx kernel.Transaction) error
+}
+
+type WalletHTTPConn struct {
 	cfg *config.Config
 
 	host host.Host
@@ -38,10 +44,10 @@ type WalletP2P struct {
 	logger *logrus.Logger
 }
 
-func NewWalletP2P(
+func NewWalletHTTPConn(
 	cfg *config.Config,
 	encoder encoding.Encoding,
-) (*WalletP2P, error) {
+) (WalletNetwork, error) {
 	// create connection manager
 	connMgr, err := connmgr.NewConnManager(
 		int(cfg.P2P.MinNumConn), //nolint:gosec // this overflowing is OK
@@ -69,7 +75,7 @@ func NewWalletP2P(
 
 	baseURL := net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort))
 
-	return &WalletP2P{
+	return &WalletHTTPConn{
 		cfg:     cfg,
 		host:    host,
 		disco:   disco,
@@ -80,36 +86,30 @@ func NewWalletP2P(
 }
 
 // GetWalletUTXOS returns the UTXOs for a given address
-func (n *WalletP2P) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
-	url := fmt.Sprintf(
-		"http://%s%s",
+func (n *WalletHTTPConn) GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
+	return fetchAndDecode(
+		ctx,
 		n.baseurl,
-		fmt.Sprintf(RouterRetrieveAddressUTXOs, base58.Encode(address)),
+		address,
+		RouterRetrieveAddressUTXOs,
+		n.getRequest,
+		n.encoder.DeserializeUTXOs,
 	)
-
-	// send GET request
-	resp, err := n.getRequest(ctx, url)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to get UTXO response for address %s: %w", base58.Encode(address), err)
-	}
-	defer resp.Body.Close()
-
-	// read response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to read list of UTXO response for address %s: %w", base58.Encode(address), err)
-	}
-
-	// decode UTXOs
-	utxos, err := n.encoder.DeserializeUTXOs(body)
-	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("failed to unmarshal UTXO response for address %s: %w", address, err)
-	}
-
-	return utxos, nil
 }
 
-func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
+// GetWalletTxs returns the transactions for a given address
+func (n *WalletHTTPConn) GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error) {
+	return fetchAndDecode(
+		ctx,
+		n.baseurl,
+		address,
+		RouterRetrieveAddressTxs,
+		n.getRequest,
+		n.encoder.DeserializeTransactions,
+	)
+}
+
+func (n *WalletHTTPConn) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	url := fmt.Sprintf(
 		"http://%s%s",
 		n.baseurl,
@@ -131,7 +131,45 @@ func (n *WalletP2P) SendTransaction(ctx context.Context, tx kernel.Transaction) 
 	return nil
 }
 
-func (n *WalletP2P) getRequest(ctx context.Context, url string) (*http.Response, error) {
+// helper function to send HTTP request and decode response with URL in error messages
+func fetchAndDecode[T any](
+	ctx context.Context,
+	baseurl string,
+	address []byte,
+	routeFormat string,
+	getRequest func(context.Context, string) (*http.Response, error),
+	decodeFunc func([]byte) ([]T, error),
+) ([]T, error) {
+	// construct the URL
+	url := fmt.Sprintf(
+		"http://%s%s",
+		baseurl,
+		fmt.Sprintf(routeFormat, base58.Encode(address)),
+	)
+
+	// send GET request
+	resp, err := getRequest(ctx, url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GET from URL %s for address %s: %w", url, base58.Encode(address), err)
+	}
+	defer resp.Body.Close()
+
+	// read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body from URL %s for address %s: %w", url, base58.Encode(address), err)
+	}
+
+	// decode response
+	data, err := decodeFunc(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response from URL %s for address %s: %w", url, base58.Encode(address), err)
+	}
+
+	return data, nil
+}
+
+func (n *WalletHTTPConn) getRequest(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)
@@ -145,7 +183,7 @@ func (n *WalletP2P) getRequest(ctx context.Context, url string) (*http.Response,
 	return resp, nil
 }
 
-func (n *WalletP2P) postRequest(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
+func (n *WalletHTTPConn) postRequest(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for url %s: %w", url, err)

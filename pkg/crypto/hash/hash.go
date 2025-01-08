@@ -3,6 +3,7 @@ package hash
 import (
 	"bytes"
 	"crypto/sha256"
+	"crypto/sha512"
 	"errors"
 	"hash"
 	"sync"
@@ -12,6 +13,7 @@ import (
 
 const (
 	SHA256 HasherType = iota
+	SHA512
 	RipeMD160
 )
 
@@ -29,6 +31,8 @@ func GetHasher(i HasherType) Hashing {
 	switch i {
 	case SHA256:
 		return NewHasher(sha256.New())
+	case SHA512:
+		return NewHasher(sha512.New())
 	case RipeMD160:
 		return NewHasher(ripemd160.New())
 	default:

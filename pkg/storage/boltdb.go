@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	cerror "github.com/yago-123/chainnet/pkg/errs"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/yago-123/chainnet/pkg/encoding"
@@ -137,7 +139,7 @@ func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		lastBlock = bucket.Get([]byte(LastBlockKey))
@@ -150,7 +152,7 @@ func (bolt *BoltDB) GetLastBlock() (*kernel.Block, error) {
 	}
 
 	if len(lastBlock) == 0 {
-		return &kernel.Block{}, ErrNotFound
+		return &kernel.Block{}, cerror.ErrStorageElementNotFound
 	}
 	return bolt.encoding.DeserializeBlock(lastBlock)
 }
@@ -162,7 +164,7 @@ func (bolt *BoltDB) GetLastHeader() (*kernel.BlockHeader, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bucketExists(bolt.headerBucket, tx)
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		// if the bucket exists, at least one header has been written
@@ -180,7 +182,7 @@ func (bolt *BoltDB) GetLastHeader() (*kernel.BlockHeader, error) {
 	}
 
 	if len(lastHeader) == 0 {
-		return &kernel.BlockHeader{}, ErrNotFound
+		return &kernel.BlockHeader{}, cerror.ErrStorageElementNotFound
 	}
 	return bolt.encoding.DeserializeHeader(lastHeader)
 }
@@ -193,7 +195,7 @@ func (bolt *BoltDB) GetLastBlockHash() ([]byte, error) {
 		exists, bucket := bucketExists(bolt.headerBucket, tx)
 		// if the last block hash does not exists yet, the genesis block has not been created yet
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		if exists {
@@ -208,7 +210,7 @@ func (bolt *BoltDB) GetLastBlockHash() ([]byte, error) {
 	}
 
 	if len(lastBlockHash) == 0 {
-		return []byte{}, ErrNotFound
+		return []byte{}, cerror.ErrStorageElementNotFound
 	}
 	return lastBlockHash, nil
 }
@@ -219,7 +221,7 @@ func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
 	err := bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		genesisBlock = bucket.Get([]byte(FirstBlockKey))
@@ -232,7 +234,7 @@ func (bolt *BoltDB) GetGenesisBlock() (*kernel.Block, error) {
 	}
 
 	if len(genesisBlock) == 0 {
-		return &kernel.Block{}, ErrNotFound
+		return &kernel.Block{}, cerror.ErrStorageElementNotFound
 	}
 	return bolt.encoding.DeserializeBlock(genesisBlock)
 }
@@ -243,7 +245,7 @@ func (bolt *BoltDB) GetGenesisHeader() (*kernel.BlockHeader, error) {
 	err := bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bucketExists(bolt.headerBucket, tx)
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		genesisHeader = bucket.Get([]byte(FirstHeaderKey))
@@ -256,7 +258,7 @@ func (bolt *BoltDB) GetGenesisHeader() (*kernel.BlockHeader, error) {
 	}
 
 	if len(genesisHeader) == 0 {
-		return &kernel.BlockHeader{}, ErrNotFound
+		return &kernel.BlockHeader{}, cerror.ErrStorageElementNotFound
 	}
 	return bolt.encoding.DeserializeHeader(genesisHeader)
 }
@@ -267,7 +269,7 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bucketExists(bolt.blockBucket, tx)
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		blockBytes = bucket.Get(hash)
@@ -280,7 +282,7 @@ func (bolt *BoltDB) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
 	}
 
 	if len(blockBytes) == 0 {
-		return &kernel.Block{}, ErrNotFound
+		return &kernel.Block{}, cerror.ErrStorageElementNotFound
 	}
 	return bolt.encoding.DeserializeBlock(blockBytes)
 }
@@ -292,7 +294,7 @@ func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, erro
 	err = bolt.db.View(func(tx *boltdb.Tx) error {
 		exists, bucket := bucketExists(bolt.headerBucket, tx)
 		if !exists {
-			return ErrNotFound
+			return cerror.ErrStorageElementNotFound
 		}
 
 		headerBytes = bucket.Get(hash)
@@ -305,7 +307,7 @@ func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, erro
 	}
 
 	if len(headerBytes) == 0 {
-		return &kernel.BlockHeader{}, ErrNotFound
+		return &kernel.BlockHeader{}, cerror.ErrStorageElementNotFound
 	}
 	return bolt.encoding.DeserializeHeader(headerBytes)
 }

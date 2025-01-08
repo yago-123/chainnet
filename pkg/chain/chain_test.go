@@ -3,6 +3,8 @@ import (
 	"os"
 	"testing"
 
+	cerror "github.com/yago-123/chainnet/pkg/errs"
+
 	"github.com/yago-123/chainnet/pkg/utxoset"
 
 	"github.com/yago-123/chainnet/config"
@@ -90,7 +92,7 @@ func TestBlockchain_InitializationFromScratch(t *testing.T) {
 	store := &mockStorage.MockStorage{}
 	store.
 		On("GetLastHeader").
-		Return(&kernel.BlockHeader{}, storage.ErrNotFound)
+		Return(&kernel.BlockHeader{}, cerror.ErrStorageElementNotFound)
 
 	cfg := &config.Config{Logger: logrus.New()}
 

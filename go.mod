@@ -6,6 +6,7 @@ toolchain go1.23.0
 
 require (
 	github.com/boltdb/bolt v1.3.1
+	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/ipfs/go-datastore v0.6.0
 	github.com/julienschmidt/httprouter v1.3.0

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	cerror "github.com/yago-123/chainnet/pkg/errs"
+
 	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/yago-123/chainnet/pkg/chain/iterator"
@@ -171,7 +173,7 @@ func (explorer *ChainExplorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	}
 
 	if len(headers) == 0 {
-		return []*kernel.BlockHeader{}, storage.ErrNotFound
+		return []*kernel.BlockHeader{}, cerror.ErrStorageElementNotFound
 	}
 
 	return headers, nil
