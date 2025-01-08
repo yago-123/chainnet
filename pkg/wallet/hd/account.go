@@ -2,6 +2,7 @@ package hd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 
 	"github.com/yago-123/chainnet/config"
@@ -37,7 +38,9 @@ type Account struct {
 
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
-	cfg             *config.Config
+
+	logger *logrus.Logger
+	cfg    *config.Config
 }
 
 func NewHDAccount(
@@ -53,6 +56,7 @@ func NewHDAccount(
 ) *Account {
 	return &Account{
 		cfg:                     cfg,
+		logger:                  cfg.Logger,
 		walletVersion:           walletVersion,
 		validator:               validator,
 		signer:                  signer,

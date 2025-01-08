@@ -148,10 +148,10 @@ func DeriveChildStepHardened(privateKey []byte, chainCode []byte, index uint32) 
 	}
 
 	// hardened key requires prepending a constant to the private key before derivation starts
-	derivedKey := append([]byte{HardenedKeyPrefix}, privateKeyRaw...)
+	prependedPrivateKey := append([]byte{HardenedKeyPrefix}, privateKeyRaw...)
 
 	// derive the new child key
-	privateKeyRawDerived, chainCodeDerived, err := deriveChildStep(derivedKey, chainCode, index)
+	privateKeyRawDerived, chainCodeDerived, err := deriveChildStep(prependedPrivateKey, chainCode, index)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -184,11 +184,8 @@ func DeriveChildStepNonHardened(publicKey []byte, chainCode []byte, index uint32
 		return nil, nil, fmt.Errorf("error decoding private key while deriving child: %w", err)
 	}
 
-	// hardened key requires prepending a constant to the private key before derivation starts
-	derivedKey := append([]byte{HardenedKeyPrefix}, publicKeyRaw...)
-
 	// derive the new child key
-	privateKeyRawDerived, chainCodeDerived, err := deriveChildStep(derivedKey, chainCode, index)
+	privateKeyRawDerived, chainCodeDerived, err := deriveChildStep(publicKeyRaw, chainCode, index)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -237,7 +234,7 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 	childPrivateKeyInt.Add(childPrivateKeyInt, parentPrivateKeyInt)
 
 	// ensure key is within valid range for elliptic curve operations
-	// todo(): add support for other curves in the future
+	// todo(): this is a wrong check, we don't make use of S256
 	curveOrder := btcec.S256().N
 	childPrivateKeyInt.Mod(childPrivateKeyInt, curveOrder)
 	// if the result is >= curve order, re-derive the key (this should not happen often)

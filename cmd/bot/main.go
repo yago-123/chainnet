@@ -2,9 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
-
-	"github.com/yago-123/chainnet/pkg/kernel"
-
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
@@ -12,6 +10,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
+	"github.com/yago-123/chainnet/pkg/kernel"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	"github.com/yago-123/chainnet/pkg/wallet/hd"
 )
@@ -31,8 +30,11 @@ var logger = logrus.New()
 var cfg = config.NewConfig()
 
 func main() {
-	privKeyPath := "wallet.pem"
 	var utxos []*kernel.UTXO
+
+	cfg.Logger.SetLevel(logrus.DebugLevel)
+
+	privKeyPath := "wallet.pem"
 
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
@@ -70,6 +72,8 @@ func main() {
 			logger.Fatalf("error generating wallet for account %d new wallet: %v", i, errWallet)
 		}
 
+		logger.Infof("brrr %s", base58.Encode(wallet.GetP2PKAddress()))
+
 		// initialize the network for the wallet
 		_, err = wallet.InitNetwork()
 		if err != nil {
@@ -82,10 +86,6 @@ func main() {
 			logger.Fatalf("error getting wallet UTXOS: %v", err)
 		}
 
-		rawPubKey, errRaw := util_crypto.DecodeDERBytesToRawPublicKey(wallet.GetP2PKAddress())
-		if errRaw != nil {
-			logger.Fatalf("error getting raw public key: %v", err)
-		}
-		logger.Infof("account number: %d, account first wallet address: %x, number of utxos: %d", hda.GetAccountID(), rawPubKey, len(utxos))
+		logger.Infof("wallet %d in account %d has %d UTXOS", i, hda.GetAccountID(), len(utxos))
 	}
 }

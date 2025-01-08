@@ -2,6 +2,7 @@ package hd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 
 	"github.com/yago-123/chainnet/config"
@@ -41,7 +42,9 @@ type Wallet struct {
 
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
-	cfg             *config.Config
+
+	logger *logrus.Logger
+	cfg    *config.Config
 }
 
 func NewHDWalletWithKeys(
@@ -79,6 +82,7 @@ func NewHDWalletWithKeys(
 
 	return &Wallet{
 		cfg:             cfg,
+		logger:          cfg.Logger,
 		walletVersion:   version,
 		PrivateKey:      privateKey,
 		masterPrivKey:   masterPrivateKeyDER,
@@ -101,17 +105,17 @@ func (hd *Wallet) Sync() (uint, error) {
 	gaugeAccountsWithoutActivity := 0
 	for {
 		// generate accounts and check if had any activity (transactions)
-		idx, account, err := hd.createAccount(hd.accountNum)
+		idx, account, err := hd.createAccount(uint32(len(tmpAccounts)))
 		if err != nil {
 			return 0, fmt.Errorf("error creating account %d: %w", idx, err)
 		}
+		tmpAccounts = append(tmpAccounts, account)
 
+		// sync the account with the network
 		numWallets, err := account.Sync()
 		if err != nil {
 			return 0, fmt.Errorf("error syncing account %d: %w", idx, err)
 		}
-
-		tmpAccounts = append(tmpAccounts, account)
 
 		// if the account has no addresses in use, increment the gauge
 		if numWallets == 0 {
@@ -120,6 +124,7 @@ func (hd *Wallet) Sync() (uint, error) {
 
 		// if the account has addresses in use, reset the gauge
 		if numWallets > 0 {
+			hd.logger.Debugf("syncing account %d: have %d active wallets", idx, numWallets)
 			gaugeAccountsWithoutActivity = 0
 		}
 
