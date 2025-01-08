@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/yago-123/chainnet/config"

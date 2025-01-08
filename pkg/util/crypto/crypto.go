@@ -9,10 +9,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	cerror "github.com/yago-123/chainnet/pkg/errs"
 	"io"
 	"math/big"
 	"os"
+
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 )
 
 const (
