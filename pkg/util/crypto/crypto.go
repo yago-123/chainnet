@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	"io"
 	"math/big"
 	"os"
@@ -171,6 +172,21 @@ func DecodeDERBytesToRawPublicKey(derPublicBytes []byte) ([]byte, error) {
 	rawPubKey := append(pubKeyECDSA.X.Bytes(), pubKeyECDSA.Y.Bytes()...)
 
 	return rawPubKey, nil
+}
+
+// ValidateECDSAP256PrivateKey ensures the private key is within the valid range for elliptic curve operations
+func ValidateECDSAP256PrivateKey(privateKeyInt *big.Int) error {
+	// ensure key is within valid range for elliptic curve operations
+	curve := elliptic.P256()
+	curveOrder := curve.Params().N
+
+	// ensure the key is within the valid range
+	privateKeyInt.Mod(privateKeyInt, curveOrder)
+	if privateKeyInt.Cmp(curveOrder) >= 0 {
+		return fmt.Errorf("%w: key exceeds curve order", cerror.ErrWalletInvalidChildPrivateKey)
+	}
+
+	return nil
 }
 
 func CalculateHMACSha512(key []byte, data []byte) ([]byte, error) {

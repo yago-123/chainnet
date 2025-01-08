@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
-	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
@@ -220,7 +218,7 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 	// apply initial hmac
 	hmacOutput, err := util_crypto.CalculateHMACSha512(chainCode, data)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error calculating HMAC-SHA512 while deriving child key: %w", err)
+		return []byte{}, []byte{}, fmt.Errorf("error calculating HMAC-SHA512 while deriving child key: %w", err)
 	}
 
 	childPrivateKey := hmacOutput[:32]
@@ -234,12 +232,9 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 	childPrivateKeyInt.Add(childPrivateKeyInt, parentPrivateKeyInt)
 
 	// ensure key is within valid range for elliptic curve operations
-	// todo(): this is a wrong check, we don't make use of S256
-	curveOrder := btcec.S256().N
-	childPrivateKeyInt.Mod(childPrivateKeyInt, curveOrder)
-	// if the result is >= curve order, re-derive the key (this should not happen often)
-	if childPrivateKeyInt.Cmp(curveOrder) >= 0 {
-		return nil, nil, fmt.Errorf("%w: key exceeds curve order", cerror.ErrWalletInvalidChildPrivateKey)
+	// todo(): implement support for more curves in ECDSA
+	if errKey := util_crypto.ValidateECDSAP256PrivateKey(childPrivateKeyInt); errKey != nil {
+		return []byte{}, []byte{}, errKey
 	}
 
 	// return the child private key (as bytes) and child chain code
