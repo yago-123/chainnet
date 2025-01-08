@@ -106,7 +106,7 @@ func (hd *Wallet) Sync() (uint, error) {
 	gaugeAccountsWithoutActivity := 0
 	for {
 		// generate accounts and check if had any activity (transactions)
-		idx, account, err := hd.createAccount(uint32(len(tmpAccounts)))
+		idx, account, err := hd.createAccount(uint32(len(tmpAccounts))) //nolint:gosec // possibility of integer overflow is OK here
 		if err != nil {
 			return 0, fmt.Errorf("error creating account %d: %w", idx, err)
 		}
