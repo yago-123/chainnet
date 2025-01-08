@@ -60,6 +60,8 @@ func main() {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
 
+	logger.Infof("wallet has %d accounts", numAccounts)
+
 	for i := 0; i < int(numAccounts); i++ { //nolint:gosec,intrange // possibility of integer overflow is OK here
 		// create a new account
 		hda, errHda := hdWallet.GetAccount(uint(i))
