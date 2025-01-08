@@ -106,16 +106,16 @@ func (hd *Wallet) Sync() (uint, error) {
 	gaugeAccountsWithoutActivity := 0
 	for {
 		// generate accounts and check if had any activity (transactions)
-		idx, account, err := hd.createAccount(uint32(len(tmpAccounts))) //nolint:gosec // possibility of integer overflow is OK here
+		account, err := hd.createAccount(uint32(len(tmpAccounts))) //nolint:gosec // possibility of integer overflow is OK here
 		if err != nil {
-			return 0, fmt.Errorf("error creating account %d: %w", idx, err)
+			return 0, fmt.Errorf("error creating account %d: %w", uint32(len(tmpAccounts)), err)
 		}
 		tmpAccounts = append(tmpAccounts, account)
 
 		// sync the account with the network
 		numWallets, err := account.Sync()
 		if err != nil {
-			return 0, fmt.Errorf("error syncing account %d: %w", idx, err)
+			return 0, fmt.Errorf("error syncing account %d: %w", account.GetAccountID(), err)
 		}
 
 		// if the account has no addresses in use, increment the gauge
@@ -125,7 +125,7 @@ func (hd *Wallet) Sync() (uint, error) {
 
 		// if the account has addresses in use, reset the gauge
 		if numWallets > 0 {
-			hd.logger.Debugf("syncing account %d: have %d active wallets", idx, numWallets)
+			hd.logger.Debugf("syncing account %d: have %d active wallets", account.GetAccountID(), numWallets)
 			gaugeAccountsWithoutActivity = 0
 		}
 
@@ -147,8 +147,8 @@ func (hd *Wallet) GetNewAccount() (*Account, error) {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	// we create a new
-	_, account, err := hd.createAccount(hd.accountNum)
+	// we create a new account and increment the account number
+	account, err := hd.createAccount(hd.accountNum)
 	if err != nil {
 		return nil, fmt.Errorf("error creating account: %w", err)
 	}
@@ -175,7 +175,7 @@ func (hd *Wallet) GetAccount(accountIdx uint) (*Account, error) {
 // account in the HD wallet, it's the responsibility of the caller to do so if needed.
 // Arguments:
 // - accountIndex: the index of the account to be created
-func (hd *Wallet) createAccount(accountIdx uint32) (uint32, *Account, error) {
+func (hd *Wallet) createAccount(accountIdx uint32) (*Account, error) {
 	var err error
 
 	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index
@@ -193,14 +193,14 @@ func (hd *Wallet) createAccount(accountIdx uint32) (uint32, *Account, error) {
 	for _, idx := range indexes {
 		derivedPrivateKey, derivedChainCode, err = DeriveChildStepHardened(derivedPrivateKey, derivedChainCode, idx)
 		if err != nil {
-			return uint32(0), nil, err
+			return nil, err
 		}
 	}
 
 	// derive the public key from the private key and pass paste it into the new account
 	derivedPublicKey, err := util_crypto.DeriveECDSAPubFromPrivateDERBytes(derivedPrivateKey)
 	if err != nil {
-		return uint32(0), nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
+		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
 
 	hdAccount := NewHDAccount(
@@ -215,5 +215,5 @@ func (hd *Wallet) createAccount(accountIdx uint32) (uint32, *Account, error) {
 		accountIdx,
 	)
 
-	return accountIdx, hdAccount, nil
+	return hdAccount, nil
 }
