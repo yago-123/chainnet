@@ -108,7 +108,7 @@ func (hd *Wallet) Sync() (uint, error) {
 		// generate accounts and check if had any activity (transactions)
 		account, err := hd.createAccount(uint32(len(tmpAccounts))) //nolint:gosec // possibility of integer overflow is OK here
 		if err != nil {
-			return 0, fmt.Errorf("error creating account %d: %w", uint32(len(tmpAccounts)), err)
+			return 0, fmt.Errorf("error creating account %d: %w", len(tmpAccounts), err)
 		}
 		tmpAccounts = append(tmpAccounts, account)
 

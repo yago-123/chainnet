@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/yago-123/chainnet/pkg/kernel"
 )

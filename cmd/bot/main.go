@@ -60,6 +60,10 @@ func main() {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
 
+	acc, _ := hdWallet.GetNewAccount()
+	wll, _ := acc.GetNewWallet()
+	logger.Infof("brrr %s", base58.Encode(wll.GetP2PKAddress()))
+
 	logger.Infof("wallet has %d accounts", numAccounts)
 
 	for i := 0; i < int(numAccounts); i++ { //nolint:gosec,intrange // possibility of integer overflow is OK here
