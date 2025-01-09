@@ -183,9 +183,8 @@ type TxInput struct {
 	PubKey string
 }
 
-// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be
-// the STXO or Spent Transaction Output. This method is used in the UTXO set in order to remove those
-// utxo that are being spent
+// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be the STXO or
+// Spent Transaction Output. Method used for mapping UTXOs and inputs via this unique key
 func (in *TxInput) UniqueTxoKey() string {
 	return fmt.Sprintf("%x-%d", in.Txid, in.Vout)
 }

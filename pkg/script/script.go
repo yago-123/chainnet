@@ -256,9 +256,7 @@ func ExtractAddressFromScriptSig(scriptSig string) string {
 }
 
 // CanBeUnlockedWith retrieves the receiver address from the script pub key
-func CanBeUnlockedWith(scriptPubKey, address string) bool {
-	var pubKeyHash []byte
-
+func CanBeUnlockedWith(scriptPubKey string, publicKey []byte, version byte) bool {
 	// process script pub key and extract the structure of the script
 	script, literals, err := StringToScript(scriptPubKey)
 	if err != nil {
@@ -277,17 +275,16 @@ func CanBeUnlockedWith(scriptPubKey, address string) bool {
 
 	switch scriptType {
 	case P2PK:
-		// compare pub key with the address provided
-		return literals[0] == address
+		// compare pub key with the publicKey provided
+		return literals[0] == string(publicKey)
 	case P2PKH:
-		// extract the pub key hash from the address provided
-		pubKeyHash, _, err = util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr([]byte(address))
-		if err != nil {
+		p2pkhAddress, errAddress := util_p2pkh.GenerateP2PKHAddrFromPubKey(publicKey, version)
+		if errAddress != nil {
 			return false
 		}
 
-		// compare the pub key hash with the one extracted from the address
-		return bytes.Equal([]byte(literals[2]), pubKeyHash)
+		// compare the P2PKH address from the script with the one generated from the publicKey
+		return bytes.Equal([]byte(literals[2]), p2pkhAddress)
 	case UndefinedScriptType:
 	default:
 		break

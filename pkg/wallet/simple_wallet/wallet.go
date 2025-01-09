@@ -280,6 +280,11 @@ func (w *Wallet) PublicKey() []byte {
 	return w.publicKey
 }
 
+// todo(): REMOVE THIS, THIS FEELS SO WRONG, NEED TO RETHINK THE RELATION ACCOUNT / WALLET / HD WALLET
+func (w *Wallet) PrivateKey() []byte {
+	return w.privateKey
+}
+
 func (w *Wallet) GetP2PKAddress() []byte {
 	return w.publicKey
 }

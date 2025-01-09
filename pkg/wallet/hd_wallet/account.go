@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
+	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
+	"github.com/yago-123/chainnet/pkg/util"
 	common "github.com/yago-123/chainnet/pkg/wallet"
 	"sync"
 
@@ -41,8 +43,9 @@ type Account struct {
 	signer  sign.Signature
 	encoder encoding.Encoding
 
-	// hasher used for deriving blockchain related values (tx ID for example)
+	// consensusHasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
+	interpreter     *rpnInter.RPNInterpreter
 
 	logger *logrus.Logger
 	cfg    *config.Config
@@ -66,6 +69,7 @@ func NewHDAccount(
 		validator:               validator,
 		signer:                  signer,
 		consensusHasher:         consensusHasher,
+		interpreter:             rpnInter.NewScriptInterpreter(signer),
 		encoder:                 encoder,
 		derivedPubAccountKey:    derivedPubAccountKey,
 		derivedChainAccountCode: derivedChainAccountCode,
@@ -229,50 +233,68 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, to []by
 	}
 
 	// generate tx hash
-	// txHash, err := util.CalculateTxHash(tx, w.consensusHasher)
-	// if err != nil {
-	// 	return &kernel.Transaction{}, err
-	// }
+	txHash, err := util.CalculateTxHash(tx, hda.consensusHasher)
+	if err != nil {
+		return &kernel.Transaction{}, err
+	}
 
 	// assign the tx hash
-	// tx.SetID(txHash)
+	tx.SetID(txHash)
 
 	// perform simple validations (light validator) before broadcasting the transaction
-	// if err = w.validator.ValidateTxLight(tx); err != nil {
-	// 	return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
-	// }
+	if err = hda.validator.ValidateTxLight(tx); err != nil {
+		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
+	}
 
 	return tx, nil
 }
 
 func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
-	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
-	scriptSigs := []string{}
-	for _, vin := range tx.Vin {
+	// precompute wallets for lookup
+	wallets := append(hda.externalWallets, hda.internalWallets...)
+
+	// map UTXOs so that can be easily accessed for generating the scriptSigs for the inputs
+	utxoMap := make(map[string]*kernel.UTXO)
+	for _, utxo := range utxos {
+		utxoMap[utxo.UniqueKey()] = utxo
+	}
+
+	scriptSigs := make([]string, len(tx.Vin))
+	// iterate through each input and unlock the funds
+	for i, vin := range tx.Vin {
+		// retrieve the UTXO that will spend the input so that the scriptPubKey can be analyzed and unlocked
+		utxo, found := utxoMap[vin.UniqueTxoKey()]
+		if !found {
+			return nil, fmt.Errorf("no matching UTXO found for input with ID %s and index %d", vin.Txid, vin.Vout)
+		}
+
+		// range over wallets to find the one that can unlock the funds
+		// todo(): optimize this, maybe we can map the wallets with the public key
 		unlocked := false
+		for _, wallet := range wallets {
+			if script.CanBeUnlockedWith(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.Version()) {
+				// generate the unlocking script
+				// todo(1/2): remove the getter for PrivateKey, not correct to access it directly, there must be some entity
+				// todo(2/2): or some logic rewriting
+				scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.PrivateKey(), tx)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
+				}
 
-		for _, utxo := range utxos {
-			if utxo.EqualInput(vin) {
-				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
-				// scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.publicKey, w.privateKey, tx)
-				// if err != nil {
-				// 		return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
-				// }
-				//
-				// scriptSigs = append(scriptSigs, scriptSig)
-
-				// unlocked = true
-				// continue
+				// save the scriptSig and jump to the next input pending unlocking
+				scriptSigs[i] = scriptSig
+				unlocked = true
+				break
 			}
 		}
 
-		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
 		if !unlocked {
-			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
+			return nil, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
 		}
 	}
 
-	for i := range len(tx.Vin) {
+	// assign scriptSigs to transaction inputs
+	for i := range tx.Vin {
 		tx.Vin[i].ScriptSig = scriptSigs[i]
 	}
 
