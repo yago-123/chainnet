@@ -36,15 +36,15 @@ func TestWallet_SendTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
-	_, err = wallet.GenerateNewTransaction(script.P2PK, "pubkey-1", 100, 1, utxos)
+	_, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 100, 1, utxos)
 	require.Error(t, err)
 
 	// send transaction with a txFee bigger than utxos amount
-	_, err = wallet.GenerateNewTransaction(script.P2PK, "pubkey-1", 1, 100, utxos)
+	_, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 1, 100, utxos)
 	require.Error(t, err)
 
 	// send transaction without utxos
-	_, err = wallet.GenerateNewTransaction(script.P2PK, "pubkey-1", 10, 1, []*kernel.UTXO{})
+	_, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 10, 1, []*kernel.UTXO{})
 	require.Error(t, err)
 
 	// send transaction with incorrect utxos unlocking scripts
@@ -66,7 +66,7 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	wallet, err := NewWallet(config.NewConfig(), 1, validator.NewLightValidator(hasher), &signer, hasher, encoding.NewProtobufEncoder())
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
-	tx, err := wallet.GenerateNewTransaction(script.P2PK, "pubkey-1", 10, 0, utxos)
+	tx, err := wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 10, 0, utxos)
 	expectedTx := &kernel.Transaction{
 		ID: tx.ID,
 		Vin: []kernel.TxInput{
@@ -84,7 +84,7 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	assert.Equal(t, expectedTx, tx)
 
 	// send transaction with correct target and some tx fee
-	tx, err = wallet.GenerateNewTransaction(script.P2PK, "pubkey-3", 10, 2, utxos)
+	tx, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-3"), 10, 2, utxos)
 	expectedTx2 := &kernel.Transaction{
 		ID: tx.ID,
 		Vin: []kernel.TxInput{

@@ -21,8 +21,8 @@ import (
 
 type Wallet struct {
 	version    byte
-	PrivateKey []byte
-	PublicKey  []byte
+	privateKey []byte
+	publicKey  []byte
 
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
@@ -80,8 +80,8 @@ func NewWalletWithKeys(
 	return &Wallet{
 		cfg:             cfg,
 		version:         version,
-		PrivateKey:      privateKey,
-		PublicKey:       publicKey,
+		privateKey:      privateKey,
+		publicKey:       publicKey,
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
@@ -137,14 +137,6 @@ func (w *Wallet) GetAddresses() ([][]byte, error) {
 	return addresses, nil
 }
 
-func (w *Wallet) GetP2PKAddress() []byte {
-	return w.PublicKey
-}
-
-func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
-	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
-}
-
 func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 	addresses, err := w.GetAddresses()
 	if err != nil {
@@ -193,7 +185,7 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
 	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
 	if err != nil {
@@ -201,7 +193,10 @@ func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string,
 	}
 
 	// create the outputs necessary for the transaction
-	outputs := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, string(w.PublicKey))
+	outputs, err := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, w.publicKey, w.version)
+	if err != nil {
+		return &kernel.Transaction{}, err
+	}
 
 	// generate transaction
 	tx := kernel.NewTransaction(
@@ -243,7 +238,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 		for _, utxo := range utxos {
 			if utxo.EqualInput(vin) {
 				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
-				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.PublicKey, w.PrivateKey, tx)
+				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.publicKey, w.privateKey, tx)
 				if err != nil {
 					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
 				}
@@ -275,4 +270,20 @@ func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) er
 	}
 
 	return nil
+}
+
+func (w *Wallet) Version() byte {
+	return w.version
+}
+
+func (w *Wallet) PublicKey() []byte {
+	return w.publicKey
+}
+
+func (w *Wallet) GetP2PKAddress() []byte {
+	return w.publicKey
+}
+
+func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
+	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.publicKey, w.version)
 }

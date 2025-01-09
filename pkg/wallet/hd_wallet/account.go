@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
+	"github.com/yago-123/chainnet/pkg/util"
 	common "github.com/yago-123/chainnet/pkg/wallet"
 	"sync"
 
@@ -92,18 +93,18 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 		for {
 			wallet, err := hda.createWallet(changeType, uint32(len(wallets)))
 			if err != nil {
-				return nil, fmt.Errorf("error creating wallet: %w", err)
+				return []*wallt.Wallet{}, fmt.Errorf("error creating wallet: %w", err)
 			}
 
 			wallets = append(wallets, wallet)
 
 			if _, err = wallet.InitNetwork(); err != nil {
-				return nil, fmt.Errorf("error setting up wallet network: %w", err)
+				return []*wallt.Wallet{}, fmt.Errorf("error setting up wallet network: %w", err)
 			}
 
 			txs, err := wallet.GetWalletTxs()
 			if err != nil {
-				return nil, fmt.Errorf("error getting wallet transactions: %w", err)
+				return []*wallt.Wallet{}, fmt.Errorf("error getting wallet transactions: %w", err)
 			}
 
 			if len(txs) == 0 {
@@ -147,11 +148,17 @@ func (hda *Account) GetAccountID() uint32 {
 
 // GetNewInternalWallet generates a new internal wallet
 func (hda *Account) GetNewInternalWallet() (*wallt.Wallet, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
 	return hda.getNewWallet(InternalChangeType, &hda.internalWallets)
 }
 
 // GetNewExternalWallet generates a new external wallet
 func (hda *Account) GetNewExternalWallet() (*wallt.Wallet, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
 	return hda.getNewWallet(ExternalChangeType, &hda.externalWallets)
 }
 
@@ -169,11 +176,30 @@ func (hda *Account) GetInternalWalletIndex() uint32 {
 	return uint32(len(hda.internalWallets))
 }
 
-func (hda *Account) GetAccountUTXOs() {
+// GetAccountUTXOs retrieves the UTXOs from both external and internal wallets. The resulting array is sorted by default
+// with external UTXOs first
+func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
 
+	utxosCollection := []*kernel.UTXO{}
+	wallets := append(hda.externalWallets, hda.internalWallets...)
+
+	for _, wall := range wallets {
+		utxos, err := wall.GetWalletUTXOS()
+		if err != nil {
+			return nil, err
+		}
+		utxosCollection = append(utxosCollection, utxos...)
+	}
+
+	return utxosCollection, nil
 }
 
-func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, to []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
 	// create the inputs necessary for the transaction
 	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
 	if err != nil {
@@ -181,14 +207,43 @@ func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string,
 	}
 
 	// create the outputs necessary for the transaction
-	outputs := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, string(w.PublicKey))
+	changeWallet, err := hda.getNewWallet(InternalChangeType, &hda.internalWallets)
+	if err != nil {
+		return nil, err
+	}
+
+	outputs, err := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, changeWallet.PublicKey(), changeWallet.Version())
+	if err != nil {
+		return nil, err
+	}
 
 	// generate transaction
 	tx := kernel.NewTransaction(
 		inputs,
 		outputs,
 	)
-	return nil, nil
+
+	// unlock the funds from the UTXOs
+	tx, err = w.UnlockTxFunds(tx, utxos)
+	if err != nil {
+		return &kernel.Transaction{}, err
+	}
+
+	// generate tx hash
+	// txHash, err := util.CalculateTxHash(tx, w.consensusHasher)
+	// if err != nil {
+	// 	return &kernel.Transaction{}, err
+	// }
+
+	// assign the tx hash
+	// tx.SetID(txHash)
+
+	// perform simple validations (light validator) before broadcasting the transaction
+	// if err = w.validator.ValidateTxLight(tx); err != nil {
+	// 	return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
+	// }
+
+	return tx, nil
 }
 
 // GetBalance returns the total balance of the account by summing the amount of all UTXOs in the externalWallets
@@ -224,9 +279,6 @@ func (hda *Account) ConsolidateChange() {
 // - the wallet generated, so it can be used
 // - an error if any
 func (hda *Account) getNewWallet(changeType changeType, walletCollection *[]*wallt.Wallet) (*wallt.Wallet, error) {
-	hda.mu.Lock()
-	defer hda.mu.Unlock()
-
 	wallet, err := hda.createWallet(changeType, uint32(len(*walletCollection)))
 	if err != nil {
 		return nil, fmt.Errorf("error creating new wallet: %w", err)

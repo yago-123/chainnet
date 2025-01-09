@@ -69,13 +69,13 @@ func DeriveECDSAPubFromPrivateDERBytes(privKey []byte) ([]byte, error) {
 
 // ConvertDERBytesToECDSAPriv converts a DER encoded private key to an ECDSA private key
 func ConvertDERBytesToECDSAPriv(privKey []byte) (*ecdsa.PrivateKey, error) {
-	// parse the DER encoded private key to get ecdsa.PrivateKey
+	// parse the DER encoded private key to get ecdsa.privateKey
 	return x509.ParseECPrivateKey(privKey)
 }
 
 // ConvertDERBytesToECDSAPub converts a DER encoded public key to an ECDSA public key
 func ConvertDERBytesToECDSAPub(pubKey []byte) (*ecdsa.PublicKey, error) {
-	// parse the DER encoded public key to get ecdsa.PublicKey
+	// parse the DER encoded public key to get ecdsa.publicKey
 	pub, err := x509.ParsePKIXPublicKey(pubKey)
 	if err != nil {
 		return nil, err
