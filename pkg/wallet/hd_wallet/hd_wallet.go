@@ -103,7 +103,7 @@ func (hd *Wallet) Sync() (uint, error) {
 	defer hd.mu.Unlock()
 
 	tmpAccounts := []*Account{}
-	gaugeAccountsWithoutActivity := 0
+	accountsWithoutActivity := 0
 	for {
 		// generate accounts and check if had any activity (transactions)
 		account, err := hd.createAccount(uint32(len(tmpAccounts))) //nolint:gosec // possibility of integer overflow is OK here
@@ -113,24 +113,25 @@ func (hd *Wallet) Sync() (uint, error) {
 		tmpAccounts = append(tmpAccounts, account)
 
 		// sync the account with the network
-		numWallets, err := account.Sync()
+		numExternalWallets, numInternalWallets, err := account.Sync()
 		if err != nil {
 			return 0, fmt.Errorf("error syncing account %d: %w", account.GetAccountID(), err)
 		}
 
-		// if the account has no addresses in use, increment the gauge
-		if numWallets == 0 {
-			gaugeAccountsWithoutActivity++
+		// if the account has no addresses in use, increment the gauge. In theory, if the external account is 0, the
+		// internal must be 0 as well, but just in case we perform the check too
+		if numExternalWallets == 0 && numInternalWallets == 0 {
+			accountsWithoutActivity++
 		}
 
 		// if the account has addresses in use, reset the gauge
-		if numWallets > 0 {
-			hd.logger.Debugf("syncing account %d: have %d active externalWallets", account.GetAccountID(), numWallets)
-			gaugeAccountsWithoutActivity = 0
+		if numExternalWallets > 0 || numInternalWallets > 0 {
+			hd.logger.Debugf("synced account %d: have %d external and %d internal accounts ", account.GetAccountID(), numExternalWallets, numInternalWallets)
+			accountsWithoutActivity = 0
 		}
 
 		// if the gap limit is reached, stop the sync process
-		if gaugeAccountsWithoutActivity >= AccountGapLimit {
+		if accountsWithoutActivity >= AccountGapLimit {
 			break
 		}
 	}
