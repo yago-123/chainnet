@@ -231,7 +231,7 @@ func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to []byte,
 // be used
 func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
-	scripSigs := []string{}
+	scriptSigs := []string{}
 	for _, vin := range tx.Vin {
 		unlocked := false
 
@@ -243,7 +243,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
 				}
 
-				scripSigs = append(scripSigs, scriptSig)
+				scriptSigs = append(scriptSigs, scriptSig)
 
 				unlocked = true
 				continue
@@ -257,7 +257,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 	}
 
 	for i := range len(tx.Vin) {
-		tx.Vin[i].ScriptSig = scripSigs[i]
+		tx.Vin[i].ScriptSig = scriptSigs[i]
 	}
 
 	return tx, nil

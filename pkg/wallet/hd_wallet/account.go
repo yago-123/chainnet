@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
-	"github.com/yago-123/chainnet/pkg/util"
 	common "github.com/yago-123/chainnet/pkg/wallet"
 	"sync"
 
@@ -224,7 +223,7 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, to []by
 	)
 
 	// unlock the funds from the UTXOs
-	tx, err = w.UnlockTxFunds(tx, utxos)
+	tx, err = hda.UnlockTxFunds(tx, utxos)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
@@ -242,6 +241,40 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, to []by
 	// if err = w.validator.ValidateTxLight(tx); err != nil {
 	// 	return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
 	// }
+
+	return tx, nil
+}
+
+func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
+	scriptSigs := []string{}
+	for _, vin := range tx.Vin {
+		unlocked := false
+
+		for _, utxo := range utxos {
+			if utxo.EqualInput(vin) {
+				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
+				// scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.publicKey, w.privateKey, tx)
+				// if err != nil {
+				// 		return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
+				// }
+				//
+				// scriptSigs = append(scriptSigs, scriptSig)
+
+				// unlocked = true
+				// continue
+			}
+		}
+
+		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
+		if !unlocked {
+			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
+		}
+	}
+
+	for i := range len(tx.Vin) {
+		tx.Vin[i].ScriptSig = scriptSigs[i]
+	}
 
 	return tx, nil
 }
