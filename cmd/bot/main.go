@@ -2,8 +2,9 @@ package main
 
 import (
 	"crypto/sha256"
-
 	"github.com/btcsuite/btcutil/base58"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
@@ -14,6 +15,15 @@ import (
 	"github.com/yago-123/chainnet/pkg/kernel"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	"github.com/yago-123/chainnet/pkg/wallet/hd_wallet"
+)
+
+const (
+	ConcurrentAccounts     = 100
+	FoundationAccountIndex = 0
+
+	MinimumTxBalance = 100
+
+	SleepTimeBetweenRecalculations = 20 * time.Minute
 )
 
 var (
@@ -31,17 +41,16 @@ var logger = logrus.New()
 var cfg = config.NewConfig()
 
 func main() {
-	var utxos []*kernel.UTXO
-
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
+	// load the "seed"
 	privKeyPath := "wallet.pem"
-
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
 	}
 
+	// create the hierachical deterministic wallet and sync it
 	hdWallet, err := hd_wallet.NewHDWalletWithKeys(
 		cfg,
 		1,
@@ -55,40 +64,45 @@ func main() {
 		logger.Fatalf("error initializing HD wallet: %v", err)
 	}
 
+	logger.Infof("syncing HD wallet...")
 	numAccounts, err := hdWallet.Sync()
 	if err != nil {
 		logger.Fatalf("error syncing wallet: %v", err)
 	}
 
-	logger.Infof("HD wallet has %d accounts", numAccounts)
+	logger.Infof("HD wallet synced with %d accounts", numAccounts)
 
-	for i := 0; i < int(numAccounts); i++ { //nolint:gosec,intrange // possibility of integer overflow is OK here
-		// create a new account
-		hda, errHda := hdWallet.GetAccount(uint(i))
-		if errHda != nil {
-			logger.Fatalf("error getting new account: %v", errHda)
-		}
-
-		// create a new wallet
-		wallet, errWallet := hda.GetNewExternalWallet()
-		if errWallet != nil {
-			logger.Fatalf("error generating wallet for account %d new wallet: %v", i, errWallet)
-		}
-
-		logger.Infof("brrr %s", base58.Encode(wallet.GetP2PKAddress()))
-
-		// initialize the network for the wallet
-		_, err = wallet.InitNetwork()
-		if err != nil {
-			logger.Fatalf("error setting up wallet network: %v", err)
-		}
-
-		// get the wallet UTXOS
-		utxos, err = wallet.GetWalletUTXOS()
-		if err != nil {
-			logger.Fatalf("error getting wallet UTXOS: %v", err)
-		}
-
-		logger.Infof("wallet %d in account %d has %d UTXOS", i, hda.GetAccountID(), len(utxos))
+	totalBalance, err := hdWallet.GetBalance()
+	if err != nil {
+		logger.Fatalf("error getting wallet balance: %v", err)
 	}
+
+	if totalBalance == 0 {
+		acc, errAcc := hdWallet.GetAccount(FoundationAccountIndex)
+		if errAcc != nil {
+			logger.Fatalf("error getting foundation account: %v", errAcc)
+		}
+
+		wallet, errAcc := acc.GetNewExternalWallet()
+		if errAcc != nil {
+			logger.Fatalf("error getting foundation wallet: %v", errAcc)
+		}
+
+		logger.Fatalf("HD wallet is empty, fund %s with a P2PK and execute this again", base58.Encode(wallet.GetP2PKAddress()))
+	}
+
+	logger.Infof("HD wallet contains %.5f coins", float64(totalBalance)/float64(kernel.ChainnetCoinAmount))
+
+	// create remaining accounts so that we can operate them in parallel without problems
+	if numAccounts < ConcurrentAccounts {
+		logger.Infof("creating remaining %d accounts...", ConcurrentAccounts-numAccounts)
+		for i := numAccounts; i < ConcurrentAccounts; i++ {
+			_, errAccount := hdWallet.GetNewAccount()
+			if errAccount != nil {
+				logger.Fatalf("error creating account: %v", errAccount)
+			}
+		}
+	}
+
+	// check the balance of the foundation account
 }
