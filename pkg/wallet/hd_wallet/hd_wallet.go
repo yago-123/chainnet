@@ -172,6 +172,20 @@ func (hd *Wallet) GetAccount(accountIdx uint) (*Account, error) {
 	return hd.accounts[accountIdx], nil
 }
 
+func (hd *Wallet) GetBalance() (uint, error) {
+	totalBalance := uint(0)
+	for _, account := range hd.accounts {
+		balance, err := account.GetBalance()
+		if err != nil {
+			return 0, fmt.Errorf("error getting balance for account %d: %w", account.GetAccountID(), err)
+		}
+
+		totalBalance += balance
+	}
+
+	return totalBalance, nil
+}
+
 // createAccount creates an  account from the HD wallet with a given account number. This method does not persist the
 // account in the HD wallet, it's the responsibility of the caller to do so if needed.
 // Arguments:
@@ -204,7 +218,7 @@ func (hd *Wallet) createAccount(accountIdx uint32) (*Account, error) {
 		return nil, fmt.Errorf("%w: %w", cerror.ErrCryptoPublicKeyDerivation, err)
 	}
 
-	hdAccount := NewHDAccount(
+	return NewHDAccount(
 		hd.cfg,
 		hd.walletVersion,
 		hd.validator,
@@ -215,6 +229,4 @@ func (hd *Wallet) createAccount(accountIdx uint32) (*Account, error) {
 		derivedChainCode,
 		accountIdx,
 	)
-
-	return hdAccount, nil
 }

@@ -88,11 +88,6 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error setting up wallet: %v", err)
 		}
 
-		_, err = wallet.InitNetwork()
-		if err != nil {
-			logger.Fatalf("error setting up wallet network: %v", err)
-		}
-
 		utxos, err := wallet.GetWalletUTXOS()
 		if err != nil {
 			logger.Fatalf("error getting wallet UTXOS: %v", err)

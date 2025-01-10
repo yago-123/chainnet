@@ -28,10 +28,7 @@ type Wallet struct {
 	// signer used for signing transactions and creating pub and private keys
 	signer sign.Signature
 
-	p2pActive    bool
-	p2pNet       network.WalletNetwork
-	p2pCtx       context.Context
-	p2pCancelCtx context.CancelFunc
+	p2pNet network.WalletNetwork
 
 	encoder encoding.Encoding
 
@@ -77,6 +74,12 @@ func NewWalletWithKeys(
 	privateKey []byte,
 	publicKey []byte,
 ) (*Wallet, error) {
+
+	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
+	if err != nil {
+		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
+	}
+
 	return &Wallet{
 		cfg:             cfg,
 		version:         version,
@@ -87,28 +90,8 @@ func NewWalletWithKeys(
 		encoder:         encoder,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
+		p2pNet:          p2pNet,
 	}, nil
-}
-
-func (w *Wallet) InitNetwork() (network.WalletNetwork, error) {
-	var p2pNet network.WalletNetwork
-
-	// check if the network has been initialized before
-	if w.p2pActive {
-		return nil, fmt.Errorf("p2p network is already active")
-	}
-
-	// create new P2P node
-	w.p2pCtx, w.p2pCancelCtx = context.WithCancel(context.Background())
-	p2pNet, err := network.NewWalletHTTPConn(w.cfg, w.encoder)
-	if err != nil {
-		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
-	}
-
-	w.p2pNet = p2pNet
-	w.p2pActive = true
-
-	return p2pNet, nil
 }
 
 func (w *Wallet) GetAddresses() ([][]byte, error) {

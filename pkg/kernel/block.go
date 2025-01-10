@@ -5,7 +5,11 @@ import (
 	"fmt"
 )
 
-const MaxNumberTxsPerBlock = 16000
+const (
+	// ChainnetCoinAmount number of smaller units (Channoshis) that represent 1 Chainnet coin
+	ChainnetCoinAmount   = 100000000
+	MaxNumberTxsPerBlock = 16000
+)
 
 type BlockHeader struct {
 	Version       []byte

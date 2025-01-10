@@ -1,8 +1,10 @@
 package hd_wallet
 
 import (
+	"context"
 	"fmt"
 	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/network"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/util"
@@ -40,7 +42,10 @@ type Account struct {
 	walletVersion byte
 	validator     consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
-	signer  sign.Signature
+	signer sign.Signature
+
+	p2pNet network.WalletNetwork
+
 	encoder encoding.Encoding
 
 	// consensusHasher used for deriving blockchain related values (tx ID for example)
@@ -61,20 +66,27 @@ func NewHDAccount(
 	derivedPubAccountKey []byte,
 	derivedChainAccountCode []byte,
 	accountNum uint32,
-) *Account {
+) (*Account, error) {
+
+	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
+	if err != nil {
+		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
+	}
+
 	return &Account{
 		cfg:                     cfg,
 		logger:                  cfg.Logger,
 		walletVersion:           walletVersion,
 		validator:               validator,
 		signer:                  signer,
+		p2pNet:                  p2pNet,
 		consensusHasher:         consensusHasher,
 		interpreter:             rpnInter.NewScriptInterpreter(signer),
 		encoder:                 encoder,
 		derivedPubAccountKey:    derivedPubAccountKey,
 		derivedChainAccountCode: derivedChainAccountCode,
 		accountID:               accountNum,
-	}
+	}, nil
 }
 
 // Sync scans and updates the account by generating a series of externalWallets based on the default gap limit.
@@ -100,10 +112,6 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 			}
 
 			wallets = append(wallets, wallet)
-
-			if _, err = wallet.InitNetwork(); err != nil {
-				return []*wallt.Wallet{}, fmt.Errorf("error setting up wallet network: %w", err)
-			}
 
 			txs, err := wallet.GetWalletTxs()
 			if err != nil {
@@ -301,13 +309,23 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 	return tx, nil
 }
 
+// SendTransaction propagates a transaction to the network
+func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
+	if err := hda.p2pNet.SendTransaction(ctx, *tx); err != nil {
+		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
+	}
+
+	return nil
+}
+
 // GetBalance returns the total balance of the account by summing the amount of all UTXOs in the externalWallets
 func (hda *Account) GetBalance() (uint, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
 	balance := uint(0)
-	for _, wallet := range hda.externalWallets {
+	wallets := append(hda.externalWallets, hda.internalWallets...)
+	for _, wallet := range wallets {
 		utxos, err := wallet.GetWalletUTXOS()
 		if err != nil {
 			return 0, fmt.Errorf("error getting wallet UTXOs: %w", err)
