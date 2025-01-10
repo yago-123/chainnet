@@ -2,8 +2,9 @@ package main
 
 import (
 	"crypto/sha256"
-	"github.com/btcsuite/btcutil/base58"
 	"time"
+
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"

@@ -3,13 +3,14 @@ package hd_wallet
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/network"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
 	"github.com/yago-123/chainnet/pkg/util"
 	common "github.com/yago-123/chainnet/pkg/wallet"
-	"sync"
 
 	"github.com/sirupsen/logrus"
 	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
@@ -67,7 +68,6 @@ func NewHDAccount(
 	derivedChainAccountCode []byte,
 	accountNum uint32,
 ) (*Account, error) {
-
 	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
@@ -195,7 +195,6 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 
 	utxosCollection := []*kernel.UTXO{}
 	wallets := append(hda.externalWallets, hda.internalWallets...)
-
 	for _, wall := range wallets {
 		utxos, err := wall.GetWalletUTXOS()
 		if err != nil {

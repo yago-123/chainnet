@@ -3,6 +3,7 @@ package simple_wallet
 import (
 	"context"
 	"fmt"
+
 	common "github.com/yago-123/chainnet/pkg/wallet"
 
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
