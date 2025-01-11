@@ -169,7 +169,7 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, addresses []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
 	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
 	if err != nil {
@@ -177,7 +177,7 @@ func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to []byte,
 	}
 
 	// create the outputs necessary for the transaction
-	outputs, err := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, w.publicKey, w.version)
+	outputs, err := common.GenerateOutputs(scriptType, []uint{targetAmount}, [][]byte{addresses}, txFee, totalBalance, w.publicKey, w.version)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}

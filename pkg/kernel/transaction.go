@@ -269,8 +269,8 @@ func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 
 func (out *TxOutput) String() string {
 	return fmt.Sprintf(
-		"TxOutput: %d to %s, unlocking script %s",
-		out.Amount,
+		"TxOutput: %f to %s, unlocking script %s",
+		ConvertFromChannoshisToCoins(out.Amount),
 		base58.Encode([]byte(out.PubKey)),
 		out.ScriptPubKey,
 	)

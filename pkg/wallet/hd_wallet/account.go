@@ -206,12 +206,17 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	return utxosCollection, nil
 }
 
-func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, to []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
 	// create the inputs necessary for the transaction
-	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
+	totalTargetAmount := uint(0)
+	for _, amount := range targetAmount {
+		totalTargetAmount += amount
+	}
+
+	inputs, totalBalance, err := common.GenerateInputs(utxos, totalTargetAmount+txFee)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
@@ -222,7 +227,7 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, to []by
 		return nil, err
 	}
 
-	outputs, err := common.GenerateOutputs(scriptType, targetAmount, txFee, totalBalance, to, changeWallet.PublicKey(), changeWallet.Version())
+	outputs, err := common.GenerateOutputs(scriptType, targetAmount, addresses, txFee, totalBalance, changeWallet.PublicKey(), changeWallet.Version())
 	if err != nil {
 		return nil, err
 	}

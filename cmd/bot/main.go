@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
+	"github.com/yago-123/chainnet/pkg/script"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -106,4 +108,58 @@ func main() {
 	}
 
 	// check the balance of the foundation account
+	foundationAccount, err := hdWallet.GetAccount(FoundationAccountIndex)
+	if err != nil {
+		logger.Fatalf("error getting foundation account: %v", err)
+	}
+
+	foundationAccountBalance, err := foundationAccount.GetBalance()
+	if err != nil {
+		logger.Fatalf("error getting foundation account balance: %v", err)
+	}
+
+	logger.Infof("foundation account contains %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
+
+	// generate outputs for multiple addresses
+	addresses := [][]byte{}
+	targetAmounts := []uint{}
+	distributeFundsAmount := (foundationAccountBalance + 1) / ConcurrentAccounts
+	for i := range ConcurrentAccounts {
+		targetAmounts = append(targetAmounts, distributeFundsAmount)
+
+		account, errAccount := hdWallet.GetAccount(uint(i))
+		if errAccount != nil {
+			logger.Fatalf("error getting account: %v", errAccount)
+		}
+
+		wallet, errWallet := account.GetNewExternalWallet()
+		if errWallet != nil {
+			logger.Fatalf("error getting wallet: %v", errWallet)
+		}
+
+		addresses = append(addresses, wallet.GetP2PKAddress())
+	}
+
+	foundationAccountUTXOs, err := foundationAccount.GetAccountUTXOs()
+	if err != nil {
+		logger.Fatalf("error getting foundation account UTXOs: %v", err)
+	}
+
+	// create the foundation fund transaction
+	tx, err := foundationAccount.GenerateNewTransaction(
+		script.P2PK,
+		addresses,
+		targetAmounts,
+		distributeFundsAmount,
+		foundationAccountUTXOs,
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.P2P.ConnTimeout)
+	defer cancel()
+
+	if errSend := foundationAccount.SendTransaction(ctx, tx); errSend != nil {
+		logger.Fatalf("error sending transaction: %v", errSend)
+	}
+
+	logger.Infof("funds distributed to %d accounts: %s", ConcurrentAccounts, tx.String())
 }

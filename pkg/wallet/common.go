@@ -29,18 +29,37 @@ func GenerateInputs(utxos []*kernel.UTXO, targetAmount uint) ([]kernel.TxInput, 
 // GenerateOutputs set up the outputs for the transaction and handle the change if necessary
 // Arguments:
 // - scriptType: the type of script that is going to be used in the outputs
-// - targetAmount: the amount that is going to be sent to the receiver
+// - targetAmounts: the amount that is going to be sent to the receivers
+// - addresses: were the outputs are sent
 // - txFee: the amount that is going to be used as a fee for the transaction
 // - totalBalance: the total balance of the UTXOs that are going to be spent
-// - receiver: the address of the main output
 // - changeReceiverPubKey: the public key of the change output (can't paste the address because will change based
 // on the payment type (scriptType)
 // - changeReceiverVersion: the version of the change output
-func GenerateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBalance uint, receiver, changeReceiverPubKey []byte, changeReceiverVersion byte) ([]kernel.TxOutput, error) {
-	change := totalBalance - txFee - targetAmount
-
+func GenerateOutputs(scriptType script.ScriptType, targetAmounts []uint, addresses [][]byte, txFee, totalBalance uint, changeReceiverPubKey []byte, changeReceiverVersion byte) ([]kernel.TxOutput, error) {
 	txOutput := []kernel.TxOutput{}
-	txOutput = append(txOutput, kernel.NewOutput(targetAmount, scriptType, string(receiver)))
+
+	// check if the target amount and the addresses have the same length
+	if len(targetAmounts) != len(addresses) {
+		return []kernel.TxOutput{}, errors.New("target amount and addresses must have the same length")
+	}
+
+	// calculate the total amount that is going to be sent to the addresses
+	totalTargetAmount := uint(0)
+	for _, amount := range targetAmounts {
+		totalTargetAmount += amount
+	}
+	if totalTargetAmount+txFee > totalBalance {
+		return []kernel.TxOutput{}, errors.New("not enough funds to perform the transaction")
+	}
+
+	// calculate the spare change
+	change := totalBalance - txFee - totalTargetAmount
+
+	// generate one output for each receiver
+	for i := range addresses {
+		txOutput = append(txOutput, kernel.NewOutput(targetAmounts[i], scriptType, string(addresses[i])))
+	}
 
 	// add output corresponding to the spare changeType. The change address will be calculated based on the scriptType
 	// desired, in order to do so we calculate the address based on the public key of the change receiver
@@ -61,7 +80,7 @@ func GenerateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBal
 			changeAddress = string(changeAddressArray)
 		}
 
-		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, scriptType, changeAddress))
+		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-totalTargetAmount, scriptType, changeAddress))
 	}
 
 	return txOutput, nil
