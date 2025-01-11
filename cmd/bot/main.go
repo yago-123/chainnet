@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"crypto/sha256"
-	"github.com/yago-123/chainnet/pkg/script"
+	"fmt"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
@@ -15,7 +17,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/kernel"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	"github.com/yago-123/chainnet/pkg/wallet/hd_wallet"
 )
@@ -27,6 +28,7 @@ const (
 	MinimumTxBalance = 100
 
 	SleepTimeBetweenRecalculations = 20 * time.Minute
+	TimeBetweenMetadataBackup      = 1 * time.Minute
 )
 
 var (
@@ -75,39 +77,58 @@ func main() {
 
 	logger.Infof("HD wallet synced with %d accounts", numAccounts)
 
-	totalBalance, err := hdWallet.GetBalance()
-	if err != nil {
-		logger.Fatalf("error getting wallet balance: %v", err)
+	if numAccounts == 0 {
+		if errAskFunds := AskForFunds(hdWallet); errAskFunds != nil {
+			logger.Fatalf("error asking for funds: %v", errAskFunds)
+		}
 	}
 
-	if totalBalance == 0 {
-		var errAcc error
-		var acc *hd_wallet.Account
-
-		numAcc := hdWallet.GetNumAccounts()
-		if numAcc == 0 {
-			acc, errAcc = hdWallet.GetNewAccount()
-			if errAcc != nil {
-				logger.Fatalf("error creating account: %v", errAcc)
-			}
+	if numAccounts == 1 {
+		if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
+			logger.Fatalf("error distributing funds: %v", errDistrFund)
 		}
+	}
 
-		if numAcc > 0 {
-			acc, errAcc = hdWallet.GetAccount(FoundationAccountIndex)
-			if errAcc != nil {
-				logger.Fatalf("error getting account: %v", errAcc)
-			}
-		}
+	if numAccounts > 1 {
+		// keep redistributing funds
+		// if account exists but wallets is 1
+		CreateMultipleWalletsInsideAccount()
+		go SaveMetadataPeriodically(hdWallet)
+	}
 
-		wallet, errAcc := acc.GetNewExternalWallet()
-		if errAcc != nil {
-			logger.Fatalf("error getting foundation wallet: %v", errAcc)
-		}
+	// if numAccounts > 1 && numWallets > 1 {
+	// 	CreateTransactionsInsideAccount()
+	// }
+}
 
-		logger.Fatalf("HD wallet is empty, fund %s with a P2PK and execute this again", base58.Encode(wallet.GetP2PKAddress()))
+func AskForFunds(hdWallet *hd_wallet.Wallet) error {
+	acc, errAcc := hdWallet.GetNewAccount()
+	if errAcc != nil {
+		return fmt.Errorf("error getting account: %w", errAcc)
+	}
+
+	wallet, errAcc := acc.GetNewExternalWallet()
+	if errAcc != nil {
+		return fmt.Errorf("error getting wallet: %w", errAcc)
+	}
+
+	logger.Warnf("HD wallet is empty, fund %s with a P2PK and execute this again", base58.Encode(wallet.GetP2PKAddress()))
+
+	return nil
+}
+
+func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
+	addresses := [][]byte{}
+	targetAmounts := []uint{}
+
+	totalBalance, err := hdWallet.GetBalance()
+	if err != nil {
+		return fmt.Errorf("error getting wallet balance: %w", err)
 	}
 
 	logger.Infof("HD wallet contains %.5f coins", float64(totalBalance)/float64(kernel.ChainnetCoinAmount))
+
+	numAccounts := hdWallet.GetNumAccounts()
 
 	// create remaining accounts so that we can operate them in parallel without problems
 	if numAccounts < ConcurrentAccounts {
@@ -115,7 +136,7 @@ func main() {
 		for i := numAccounts; i < ConcurrentAccounts; i++ {
 			_, errAccount := hdWallet.GetNewAccount()
 			if errAccount != nil {
-				logger.Fatalf("error creating account: %v", errAccount)
+				return fmt.Errorf("error creating account: %w", errAccount)
 			}
 		}
 	}
@@ -123,31 +144,29 @@ func main() {
 	// check the balance of the foundation account
 	foundationAccount, err := hdWallet.GetAccount(FoundationAccountIndex)
 	if err != nil {
-		logger.Fatalf("error getting foundation account: %v", err)
+		return fmt.Errorf("error getting foundation account: %w", err)
 	}
 
 	foundationAccountBalance, err := foundationAccount.GetBalance()
 	if err != nil {
-		logger.Fatalf("error getting foundation account balance: %v", err)
+		return fmt.Errorf("error getting foundation account balance: %w", err)
 	}
 
 	logger.Infof("foundation account contains %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
 
 	// generate outputs for multiple addresses
-	addresses := [][]byte{}
-	targetAmounts := []uint{}
-	distributeFundsAmount := (foundationAccountBalance + 1) / ConcurrentAccounts
+	distributeFundsAmount := (foundationAccountBalance) / (ConcurrentAccounts + 1)
 	for i := range ConcurrentAccounts {
 		targetAmounts = append(targetAmounts, distributeFundsAmount)
 
 		account, errAccount := hdWallet.GetAccount(uint(i))
 		if errAccount != nil {
-			logger.Fatalf("error getting account: %v", errAccount)
+			return fmt.Errorf("error getting account: %w", errAccount)
 		}
 
 		wallet, errWallet := account.GetNewExternalWallet()
 		if errWallet != nil {
-			logger.Fatalf("error getting wallet: %v", errWallet)
+			return fmt.Errorf("error getting wallet: %w", errWallet)
 		}
 
 		addresses = append(addresses, wallet.GetP2PKAddress())
@@ -155,7 +174,7 @@ func main() {
 
 	foundationAccountUTXOs, err := foundationAccount.GetAccountUTXOs()
 	if err != nil {
-		logger.Fatalf("error getting foundation account UTXOs: %v", err)
+		return fmt.Errorf("error getting foundation account UTXOs: %w", err)
 	}
 
 	// create the foundation fund transaction
@@ -166,13 +185,34 @@ func main() {
 		distributeFundsAmount,
 		foundationAccountUTXOs,
 	)
+	if err != nil {
+		return fmt.Errorf("error generating transaction: %w", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.P2P.ConnTimeout)
 	defer cancel()
 
 	if errSend := foundationAccount.SendTransaction(ctx, tx); errSend != nil {
-		logger.Fatalf("error sending transaction: %v", errSend)
+		return fmt.Errorf("error sending transaction: %w", errSend)
 	}
 
 	logger.Infof("funds distributed to %d accounts: %s", ConcurrentAccounts, tx.String())
+
+	return nil
+}
+
+func CreateMultipleWalletsInsideAccount() {
+
+}
+
+func CreateTransactionsInsideAccount() {
+
+}
+
+func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
+	for {
+		time.Sleep(SleepTimeBetweenRecalculations)
+
+		hdWallet.GetMetadata()
+	}
 }

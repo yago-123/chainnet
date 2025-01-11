@@ -143,6 +143,13 @@ func (hd *Wallet) Sync() (uint, error) {
 	return uint(hd.accountNum), nil
 }
 
+func (hd *Wallet) GetMetadata() {
+	hd.mu.Lock()
+	defer hd.mu.Unlock()
+
+	// todo(): implement this method
+}
+
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index
 func (hd *Wallet) GetNewAccount() (*Account, error) {
 	hd.mu.Lock()

@@ -100,6 +100,9 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
+	var wg sync.WaitGroup
+	errCh := make(chan error, 2)
+
 	// helper function to sync wallets
 	syncWallets := func(changeType changeType) ([]*wallt.Wallet, error) {
 		wallets := []*wallt.Wallet{}
@@ -136,19 +139,40 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 		return activeWallets, nil
 	}
 
-	// sync external wallets
-	externalWallets, err := syncWallets(ExternalChangeType)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed syncing external addresses: %w", err)
-	}
-	hda.externalWallets = externalWallets
+	// parallel tasks
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		externalWallets, err := syncWallets(ExternalChangeType)
+		if err != nil {
+			errCh <- fmt.Errorf("failed syncing external addresses: %w", err)
+			return
+		}
+		hda.externalWallets = externalWallets
+	}()
 
-	// sync internal wallets
-	internalWallets, err := syncWallets(InternalChangeType)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed syncing internal addresses: %w", err)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		internalWallets, err := syncWallets(InternalChangeType)
+		if err != nil {
+			errCh <- fmt.Errorf("failed syncing internal addresses: %w", err)
+			return
+		}
+		hda.internalWallets = internalWallets
+	}()
+
+	// wait for all goroutines to complete
+	wg.Wait()
+	close(errCh)
+
+	// check for errors
+	var firstError error
+	for err := range errCh {
+		if firstError == nil {
+			firstError = err // capture the first error
+		}
 	}
-	hda.internalWallets = internalWallets
 
 	return uint32(len(hda.externalWallets)), uint32(len(hda.internalWallets)), nil
 }

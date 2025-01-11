@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 	"github.com/yago-123/chainnet/pkg/kernel"
 
