@@ -149,3 +149,15 @@ func IsValidHash(hash []byte) bool {
 
 	return true
 }
+
+func ConvertFromChannoshisToCoins(channoshis uint) float64 {
+	if channoshis == 0 {
+		return 0.0
+	}
+
+	return float64(channoshis) / float64(kernel.ChainnetCoinAmount)
+}
+
+func ConvertFromCoinsToChannoshis(coins float64) uint {
+	return uint(coins * float64(kernel.ChainnetCoinAmount))
+}

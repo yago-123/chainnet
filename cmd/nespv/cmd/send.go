@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"github.com/yago-123/chainnet/pkg/kernel"
+	"github.com/yago-123/chainnet/pkg/util"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
@@ -94,7 +94,7 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error getting wallet UTXOS: %v", err)
 		}
 
-		tx, err := wallet.GenerateNewTransaction(payType, base58.Decode(address), uint(amount*float64(kernel.ChainnetCoinAmount)), uint(fee*float64(kernel.ChainnetCoinAmount)), utxos)
+		tx, err := wallet.GenerateNewTransaction(payType, base58.Decode(address), util.ConvertFromCoinsToChannoshis(amount), util.ConvertFromCoinsToChannoshis(fee), utxos)
 		if err != nil {
 			logger.Fatalf("error generating transaction: %v", err)
 		}
