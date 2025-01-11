@@ -172,6 +172,13 @@ func (hd *Wallet) GetAccount(accountIdx uint) (*Account, error) {
 	return hd.accounts[accountIdx], nil
 }
 
+func (hd *Wallet) GetNumAccounts() uint {
+	hd.mu.Lock()
+	defer hd.mu.Unlock()
+
+	return uint(hd.accountNum)
+}
+
 func (hd *Wallet) GetBalance() (uint, error) {
 	totalBalance := uint(0)
 	for _, account := range hd.accounts {

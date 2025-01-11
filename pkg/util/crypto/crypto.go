@@ -109,7 +109,7 @@ func ReadECDSAPemToPrivateKeyDerBytes(path string) ([]byte, error) {
 // because the portability of the keys and the variety of them across different systems is valued in this project
 func EncodeRawECDSAP256PrivateKeyToDERBytes(privKey []byte) ([]byte, error) {
 	// todo(): include support more crypto curves for ECDSA
-	if len(privKey) != Secp256r1KeyLength {
+	if len(privKey) > Secp256r1KeyLength {
 		return nil, fmt.Errorf("invalid private key length: only P-256 curve (32 bytes) is supported so far, got %d", len(privKey))
 	}
 

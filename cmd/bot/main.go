@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	ConcurrentAccounts     = 100
+	ConcurrentAccounts     = 4
 	FoundationAccountIndex = 0
 
 	MinimumTxBalance = 100
@@ -47,7 +47,7 @@ func main() {
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
 	// load the "seed"
-	privKeyPath := "wallet.pem"
+	privKeyPath := "wallet2.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -81,9 +81,22 @@ func main() {
 	}
 
 	if totalBalance == 0 {
-		acc, errAcc := hdWallet.GetAccount(FoundationAccountIndex)
-		if errAcc != nil {
-			logger.Fatalf("error getting foundation account: %v", errAcc)
+		var errAcc error
+		var acc *hd_wallet.Account
+
+		numAcc := hdWallet.GetNumAccounts()
+		if numAcc == 0 {
+			acc, errAcc = hdWallet.GetNewAccount()
+			if errAcc != nil {
+				logger.Fatalf("error creating account: %v", errAcc)
+			}
+		}
+
+		if numAcc > 0 {
+			acc, errAcc = hdWallet.GetAccount(FoundationAccountIndex)
+			if errAcc != nil {
+				logger.Fatalf("error getting account: %v", errAcc)
+			}
 		}
 
 		wallet, errAcc := acc.GetNewExternalWallet()
