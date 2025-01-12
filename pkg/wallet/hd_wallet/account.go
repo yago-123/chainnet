@@ -197,18 +197,18 @@ func (hda *Account) GetNewExternalWallet() (*wallt.Wallet, error) {
 	return hda.getNewWallet(ExternalChangeType, &hda.externalWallets)
 }
 
-func (hda *Account) GetExternalWalletIndex() uint32 {
+func (hda *Account) GetExternalWalletIndex() uint {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
-	return uint32(len(hda.externalWallets))
+	return uint(len(hda.externalWallets))
 }
 
-func (hda *Account) GetInternalWalletIndex() uint32 {
+func (hda *Account) GetInternalWalletIndex() uint {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
-	return uint32(len(hda.internalWallets))
+	return uint(len(hda.internalWallets))
 }
 
 // GetAccountUTXOs retrieves the UTXOs from both external and internal wallets. The resulting array is sorted by default

@@ -27,8 +27,7 @@ type Wallet struct {
 	// from seeing the private key in the derivation process
 	masterChainCode []byte
 
-	accounts   []*Account
-	accountNum uint32
+	accounts []*Account
 
 	// mu mutex used to synchronize the access to the HD wallet fields
 	mu sync.Mutex
@@ -57,7 +56,6 @@ func NewHDWalletWithKeys(
 	encoder encoding.Encoding,
 	privateKey []byte,
 ) (*Wallet, error) {
-	var accountIndex uint32
 
 	// todo(): enclose the master key derivation into a separate function
 	// this represents a variant of BIP-44 by skipping BIP-39
@@ -89,7 +87,6 @@ func NewHDWalletWithKeys(
 		masterPrivKey:   masterPrivateKeyDER,
 		masterPubKey:    masterPubKey,
 		masterChainCode: masterChainCode,
-		accountNum:      accountIndex,
 		validator:       validator,
 		signer:          signer,
 		encoder:         encoder,
@@ -138,16 +135,26 @@ func (hd *Wallet) Sync() (uint, error) {
 
 	// store the accounts that are in use and update the account number
 	hd.accounts = tmpAccounts[:len(tmpAccounts)-AccountGapLimit]
-	hd.accountNum = uint32(len(hd.accounts)) //nolint:gosec // possibility of integer overflow is OK here
 
-	return uint(hd.accountNum), nil
+	return uint(len(hd.accounts)), nil
 }
 
-func (hd *Wallet) GetMetadata() {
+func (hd *Wallet) GetMetadata() *Metadata {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	// todo(): implement this method
+	metadata := &Metadata{}
+
+	metadata.NumAccounts = hd.GetNumAccounts()
+
+	for _, account := range hd.accounts {
+		metadata.MetadataAccounts = append(metadata.MetadataAccounts, MetadataAccount{
+			NumExternalWallets: account.GetExternalWalletIndex(),
+			NumInternalWallets: account.GetInternalWalletIndex(),
+		})
+	}
+
+	return metadata
 }
 
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index
@@ -156,13 +163,12 @@ func (hd *Wallet) GetNewAccount() (*Account, error) {
 	defer hd.mu.Unlock()
 
 	// we create a new account and increment the account number
-	account, err := hd.createAccount(hd.accountNum)
+	account, err := hd.createAccount(uint32(len(hd.accounts)))
 	if err != nil {
 		return nil, fmt.Errorf("error creating account: %w", err)
 	}
 
 	hd.accounts = append(hd.accounts, account)
-	hd.accountNum++
 
 	return account, nil
 }
@@ -172,7 +178,7 @@ func (hd *Wallet) GetAccount(accountIdx uint) (*Account, error) {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	if uint32(accountIdx) >= hd.accountNum { ///nolint:gosec // possibility of integer overflow is OK here
+	if accountIdx >= uint(len(hd.accounts)) { ///nolint:gosec // possibility of integer overflow is OK here
 		return nil, fmt.Errorf("account index %d does not exist", accountIdx)
 	}
 
@@ -183,7 +189,7 @@ func (hd *Wallet) GetNumAccounts() uint {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	return uint(hd.accountNum)
+	return uint(len(hd.accounts))
 }
 
 func (hd *Wallet) GetBalance() (uint, error) {
