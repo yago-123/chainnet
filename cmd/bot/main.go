@@ -69,6 +69,8 @@ func main() {
 		logger.Fatalf("error initializing HD wallet: %v", err)
 	}
 
+	go SaveMetadataPeriodically(hdWallet)
+
 	logger.Infof("syncing HD wallet...")
 	numAccounts, err := hdWallet.Sync()
 	if err != nil {
@@ -93,7 +95,6 @@ func main() {
 		// keep redistributing funds
 		// if account exists but wallets is 1
 		CreateMultipleWalletsInsideAccount()
-		go SaveMetadataPeriodically(hdWallet)
 	}
 
 	// if numAccounts > 1 && numWallets > 1 {
@@ -211,8 +212,7 @@ func CreateTransactionsInsideAccount() {
 
 func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 	for {
-		time.Sleep(SleepTimeBetweenRecalculations)
-
-		hdWallet.GetMetadata()
+		time.Sleep(TimeBetweenMetadataBackup)
+		hd_wallet.SaveMetadata("hd_wallet.data", hdWallet.GetMetadata())
 	}
 }

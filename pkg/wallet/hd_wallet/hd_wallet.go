@@ -145,7 +145,7 @@ func (hd *Wallet) GetMetadata() *Metadata {
 
 	metadata := &Metadata{}
 
-	metadata.NumAccounts = hd.GetNumAccounts()
+	metadata.NumAccounts = uint(len(hd.accounts))
 
 	for _, account := range hd.accounts {
 		metadata.MetadataAccounts = append(metadata.MetadataAccounts, MetadataAccount{
