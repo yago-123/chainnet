@@ -3,6 +3,7 @@ package simple_wallet
 import (
 	"context"
 	"fmt"
+
 	"github.com/btcsuite/btcutil/base58"
 
 	common "github.com/yago-123/chainnet/pkg/wallet"

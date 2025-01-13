@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
@@ -41,7 +42,7 @@ func GenerateOutputs(scriptType script.ScriptType, targetAmounts []uint, address
 
 	// check if the target amount and the addresses have the same length
 	if len(targetAmounts) != len(addresses) {
-		return []kernel.TxOutput{}, errors.New("target amount and addresses must have the same length")
+		return []kernel.TxOutput{}, fmt.Errorf("target amounts (len=%d) and addresses (len=%d) must have the same length", len(targetAmounts), len(addresses))
 	}
 
 	// calculate the total amount that is going to be sent to the addresses
