@@ -61,7 +61,6 @@ func NewHDWalletWithKeys(
 	encoder encoding.Encoding,
 	privateKey []byte,
 ) (*Wallet, error) {
-
 	// todo(): enclose the master key derivation into a separate function
 	// this represents a variant of BIP-44 by skipping BIP-39
 	masterInfo, err := util_crypto.CalculateHMACSha512([]byte(HMACKeyStandard), privateKey)

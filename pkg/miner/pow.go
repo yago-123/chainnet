@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"runtime"
 	"sync"
@@ -62,7 +63,10 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 		return nil, 0, errors.New("target is bigger than the hash length")
 	}
 
-	numGoroutines := runtime.NumCPU()
+	// calculate the number of goroutines to use. We use half of the available CPUs because in our case the miner
+	// will have other tasks to do (like listening for new blocks) and we don't want to starve the system (in miner only
+	// scenarios, we could use all CPUs)
+	numGoroutines := int(math.Max(1, float64(runtime.NumCPU()/2)))
 	nonceRange := MaxNonce / uint(numGoroutines)
 
 	// if one of the goroutines finds a block, use this context to propagate the cancellation. This cancellation

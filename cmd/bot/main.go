@@ -30,7 +30,7 @@ const (
 	MaxNumberConcurrentAccounts = 5
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
-	MaxNumberWalletsPerAccount = 100
+	MaxNumberWalletsPerAccount = 5
 	FoundationAccountIndex     = 0
 
 	// todo(): make this a flag?
@@ -38,7 +38,7 @@ const (
 
 	MinimumTxBalance = 100000
 
-	TimeoutSendTransaction = 10 * time.Second
+	TimeoutSendTransaction = 5 * time.Second
 	PeriodMetadataBackup   = 1 * time.Minute
 )
 
@@ -58,6 +58,7 @@ var cfg = config.NewConfig()
 
 func main() {
 	cfg.Logger.SetLevel(logrus.DebugLevel)
+	logger.SetLevel(logrus.DebugLevel)
 
 	var hdWallet *hd_wallet.Wallet
 
@@ -133,15 +134,16 @@ func main() {
 		for i := numAccounts; i < MaxNumberConcurrentAccounts; i++ {
 			_, errAccount := hdWallet.GetNewAccount()
 			if errAccount != nil {
-				logger.Fatalf("error creating account: %w", errAccount)
+				logger.Fatalf("error creating account: %v", errAccount)
 			}
 		}
 	}
+
 	// distribute funds among accounts regardless of the number of accounts. This is done so that we can refill
 	// the bots by transfering funds to the foundation account and restarting the bot
-	if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
-		logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
-	}
+	//if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
+	//	logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
+	//}
 
 	// distribute funds between wallets for each account (isolated)
 	for i := 0; i < MaxNumberConcurrentAccounts; i++ {

@@ -77,7 +77,6 @@ func NewWalletWithKeys(
 	privateKey []byte,
 	publicKey []byte,
 ) (*Wallet, error) {
-
 	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
@@ -238,7 +237,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 
 		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
 		if !unlocked {
-			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
+			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %x and index %d", vin.Txid, vin.Vout)
 		}
 	}
 
