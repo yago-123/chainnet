@@ -3,6 +3,7 @@ package simple_wallet
 import (
 	"context"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 
 	common "github.com/yago-123/chainnet/pkg/wallet"
 
@@ -135,7 +136,7 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 		// retrieve UTXOs for each address
 		utxo, errUtxos := w.p2pNet.GetWalletUTXOS(ctx, address)
 		if errUtxos != nil {
-			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
 
 		utxos = append(utxos, utxo...)
@@ -159,7 +160,7 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 		// retrieve txs for each address
 		tx, errUtxos := w.p2pNet.GetWalletTxs(ctx, address)
 		if errUtxos != nil {
-			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
 
 		txs = append(txs, tx...)

@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/util"
+	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
+	"math/rand/v2"
+	"sort"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -22,16 +26,19 @@ import (
 )
 
 const (
-	ConcurrentAccounts     = 4
-	FoundationAccountIndex = 0
+	MaxNumberConcurrentAccounts = 5
+	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
+	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
+	MaxNumberWalletsPerAccount = 100
+	FoundationAccountIndex     = 0
 
 	// todo(): make this a flag?
 	MetadataPath = "hd_wallet.data"
 
-	MinimumTxBalance = 100
+	MinimumTxBalance = 100000
 
-	SleepTimeBetweenRecalculations = 20 * time.Minute
-	TimeBetweenMetadataBackup      = 1 * time.Minute
+	TimeoutSendTransaction = 10 * time.Second
+	PeriodMetadataBackup   = 1 * time.Minute
 )
 
 var (
@@ -53,8 +60,8 @@ func main() {
 
 	var hdWallet *hd_wallet.Wallet
 
-	// load the "seed"
-	privKeyPath := "wallet2.pem"
+	// load the wallet "seed"
+	privKeyPath := "wallet.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -106,33 +113,54 @@ func main() {
 	numAccounts := hdWallet.GetNumAccounts()
 	logger.Infof("HD wallet initialized, contains %d accounts", numAccounts)
 
+	// save the metadata periodically
 	go SaveMetadataPeriodically(hdWallet)
 
 	logger.Infof("HD wallet synced with %d accounts", numAccounts)
 
+	// if there are no active accounts, ask for funds and exit the program
 	if numAccounts == 0 {
-		if errAskFunds := AskForFunds(hdWallet); errAskFunds != nil {
-			logger.Fatalf("error asking for funds: %v", errAskFunds)
+		//	if errAskFunds := AskForFunds(hdWallet); errAskFunds != nil {
+		//		logger.Fatalf("error asking for funds: %v", errAskFunds)
+		//	}
+	}
+
+	// create remaining accounts if needed so that we can operate them in parallel without problems
+	numAccounts = hdWallet.GetNumAccounts()
+	if numAccounts < MaxNumberConcurrentAccounts {
+		logger.Infof("creating remaining %d accounts...", MaxNumberConcurrentAccounts-numAccounts)
+		for i := numAccounts; i < MaxNumberConcurrentAccounts; i++ {
+			_, errAccount := hdWallet.GetNewAccount()
+			if errAccount != nil {
+				logger.Fatalf("error creating account: %w", errAccount)
+			}
 		}
 	}
-
-	if numAccounts == 1 {
-		if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
-			logger.Fatalf("error distributing funds: %v", errDistrFund)
-		}
-	}
-
-	if numAccounts > 1 {
-		// keep redistributing funds
-		// if account exists but wallets is 1
-		CreateMultipleWalletsInsideAccount()
-	}
-
-	// if numAccounts > 1 && numWallets > 1 {
-	// 	CreateTransactionsInsideAccount()
+	// distribute funds among accounts regardless of the number of accounts. This is done so that we can refill
+	// the bots by transfering funds to the foundation account and restarting the bot
+	// if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
+	// 	logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
 	// }
+
+	// distribute funds between wallets for each account (isolated)
+	for i := 0; i < MaxNumberConcurrentAccounts; i++ {
+		// skip the foundation account
+		if i == FoundationAccountIndex {
+			continue
+		}
+
+		// retrieve account and start the generation of transactions among the wallets contained
+		account, errAcc := hdWallet.GetAccount(uint(i))
+		if errAcc != nil {
+			logger.Fatalf("error getting account: %v", errAcc)
+		}
+		go DistributeFundsBetweenWallets(account)
+	}
+
+	select {}
 }
 
+// AskForFunds asks for funds to the user by displaying the P2PK address of the first wallet in the HD wallet
 func AskForFunds(hdWallet *hd_wallet.Wallet) error {
 	acc, errAcc := hdWallet.GetNewAccount()
 	if errAcc != nil {
@@ -149,6 +177,9 @@ func AskForFunds(hdWallet *hd_wallet.Wallet) error {
 	return nil
 }
 
+// DistributeFundsAmongAccounts distributes the funds from the foundation account to the rest of the accounts in the
+// HD wallet. This is done so that accounts can start operating in an isolated way without having to rely on external
+// funds
 func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 	addresses := [][]byte{}
 	targetAmounts := []uint{}
@@ -159,19 +190,6 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 	}
 
 	logger.Infof("HD wallet contains %.5f coins", float64(totalBalance)/float64(kernel.ChainnetCoinAmount))
-
-	numAccounts := hdWallet.GetNumAccounts()
-
-	// create remaining accounts so that we can operate them in parallel without problems
-	if numAccounts < ConcurrentAccounts {
-		logger.Infof("creating remaining %d accounts...", ConcurrentAccounts-numAccounts)
-		for i := numAccounts; i < ConcurrentAccounts; i++ {
-			_, errAccount := hdWallet.GetNewAccount()
-			if errAccount != nil {
-				return fmt.Errorf("error creating account: %w", errAccount)
-			}
-		}
-	}
 
 	// check the balance of the foundation account
 	foundationAccount, err := hdWallet.GetAccount(FoundationAccountIndex)
@@ -187,8 +205,8 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 	logger.Infof("foundation account contains %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
 
 	// generate outputs for multiple addresses
-	distributeFundsAmount := (foundationAccountBalance) / (ConcurrentAccounts + 1)
-	for i := range ConcurrentAccounts {
+	distributeFundsAmount := (foundationAccountBalance) / (MaxNumberConcurrentAccounts + 1)
+	for i := range MaxNumberConcurrentAccounts {
 		targetAmounts = append(targetAmounts, distributeFundsAmount)
 
 		account, errAccount := hdWallet.GetAccount(uint(i))
@@ -228,22 +246,135 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		return fmt.Errorf("error sending transaction: %w", errSend)
 	}
 
-	logger.Infof("funds distributed to %d accounts: %s", ConcurrentAccounts, tx.String())
+	logger.Infof("funds distributed to %d accounts: %s", MaxNumberConcurrentAccounts, tx.String())
 
 	return nil
 }
 
-func CreateMultipleWalletsInsideAccount() {
+func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
+	var tx *kernel.Transaction
 
+	logrus.Infof("starting funds distribution for account %d", acc.GetAccountID())
+	for {
+
+		// sleep randomized so that the nodes are not overflowed
+		time.Sleep(time.Duration(rand.UintN(200)+10) * time.Second)
+
+		// get the UTXOs of the account
+		accUTXOs, err := acc.GetAccountUTXOs()
+		if err != nil {
+			logger.Warnf("error getting account UTXOs for account %d: %v", acc.GetAccountID(), err)
+		}
+
+		// if there are less than 10 UTXOs, then genererate multi outputs transaction (>15 outputs)
+		if len(accUTXOs) < 10 {
+			for _, utxo := range accUTXOs {
+				// todo(): change the minimum here
+				addresses := GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount, acc)
+				amounts := GetRandomAmounts(utxo.GetAmount(), uint(len(addresses))+1) // add 1 for the tx fees
+				tx, err = acc.GenerateNewTransaction(script.P2PKH, addresses, amounts[:len(addresses)-1], amounts[len(addresses)-1], []*kernel.UTXO{utxo})
+
+				ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
+				defer cancel()
+
+				if errSend := acc.SendTransaction(ctx, tx); errSend != nil {
+					logger.Warnf("error sending transaction: %v", errSend)
+					continue
+				}
+
+				logger.Warnf("funds distributed to %d wallets: %s", len(addresses), tx.String())
+			}
+
+			time.Sleep(5 * time.Minute)
+			continue
+		}
+
+		//balance := GetBalanceUTXOs(utxo)
+
+		// if there are more than 10 UTXOs, then split the UTXOs array in 5 and do periodic transactions
+		splitedUTXOs := util.SplitArray(accUTXOs, 15)
+		for _, utxos := range splitedUTXOs {
+			if util.GetBalanceUTXOs(utxos) < MinimumTxBalance {
+
+			}
+
+			// acc.GenerateNewTransaction()
+			// acc.SendTransaction()
+
+			// randomized
+			time.Sleep(time.Duration(rand.UintN(60)+30) * time.Second)
+		}
+	}
 }
 
-func CreateTransactionsInsideAccount() {
+func GetRandomAmounts(totalBalance, numAddresses uint) []uint {
+	if numAddresses == 0 || totalBalance == 0 {
+		return []uint{}
+	}
 
+	// generate N-1 random points in the range [0, totalBalance]
+	randomPoints := make([]uint, numAddresses-1)
+	for i := range randomPoints {
+		randomPoints[i] = uint(rand.UintN(totalBalance + 1))
+	}
+
+	// sort the random points to create ranges
+	sort.Slice(randomPoints, func(i, j int) bool { return randomPoints[i] < randomPoints[j] })
+
+	// calculate balances as differences between sorted random points
+	balances := make([]uint, numAddresses)
+	prev := uint(0)
+	for i, point := range randomPoints {
+		balances[i] = point - prev
+		prev = point
+	}
+	balances[numAddresses-1] = totalBalance - prev
+
+	return balances
+}
+
+func GetRandomAccountAddresses(min, max uint, account *hd_wallet.Account) [][]byte {
+	var err error
+	var addresses [][]byte
+
+	numAddresses := rand.UintN(max-min) + min
+
+	for i := uint(0); i < numAddresses; i++ {
+		var wallet *wallt.Wallet
+
+		// if not all wallets have been created, create a new one
+		if account.GetExternalWalletIndex() < MaxNumberWalletsPerAccount {
+			wallet, err = account.GetNewExternalWallet()
+			if err != nil {
+				logger.Warnf("error getting new wallet: %v", err)
+				continue
+			}
+		}
+
+		// if the limit have been reached, pick an existing wallet
+		if account.GetExternalWalletIndex() >= MaxNumberConcurrentAccounts {
+			wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
+			if err != nil {
+				logger.Warnf("error getting external wallet: %v", err)
+				continue
+			}
+		}
+
+		address, errAddress := wallet.GetP2PKHAddress()
+		if errAddress != nil {
+			logger.Warnf("error getting P2PKH address: %v", errAddress)
+			continue
+		}
+
+		addresses = append(addresses, address)
+	}
+
+	return addresses
 }
 
 func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 	for {
-		time.Sleep(TimeBetweenMetadataBackup)
+		time.Sleep(PeriodMetadataBackup)
 		hd_wallet.SaveMetadata("hd_wallet.data", hdWallet.GetMetadata())
 	}
 }

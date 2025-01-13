@@ -61,6 +61,16 @@ func VerifyBlockHash(bh *kernel.BlockHeader, hash []byte, hasher hash.Hashing) e
 	return nil
 }
 
+// GetBalanceUTXOs calculates the total balance of a list of UTXOs
+func GetBalanceUTXOs(utxos []*kernel.UTXO) uint {
+	var balance uint
+	for _, utxo := range utxos {
+		balance += utxo.GetAmount()
+	}
+
+	return balance
+}
+
 // SafeUintToInt converts uint to int safely, returning an error if it would overflow
 func SafeUintToInt(u uint) (int, error) {
 	if u > uint(int(^uint(0)>>1)) { // Check if u exceeds the maximum int value
@@ -148,4 +158,23 @@ func IsValidHash(hash []byte) bool {
 	}
 
 	return true
+}
+
+func SplitArray[T any](arr []T, numParts int) [][]T {
+	var result [][]T
+	totalLen := len(arr)
+	partLen := totalLen / numParts
+	remainder := totalLen % numParts
+
+	start := 0
+	for i := 0; i < numParts; i++ {
+		end := start + partLen
+		if i < remainder {
+			end++ // Distribute the remainder
+		}
+		result = append(result, arr[start:end])
+		start = end
+	}
+
+	return result
 }

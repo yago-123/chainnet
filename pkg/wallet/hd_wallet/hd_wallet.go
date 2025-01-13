@@ -1,6 +1,7 @@
 package hd_wallet
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -13,6 +14,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/encoding"
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
+)
+
+const (
+	MaxConcurrentRequests = 5
 )
 
 // Wallet represents a Hierarchical Deterministic wallet
@@ -222,15 +227,61 @@ func (hd *Wallet) GetNumAccounts() uint {
 	return uint(len(hd.accounts))
 }
 
+// GetBalance returns the total balance of the HD wallet by summing the balances of all accounts. In case of finding
+// one error, the method will return the error and stop processing the other accounts. This method ensures that the
+// balance reported is the most accurate possible (hence why we cancel and return error if we find 1 error)
 func (hd *Wallet) GetBalance() (uint, error) {
-	totalBalance := uint(0)
-	for _, account := range hd.accounts {
-		balance, err := account.GetBalance()
-		if err != nil {
-			return 0, fmt.Errorf("error getting balance for account %d: %w", account.GetAccountID(), err)
-		}
+	// create a cancellable context, this will be used in case an error is found (everything will be canceled)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // ensure cancel is called to release resources
 
-		totalBalance += balance
+	semaphore := make(chan struct{}, MaxConcurrentRequests) // semaphore to limit concurrency
+	var wg sync.WaitGroup
+	var balanceMu sync.Mutex // protects totalBalance
+
+	totalBalance := uint(0)
+
+	var overallErr error
+	var overallErrMu sync.Mutex // protects overallErr
+
+	for _, account := range hd.accounts {
+		semaphore <- struct{}{} // acquire a slot
+		wg.Add(1)
+
+		go func(acc *Account) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // release the slot
+
+			select {
+			case <-ctx.Done():
+				// context canceled, stop processing
+				return
+			default:
+				// proceed with fetching balance
+				balance, err := acc.GetBalance()
+				if err != nil {
+					// capture the error and cancel other operations
+					overallErrMu.Lock()
+					if overallErr == nil { // only set the first error
+						overallErr = fmt.Errorf("error getting balance for account %d: %w", acc.GetAccountID(), err)
+						cancel() // cancel the context
+					}
+					overallErrMu.Unlock()
+					return
+				}
+
+				// safely add the account's balance to the total balance
+				balanceMu.Lock()
+				totalBalance += balance
+				balanceMu.Unlock()
+			}
+		}(account)
+	}
+
+	wg.Wait() // wait for all goroutines to finish
+
+	if overallErr != nil {
+		return 0, overallErr
 	}
 
 	return totalBalance, nil

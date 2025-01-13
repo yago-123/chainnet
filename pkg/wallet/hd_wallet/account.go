@@ -24,10 +24,6 @@ import (
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
-const (
-	MaxConcurrentRequests = 10
-)
-
 type Account struct {
 	// derivedPubAccountKey public key derived from the master private key to be used for this account
 	// in other words, level 3 of the HD wallet derivation path
@@ -231,6 +227,28 @@ func (hda *Account) GetInternalWalletIndex() uint {
 	defer hda.mu.Unlock()
 
 	return uint(len(hda.internalWallets))
+}
+
+func (hda *Account) GetExternalWallet(idx uint) (*wallt.Wallet, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
+	if idx >= uint(len(hda.externalWallets)) {
+		return nil, fmt.Errorf("index %d out of bounds for external wallets, contains %d so far", idx, len(hda.externalWallets))
+	}
+
+	return hda.externalWallets[idx], nil
+}
+
+func (hda *Account) GetInternalWallet(idx uint) (*wallt.Wallet, error) {
+	hda.mu.Lock()
+	defer hda.mu.Unlock()
+
+	if idx >= uint(len(hda.internalWallets)) {
+		return nil, fmt.Errorf("index %d out of bounds for internal wallets, contains %d so far", idx, len(hda.internalWallets))
+	}
+
+	return hda.internalWallets[idx], nil
 }
 
 func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
