@@ -24,6 +24,10 @@ import (
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
+const (
+	MaxConcurrentRequests = 10
+)
+
 type Account struct {
 	// derivedPubAccountKey public key derived from the master private key to be used for this account
 	// in other words, level 3 of the HD wallet derivation path
@@ -229,25 +233,6 @@ func (hda *Account) GetInternalWalletIndex() uint {
 	return uint(len(hda.internalWallets))
 }
 
-// GetAccountUTXOs retrieves the UTXOs from both external and internal wallets. The resulting array is sorted by default
-// with external UTXOs first
-func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
-	hda.mu.Lock()
-	defer hda.mu.Unlock()
-
-	utxosCollection := []*kernel.UTXO{}
-	wallets := append(hda.externalWallets, hda.internalWallets...)
-	for _, wall := range wallets {
-		utxos, err := wall.GetWalletUTXOS()
-		if err != nil {
-			return nil, err
-		}
-		utxosCollection = append(utxosCollection, utxos...)
-	}
-
-	return utxosCollection, nil
-}
-
 func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
@@ -364,22 +349,93 @@ func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction)
 	return nil
 }
 
+// GetAccountUTXOs retrieves the UTXOs from both external and internal wallets. The resulting array is sorted by default
+// with external UTXOs first
+func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
+	semaphore := make(chan struct{}, MaxConcurrentRequests) // Buffered channel as a semaphore
+	var wg sync.WaitGroup
+	var utxosMu sync.Mutex // protects utxosCollection
+
+	utxosCollection := []*kernel.UTXO{}
+
+	hda.mu.Lock()
+	wallets := append(hda.externalWallets, hda.internalWallets...)
+	hda.mu.Unlock()
+
+	for _, wall := range wallets {
+		semaphore <- struct{}{} // acquire a slot
+		wg.Add(1)
+
+		go func(w *wallt.Wallet) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // release the slot
+
+			utxos, err := w.GetWalletUTXOS()
+			if err != nil {
+				hda.logger.Warnf("error fetching UTXOs from wallet: %v", err)
+				return
+			}
+
+			utxosMu.Lock()
+			utxosCollection = append(utxosCollection, utxos...)
+			utxosMu.Unlock()
+		}(wall)
+	}
+
+	wg.Wait() // wait for all goroutines to finish
+
+	return utxosCollection, nil
+}
+
 // GetBalance returns the total balance of the account by summing the amount of all UTXOs in the externalWallets
 func (hda *Account) GetBalance() (uint, error) {
-	hda.mu.Lock()
-	defer hda.mu.Unlock()
+	semaphore := make(chan struct{}, MaxConcurrentRequests) // buffered channel as a semaphore
+	var wg sync.WaitGroup
+	var balanceMu sync.Mutex // protects the balance variable
 
 	balance := uint(0)
-	wallets := append(hda.externalWallets, hda.internalWallets...)
-	for _, wallet := range wallets {
-		utxos, err := wallet.GetWalletUTXOS()
-		if err != nil {
-			return 0, fmt.Errorf("error getting wallet UTXOs: %w", err)
-		}
 
-		for _, utxo := range utxos {
-			balance += utxo.GetAmount()
-		}
+	hda.mu.Lock()
+	wallets := append(hda.externalWallets, hda.internalWallets...)
+	hda.mu.Unlock()
+
+	var overallErr error
+	var overallErrMu sync.Mutex // protects access to overallErr
+
+	for _, wallet := range wallets {
+		semaphore <- struct{}{} // acquire a slot
+		wg.Add(1)
+
+		go func(w *wallt.Wallet) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // release the slot
+
+			utxos, err := w.GetWalletUTXOS()
+			if err != nil {
+				overallErrMu.Lock()
+				if overallErr == nil { // capture the first error
+					overallErr = fmt.Errorf("error getting wallet UTXOs: %w", err)
+				}
+				overallErrMu.Unlock()
+				return
+			}
+
+			localBalance := uint(0)
+			for _, utxo := range utxos {
+				localBalance += utxo.GetAmount()
+			}
+
+			// safely add localBalance to the total balance
+			balanceMu.Lock()
+			balance += localBalance
+			balanceMu.Unlock()
+		}(wallet)
+	}
+
+	wg.Wait() // wait for all goroutines to finish
+
+	if overallErr != nil {
+		return 0, overallErr
 	}
 
 	return balance, nil
