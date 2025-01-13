@@ -94,6 +94,36 @@ func NewHDWalletWithKeys(
 	}, nil
 }
 
+func NewHDWalletWithMetadata(
+	cfg *config.Config,
+	version byte,
+	validator consensus.LightValidator,
+	signer sign.Signature,
+	consensusHasher hash.Hashing,
+	encoder encoding.Encoding,
+	privateKey []byte,
+	metadata *Metadata) (*Wallet, error) {
+
+	// create base HD wallet
+	hdWallet, err := NewHDWalletWithKeys(cfg, version, validator, signer, consensusHasher, encoder, privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("error creating HD wallet with keys: %w", err)
+	}
+
+	// create accounts with the corresponding metadata
+	for i := 0; i < len(metadata.MetadataAccounts); i++ {
+		accountMetadata := metadata.MetadataAccounts[i]
+		account, errAcc := hdWallet.createAccount(uint32(i), uint32(accountMetadata.NumExternalWallets), uint32(accountMetadata.NumInternalWallets))
+		if errAcc != nil {
+			return nil, fmt.Errorf("error creating account %d: %w", i, errAcc)
+		}
+
+		hdWallet.accounts = append(hdWallet.accounts, account)
+	}
+
+	return hdWallet, nil
+}
+
 // Sync synchronizes the HD wallet fields so that all accounts and addresses are up to date
 func (hd *Wallet) Sync() (uint, error) {
 	hd.mu.Lock()
@@ -103,7 +133,7 @@ func (hd *Wallet) Sync() (uint, error) {
 	accountsWithoutActivity := 0
 	for {
 		// generate accounts and check if had any activity (transactions)
-		account, err := hd.createAccount(uint32(len(tmpAccounts))) //nolint:gosec // possibility of integer overflow is OK here
+		account, err := hd.createAccount(uint32(len(tmpAccounts)), 0, 0) //nolint:gosec // possibility of integer overflow is OK here
 		if err != nil {
 			return 0, fmt.Errorf("error creating account %d: %w", len(tmpAccounts), err)
 		}
@@ -143,7 +173,7 @@ func (hd *Wallet) GetMetadata() *Metadata {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()
 
-	metadata := &Metadata{}
+	metadata := Metadata{}
 
 	metadata.NumAccounts = uint(len(hd.accounts))
 
@@ -154,7 +184,7 @@ func (hd *Wallet) GetMetadata() *Metadata {
 		})
 	}
 
-	return metadata
+	return &metadata
 }
 
 // GetNewAccount derives a new account from the HD wallet by incrementing the account index
@@ -163,7 +193,7 @@ func (hd *Wallet) GetNewAccount() (*Account, error) {
 	defer hd.mu.Unlock()
 
 	// we create a new account and increment the account number
-	account, err := hd.createAccount(uint32(len(hd.accounts)))
+	account, err := hd.createAccount(uint32(len(hd.accounts)), 0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("error creating account: %w", err)
 	}
@@ -210,7 +240,7 @@ func (hd *Wallet) GetBalance() (uint, error) {
 // account in the HD wallet, it's the responsibility of the caller to do so if needed.
 // Arguments:
 // - accountIndex: the index of the account to be created
-func (hd *Wallet) createAccount(accountIdx uint32) (*Account, error) {
+func (hd *Wallet) createAccount(accountIdx uint32, externalWalletsIdx, internalWalletsIdx uint32) (*Account, error) {
 	var err error
 
 	// derive the child key step by step, following the BIP44 path purpose' / coin type' / account' / change / index
@@ -248,5 +278,7 @@ func (hd *Wallet) createAccount(accountIdx uint32) (*Account, error) {
 		derivedPublicKey,
 		derivedChainCode,
 		accountIdx,
+		externalWalletsIdx,
+		internalWalletsIdx,
 	)
 }

@@ -67,13 +67,15 @@ func NewHDAccount(
 	derivedPubAccountKey []byte,
 	derivedChainAccountCode []byte,
 	accountNum uint32,
+	externalWalletsNum uint32,
+	internalWalletsNum uint32,
 ) (*Account, error) {
 	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
 	}
 
-	return &Account{
+	acc := &Account{
 		cfg:                     cfg,
 		logger:                  cfg.Logger,
 		walletVersion:           walletVersion,
@@ -86,7 +88,23 @@ func NewHDAccount(
 		derivedPubAccountKey:    derivedPubAccountKey,
 		derivedChainAccountCode: derivedChainAccountCode,
 		accountID:               accountNum,
-	}, nil
+	}
+
+	for i := uint32(0); i < externalWalletsNum; i++ {
+		_, errWall := acc.getNewWallet(ExternalChangeType, &acc.externalWallets)
+		if errWall != nil {
+			return nil, fmt.Errorf("error creating external wallet %d: %w", i, errWall)
+		}
+	}
+
+	for i := uint32(0); i < internalWalletsNum; i++ {
+		_, errWall := acc.getNewWallet(InternalChangeType, &acc.internalWallets)
+		if errWall != nil {
+			return nil, fmt.Errorf("error creating internal wallet %d: %w", i, errWall)
+		}
+	}
+
+	return acc, nil
 }
 
 // Sync scans and updates the account by generating a series of externalWallets based on the default gap limit.
@@ -139,7 +157,7 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 		return activeWallets, nil
 	}
 
-	// parallel tasks
+	// sync external and internal wallets concurrently
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -371,7 +389,7 @@ func (hda *Account) ConsolidateChange() {
 
 }
 
-// getNewWallet generates a new wallet based on the specified change type
+// getNewWallet generates a new wallet based on the specified change type and appends it to the appropriate wallet collection.
 // Arguments:
 // - changeType: represent the type of wallet that will be created (external or internal)
 // - walletCollection: represent the collection in which the new wallet will be persisted (this can be internalWallets

@@ -25,6 +25,9 @@ const (
 	ConcurrentAccounts     = 4
 	FoundationAccountIndex = 0
 
+	// todo(): make this a flag?
+	MetadataPath = "hd_wallet.data"
+
 	MinimumTxBalance = 100
 
 	SleepTimeBetweenRecalculations = 20 * time.Minute
@@ -48,6 +51,8 @@ var cfg = config.NewConfig()
 func main() {
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 
+	var hdWallet *hd_wallet.Wallet
+
 	// load the "seed"
 	privKeyPath := "wallet2.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
@@ -55,27 +60,53 @@ func main() {
 		logger.Fatalf("error reading private key: %v", err)
 	}
 
-	// create the hierachical deterministic wallet and sync it
-	hdWallet, err := hd_wallet.NewHDWalletWithKeys(
-		cfg,
-		1,
-		validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
-		consensusSigner,
-		hash.GetHasher(consensusHasherType),
-		encoding.NewProtobufEncoder(),
-		privKey,
-	)
+	metadata, err := hd_wallet.LoadMetadata(MetadataPath)
 	if err != nil {
-		logger.Fatalf("error initializing HD wallet: %v", err)
+		logger.Warnf("error loading metadata: %v", err)
 	}
+
+	if metadata == nil {
+		// create the hierachical deterministic wallet and sync it
+		hdWallet, err = hd_wallet.NewHDWalletWithKeys(
+			cfg,
+			1,
+			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+			consensusSigner,
+			hash.GetHasher(consensusHasherType),
+			encoding.NewProtobufEncoder(),
+			privKey,
+		)
+		if err != nil {
+			logger.Fatalf("error initializing HD wallet: %v", err)
+		}
+
+		logger.Infof("syncing HD wallet...")
+		_, err = hdWallet.Sync()
+		if err != nil {
+			logger.Fatalf("error syncing wallet: %v", err)
+		}
+	}
+
+	if metadata != nil {
+		hdWallet, err = hd_wallet.NewHDWalletWithMetadata(
+			cfg,
+			1,
+			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
+			consensusSigner,
+			hash.GetHasher(consensusHasherType),
+			encoding.NewProtobufEncoder(),
+			privKey,
+			metadata,
+		)
+		if err != nil {
+			logger.Fatalf("error initializing HD wallet with metadata: %v", err)
+		}
+	}
+
+	numAccounts := hdWallet.GetNumAccounts()
+	logger.Infof("HD wallet initialized, contains %d accounts", numAccounts)
 
 	go SaveMetadataPeriodically(hdWallet)
-
-	logger.Infof("syncing HD wallet...")
-	numAccounts, err := hdWallet.Sync()
-	if err != nil {
-		logger.Fatalf("error syncing wallet: %v", err)
-	}
 
 	logger.Infof("HD wallet synced with %d accounts", numAccounts)
 
