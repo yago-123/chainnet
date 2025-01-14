@@ -78,15 +78,7 @@ func main() {
 		if errWallet != nil {
 			logger.Fatalf("error generating wallet for account %d new wallet: %v", i, errWallet)
 		}
-
-		logger.Infof("brrr %s", base58.Encode(wallet.GetP2PKAddress()))
-
-		// initialize the network for the wallet
-		_, err = wallet.InitNetwork()
-		if err != nil {
-			logger.Fatalf("error setting up wallet network: %v", err)
-		}
-
+		
 		// get the wallet UTXOS
 		utxos, err = wallet.GetWalletUTXOS()
 		if err != nil {

@@ -149,3 +149,13 @@ func IsValidHash(hash []byte) bool {
 
 	return true
 }
+
+// GetBalanceUTXOs calculates the total balance of a list of UTXOs
+func GetBalanceUTXOs(utxos []*kernel.UTXO) uint {
+	var balance uint
+	for _, utxo := range utxos {
+		balance += utxo.Amount()
+	}
+
+	return balance
+}

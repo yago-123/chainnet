@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/yago-123/chainnet/pkg/kernel"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
@@ -36,8 +37,8 @@ var sendCmd = &cobra.Command{
 
 		scriptTypeStr, _ := cmd.Flags().GetString(FlagPayType)
 		address, _ := cmd.Flags().GetString(FlagAddress)
-		amount, _ := cmd.Flags().GetUint(FlagAmount)
-		fee, _ := cmd.Flags().GetUint(FlagFee)
+		amount, _ := cmd.Flags().GetFloat64(FlagAmount)
+		fee, _ := cmd.Flags().GetFloat64(FlagFee)
 		privKeyCont, _ := cmd.Flags().GetString(FlagPrivKey)
 		privKeyPath, _ := cmd.Flags().GetString(FlagWalletKey)
 
@@ -88,17 +89,12 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error setting up wallet: %v", err)
 		}
 
-		_, err = wallet.InitNetwork()
-		if err != nil {
-			logger.Fatalf("error setting up wallet network: %v", err)
-		}
-
 		utxos, err := wallet.GetWalletUTXOS()
 		if err != nil {
 			logger.Fatalf("error getting wallet UTXOS: %v", err)
 		}
 
-		tx, err := wallet.GenerateNewTransaction(payType, string(base58.Decode(address)), amount, fee, utxos)
+		tx, err := wallet.GenerateNewTransaction(payType, string(base58.Decode(address)), kernel.ConvertFromCoinsToChannoshis(amount), kernel.ConvertFromCoinsToChannoshis(fee), utxos)
 		if err != nil {
 			logger.Fatalf("error generating transaction: %v", err)
 		}
@@ -123,8 +119,8 @@ func init() {
 	// sub commands
 	sendCmd.Flags().String(FlagPayType, "P2PK", "Type of address to send coins to")
 	sendCmd.Flags().String(FlagAddress, "", "Destination address to send coins")
-	sendCmd.Flags().Uint(FlagAmount, 0, "Amount of coins to send")
-	sendCmd.Flags().Uint(FlagFee, 0, "Amount of fee to send")
+	sendCmd.Flags().Float64(FlagAmount, 0.0, "Amount of coins to send")
+	sendCmd.Flags().Float64(FlagFee, 0.0, "Amount of fee to send")
 	sendCmd.Flags().String(FlagPrivKey, "", "Private key")
 
 	// todo(): reestructure this duplication

@@ -122,10 +122,10 @@ func (op ScriptElement) ToUint() uint {
 // NewScript generates a new script based on the type and the argument provided. The argument content changes
 // based on the script type. In the case of P2PK the argument will be the public key, in the case of P2PKH the
 // argument will be the P2PKH address
-func NewScript(scriptType ScriptType, arg []byte) string {
+func NewScript(scriptType ScriptType, address []byte) string {
 	// if there is no public key, return undefined directly
-	if len(arg) == 0 {
-		return scriptStructure[UndefinedScriptType].String(arg)
+	if len(address) == 0 {
+		return scriptStructure[UndefinedScriptType].String(address)
 	}
 
 	// generate script based on type
@@ -133,7 +133,7 @@ func NewScript(scriptType ScriptType, arg []byte) string {
 
 	// todo() the render will switch to a hex string eventually
 	// render script to string
-	return script.String(arg)
+	return script.String(address)
 }
 
 // String returns the string representation of the script. The argument content changes based on the script type,
