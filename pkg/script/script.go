@@ -190,11 +190,11 @@ func (s Script) String(arg []byte) string {
 }
 
 // StringToScript converts a script pub key string into Script type and array of literals (like pub key, hash pub key, etc)
-func StringToScript(script string) (Script, []string, error) {
+func StringToScript(scriptPubKey string) (Script, []string, error) {
 	scriptTokens := []ScriptElement{}
 	scriptString := []string{}
 
-	for _, element := range strings.Split(script, scriptSeparator) {
+	for _, element := range strings.Split(scriptPubKey, scriptSeparator) {
 		var token ScriptElement
 		var literal string
 
