@@ -346,7 +346,9 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 		}
 
 		if !unlocked {
-			return nil, fmt.Errorf("couldn't unlock funds for input with ID %x and index %d", vin.Txid, vin.Vout)
+			return nil, fmt.Errorf("couldn't unlock funds for input with ID %x, index %d and scriptPubKey %s", vin.Txid, vin.Vout, utxo.Output.ScriptPubKey)
+		} else {
+			hda.logger.Infof("unlocked funds for input with ID %x, index %d and scriptPubKey %s", vin.Txid, vin.Vout, utxo.Output.ScriptPubKey)
 		}
 	}
 

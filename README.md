@@ -187,6 +187,16 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/loggi
 There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
 loading real data.
 
+```
+If wanna install locally miner: 
+$ ansible-playbook -c local -i 127.0.0.1, -e @ansible/config/miner-seed.yml -e "identity_path=~/.ssh/seed-node-1.pem" ansible/playbooks/blockchain.yml
+Install grafana: 
+$ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/grafana.yml
+Install monitoring and logging: 
+$ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/monitoring.yml
+$ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/logging.yml
+```
+
 ### Run in Kubernetes 
 Deploy the helm chart:
 ```bash

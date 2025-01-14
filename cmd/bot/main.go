@@ -58,12 +58,15 @@ var cfg = config.NewConfig()
 
 func main() {
 	cfg.Logger.SetLevel(logrus.DebugLevel)
+	cfg.Wallet.ServerAddress = "127.0.0.1"
+	cfg.Wallet.ServerPort = 9100
+
 	logger.SetLevel(logrus.DebugLevel)
 
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet2.pem"
+	privKeyPath := "wallet4.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -209,6 +212,11 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 
 	logger.Infof("foundation account contains %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
 
+	if foundationAccountBalance < MinimumTxBalance {
+		logger.Warnf("foundation account balance is below the minimum transaction balance, skipping distribution")
+		return nil
+	}
+
 	// generate outputs for multiple addresses
 	distributeFundsAmount := (foundationAccountBalance) / (MaxNumberConcurrentAccounts + 1)
 	for i := range MaxNumberConcurrentAccounts {
@@ -256,96 +264,35 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 	return nil
 }
 
+// DistributeFundsBetweenWallets distributes the funds between the wallets of an account. This is done so that the
+// account can operate in an isolated way without having to rely on external funds (until the tx fees waste all the
+// funds)
 func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
-	var tx *kernel.Transaction
-	var amounts []uint
-	var addresses [][]byte
+	logrus.Infof("Starting funds distribution for account %d", acc.GetAccountID())
 
-	logrus.Infof("starting funds distribution for account %d", acc.GetAccountID())
 	for {
-		// sleep randomized so that the nodes are not overflowed
-		time.Sleep(time.Duration(rand.UintN(200)+20) * time.Second)
+		time.Sleep(randomizedSleep(20, 220))
 
-		// get the UTXOs of the account
 		accUTXOs, err := acc.GetAccountUTXOs()
 		if err != nil {
-			logger.Warnf("error getting account UTXOs for account %d: %v", acc.GetAccountID(), err)
+			logger.Warnf("Error getting UTXOs for account %d: %v", acc.GetAccountID(), err)
+			continue
 		}
 
+		// if the account has no UTXOs, skip the execution
 		if len(accUTXOs) == 0 {
-			logger.Warnf("no UTXOs found for account %d, skipping execution", acc.GetAccountID())
+			logger.Warnf("No UTXOs found for account %d, skipping execution", acc.GetAccountID())
 			continue
 		}
 
-		// if there are less than 10 UTXOs, then generate multi outputs transaction (>15 outputs)
+		// if the account has a small number of UTXOs, distribute them to a small number of wallets
 		if len(accUTXOs) < 10 {
-			for _, utxo := range accUTXOs {
-				addresses = GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount, acc)
-				amounts = GetRandomAmounts(utxo.GetAmount(), uint(len(addresses))+1) // add 1 for the tx fees
-				tx, err = acc.GenerateNewTransaction(script.P2PKH, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], []*kernel.UTXO{utxo})
-				if err != nil {
-					logger.Warnf("error generating transaction: %v", err)
-					continue
-				}
-
-				ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
-				defer cancel()
-
-				if errSend := acc.SendTransaction(ctx, tx); errSend != nil {
-					logger.Warnf("error sending transaction: %v", errSend)
-					continue
-				}
-
-				logger.Debugf("account %d distributed %f coins to %d addresses: %s",
-					acc.GetAccountID(),
-					kernel.ConvertFromChannoshisToCoins(utxo.GetAmount()),
-					len(addresses),
-					tx.String())
-
-				// sleep after each transaction is sent to avoid overflow
-				time.Sleep(time.Duration(rand.UintN(200)+10) * time.Second)
-			}
-
+			distributeSmallUTXOs(acc, accUTXOs)
 			continue
 		}
 
-		// if there are more than 10 UTXOs, then split the UTXOs array in 5 and do periodic transactions
-		splitedUTXOs := util.SplitArray(accUTXOs, 5)
-		for _, utxos := range splitedUTXOs {
-			totalBalanceTx := util.GetBalanceUTXOs(utxos)
-			if totalBalanceTx < MinimumTxBalance {
-				// if the balance is too small, send the transaction with a single output
-				addresses = GetRandomAccountAddresses(0, 1, acc)
-				amounts = GetRandomAmounts(totalBalanceTx, uint(len(addresses))+1)
-			}
-
-			if totalBalanceTx > MinimumTxBalance {
-				addresses = GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount, acc)
-				amounts = GetRandomAmounts(totalBalanceTx, uint(len(addresses))+1)
-			}
-
-			tx, err = acc.GenerateNewTransaction(script.P2PKH, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos)
-			if err != nil {
-				logger.Warnf("error generating transaction: %v", err)
-				continue
-			}
-
-			ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
-			defer cancel()
-
-			if errSend := acc.SendTransaction(ctx, tx); errSend != nil {
-				logger.Warnf("error sending transaction: %v", errSend)
-				continue
-			}
-
-			logger.Debugf("account %d distributed %f coins to %d addresses: %s",
-				acc.GetAccountID(),
-				kernel.ConvertFromChannoshisToCoins(util.GetBalanceUTXOs(utxos)),
-				len(addresses),
-				tx.String())
-
-			time.Sleep(time.Duration(rand.UintN(60)+30) * time.Second)
-		}
+		// if the account has a large number of UTXOs, split them into smaller groups
+		distributeLargeUTXOs(acc, accUTXOs)
 	}
 }
 
@@ -419,4 +366,67 @@ func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 		time.Sleep(PeriodMetadataBackup)
 		hd_wallet.SaveMetadata("hd_wallet.data", hdWallet.GetMetadata())
 	}
+}
+
+func distributeSmallUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
+	for _, utxo := range accUTXOs {
+		addresses := GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount, acc)
+		amounts := GetRandomAmounts(utxo.GetAmount(), uint(len(addresses))+1)
+		createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], []*kernel.UTXO{utxo})
+
+		time.Sleep(randomizedSleep(10, 210))
+	}
+}
+
+func distributeLargeUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
+	splitUTXOs := util.SplitArray(accUTXOs, 5)
+
+	for _, utxos := range splitUTXOs {
+		totalBalance := util.GetBalanceUTXOs(utxos)
+
+		if totalBalance < MinimumTxBalance {
+			addresses := GetRandomAccountAddresses(0, 1, acc)
+			amounts := GetRandomAmounts(totalBalance, uint(len(addresses))+1)
+			createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos)
+		} else {
+			addresses := GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount, acc)
+			amounts := GetRandomAmounts(totalBalance, uint(len(addresses))+1)
+			createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos)
+		}
+
+		time.Sleep(randomizedSleep(30, 90))
+	}
+}
+
+func randomizedSleep(min, max uint) time.Duration {
+	return time.Duration(rand.UintN(max-min)+min) * time.Second
+}
+
+func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []*kernel.UTXO) {
+	tx, err := acc.GenerateNewTransaction(
+		script.P2PKH,
+		addresses,
+		amounts,
+		txFee,
+		utxos,
+	)
+	if err != nil {
+		logger.Warnf("error generating transaction: %v", err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
+	defer cancel()
+
+	if errSend := acc.SendTransaction(ctx, tx); errSend != nil {
+		logger.Warnf("error sending transaction: %v", errSend)
+		return
+	}
+
+	logger.Debugf("account %d distributed %f coins to %d addresses: %s",
+		acc.GetAccountID(),
+		kernel.ConvertFromChannoshisToCoins(util.GetBalanceUTXOs(utxos)),
+		len(addresses),
+		tx.String(),
+	)
 }
