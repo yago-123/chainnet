@@ -17,10 +17,7 @@ import (
 )
 
 const (
-	// ChainnetCoinAmount number of smaller units (Channoshis) that represent 1 Chainnet coin
-	ChainnetCoinAmount = 100000000
-
-	InitialCoinbaseReward = 50 * ChainnetCoinAmount
+	InitialCoinbaseReward = 50 * kernel.ChainnetCoinAmount
 	HalvingInterval       = 210000
 	MaxNumberHalvings     = 64
 

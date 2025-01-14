@@ -88,12 +88,7 @@ func (hda *Account) Sync() (uint32, error) {
 		if err != nil {
 			return 0, fmt.Errorf("error creating wallet: %w", err)
 		}
-
-		_, err = wallet.InitNetwork()
-		if err != nil {
-			return 0, fmt.Errorf("error setting up wallet network: %w", err)
-		}
-
+		
 		txs, err := wallet.GetWalletTxs()
 		if err != nil {
 			return 0, fmt.Errorf("error getting wallet transactions: %w", err)
