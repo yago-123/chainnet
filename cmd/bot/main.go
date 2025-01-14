@@ -66,7 +66,7 @@ func main() {
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet4.pem"
+	privKeyPath := "wallet.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -121,8 +121,6 @@ func main() {
 	// save the metadata periodically
 	go SaveMetadataPeriodically(hdWallet)
 
-	logger.Infof("HD wallet synced with %d accounts", numAccounts)
-
 	// if there are no active accounts, ask for funds and exit the program
 	if numAccounts == 0 {
 		if errAskFunds := AskForFunds(hdWallet); errAskFunds != nil {
@@ -150,20 +148,23 @@ func main() {
 		logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
 	}
 
-	// distribute funds between wallets for each account (isolated)
-	for i := 0; i < MaxNumberConcurrentAccounts; i++ {
-		// skip the foundation account
-		if i == FoundationAccountIndex {
-			continue
+	/*
+		// distribute funds between wallets for each account (isolated)
+		for i := 0; i < MaxNumberConcurrentAccounts; i++ {
+			// skip the foundation account
+			if i == FoundationAccountIndex {
+				continue
+			}
+
+			// retrieve account and start the generation of transactions among the wallets contained
+			account, errAcc := hdWallet.GetAccount(uint(i))
+			if errAcc != nil {
+				logger.Fatalf("error getting account: %v", errAcc)
+			}
+			go DistributeFundsBetweenWallets(account)
 		}
 
-		// retrieve account and start the generation of transactions among the wallets contained
-		account, errAcc := hdWallet.GetAccount(uint(i))
-		if errAcc != nil {
-			logger.Fatalf("error getting account: %v", errAcc)
-		}
-		go DistributeFundsBetweenWallets(account)
-	}
+	*/
 
 	select {}
 }
@@ -192,12 +193,14 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 	addresses := [][]byte{}
 	targetAmounts := []uint{}
 
+	var wallet *wallt.Wallet
+
 	totalBalance, err := hdWallet.GetBalance()
 	if err != nil {
 		return fmt.Errorf("error getting wallet balance: %w", err)
 	}
 
-	logger.Infof("HD wallet contains %.5f coins", float64(totalBalance)/float64(kernel.ChainnetCoinAmount))
+	logger.Infof("HD wallet contains %.5f coins", kernel.ConvertFromChannoshisToCoins(totalBalance))
 
 	// check the balance of the foundation account
 	foundationAccount, err := hdWallet.GetAccount(FoundationAccountIndex)
@@ -217,49 +220,48 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		return nil
 	}
 
-	// generate outputs for multiple addresses
-	distributeFundsAmount := (foundationAccountBalance) / (MaxNumberConcurrentAccounts + 1)
+	// generate one output for each account by distributing the funds equally
+	distributeFundsAmount := foundationAccountBalance / MaxNumberConcurrentAccounts
 	for i := range MaxNumberConcurrentAccounts {
 		targetAmounts = append(targetAmounts, distributeFundsAmount)
 
+		// retrieve the account and choose the wallet to send the funds to
 		account, errAccount := hdWallet.GetAccount(uint(i))
 		if errAccount != nil {
 			return fmt.Errorf("error getting account: %w", errAccount)
 		}
 
-		wallet, errWallet := account.GetNewExternalWallet()
-		if errWallet != nil {
-			return fmt.Errorf("error getting wallet: %w", errWallet)
+		if account.GetExternalWalletIndex() >= MaxNumberWalletsPerAccount {
+			wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
+			if err != nil {
+				return fmt.Errorf("error getting external wallet: %w", err)
+			}
 		}
 
-		addresses = append(addresses, wallet.GetP2PKAddress())
+		if account.GetExternalWalletIndex() < MaxNumberWalletsPerAccount {
+			wallet, err = account.GetNewExternalWallet()
+			if err != nil {
+				return fmt.Errorf("error getting new wallet: %w", err)
+			}
+		}
+
+		// get the P2PKH address of the wallet
+		address, errWallet := wallet.GetP2PKHAddress()
+		if errWallet != nil {
+			return fmt.Errorf("error getting P2PKH address: %w", errWallet)
+		}
+		addresses = append(addresses, address)
 	}
 
+	// retrieve the UTXOs and create the whole transaction
 	foundationAccountUTXOs, err := foundationAccount.GetAccountUTXOs()
 	if err != nil {
 		return fmt.Errorf("error getting foundation account UTXOs: %w", err)
 	}
 
-	// create the foundation fund transaction
-	tx, err := foundationAccount.GenerateNewTransaction(
-		script.P2PK,
-		addresses,
-		targetAmounts,
-		distributeFundsAmount,
-		foundationAccountUTXOs,
-	)
-	if err != nil {
-		return fmt.Errorf("error generating transaction: %w", err)
+	if err = createAndSendTransaction(foundationAccount, addresses, targetAmounts, 0, foundationAccountUTXOs); err != nil {
+		return fmt.Errorf("error creating and sending transaction: %w", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.P2P.ConnTimeout)
-	defer cancel()
-
-	if errSend := foundationAccount.SendTransaction(ctx, tx); errSend != nil {
-		return fmt.Errorf("error sending transaction: %w", errSend)
-	}
-
-	logger.Infof("funds distributed to %d accounts: %s", MaxNumberConcurrentAccounts, tx.String())
 
 	return nil
 }
@@ -378,8 +380,8 @@ func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 func distributeSmallUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
 	for _, utxo := range accUTXOs {
 		addresses := GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount-1, acc)
-		amounts := GetRandomAmounts(utxo.GetAmount(), uint(len(addresses))+1)
-		if err := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], []*kernel.UTXO{utxo}); err != nil {
+		amounts := GetRandomAmounts(utxo.GetAmount(), uint(len(addresses)))
+		if err := createAndSendTransaction(acc, addresses, amounts, 0, []*kernel.UTXO{utxo}); err != nil {
 			logger.Warnf("error creating and sending transaction from distributeSmallUTXOs: %v", err)
 		}
 
@@ -399,6 +401,8 @@ func distributeLargeUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
 				logger.Warnf("error getting random account address: %v", err)
 				continue
 			}
+
+			logger.Infof("created address: %s", base58.Encode(address))
 			if errSend := createAndSendTransaction(acc, [][]byte{address}, []uint{totalBalance}, 0, utxos); errSend != nil {
 				logger.Warnf("error creating and sending transaction from distributeLargeUTXOs 1: %v", errSend)
 			}
@@ -406,8 +410,11 @@ func distributeLargeUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
 
 		if totalBalance >= MinimumTxBalance {
 			addresses := GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount-1, acc)
-			amounts := GetRandomAmounts(totalBalance, uint(len(addresses))+1)
-			if errSend := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos); errSend != nil {
+			for _, address := range addresses {
+				logger.Infof("created address: %s", base58.Encode(address))
+			}
+			amounts := GetRandomAmounts(totalBalance, uint(len(addresses)))
+			if errSend := createAndSendTransaction(acc, addresses, amounts, 0, utxos); errSend != nil {
 				logger.Warnf("error creating and sending transaction from distributeLargeUTXOs 2: %v", errSend)
 			}
 		}
@@ -429,7 +436,7 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 		utxos,
 	)
 	if err != nil {
-		return fmt.Errorf("error generating transaction: %v", err)
+		return fmt.Errorf("error generating transaction (create and send): %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
