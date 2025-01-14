@@ -12,7 +12,7 @@
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
   pub-key-reward:                                  # Public wallet key encoded in base58, used for receiving mining rewards
-    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTHVR4fcXc2Bjjp37zq24rwn2fxvZX65UzJs9AJXW3yNF71Usz2Xza86goL8T4jnXFvsvWkFb1Bb8ngVxTDXsHDDma"
+    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJNUcwvzovVV2RVuZE3RKBazFLZeJaY92m6UKFhc9AJFE3xkqvUA74uh7iwEdp9HxbqgK7bYRRepEGbJp9q5NcERV"
   mining-interval: "1m"                    # Interval between block creation
   adjustment-interval: 6                    # Number of blocks before adjusting the difficulty
 

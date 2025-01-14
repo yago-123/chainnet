@@ -181,7 +181,7 @@ func AskForFunds(hdWallet *hd_wallet.Wallet) error {
 		return fmt.Errorf("error getting wallet: %w", errAcc)
 	}
 
-	logger.Warnf("HD wallet is empty, fund %s with a P2PK and execute this again", base58.Encode(wallet.GetP2PKAddress()))
+	logger.Warnf("HD wallet is empty, fund %s with a P2PKH and execute this again", base58.Encode(wallet.GetP2PKAddress()))
 
 	return nil
 }
