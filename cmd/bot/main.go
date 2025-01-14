@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 5
+	MaxNumberConcurrentAccounts = 30
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5
@@ -63,7 +63,7 @@ func main() {
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet.pem"
+	privKeyPath := "wallet2.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -125,6 +125,8 @@ func main() {
 		if errAskFunds := AskForFunds(hdWallet); errAskFunds != nil {
 			logger.Fatalf("error asking for funds: %v", errAskFunds)
 		}
+
+		return
 	}
 
 	// create remaining accounts if needed so that we can operate them in parallel without problems
@@ -141,9 +143,9 @@ func main() {
 
 	// distribute funds among accounts regardless of the number of accounts. This is done so that we can refill
 	// the bots by transfering funds to the foundation account and restarting the bot
-	//if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
-	//	logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
-	//}
+	if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
+		logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
+	}
 
 	// distribute funds between wallets for each account (isolated)
 	for i := 0; i < MaxNumberConcurrentAccounts; i++ {
@@ -262,12 +264,17 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 	logrus.Infof("starting funds distribution for account %d", acc.GetAccountID())
 	for {
 		// sleep randomized so that the nodes are not overflowed
-		time.Sleep(time.Duration(rand.UintN(200)+10) * time.Second)
+		time.Sleep(time.Duration(rand.UintN(200)+20) * time.Second)
 
 		// get the UTXOs of the account
 		accUTXOs, err := acc.GetAccountUTXOs()
 		if err != nil {
 			logger.Warnf("error getting account UTXOs for account %d: %v", acc.GetAccountID(), err)
+		}
+
+		if len(accUTXOs) == 0 {
+			logger.Warnf("no UTXOs found for account %d, skipping execution", acc.GetAccountID())
+			continue
 		}
 
 		// if there are less than 10 UTXOs, then generate multi outputs transaction (>15 outputs)
@@ -289,7 +296,11 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 					continue
 				}
 
-				logger.Debugf("funds distributed to %d wallets: %s", len(addresses), tx.String())
+				logger.Debugf("account %d distributed %f coins to %d addresses: %s",
+					acc.GetAccountID(),
+					kernel.ConvertFromChannoshisToCoins(utxo.GetAmount()),
+					len(addresses),
+					tx.String())
 
 				// sleep after each transaction is sent to avoid overflow
 				time.Sleep(time.Duration(rand.UintN(200)+10) * time.Second)
@@ -327,7 +338,11 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 				continue
 			}
 
-			logger.Debugf("funds distributed to %d wallets: %s", len(addresses), tx.String())
+			logger.Debugf("account %d distributed %f coins to %d addresses: %s",
+				acc.GetAccountID(),
+				kernel.ConvertFromChannoshisToCoins(util.GetBalanceUTXOs(utxos)),
+				len(addresses),
+				tx.String())
 
 			time.Sleep(time.Duration(rand.UintN(60)+30) * time.Second)
 		}
