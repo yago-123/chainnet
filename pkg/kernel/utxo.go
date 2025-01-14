@@ -22,7 +22,7 @@ func (utxo *UTXO) UniqueKey() string {
 	return fmt.Sprintf("%x-%d", utxo.TxID, utxo.OutIdx)
 }
 
-// GetAmount returns the balance value contained in the UTXO ($$$)
-func (utxo *UTXO) GetAmount() uint {
+// Amount returns the balance value contained in the UTXO ($$$)
+func (utxo *UTXO) Amount() uint {
 	return utxo.Output.Amount
 }

@@ -30,9 +30,8 @@ type Wallet struct {
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
 	signer sign.Signature
-
-	p2pNet network.WalletNetwork
-
+	// p2pNet used for broadcasting transactions
+	p2pNet  network.WalletNetwork
 	encoder encoding.Encoding
 
 	// hasher used for deriving blockchain related values (tx ID for example)
@@ -89,10 +88,10 @@ func NewWalletWithKeys(
 		publicKey:       publicKey,
 		validator:       validator,
 		signer:          signer,
+		p2pNet:          p2pNet,
 		encoder:         encoder,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
-		p2pNet:          p2pNet,
 	}, nil
 }
 

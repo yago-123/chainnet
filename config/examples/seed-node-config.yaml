@@ -12,8 +12,13 @@
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
   pub-key-reward:                                  # Public wallet key encoded in base58, used for receiving mining rewards
+<<<<<<< HEAD
     "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJNUcwvzovVV2RVuZE3RKBazFLZeJaY92m6UKFhc9AJFE3xkqvUA74uh7iwEdp9HxbqgK7bYRRepEGbJp9q5NcERV"
   mining-interval: "1m"                    # Interval between block creation
+=======
+    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTFZPkwFk6Y3yxTALWhYwRYPnc82Eb6DkamRfHf3W4nd5Jm8TnaQSL7ApSn9vuKdhkDX8M1s6JQdB2M9g4ySpZG1c9"
+  mining-interval: "10m"                    # Interval between block creation
+>>>>>>> avoid-using-channoshis-in-wallets
   adjustment-interval: 6                    # Number of blocks before adjusting the difficulty
 
 prometheus:

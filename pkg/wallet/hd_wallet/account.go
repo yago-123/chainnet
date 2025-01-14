@@ -438,7 +438,7 @@ func (hda *Account) GetBalance() (uint, error) {
 
 			localBalance := uint(0)
 			for _, utxo := range utxos {
-				localBalance += utxo.GetAmount()
+				localBalance += utxo.Amount()
 			}
 
 			// safely add localBalance to the total balance

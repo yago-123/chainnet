@@ -381,7 +381,7 @@ func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 func distributeSmallUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
 	for _, utxo := range accUTXOs {
 		addresses := GetRandomAccountAddresses(1, MaxNumberWalletsPerAccount-1, acc)
-		amounts := GetRandomAmounts(utxo.GetAmount(), uint(len(addresses)))
+		amounts := GetRandomAmounts(utxo.Amount(), uint(len(addresses)))
 		if err := createAndSendTransaction(acc, addresses, amounts, 0, []*kernel.UTXO{utxo}); err != nil {
 			logger.Warnf("error creating and sending transaction from distributeSmallUTXOs: %v", err)
 		}

@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"context"
-
-	cerror "github.com/yago-123/chainnet/pkg/errs"
 	"github.com/yago-123/chainnet/pkg/kernel"
 
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 
 	"github.com/btcsuite/btcutil/base58"
