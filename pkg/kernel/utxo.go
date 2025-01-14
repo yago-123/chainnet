@@ -17,7 +17,12 @@ func (utxo *UTXO) EqualInput(input TxInput) bool {
 	return bytes.Equal(utxo.TxID, input.Txid) && utxo.OutIdx == input.Vout
 }
 
-// UniqueKey represents the unique key for the UTXO
+// UniqueKey represents the unique key for the UTXO. Method used for mapping UTXOs and inputs via this unique key
 func (utxo *UTXO) UniqueKey() string {
 	return fmt.Sprintf("%x-%d", utxo.TxID, utxo.OutIdx)
+}
+
+// Amount returns the balance value contained in the UTXO ($$$)
+func (utxo *UTXO) Amount() uint {
+	return utxo.Output.Amount
 }
