@@ -3,6 +3,7 @@ package hd_wallet
 import (
 	"context"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"sync"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -251,7 +252,7 @@ func (hda *Account) GetInternalWallet(idx uint) (*wallt.Wallet, error) {
 	return hda.internalWallets[idx], nil
 }
 
-func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, changeReceiverPubKey []byte, changeReceiverVersion byte, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
@@ -266,13 +267,7 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, address
 		return &kernel.Transaction{}, err
 	}
 
-	// create the outputs necessary for the transaction
-	changeWallet, err := hda.getNewWallet(InternalChangeType, &hda.internalWallets)
-	if err != nil {
-		return nil, err
-	}
-
-	outputs, err := common.GenerateOutputs(scriptType, targetAmount, addresses, txFee, totalBalance, changeWallet.PublicKey(), changeWallet.Version())
+	outputs, err := common.GenerateOutputs(scriptType, targetAmount, addresses, txFee, totalBalance, changeReceiverPubKey, changeReceiverVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -329,10 +324,13 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 		// todo(): optimize this, maybe we can map the wallets with the public key
 		unlocked := false
 		for _, wallet := range wallets {
+			add, err := wallet.GetP2PKHAddress()
+			if err != nil {
+				hda.logger.Errorf("error getting wallet P2PKH address: %v", err)
+			}
+			hda.logger.Infof("wallet P2PKH: %s, P2PK: %s", base58.Encode(add), base58.Encode(wallet.PublicKey()))
 			if script.CanBeUnlockedWith(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.Version()) {
 				// generate the unlocking script
-				// todo(1/2): remove the getter for PrivateKey, not correct to access it directly, there must be some entity
-				// todo(2/2): or some logic rewriting
 				scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.PrivateKey(), tx)
 				if err != nil {
 					return nil, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
@@ -347,8 +345,6 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 
 		if !unlocked {
 			return nil, fmt.Errorf("couldn't unlock funds for input with ID %x, index %d and scriptPubKey %s", vin.Txid, vin.Vout, utxo.Output.ScriptPubKey)
-		} else {
-			hda.logger.Infof("unlocked funds for input with ID %x, index %d and scriptPubKey %s", vin.Txid, vin.Vout, utxo.Output.ScriptPubKey)
 		}
 	}
 

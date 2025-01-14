@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 30
+	MaxNumberConcurrentAccounts = 5
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5
@@ -66,7 +66,7 @@ func main() {
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet.pem"
+	privKeyPath := "wallet-test.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -181,7 +181,7 @@ func AskForFunds(hdWallet *hd_wallet.Wallet) error {
 		return fmt.Errorf("error getting wallet: %w", errAcc)
 	}
 
-	logger.Warnf("HD wallet is empty, fund %s with a P2PKH and execute this again", base58.Encode(wallet.GetP2PKAddress()))
+	logger.Warnf("HD wallet is empty, fund %s with a P2PK and execute this again", base58.Encode(wallet.GetP2PKAddress()))
 
 	return nil
 }
@@ -250,6 +250,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		if errWallet != nil {
 			return fmt.Errorf("error getting P2PKH address: %w", errWallet)
 		}
+
 		addresses = append(addresses, address)
 	}
 
@@ -428,11 +429,26 @@ func randomizedSleep(min, max uint) time.Duration {
 }
 
 func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []*kernel.UTXO) error {
+	var err error
+	var wallet *wallt.Wallet
+
+	if acc.GetInternalWalletIndex() == 0 {
+		wallet, err = acc.GetNewInternalWallet()
+	} else {
+		wallet, err = acc.GetInternalWallet(0)
+	}
+
+	if err != nil {
+		return fmt.Errorf("error getting internal wallet: %v", err)
+	}
+
 	tx, err := acc.GenerateNewTransaction(
 		script.P2PKH,
 		addresses,
 		amounts,
 		txFee,
+		wallet.PublicKey(),
+		1,
 		utxos,
 	)
 	if err != nil {

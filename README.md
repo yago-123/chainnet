@@ -189,7 +189,7 @@ loading real data.
 
 ```
 If wanna install locally miner: 
-$ ansible-playbook -c local -i 127.0.0.1, -e @ansible/config/miner-seed.yml -e "identity_path=~/.ssh/seed-node-1.pem" ansible/playbooks/blockchain.yml
+$ sudo ansible-playbook -c local -i 127.0.0.1, -e @ansible/config/miner-seed.yml -e "identity_path=/home/yago/.ssh/seed-node-1.pem" ansible/playbooks/blockchain.yml
 Install grafana: 
 $ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/grafana.yml
 Install monitoring and logging: 
