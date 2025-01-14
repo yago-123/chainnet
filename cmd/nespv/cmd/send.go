@@ -119,8 +119,8 @@ func init() {
 	// sub commands
 	sendCmd.Flags().String(FlagPayType, "P2PK", "Type of address to send coins to")
 	sendCmd.Flags().String(FlagAddress, "", "Destination address to send coins")
-	sendCmd.Flags().Uint(FlagAmount, 0.0, "Amount of coins to send")
-	sendCmd.Flags().Uint(FlagFee, 0.0, "Amount of fee to send")
+	sendCmd.Flags().Float64(FlagAmount, 0.0, "Amount of coins to send")
+	sendCmd.Flags().Float64(FlagFee, 0.0, "Amount of fee to send")
 	sendCmd.Flags().String(FlagPrivKey, "", "Private key")
 
 	// todo(): reestructure this duplication
