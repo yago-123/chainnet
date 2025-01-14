@@ -1,12 +1,12 @@
 package script
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
-
 	"github.com/btcsuite/btcutil/base58"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 )
 
 type ScriptType uint //nolint:revive // ScriptType is a type for script types
@@ -190,11 +190,11 @@ func (s Script) String(arg []byte) string {
 }
 
 // StringToScript converts a script pub key string into Script type and array of literals (like pub key, hash pub key, etc)
-func StringToScript(script string) (Script, []string, error) {
+func StringToScript(scriptPubKey string) (Script, []string, error) {
 	scriptTokens := []ScriptElement{}
 	scriptString := []string{}
 
-	for _, element := range strings.Split(script, scriptSeparator) {
+	for _, element := range strings.Split(scriptPubKey, scriptSeparator) {
 		var token ScriptElement
 		var literal string
 
@@ -234,6 +234,44 @@ func ReturnScriptTypeFromStringType(scriptType string) ScriptType {
 	}
 
 	return typ
+}
+
+// CanBeUnlockedWith retrieves the receiver address from the script pub key
+func CanBeUnlockedWith(scriptPubKey string, publicKey []byte, version byte) bool {
+	// process script pub key and extract the structure of the script
+	script, literals, err := StringToScript(scriptPubKey)
+	if err != nil {
+		return false
+	}
+
+	// determine the script type
+	scriptType := DetermineScriptType(script)
+
+	// ensure that the number of literals matches the number of elements in the script. This helps prevent
+	// out-of-bounds access in each script type below. Although this is already handled inside the StringToScript function,
+	// we include this check as an extra precaution.
+	if len(scriptStructure[scriptType]) != len(literals) {
+		return false
+	}
+
+	switch scriptType {
+	case P2PK:
+		// compare pub key with the publicKey provided
+		return literals[0] == string(publicKey)
+	case P2PKH:
+		p2pkhAddress, errAddress := util_p2pkh.GenerateP2PKHAddrFromPubKey(publicKey, version)
+		if errAddress != nil {
+			return false
+		}
+
+		// compare the P2PKH address from the script with the one generated from the publicKey
+		return bytes.Equal([]byte(literals[2]), p2pkhAddress)
+	case UndefinedScriptType:
+	default:
+		break
+	}
+
+	return false
 }
 
 // scriptsMatch checks if two scripts contain the same script elements in the same order

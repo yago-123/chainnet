@@ -2,13 +2,13 @@ package script //nolint:testpackage // don't create separate package for tests
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
-
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 )
 
 func TestNewScript_P2PK(t *testing.T) {
@@ -59,6 +59,56 @@ func TestNewScript_P2PKH(t *testing.T) {
 			if got := NewScript(tt.args.scriptType, tt.args.addressP2PKH); got != tt.want {
 				t.Errorf("NewScript() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestCanBeUnlockedWithForP2PK(t *testing.T) {
+	type args struct {
+		scriptPubKey string
+		address      []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"correct scriptPubKey and address", args{NewScript(P2PK, []byte("pubkey-1")), []byte("pubkey-1")}, true},
+		{"incorrect scriptPubKey and address", args{NewScript(P2PK, []byte("pubkey-1")), []byte("pubkey-2")}, false},
+		{"empty scriptPubKey", args{NewScript(P2PK, []byte("")), []byte("pubkey-1")}, false},
+		{"empty address", args{NewScript(P2PK, []byte("pubkey-1")), []byte("")}, false},
+		{"empty scriptPubKey and address", args{NewScript(P2PK, []byte("")), []byte("")}, false},
+		{"random scriptPubKey", args{"random script pub key", []byte("")}, false},
+		{"random scriptPubKey", args{"random script pub key", []byte("pubkey-1")}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, CanBeUnlockedWith(tt.args.scriptPubKey, tt.args.address, 1), "CanBeUnlockedWith(%v, %v)", tt.args.scriptPubKey, tt.args.address)
+		})
+	}
+}
+
+func TestCanBeUnlockedWithForP2PKH(t *testing.T) {
+	type args struct {
+		scriptPubKey string
+		address      []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"correct pubkey and address", args{NewScript(P2PKH, base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")), base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")}, true},
+		{"incorrect pubkey and address", args{NewScript(P2PKH, base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")), base58.Decode("hVb8js1bpmyYsQrKQFfWyaUs111111111")}, false},
+		{"empty pubkey", args{NewScript(P2PKH, []byte("")), base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")}, false},
+		{"empty address", args{NewScript(P2PKH, base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")), []byte{}}, false},
+		{"empty pubkey and address", args{NewScript(P2PKH, []byte("")), []byte("")}, false},
+		{"random script pub key", args{"random script pub key", []byte("")}, false},
+		{"random script pub key", args{"random script pub key", base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, CanBeUnlockedWith(tt.args.scriptPubKey, tt.args.address, 1), "CanBeUnlockedWith(%v, %v)", tt.args.scriptPubKey, tt.args.address)
 		})
 	}
 }
