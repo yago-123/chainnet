@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"math/rand/v2"
 	"sort"
 	"time"
@@ -28,10 +27,10 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 5
+	MaxNumberConcurrentAccounts = 50
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
-	MaxNumberWalletsPerAccount = 5
+	MaxNumberWalletsPerAccount = 10
 	FoundationAccountIndex     = 0
 
 	// todo(): make this a flag?
@@ -39,8 +38,13 @@ const (
 
 	MinimumTxBalance = 100000
 
-	MaxSecondsBetweenTransactions = 200
-	MinSecondsBetweenTransactions = 20
+	// limits for startup of fund distribution, prevents all bots asking for funds at the same time
+	MinTimeStartupFundDistribution = 1 * time.Second
+	MaxTimeStartupFundDistribution = 300 * time.Second
+
+	// limits for time between transactions, apply at account level
+	MinTimeBetweenTransactions = 5 * time.Second
+	MaxTimeBetweenTransactions = 120 * time.Second
 
 	TimeoutSendTransaction = 5 * time.Second
 	PeriodMetadataBackup   = 1 * time.Minute
@@ -285,7 +289,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 
 	// sleep for a random amount of time before starting the distribution so that we avoid all accounts asking
 	// for UTXOs at the same time
-	randomizedSleep(MinSecondsBetweenTransactions, MaxSecondsBetweenTransactions)
+	randomizedSleep(MinTimeStartupFundDistribution, MaxTimeStartupFundDistribution)
 
 	for {
 		accUTXOs, err := acc.GetAccountUTXOs()
@@ -297,7 +301,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 		// if the account has no UTXOs, skip the execution
 		if len(accUTXOs) == 0 {
 			logger.Warnf("no UTXOs found for account %d, skipping execution", acc.GetAccountID())
-			time.Sleep(randomizedSleep(MinSecondsBetweenTransactions, MaxSecondsBetweenTransactions))
+			randomizedSleep(MinTimeBetweenTransactions, MaxTimeBetweenTransactions)
 
 			continue
 		}
@@ -331,7 +335,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}
 
-			randomizedSleep(MinSecondsBetweenTransactions, MaxSecondsBetweenTransactions)
+			randomizedSleep(MinTimeBetweenTransactions, MaxTimeBetweenTransactions)
 		}
 	}
 }
@@ -366,62 +370,33 @@ func getRandomAmounts(totalBalance, numAddresses uint) []uint {
 func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 	for {
 		time.Sleep(PeriodMetadataBackup)
-		hd_wallet.SaveMetadata("hd_wallet.data", hdWallet.GetMetadata())
+		hd_wallet.SaveMetadata(MetadataPath, hdWallet.GetMetadata())
 	}
 }
 
-func randomizedSleep(min, max uint) time.Duration {
-	return time.Duration(rand.UintN(max-min)+min) * time.Second
-}
-
-func printAllAddressesForAccount(acc *hd_wallet.Account) {
-	for i := uint(0); i < acc.GetExternalWalletIndex(); i++ {
-		wallet, err := acc.GetExternalWallet(i)
-		if err != nil {
-			logger.Fatalf("error getting external wallet: %v", err)
-		}
-
-		p2pkhAddr, err := wallet.GetP2PKHAddress()
-		if err != nil {
-			logger.Fatalf("error getting P2PKH address: %v", err)
-		}
-
-		hashedAddr, _, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(p2pkhAddr)
-		if err != nil {
-			logger.Fatalf("error extracting public key hash from P2PKH address: %v", err)
-		}
-
-		logger.Debugf("account %d, external wallet %d: P2PKH: %s / P2PKH addr: %s / P2PK: %s", acc.GetAccountID(), i, base58.Encode(p2pkhAddr), base58.Encode(hashedAddr), base58.Encode(wallet.GetP2PKAddress()))
+func randomizedSleep(minDuration, maxDuration time.Duration) {
+	// do nothing if the range is invalid
+	if maxDuration <= minDuration {
+		return
 	}
 
-	for i := uint(0); i < acc.GetInternalWalletIndex(); i++ {
-		wallet, err := acc.GetInternalWallet(i)
-		if err != nil {
-			logger.Fatalf("error getting internal wallet: %v", err)
-		}
-
-		p2pkhAddr, err := wallet.GetP2PKHAddress()
-		if err != nil {
-			logger.Fatalf("error getting P2PKH address: %v", err)
-		}
-
-		hashedAddr, _, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(p2pkhAddr)
-		if err != nil {
-			logger.Fatalf("error extracting public key hash from P2PKH address: %v", err)
-		}
-
-		logger.Debugf("account %d, internal wallet %d: P2PKH: %s / P2PKH addr: %s / P2PK: %s", acc.GetAccountID(), i, base58.Encode(p2pkhAddr), base58.Encode(hashedAddr), base58.Encode(wallet.GetP2PKAddress()))
-	}
+	durationRange := maxDuration - minDuration
+	// generate a random duration within the range
+	randomDuration := minDuration + rand.N(durationRange)
+	time.Sleep(randomDuration)
 }
 
 func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []*kernel.UTXO) error {
 	var err error
 	var wallet *wallt.Wallet
 
-	if acc.GetInternalWalletIndex() == 0 {
+	// retrieve change address by retrieving a internal wallet from the account
+	if acc.GetInternalWalletIndex() >= MaxNumberWalletsPerAccount {
+		wallet, err = acc.GetInternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
+	}
+
+	if acc.GetInternalWalletIndex() < MaxNumberWalletsPerAccount {
 		wallet, err = acc.GetNewInternalWallet()
-	} else {
-		wallet, err = acc.GetInternalWallet(0)
 	}
 
 	if err != nil {
