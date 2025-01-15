@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math/rand/v2"
-	"sort"
 	"time"
 
 	"github.com/yago-123/chainnet/pkg/util"
@@ -119,7 +118,7 @@ func main() {
 	logger.Infof("HD wallet initialized, contains %d accounts", numAccounts)
 
 	// save the metadata periodically
-	go SaveMetadataPeriodically(hdWallet)
+	// go SaveMetadataPeriodically(hdWallet)
 
 	// if there are no active accounts, ask for funds and exit the program
 	if numAccounts == 0 {
@@ -267,6 +266,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 	return nil
 }
 
+/*
 // DistributeFundsBetweenWallets distributes the funds between the wallets of an account. This is done so that the
 // account can operate in an isolated way without having to rely on external funds (until the tx fees waste all the
 // funds)
@@ -427,6 +427,7 @@ func distributeLargeUTXOs(acc *hd_wallet.Account, accUTXOs []*kernel.UTXO) {
 func randomizedSleep(min, max uint) time.Duration {
 	return time.Duration(rand.UintN(max-min)+min) * time.Second
 }
+*/
 
 func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []*kernel.UTXO) error {
 	var err error
