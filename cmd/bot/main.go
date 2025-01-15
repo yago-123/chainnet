@@ -8,6 +8,8 @@ import (
 	"sort"
 	"time"
 
+	hd_wallet "github.com/yago-123/chainnet/pkg/wallet/hd_wallet"
+
 	"github.com/yago-123/chainnet/pkg/util"
 	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
 
@@ -23,7 +25,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
-	"github.com/yago-123/chainnet/pkg/wallet/hd_wallet"
 )
 
 const (
