@@ -3,7 +3,6 @@ package wallet
 import (
 	"errors"
 	"fmt"
-
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"

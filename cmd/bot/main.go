@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	"math/rand/v2"
 	"time"
 
@@ -26,7 +27,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 5
+	MaxNumberConcurrentAccounts = 1
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5
@@ -57,9 +58,6 @@ var cfg = config.NewConfig()
 
 func main() {
 	cfg.Logger.SetLevel(logrus.DebugLevel)
-	cfg.Wallet.ServerAddress = "127.0.0.1"
-	cfg.Wallet.ServerPort = 8080
-
 	logger.SetLevel(logrus.DebugLevel)
 
 	var hdWallet *hd_wallet.Wallet
@@ -141,10 +139,24 @@ func main() {
 		}
 	}
 
+	acc, err := hdWallet.GetAccount(FoundationAccountIndex)
+	if err != nil {
+		logger.Fatalf("error getting account: %v", err)
+	}
+
 	// distribute funds among accounts regardless of the number of accounts. This is done so that we can refill
 	// the bots by transfering funds to the foundation account and restarting the bot
 	if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
 		logger.Warnf("error distributing funds from foundation account: %v", errDistrFund)
+	}
+
+	for i := uint(0); i < hdWallet.GetNumAccounts(); i++ {
+		acc, err = hdWallet.GetAccount(i)
+		if err != nil {
+			logger.Fatalf("error getting account: %v", err)
+		}
+
+		printAllAddressesForAccount(acc)
 	}
 
 	/*
@@ -170,14 +182,23 @@ func main() {
 
 // AskForFunds asks for funds to the user by displaying the P2PK address of the first wallet in the HD wallet
 func AskForFunds(hdWallet *hd_wallet.Wallet) error {
-	acc, errAcc := hdWallet.GetNewAccount()
-	if errAcc != nil {
-		return fmt.Errorf("error getting account: %w", errAcc)
+	var wallet *wallt.Wallet
+	acc, err := hdWallet.GetNewAccount()
+	if err != nil {
+		return fmt.Errorf("error getting account: %w", err)
 	}
 
-	wallet, errAcc := acc.GetNewExternalWallet()
-	if errAcc != nil {
-		return fmt.Errorf("error getting wallet: %w", errAcc)
+	if acc.GetExternalWalletIndex() > 0 {
+		wallet, err = acc.GetExternalWallet(0)
+		if err != nil {
+			return fmt.Errorf("error getting external wallet: %w", err)
+		}
+	}
+	if acc.GetExternalWalletIndex() == 0 {
+		wallet, err = acc.GetNewExternalWallet()
+		if err != nil {
+			return fmt.Errorf("error getting wallet: %w", err)
+		}
 	}
 
 	logger.Warnf("HD wallet is empty, fund %s with a P2PK and execute this again", base58.Encode(wallet.GetP2PKAddress()))
@@ -428,6 +449,46 @@ func randomizedSleep(min, max uint) time.Duration {
 	return time.Duration(rand.UintN(max-min)+min) * time.Second
 }
 */
+
+func printAllAddressesForAccount(acc *hd_wallet.Account) {
+	for i := uint(0); i < acc.GetExternalWalletIndex(); i++ {
+		wallet, err := acc.GetExternalWallet(i)
+		if err != nil {
+			logger.Fatalf("error getting external wallet: %v", err)
+		}
+
+		p2pkhAddr, err := wallet.GetP2PKHAddress()
+		if err != nil {
+			logger.Fatalf("error getting P2PKH address: %v", err)
+		}
+
+		hashedAddr, _, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(p2pkhAddr)
+		if err != nil {
+			logger.Fatalf("error extracting public key hash from P2PKH address: %v", err)
+		}
+
+		logger.Debugf("account %d, external wallet %d: P2PKH: %s / P2PKH addr: %s / P2PK: %s", acc.GetAccountID(), i, base58.Encode(p2pkhAddr), base58.Encode(hashedAddr), base58.Encode(wallet.GetP2PKAddress()))
+	}
+
+	for i := uint(0); i < acc.GetInternalWalletIndex(); i++ {
+		wallet, err := acc.GetInternalWallet(i)
+		if err != nil {
+			logger.Fatalf("error getting internal wallet: %v", err)
+		}
+
+		p2pkhAddr, err := wallet.GetP2PKHAddress()
+		if err != nil {
+			logger.Fatalf("error getting P2PKH address: %v", err)
+		}
+
+		hashedAddr, _, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(p2pkhAddr)
+		if err != nil {
+			logger.Fatalf("error extracting public key hash from P2PKH address: %v", err)
+		}
+
+		logger.Debugf("account %d, internal wallet %d: P2PKH: %s / P2PKH addr: %s / P2PK: %s", acc.GetAccountID(), i, base58.Encode(p2pkhAddr), base58.Encode(hashedAddr), base58.Encode(wallet.GetP2PKAddress()))
+	}
+}
 
 func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []*kernel.UTXO) error {
 	var err error

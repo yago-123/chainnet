@@ -9,6 +9,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/encoding"
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
 )
 
@@ -71,6 +72,12 @@ var addressesCmd = &cobra.Command{
 			logger.Fatalf("error getting P2PKH address: %v", err)
 		}
 		logger.Infof("P2PKH addr: %s", base58.Encode(p2pkhAddr))
+
+		pubKeyHashedAddr, version, err := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(p2pkhAddr)
+		if err != nil {
+			logger.Fatalf("error extracting pub key hash from P2PKH address: %v", err)
+		}
+		logger.Infof("Hashed-only P2PKH address %s, version: %d", base58.Encode(pubKeyHashedAddr), version)
 	},
 }
 

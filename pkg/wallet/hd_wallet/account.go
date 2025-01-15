@@ -3,7 +3,6 @@ package hd_wallet
 import (
 	"context"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"sync"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -324,11 +323,6 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 		// todo(): optimize this, maybe we can map the wallets with the public key
 		unlocked := false
 		for _, wallet := range wallets {
-			add, err := wallet.GetP2PKHAddress()
-			if err != nil {
-				hda.logger.Errorf("error getting wallet P2PKH address: %v", err)
-			}
-			hda.logger.Infof("wallet P2PKH: %s, P2PK: %s", base58.Encode(add), base58.Encode(wallet.PublicKey()))
 			if script.CanBeUnlockedWith(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.Version()) {
 				// generate the unlocking script
 				scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.PrivateKey(), tx)

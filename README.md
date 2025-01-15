@@ -196,6 +196,10 @@ Install monitoring and logging:
 $ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/monitoring.yml
 $ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/logging.yml
 ```
+Retrieve addresses from `nespv` wallet: 
+``` 
+./bin/chainnet-nespv addresses --wallet-key-path wallet.pem
+```
 
 ### Run in Kubernetes 
 Deploy the helm chart:
