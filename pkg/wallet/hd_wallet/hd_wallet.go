@@ -229,57 +229,34 @@ func (hd *Wallet) GetNumAccounts() uint {
 // one error, the method will return the error and stop processing the other accounts. This method ensures that the
 // balance reported is the most accurate possible (hence why we cancel and return error if we find 1 error)
 func (hd *Wallet) GetBalance() (uint, error) {
-	// create a cancellable context, this will be used in case an error is found (everything will be canceled)
+	// Create a cancellable context
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // ensure cancel is called to release resources
+	defer cancel()
 
-	semaphore := make(chan struct{}, MaxConcurrentRequests) // semaphore to limit concurrency
-	var wg sync.WaitGroup
+	var totalBalance uint
 	var balanceMu sync.Mutex // protects totalBalance
 
-	totalBalance := uint(0)
-
-	var overallErr error
-	var overallErrMu sync.Mutex // protects overallErr
-
-	for _, account := range hd.accounts {
-		semaphore <- struct{}{} // acquire a slot
-		wg.Add(1)
-
-		go func(acc *Account) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // release the slot
-
-			select {
-			case <-ctx.Done():
-				// context canceled, stop processing
-				return
-			default:
-				// proceed with fetching balance
-				balance, err := acc.GetBalance()
-				if err != nil {
-					// capture the error and cancel other operations
-					overallErrMu.Lock()
-					if overallErr == nil { // only set the first error
-						overallErr = fmt.Errorf("error getting balance for account %d: %w", acc.GetAccountID(), err)
-						cancel() // cancel the context
-					}
-					overallErrMu.Unlock()
-					return
-				}
-
-				// safely add the account's balance to the total balance
-				balanceMu.Lock()
-				totalBalance += balance
-				balanceMu.Unlock()
+	// Use the helper function to process accounts concurrently
+	err := processAccountsConcurrently(hd.accounts, MaxConcurrentRequests, ctx, cancel, func(ctx context.Context, acc *Account) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err() // If the context is canceled, stop processing
+		default:
+			balance, err := acc.GetBalance()
+			if err != nil {
+				return fmt.Errorf("error getting balance for account %d: %w", acc.GetAccountID(), err)
 			}
-		}(account)
-	}
 
-	wg.Wait() // wait for all goroutines to finish
+			// Safely add the balance to the total
+			balanceMu.Lock()
+			totalBalance += balance
+			balanceMu.Unlock()
+			return nil
+		}
+	})
 
-	if overallErr != nil {
-		return 0, overallErr
+	if err != nil {
+		return 0, err
 	}
 
 	return totalBalance, nil
@@ -330,4 +307,43 @@ func (hd *Wallet) createAccount(accountIdx uint32, externalWalletsIdx, internalW
 		externalWalletsIdx,
 		internalWalletsIdx,
 	)
+}
+
+func processAccountsConcurrently(
+	accounts []*Account,
+	maxConcurrency int,
+	ctx context.Context,
+	cancel context.CancelFunc,
+	process func(ctx context.Context, acc *Account) error,
+) error {
+	semaphore := make(chan struct{}, maxConcurrency)
+	var wg sync.WaitGroup
+	var overallErr error
+	var overallErrMu sync.Mutex
+
+	for _, acc := range accounts {
+		// acquire a slot
+		semaphore <- struct{}{}
+		wg.Add(1)
+
+		go func(account *Account) {
+			defer wg.Done()
+			// release the slot
+			defer func() { <-semaphore }()
+
+			if err := process(ctx, account); err != nil {
+				overallErrMu.Lock()
+				// capture the first error and cancel the context
+				if overallErr == nil {
+					overallErr = err
+					cancel()
+				}
+				overallErrMu.Unlock()
+			}
+		}(acc)
+	}
+
+	// wait for all goroutines to finish
+	wg.Wait()
+	return overallErr
 }
