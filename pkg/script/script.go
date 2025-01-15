@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
-	util_script "github.com/yago-123/chainnet/pkg/util/script"
-
 	"github.com/btcsuite/btcutil/base58"
+	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 )
 
 type ScriptType uint //nolint:revive // ScriptType is a type for script types
@@ -236,23 +234,6 @@ func ReturnScriptTypeFromStringType(scriptType string) ScriptType {
 	}
 
 	return typ
-}
-
-// ExtractAddressFromScriptSig analyzes a script signature and returns the corresponding address that unblocks the
-// script
-func ExtractAddressFromScriptSig(scriptSig string) string {
-	scriptSigElems := util_script.DecodeScriptSig(scriptSig)
-	// as part of GenerateScriptSig function we know that scriptSig for P2PK and P2PKH is based on
-	// signature + pubKey, for know we can afford this simple implementation
-
-	// todo(): enable sciptSig type detection once new payment types are enabled
-	// return empty if the number of elements is different than expected (signature + pubKey)
-	if len(scriptSigElems) != 2 {
-		return ""
-	}
-
-	// pub key is stored in clear (even for P2PKH) in scriptSig
-	return string(scriptSigElems[1])
 }
 
 // CanBeUnlockedWith retrieves the receiver address from the script pub key

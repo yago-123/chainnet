@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	util_script "github.com/yago-123/chainnet/pkg/util/script"
-
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -66,36 +64,6 @@ func TestNewScript_P2PKH(t *testing.T) {
 	}
 }
 
-func TestStringToScript(t *testing.T) {
-	type args struct {
-		script string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    Script
-		want1   []string
-		wantErr bool
-	}{
-		{"", args{NewScript(P2PK, []byte("pubkey1"))}, Script([]ScriptElement{PubKey, OpChecksig}), []string{"pubkey1", ""}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := StringToScript(tt.args.script)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("StringToScript() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("StringToScript() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("StringToScript() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
-	}
-}
-
 func TestCanBeUnlockedWithForP2PK(t *testing.T) {
 	type args struct {
 		scriptPubKey string
@@ -146,22 +114,32 @@ func TestCanBeUnlockedWithForP2PKH(t *testing.T) {
 	}
 }
 
-func TestExtractAddressFromScriptSig(t *testing.T) {
+func TestStringToScript(t *testing.T) {
 	type args struct {
-		scriptSig string
+		script string
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name    string
+		args    args
+		want    Script
+		want1   []string
+		wantErr bool
 	}{
-		{"extract pub key from P2PK scriptSig", args{util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubkey-1")})}, "pubkey-1"},
-		{"extract pub key from P2PKH scriptSig", args{util_script.EncodeScriptSig([][]byte{[]byte("signature"), []byte("pubkey-2")})}, "pubkey-2"},
-		{"handle case for empty scriptSig", args{""}, ""},
+		{"", args{NewScript(P2PK, []byte("pubkey1"))}, Script([]ScriptElement{PubKey, OpChecksig}), []string{"pubkey1", ""}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, ExtractAddressFromScriptSig(tt.args.scriptSig), "ExtractAddressFromScriptSig(%v)", tt.args.scriptSig)
+			got, got1, err := StringToScript(tt.args.script)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("StringToScript() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("StringToScript() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("StringToScript() got1 = %v, want %v", got1, tt.want1)
+			}
 		})
 	}
 }
