@@ -1,4 +1,4 @@
-package hd_wallet
+package hdwallet
 
 import (
 	"context"
@@ -369,7 +369,7 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	utxosCollection := []*kernel.UTXO{}
 
 	hda.mu.Lock()
-	wallets := append(hda.externalWallets, hda.internalWallets...)
+	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // this operation is fine
 	hda.mu.Unlock()
 
 	for _, wall := range wallets {

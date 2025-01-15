@@ -3,8 +3,9 @@ package interpreter
 import (
 	"crypto/sha256"
 	"fmt"
-	"golang.org/x/crypto/ripemd160"
 	"strconv"
+
+	"golang.org/x/crypto/ripemd160"
 
 	"github.com/yago-123/chainnet/pkg/crypto"
 

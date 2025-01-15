@@ -1,4 +1,4 @@
-package hd_wallet
+package hdwallet
 
 import (
 	"fmt"

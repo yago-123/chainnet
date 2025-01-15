@@ -1,4 +1,4 @@
-package hd_wallet
+package hdwallet
 
 import (
 	"context"
@@ -107,7 +107,6 @@ func NewHDWalletWithMetadata(
 	encoder encoding.Encoding,
 	privateKey []byte,
 	metadata *Metadata) (*Wallet, error) {
-
 	// create base HD wallet
 	hdWallet, err := NewHDWalletWithKeys(cfg, version, validator, signer, consensusHasher, encoder, privateKey)
 	if err != nil {

@@ -1,4 +1,4 @@
-package hd_wallet //nolint:testpackage // don't create separate package for tests
+package hdwallet //nolint:testpackage // don't create separate package for tests
 import "testing"
 
 const privateKeyHDTest = `

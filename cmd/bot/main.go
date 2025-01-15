@@ -40,10 +40,10 @@ const (
 
 	// limits for startup of fund distribution, prevents all bots asking for funds at the same time
 	MinTimeStartupFundDistribution = 1 * time.Second
-	MaxTimeStartupFundDistribution = 300 * time.Second
+	MaxTimeStartupFundDistribution = 500 * time.Second
 
 	// limits for time between transactions, apply at account level
-	MinTimeBetweenTransactions = 5 * time.Second
+	MinTimeBetweenTransactions = 30 * time.Second
 	MaxTimeBetweenTransactions = 120 * time.Second
 
 	TimeoutSendTransaction = 5 * time.Second
@@ -150,7 +150,7 @@ func main() {
 	// calculate the total balance available
 	totalBalance, err := hdWallet.GetBalance()
 	if err != nil {
-		logger.Fatalf("error getting wallet balance: %w", err)
+		logger.Fatalf("error getting wallet balance: %v", err)
 	}
 	logger.Infof("HD wallet contains %.5f coins", kernel.ConvertFromChannoshisToCoins(totalBalance))
 
@@ -400,7 +400,7 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 	}
 
 	if err != nil {
-		return fmt.Errorf("error getting internal wallet: %v", err)
+		return fmt.Errorf("error getting internal wallet: %w", err)
 	}
 
 	tx, err := acc.GenerateNewTransaction(
@@ -413,14 +413,14 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 		utxos,
 	)
 	if err != nil {
-		return fmt.Errorf("error generating transaction (create and send): %v", err)
+		return fmt.Errorf("error generating transaction (create and send): %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
 	defer cancel()
 
 	if errSend := acc.SendTransaction(ctx, tx); errSend != nil {
-		return fmt.Errorf("error sending transaction: %v", errSend)
+		return fmt.Errorf("error sending transaction: %w", errSend)
 	}
 
 	logger.Debugf("account %d distributed %f coins to %d addresses: %s",
@@ -443,7 +443,7 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 	if account.GetExternalWalletIndex() >= MaxNumberWalletsPerAccount {
 		wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
 		if err != nil {
-			return []byte{}, fmt.Errorf("error getting external wallet: %v", err)
+			return []byte{}, fmt.Errorf("error getting external wallet: %w", err)
 		}
 	}
 
@@ -451,13 +451,13 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 	if account.GetExternalWalletIndex() < MaxNumberWalletsPerAccount {
 		wallet, err = account.GetNewExternalWallet()
 		if err != nil {
-			return []byte{}, fmt.Errorf("error getting new wallet: %v", err)
+			return []byte{}, fmt.Errorf("error getting new wallet: %w", err)
 		}
 	}
 
 	address, errAddress := wallet.GetP2PKHAddress()
 	if errAddress != nil {
-		return []byte{}, fmt.Errorf("error getting P2PKH address: %v", errAddress)
+		return []byte{}, fmt.Errorf("error getting P2PKH address: %w", errAddress)
 	}
 
 	return address, nil
@@ -472,7 +472,7 @@ func getRandomAccountAddresses(min, max uint, account *hd_wallet.Account) ([][]b
 	for i := uint(0); i < numAddresses; i++ {
 		address, errAddress := getRandomAccountAddress(account)
 		if errAddress != nil {
-			return [][]byte{}, fmt.Errorf("error getting random account address: %v", errAddress)
+			return [][]byte{}, fmt.Errorf("error getting random account address: %w", errAddress)
 		}
 
 		addresses = append(addresses, address)
