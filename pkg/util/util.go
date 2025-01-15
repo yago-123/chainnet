@@ -159,22 +159,3 @@ func GetBalanceUTXOs(utxos []*kernel.UTXO) uint {
 
 	return balance
 }
-
-func SplitArray[T any](arr []T, numParts int) [][]T {
-	var result [][]T
-	totalLen := len(arr)
-	partLen := totalLen / numParts
-	remainder := totalLen % numParts
-
-	start := 0
-	for i := 0; i < numParts; i++ {
-		end := start + partLen
-		if i < remainder {
-			end++ // Distribute the remainder
-		}
-		result = append(result, arr[start:end])
-		start = end
-	}
-
-	return result
-}

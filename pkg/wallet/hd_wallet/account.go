@@ -362,92 +362,63 @@ func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction)
 // GetAccountUTXOs retrieves the UTXOs from both external and internal wallets. The resulting array is sorted by default
 // with external UTXOs first
 func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
-	semaphore := make(chan struct{}, MaxConcurrentRequests) // Buffered channel as a semaphore
-	var wg sync.WaitGroup
-	var utxosMu sync.Mutex // protects utxosCollection
-
-	utxosCollection := []*kernel.UTXO{}
-
 	hda.mu.Lock()
-	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // this operation is fine
+	wallets := append(hda.externalWallets, hda.internalWallets...)
 	hda.mu.Unlock()
 
-	for _, wall := range wallets {
-		semaphore <- struct{}{} // acquire a slot
-		wg.Add(1)
+	var utxosCollection []*kernel.UTXO
+	var utxosMu sync.Mutex
 
-		go func(w *wallt.Wallet) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // release the slot
+	err := processWalletsConcurrently(wallets, MaxConcurrentRequests, func(w *wallt.Wallet) error {
+		utxos, err := w.GetWalletUTXOS()
+		if err != nil {
+			hda.logger.Warnf("error fetching UTXOs from wallet: %v", err)
+			return err
+		}
 
-			utxos, err := w.GetWalletUTXOS()
-			if err != nil {
-				hda.logger.Warnf("error fetching UTXOs from wallet: %v", err)
-				return
-			}
+		utxosMu.Lock()
+		utxosCollection = append(utxosCollection, utxos...)
+		utxosMu.Unlock()
 
-			utxosMu.Lock()
-			utxosCollection = append(utxosCollection, utxos...)
-			utxosMu.Unlock()
-		}(wall)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
-
-	wg.Wait() // wait for all goroutines to finish
-
 	return utxosCollection, nil
 }
 
 // GetBalance returns the total balance of the account by summing the amount of all UTXOs in the externalWallets
 func (hda *Account) GetBalance() (uint, error) {
-	semaphore := make(chan struct{}, MaxConcurrentRequests) // buffered channel as a semaphore
-	var wg sync.WaitGroup
-	var balanceMu sync.Mutex // protects the balance variable
-
-	balance := uint(0)
-
 	hda.mu.Lock()
 	wallets := append(hda.externalWallets, hda.internalWallets...)
 	hda.mu.Unlock()
 
-	var overallErr error
-	var overallErrMu sync.Mutex // protects access to overallErr
+	var balance uint
+	var balanceMu sync.Mutex
 
-	for _, wallet := range wallets {
-		semaphore <- struct{}{} // acquire a slot
-		wg.Add(1)
+	err := processWalletsConcurrently(wallets, MaxConcurrentRequests, func(w *wallt.Wallet) error {
+		utxos, err := w.GetWalletUTXOS()
+		if err != nil {
+			return fmt.Errorf("error getting wallet UTXOs: %w", err)
+		}
 
-		go func(w *wallt.Wallet) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // release the slot
+		localBalance := uint(0)
+		for _, utxo := range utxos {
+			localBalance += utxo.Amount()
+		}
 
-			utxos, err := w.GetWalletUTXOS()
-			if err != nil {
-				overallErrMu.Lock()
-				if overallErr == nil { // capture the first error
-					overallErr = fmt.Errorf("error getting wallet UTXOs: %w", err)
-				}
-				overallErrMu.Unlock()
-				return
-			}
+		balanceMu.Lock()
+		balance += localBalance
+		balanceMu.Unlock()
 
-			localBalance := uint(0)
-			for _, utxo := range utxos {
-				localBalance += utxo.Amount()
-			}
+		return nil
+	})
 
-			// safely add localBalance to the total balance
-			balanceMu.Lock()
-			balance += localBalance
-			balanceMu.Unlock()
-		}(wallet)
+	if err != nil {
+		return 0, err
 	}
-
-	wg.Wait() // wait for all goroutines to finish
-
-	if overallErr != nil {
-		return 0, overallErr
-	}
-
 	return balance, nil
 }
 
@@ -524,4 +495,42 @@ func (hda *Account) createWallet(change changeType, walletNum uint32) (*wallt.Wa
 	}
 
 	return wallet, nil
+}
+
+// processWalletsConcurrently processes a list of wallets concurrently limiting the number of goroutines to
+// maxConcurrency. Can modify the behaviour by providing a custom process function that will be executed
+func processWalletsConcurrently(
+	wallets []*wallt.Wallet,
+	maxConcurrency int,
+	process func(w *wallt.Wallet) error,
+) error {
+	// use a buffered channel as a semaphore to limit the number of concurrent goroutines
+	semaphore := make(chan struct{}, maxConcurrency)
+	var wg sync.WaitGroup
+	var overallErr error
+	var overallErrMu sync.Mutex // protects access to overallErr
+
+	for _, wallet := range wallets {
+		// acquire a slot
+		semaphore <- struct{}{}
+		wg.Add(1)
+
+		go func(w *wallt.Wallet) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // release the slot
+
+			if err := process(w); err != nil {
+				overallErrMu.Lock()
+				if overallErr == nil {
+					// capture the first error
+					overallErr = err
+				}
+				overallErrMu.Unlock()
+			}
+		}(wallet)
+	}
+
+	// wait for all goroutines to finish
+	wg.Wait()
+	return overallErr
 }
