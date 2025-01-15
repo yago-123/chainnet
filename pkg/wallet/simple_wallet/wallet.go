@@ -1,4 +1,4 @@
-package simple_wallet
+package simplewallet
 
 import (
 	"context"

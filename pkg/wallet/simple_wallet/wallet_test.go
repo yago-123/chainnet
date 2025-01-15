@@ -1,4 +1,4 @@
-package simple_wallet //nolint:testpackage // don't create separate package for tests
+package simplewallet //nolint:testpackage // don't create separate package for tests
 
 import (
 	"testing"
