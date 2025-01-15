@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/yago-123/minikube-testing v0.0.0-20240826204523-3f7ac36e34cb
 	golang.org/x/crypto v0.32.0
-	google.golang.org/protobuf v1.36.2
+	google.golang.org/protobuf v1.36.3
 )
 
 require (
