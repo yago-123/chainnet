@@ -25,15 +25,15 @@ seed-nodes:                               # List of seed nodes
     port: 9100
   - address: "seed-2.chainnet.yago.ninja"
     peer-id: "peerID-2"
-    port: 8081
+    port: 9200
   - address: "seed-3.chainnet.yago.ninja"
     peer-id: "peerID-3"
-    port: 8082
+    port: 9300
 
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
   pub-key-reward:                         # Public wallet key encoded in base58, used for receiving mining rewards
-    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTJVEyUnnaMDSRgUZKJzwFAdWKhSv8HTtbQbecee5xew2DPfqm467oef3KEW7bT54WdDWbvEqEhFv1YT3aPZZVqgKc"
+    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTK2r1ViPYeJCMAcSHrt4AEkBouG5vmbAjKMGnZ1RyjP3bPTUhJrRXfEnD3CEhB7Rumao463ayeiU2jbRhjsygwqFp"
   mining-interval: "10m"                  # Interval between block creation
   adjustment-interval: 6                  # Number of blocks before adjusting the difficulty
 
@@ -43,6 +43,7 @@ chain:
 prometheus:
   enabled: true                           # Enable or disable prometheus metrics
   port: 9091                              # Port exposed for prometheus metrics
+  libp2p-port: 9099                       # Port exposed for core libp2p metrics
   path: "/metrics"                        # Path for prometheus metrics endpoint
 
 p2p:

@@ -23,9 +23,10 @@ const (
 
 	KeyChainMaxTxsMempool = "chain.max-txs-mempool"
 
-	KeyPrometheusEnabled = "prometheus.enabled"
-	KeyPrometheusPort    = "prometheus.port"
-	KeyPrometheusPath    = "prometheus.path"
+	KeyPrometheusEnabled    = "prometheus.enabled"
+	KeyPrometheusPort       = "prometheus.port"
+	KeyPrometheusLibp2pPort = "prometheus.libp2p-port"
+	KeyPrometheusPath       = "prometheus.path"
 
 	KeyP2PEnabled          = "p2p.enabled"
 	KeyP2PPeerIdentityPath = "p2p.identity-path"
@@ -54,9 +55,10 @@ const (
 
 	DefaultMaxTxsMempool = 10000
 
-	DefaultPrometheusEnabled = true
-	DefaultPrometheusPort    = 9090
-	DefaultPrometheusPath    = "/metrics"
+	DefaultPrometheusEnabled    = true
+	DefaultPrometheusPort       = 9090
+	DefaultPrometheusLibp2pPort = 9095
+	DefaultPrometheusPath       = "/metrics"
 
 	DefaultP2PEnabled      = true
 	DefaultP2PPeerPort     = 9100
@@ -94,9 +96,10 @@ type Chain struct {
 }
 
 type Prometheus struct {
-	Enabled bool   `mapstructure:"enabled"`
-	Port    uint   `mapstructure:"port"`
-	Path    string `mapstructure:"path"`
+	Enabled    bool   `mapstructure:"enabled"`
+	Port       uint   `mapstructure:"port"`
+	PortLibp2p uint   `mapstructure:"libp2p-port"`
+	Path       string `mapstructure:"path"`
 }
 
 // P2PConfig holds P2P-specific configuration
@@ -146,9 +149,10 @@ func NewConfig() *Config {
 			MaxTxsMempool: DefaultMaxTxsMempool,
 		},
 		Prometheus: Prometheus{
-			Enabled: DefaultPrometheusEnabled,
-			Port:    DefaultPrometheusPort,
-			Path:    DefaultPrometheusPath,
+			Enabled:    DefaultPrometheusEnabled,
+			Port:       DefaultPrometheusPort,
+			PortLibp2p: DefaultPrometheusLibp2pPort,
+			Path:       DefaultPrometheusPath,
 		},
 		P2P: P2PConfig{
 			Enabled:      DefaultP2PEnabled,
@@ -221,6 +225,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 
 	cmd.Flags().Bool(KeyPrometheusEnabled, DefaultPrometheusEnabled, "Enable Prometheus metrics endpoint")
 	cmd.Flags().Uint(KeyPrometheusPort, DefaultPrometheusPort, "Port for Prometheus metrics")
+	cmd.Flags().Uint(KeyPrometheusLibp2pPort, DefaultPrometheusLibp2pPort, "Port for libp2p core Prometheus metrics")
 	cmd.Flags().String(KeyPrometheusPath, DefaultPrometheusPath, "Path for Prometheus metrics")
 
 	cmd.Flags().Bool(KeyP2PEnabled, DefaultP2PEnabled, "Enable P2P")
@@ -251,6 +256,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 
 	_ = viper.BindPFlag(KeyPrometheusEnabled, cmd.Flags().Lookup(KeyPrometheusEnabled))
 	_ = viper.BindPFlag(KeyPrometheusPort, cmd.Flags().Lookup(KeyPrometheusPort))
+	_ = viper.BindPFlag(KeyPrometheusLibp2pPort, cmd.Flags().Lookup(KeyPrometheusLibp2pPort))
 	_ = viper.BindPFlag(KeyPrometheusPath, cmd.Flags().Lookup(KeyPrometheusPath))
 
 	_ = viper.BindPFlag(KeyP2PEnabled, cmd.Flags().Lookup(KeyP2PEnabled))
@@ -301,6 +307,9 @@ func applyPrometheusFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyPrometheusPort) {
 		cfg.Prometheus.Port = viper.GetUint(KeyPrometheusPort)
+	}
+	if cmd.Flags().Changed(KeyPrometheusLibp2pPort) {
+		cfg.Prometheus.PortLibp2p = viper.GetUint(KeyPrometheusLibp2pPort)
 	}
 	if cmd.Flags().Changed(KeyPrometheusPath) {
 		cfg.Prometheus.Path = viper.GetString(KeyPrometheusPath)

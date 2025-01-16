@@ -95,19 +95,18 @@ func main() {
 	subjectChain.Register(boltdb)
 	subjectChain.Register(mempool)
 	subjectChain.Register(utxoSet)
-
-	// add monitoring via Prometheus
-	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet}
-	prometheusExporter := monitor.NewPrometheusExporter(cfg, monitors)
-
 	// the chain network is an special case regarding prometheus, see why inside the network module
-	network, err := chain.InitNetwork(netSubject, prometheusExporter.Registry())
+	network, err := chain.InitNetwork(netSubject)
 	if err != nil {
 		cfg.Logger.Fatalf("error initializing network: %s", err)
 	}
 
 	// register the block subject to the network
 	subjectChain.Register(network)
+
+	// add monitoring via Prometheus
+	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet, network}
+	prometheusExporter := monitor.NewPrometheusExporter(cfg, monitors)
 
 	if cfg.Prometheus.Enabled {
 		if err = prometheusExporter.Start(); err != nil {

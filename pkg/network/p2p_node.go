@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
 	"time"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
@@ -242,6 +245,8 @@ type NodeP2P struct {
 
 	router *HTTPRouter
 
+	bandwithCounter *metrics.BandwidthCounter
+
 	// bufferSize represents size of buffer for reading over the network
 	bufferSize uint
 
@@ -255,7 +260,6 @@ func NewNodeP2P(
 	encoder encoding.Encoding,
 	explorer *explorer.ChainExplorer,
 	mempoolExplorer *mempool.MemPoolExplorer,
-	registry *prometheus.Registry,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
 	options := []p2pConfig.Option{}
@@ -294,10 +298,23 @@ func NewNodeP2P(
 		options = append(options, libp2p.Identity(p2pPrivKey))
 	}
 
-	// add prometheus metrics to options, ideally we should have this attached from RegisterMetrics function, but
-	// we need to pass the registry to the libp2p.New function and there are no better alternatives
-	options = append(options, libp2p.PrometheusRegisterer(registry))
-	//options = append(options, libp2p.BandwidthReporter(metrics.NewBandwidthCounter()))
+	// store bandwith metrics in counter for extracting metrics in RegisterMetrics
+	bandwithCounter := metrics.NewBandwidthCounter()
+	options = append(options, libp2p.BandwidthReporter(bandwithCounter))
+
+	// add separate libp2p core metrics to a separate Prometheus registry
+	if cfg.Prometheus.Enabled {
+		registry := prometheus.NewRegistry()
+		http.Handle(cfg.Prometheus.Path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+		go func() {
+			cfg.Logger.Infof("exposing libp2p Prometheus metrics in http://localhost:%d%s", cfg.Prometheus.PortLibp2p, cfg.Prometheus.Path)
+			if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.Prometheus.PortLibp2p), nil); err != nil {
+				cfg.Logger.Errorf("failed to start metrics server: %v", err)
+			}
+		}()
+
+		options = append(options, libp2p.PrometheusRegisterer(registry))
+	}
 
 	// create host
 	host, err := libp2p.New(
@@ -520,10 +537,11 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 }
 
 func (n *NodeP2P) RegisterMetrics(registerer *prometheus.Registry) {
-	// this module contains the metrics outside the libp2p native ones. We can't register the libp2p metrics from
+	// this module contains the metrics outside the libp2p core ones. We can't register the libp2p metrics from
 	// here because the libp2p host is created outside this module and can't be modified after creation
 	// this function remains for non-libp2p core metrics
 
+	// n.bandwithCounter.LogRecvMessage()
 	// todo(): figure how to parse the metrics from the pubsub and the discovery
 	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
 	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 )
@@ -105,8 +105,4 @@ func (prom *PromExporter) Stop() error {
 
 	prom.isActive = false
 	return nil
-}
-
-func (prom *PromExporter) Registry() *prometheus.Registry {
-	return prom.registry
 }
