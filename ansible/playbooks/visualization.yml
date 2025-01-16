@@ -6,4 +6,4 @@
   vars:
     domain: dashboard.chainnet.yago.ninja
   roles:
-    - grafana
+    - visualization

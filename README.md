@@ -165,7 +165,7 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/mine
 After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this, 
 you must first install Grafana:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/grafana.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/visualization.yml
 ```
 
 Once Grafana is installed, you can configure your domain or access the Grafana instance via `http://localhost:3000` and 
@@ -174,7 +174,7 @@ you can run `Certbot` using the following playbook and then rerun the Grafana pl
 updates the HTTPS endpoint:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/install-SSL.yml
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/grafana.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/visualization.yml
 ```
 
 Once the chain is running and Grafana is up and accessible, you can install monitoring and/or logging via the following
@@ -186,20 +186,6 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/loggi
 
 There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
 loading real data.
-
-```
-If wanna install locally miner: 
-$ sudo ansible-playbook -c local -i 127.0.0.1, -e @ansible/config/miner-seed.yml -e "identity_path=/home/yago/.ssh/seed-node-1.pem" ansible/playbooks/blockchain.yml
-Install grafana: 
-$ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/grafana.yml
-Install monitoring and logging: 
-$ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/monitoring.yml
-$ ansible-playbook -c local -i 127.0.0.1, ansible/playbooks/logging.yml
-```
-Retrieve addresses from `nespv` wallet: 
-``` 
-./bin/chainnet-nespv addresses --wallet-key-path wallet.pem
-```
 
 ### Run in Kubernetes 
 Deploy the helm chart:

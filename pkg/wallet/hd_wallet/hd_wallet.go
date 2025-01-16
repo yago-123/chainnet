@@ -173,6 +173,7 @@ func (hd *Wallet) Sync() (uint, error) {
 	return uint(len(hd.accounts)), nil
 }
 
+// GetMetadata returns the metadata of the HD wallet
 func (hd *Wallet) GetMetadata() *Metadata {
 	hd.mu.Lock()
 	defer hd.mu.Unlock()

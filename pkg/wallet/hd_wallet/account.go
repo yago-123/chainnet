@@ -300,6 +300,7 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, address
 	return tx, nil
 }
 
+// UnlockTxFunds unlocks the funds from the UTXOs by generating the scriptSigs for the inputs
 func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// precompute wallets for lookup
 	wallets := append(hda.externalWallets, hda.internalWallets...)
@@ -408,7 +409,7 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 
 // GetBalance returns the total balance of the account by summing the amount of all UTXOs in the externalWallets
 func (hda *Account) GetBalance() (uint, error) {
-	// Lock to safely access wallets
+	// lock to safely access wallets
 	hda.mu.Lock()
 	wallets := append(hda.externalWallets, hda.internalWallets...)
 	hda.mu.Unlock()
@@ -416,11 +417,11 @@ func (hda *Account) GetBalance() (uint, error) {
 	var balance uint
 	var balanceMu sync.Mutex
 
-	// Create a context with cancellation
+	// create a context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Use the unified helper function to process wallets concurrently
+	// use the unified helper function to process wallets concurrently
 	err := util.ProcessConcurrently(
 		ctx,
 		wallets,

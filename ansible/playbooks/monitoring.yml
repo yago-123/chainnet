@@ -12,7 +12,7 @@
 
     - name: Install and start Grafana if not running
       include_role:
-        name: grafana
+        name: visualization
       when: grafana_installed
 
     - name: Set up monitoring
