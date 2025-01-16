@@ -14,7 +14,6 @@ type Monitor interface {
 	RegisterMetrics(registry *prometheus.Registry)
 }
 
-// add labels to these metrics? like host
 // NewMetric registers a new metric with the given name and help string
 func NewMetric(registry *prometheus.Registry, typ MetricType, name, help string, executor func() float64) {
 	switch typ {
@@ -28,5 +27,31 @@ func NewMetric(registry *prometheus.Registry, typ MetricType, name, help string,
 			Name: name,
 			Help: help,
 		}, executor))
+	}
+}
+
+func NewMetricWithLabels(
+	registry *prometheus.Registry,
+	typ MetricType,
+	name, help string,
+	labels []string,
+	updater func(metricVec interface{}),
+) {
+	switch typ {
+	case Counter:
+		metric := prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		}, labels)
+		registry.MustRegister(metric)
+		go updater(metric)
+
+	case Gauge:
+		metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: name,
+			Help: help,
+		}, labels)
+		registry.MustRegister(metric)
+		go updater(metric)
 	}
 }

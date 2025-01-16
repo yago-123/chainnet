@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/monitor"
 	"net/http"
 	"time"
 
@@ -537,16 +538,100 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 	}
 }
 
-func (n *NodeP2P) RegisterMetrics(registerer *prometheus.Registry) {
+func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 	// this module contains the metrics outside the libp2p core ones. We can't register the libp2p metrics from
 	// here because the libp2p host is created outside this module and can't be modified after creation
 	// this function remains for non-libp2p core metrics
 
-	// GetBandwidthForPeer(p peer.ID) -> maybe we can expose the top peers, how we know the peers though?
-	// GetBandwidthForProtocol(proto protocol.ID) (out Stats) -> show protocol usages
-	// GetBandwidthTotals() (out Stats) -> show total bandwith usage
 	// GetBandwidthByPeer() map[peer.ID]Stats -> now worth IMO, not scalable
 	// GetBandwidthByProtocol() map[protocol.ID]Stats -> this is better than GetBandwidthForProtocol I think (we don't have many protocols)
+
+	//totalInMetric = prometheus.NewCounter(prometheus.CounterOpts{
+	//	Name: "libp2p_total_in_bytes",
+	//	Help: "Total incoming bandwidth in bytes.",
+	//})
+	monitor.NewMetric(register, monitor.Counter, "libp2p_total_in_bytes", "Total incoming bandwidth in bytes",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().TotalIn)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "libp2p_total_out_bytes", "Total outgoing bandwidth in bytes",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().TotalOut)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "libp2p_rate_in_bytes_per_second", "Incoming bandwidth rate in bytes per second",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().RateIn)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "libp2p_rate_out_bytes_per_second", "Outgoing bandwidth rate in bytes per second",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().RateOut)
+		},
+	)
+
+	/*
+		labels := []string{"protocol"}
+
+		monitor.NewMetricWithLabels(register, monitor.Gauge, "libp2p_bandwidth_total_in", "Total incoming bandwidth by protocol", labels,
+			func(metricVec interface{}) {
+				gaugeVec := metricVec.(*prometheus.GaugeVec)
+				for {
+					stats := n.bandwithCounter.GetBandwidthByProtocol()
+					for protocol, stat := range stats {
+						gaugeVec.WithLabelValues(string(protocol)).Set(float64(stat.TotalIn))
+					}
+					time.Sleep(10 * time.Second)
+				}
+			})
+
+
+	*/
+	/*
+		// Incoming bandwidth rate
+		NewMetric(registry, Gauge, "libp2p_bandwidth_rate_in", "Incoming bandwidth rate by protocol", labels,
+			func(metricVec interface{}) {
+				gaugeVec := metricVec.(*prometheus.GaugeVec)
+				for {
+					stats := bwc.GetBandwidthByProtocol()
+					for protocol, stat := range stats {
+						gaugeVec.WithLabelValues(string(protocol)).Set(stat.RateIn)
+					}
+					time.Sleep(10 * time.Second)
+				}
+			})
+
+		// Total outgoing bandwidth
+		NewMetric(registry, Gauge, "libp2p_bandwidth_total_out", "Total outgoing bandwidth by protocol", labels,
+			func(metricVec interface{}) {
+				gaugeVec := metricVec.(*prometheus.GaugeVec)
+				for {
+					stats := bwc.GetBandwidthByProtocol()
+					for protocol, stat := range stats {
+						gaugeVec.WithLabelValues(string(protocol)).Set(float64(stat.TotalOut))
+					}
+					time.Sleep(10 * time.Second)
+				}
+			})
+
+		// Outgoing bandwidth rate
+		NewMetric(registry, Gauge, "libp2p_bandwidth_rate_out", "Outgoing bandwidth rate by protocol", labels,
+			func(metricVec interface{}) {
+				gaugeVec := metricVec.(*prometheus.GaugeVec)
+				for {
+					stats := bwc.GetBandwidthByProtocol()
+					for protocol, stat := range stats {
+						gaugeVec.WithLabelValues(string(protocol)).Set(stat.RateOut)
+					}
+					time.Sleep(10 * time.Second)
+				}
+			})
+
+	*/
 
 	// todo(): figure how to parse the metrics from the pubsub and the discovery
 	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
