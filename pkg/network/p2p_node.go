@@ -541,7 +541,12 @@ func (n *NodeP2P) RegisterMetrics(registerer *prometheus.Registry) {
 	// here because the libp2p host is created outside this module and can't be modified after creation
 	// this function remains for non-libp2p core metrics
 
-	// n.bandwithCounter.LogRecvMessage()
+	// GetBandwidthForPeer(p peer.ID) -> maybe we can expose the top peers, how we know the peers though?
+	// GetBandwidthForProtocol(proto protocol.ID) (out Stats) -> show protocol usages
+	// GetBandwidthTotals() (out Stats) -> show total bandwith usage
+	// GetBandwidthByPeer() map[peer.ID]Stats -> now worth IMO, not scalable
+	// GetBandwidthByProtocol() map[protocol.ID]Stats -> this is better than GetBandwidthForProtocol I think (we don't have many protocols)
+
 	// todo(): figure how to parse the metrics from the pubsub and the discovery
 	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
 	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards
