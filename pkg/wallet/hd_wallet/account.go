@@ -303,7 +303,7 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, address
 // UnlockTxFunds unlocks the funds from the UTXOs by generating the scriptSigs for the inputs
 func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// precompute wallets for lookup
-	wallets := append(hda.externalWallets, hda.internalWallets...)
+	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // simpler to use a single append
 
 	// map UTXOs so that can be easily accessed for generating the scriptSigs for the inputs
 	utxoMap := make(map[string]*kernel.UTXO)
@@ -363,7 +363,7 @@ func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction)
 // GetAccountUTXOs retrieves the UTXOs from both external and internal wallets
 func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	hda.mu.Lock()
-	wallets := append(hda.externalWallets, hda.internalWallets...)
+	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // simpler to use a single append
 	hda.mu.Unlock()
 
 	var utxosCollection []*kernel.UTXO
@@ -411,7 +411,7 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 func (hda *Account) GetBalance() (uint, error) {
 	// lock to safely access wallets
 	hda.mu.Lock()
-	wallets := append(hda.externalWallets, hda.internalWallets...)
+	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // simpler to use a single append
 	hda.mu.Unlock()
 
 	var balance uint
@@ -472,7 +472,7 @@ func (hda *Account) ConsolidateChange() {
 // - the wallet generated, so it can be used
 // - an error if any
 func (hda *Account) getNewWallet(changeType changeType, walletCollection *[]*wallt.Wallet) (*wallt.Wallet, error) {
-	wallet, err := hda.createWallet(changeType, uint32(len(*walletCollection)))
+	wallet, err := hda.createWallet(changeType, uint32(len(*walletCollection))) //nolint:gosec // possibility of integer overflow is OK here
 	if err != nil {
 		return nil, fmt.Errorf("error creating new wallet: %w", err)
 	}

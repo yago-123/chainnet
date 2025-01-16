@@ -285,7 +285,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 // DistributeFundsBetweenWallets distributes the funds between the wallets of an account. This is done so that the
 // account can operate in an isolated way without having to rely on external funds (until the tx fees waste all the
 // funds)
-func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
+func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // this is a core func for bot, it's OK to be long here
 	logrus.Infof("Starting funds distribution for account %d", acc.GetAccountID())
 
 	// sleep for a random amount of time before starting the distribution so that we avoid all accounts asking
