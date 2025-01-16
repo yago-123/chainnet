@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
 	"time"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
@@ -292,6 +294,14 @@ func NewNodeP2P(
 		// add peer identity to options
 		options = append(options, libp2p.Identity(p2pPrivKey))
 	}
+
+	reg := prometheus.NewRegistry()
+	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+	go func() {
+		http.ListenAndServe(":2112", nil) // Any port is fine
+	}()
+
+	options = append(options, libp2p.PrometheusRegisterer(reg))
 
 	// create host
 	host, err := libp2p.New(

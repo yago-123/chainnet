@@ -208,7 +208,7 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 			for _, pair := range m.pairs {
 				totalFee += pair.Fee
 			}
-			return float64(totalFee)
+			return kernel.ConvertFromChannoshisToCoins(totalFee)
 		},
 	)
 
