@@ -114,7 +114,7 @@ func NewHDAccount(
 // no funds (empty wallet) for the specified gap limit, the syncing process halts, and the number of active externalWallets
 // is recorded.
 // Returns the number of active externalWallets found during the sync process and an error if any
-func (hda *Account) Sync() (uint32, uint32, error) {
+func (hda *Account) Sync() (uint32, uint32, error) { //nolint:gocognit // it's OK to be a bit more complex here
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
@@ -127,7 +127,7 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 		gapCounter := 0
 
 		for {
-			wallet, err := hda.createWallet(changeType, uint32(len(wallets)))
+			wallet, err := hda.createWallet(changeType, uint32(len(wallets))) //nolint:gosec // possibility of integer overflow is OK here
 			if err != nil {
 				return []*wallt.Wallet{}, fmt.Errorf("error creating wallet: %w", err)
 			}
@@ -192,7 +192,7 @@ func (hda *Account) Sync() (uint32, uint32, error) {
 		}
 	}
 
-	return uint32(len(hda.externalWallets)), uint32(len(hda.internalWallets)), nil
+	return uint32(len(hda.externalWallets)), uint32(len(hda.internalWallets)), nil //nolint:gosec // possibility of integer overflow is OK here
 }
 
 func (hda *Account) GetAccountID() uint32 {

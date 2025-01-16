@@ -65,7 +65,7 @@ var (
 var logger = logrus.New()
 var cfg = config.NewConfig()
 
-func main() {
+func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be long here
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 	logger.SetLevel(logrus.DebugLevel)
 
@@ -345,7 +345,9 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 	for {
 		time.Sleep(PeriodMetadataBackup)
-		hd_wallet.SaveMetadata(MetadataPath, hdWallet.GetMetadata())
+		if err := hd_wallet.SaveMetadata(MetadataPath, hdWallet.GetMetadata()); err != nil {
+			logger.Warnf("error saving metadata: %v", err)
+		}
 	}
 }
 

@@ -3,8 +3,9 @@ package hdwallet
 import (
 	"context"
 	"fmt"
-	"github.com/yago-123/chainnet/pkg/util"
 	"sync"
+
+	"github.com/yago-123/chainnet/pkg/util"
 
 	"github.com/sirupsen/logrus"
 
@@ -198,7 +199,7 @@ func (hd *Wallet) GetNewAccount() (*Account, error) {
 	defer hd.mu.Unlock()
 
 	// we create a new account and increment the account number
-	account, err := hd.createAccount(uint32(len(hd.accounts)), 0, 0)
+	account, err := hd.createAccount(uint32(len(hd.accounts)), 0, 0) //nolint:gosec // possibility of integer overflow is OK here
 	if err != nil {
 		return nil, fmt.Errorf("error creating account: %w", err)
 	}
