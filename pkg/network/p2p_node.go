@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/libp2p/go-libp2p/core/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"time"
+
+	"github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
