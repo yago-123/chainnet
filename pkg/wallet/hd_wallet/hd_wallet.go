@@ -3,6 +3,7 @@ package hdwallet
 import (
 	"context"
 	"fmt"
+	"github.com/yago-123/chainnet/pkg/util"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -229,31 +230,39 @@ func (hd *Wallet) GetNumAccounts() uint {
 // one error, the method will return the error and stop processing the other accounts. This method ensures that the
 // balance reported is the most accurate possible (hence why we cancel and return error if we find 1 error)
 func (hd *Wallet) GetBalance() (uint, error) {
-	// Create a cancellable context
+	// create a cancellable context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var totalBalance uint
-	var balanceMu sync.Mutex // protects totalBalance
+	// protects totalBalance
+	var balanceMu sync.Mutex
 
-	// Use the helper function to process accounts concurrently
-	err := processAccountsConcurrently(hd.accounts, MaxConcurrentRequests, ctx, cancel, func(ctx context.Context, acc *Account) error {
-		select {
-		case <-ctx.Done():
-			return ctx.Err() // If the context is canceled, stop processing
-		default:
-			balance, err := acc.GetBalance()
-			if err != nil {
-				return fmt.Errorf("error getting balance for account %d: %w", acc.GetAccountID(), err)
+	// use the unified helper function to process accounts concurrently
+	err := util.ProcessConcurrently(
+		hd.accounts,
+		MaxConcurrentRequests,
+		ctx,
+		cancel,
+		func(ctx context.Context, acc *Account) error {
+			select {
+			case <-ctx.Done():
+				// if the context is canceled, stop processing
+				return ctx.Err()
+			default:
+				balance, err := acc.GetBalance()
+				if err != nil {
+					return fmt.Errorf("error getting balance for account %d: %w", acc.GetAccountID(), err)
+				}
+
+				// safely add the balance to the total
+				balanceMu.Lock()
+				totalBalance += balance
+				balanceMu.Unlock()
+				return nil
 			}
-
-			// Safely add the balance to the total
-			balanceMu.Lock()
-			totalBalance += balance
-			balanceMu.Unlock()
-			return nil
-		}
-	})
+		},
+	)
 
 	if err != nil {
 		return 0, err
@@ -307,43 +316,4 @@ func (hd *Wallet) createAccount(accountIdx uint32, externalWalletsIdx, internalW
 		externalWalletsIdx,
 		internalWalletsIdx,
 	)
-}
-
-func processAccountsConcurrently(
-	accounts []*Account,
-	maxConcurrency int,
-	ctx context.Context,
-	cancel context.CancelFunc,
-	process func(ctx context.Context, acc *Account) error,
-) error {
-	semaphore := make(chan struct{}, maxConcurrency)
-	var wg sync.WaitGroup
-	var overallErr error
-	var overallErrMu sync.Mutex
-
-	for _, acc := range accounts {
-		// acquire a slot
-		semaphore <- struct{}{}
-		wg.Add(1)
-
-		go func(account *Account) {
-			defer wg.Done()
-			// release the slot
-			defer func() { <-semaphore }()
-
-			if err := process(ctx, account); err != nil {
-				overallErrMu.Lock()
-				// capture the first error and cancel the context
-				if overallErr == nil {
-					overallErr = err
-					cancel()
-				}
-				overallErrMu.Unlock()
-			}
-		}(acc)
-	}
-
-	// wait for all goroutines to finish
-	wg.Wait()
-	return overallErr
 }

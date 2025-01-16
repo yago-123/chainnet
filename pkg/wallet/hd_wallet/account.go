@@ -359,8 +359,7 @@ func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction)
 	return nil
 }
 
-// GetAccountUTXOs retrieves the UTXOs from both external and internal wallets. The resulting array is sorted by default
-// with external UTXOs first
+// GetAccountUTXOs retrieves the UTXOs from both external and internal wallets
 func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	hda.mu.Lock()
 	wallets := append(hda.externalWallets, hda.internalWallets...)
@@ -369,19 +368,37 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	var utxosCollection []*kernel.UTXO
 	var utxosMu sync.Mutex
 
-	err := processWalletsConcurrently(wallets, MaxConcurrentRequests, func(w *wallt.Wallet) error {
-		utxos, err := w.GetWalletUTXOS()
-		if err != nil {
-			hda.logger.Warnf("error fetching UTXOs from wallet: %v", err)
-			return err
-		}
+	// create a context with cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		utxosMu.Lock()
-		utxosCollection = append(utxosCollection, utxos...)
-		utxosMu.Unlock()
+	// use the unified helper function to process wallets concurrently
+	err := util.ProcessConcurrently(
+		wallets,
+		MaxConcurrentRequests,
+		ctx,
+		cancel, // Pass the cancel function to stop other operations on error
+		func(ctx context.Context, w *wallt.Wallet) error {
+			select {
+			case <-ctx.Done():
+				// stop processing if the context is canceled
+				return ctx.Err()
+			default:
+				utxos, err := w.GetWalletUTXOS()
+				if err != nil {
+					hda.logger.Warnf("error fetching UTXOs from wallet: %v", err)
+					return err
+				}
 
-		return nil
-	})
+				// safely append UTXOs to the collection
+				utxosMu.Lock()
+				utxosCollection = append(utxosCollection, utxos...)
+				utxosMu.Unlock()
+
+				return nil
+			}
+		},
+	)
 
 	if err != nil {
 		return nil, err
@@ -391,6 +408,7 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 
 // GetBalance returns the total balance of the account by summing the amount of all UTXOs in the externalWallets
 func (hda *Account) GetBalance() (uint, error) {
+	// Lock to safely access wallets
 	hda.mu.Lock()
 	wallets := append(hda.externalWallets, hda.internalWallets...)
 	hda.mu.Unlock()
@@ -398,23 +416,41 @@ func (hda *Account) GetBalance() (uint, error) {
 	var balance uint
 	var balanceMu sync.Mutex
 
-	err := processWalletsConcurrently(wallets, MaxConcurrentRequests, func(w *wallt.Wallet) error {
-		utxos, err := w.GetWalletUTXOS()
-		if err != nil {
-			return fmt.Errorf("error getting wallet UTXOs: %w", err)
-		}
+	// Create a context with cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		localBalance := uint(0)
-		for _, utxo := range utxos {
-			localBalance += utxo.Amount()
-		}
+	// Use the unified helper function to process wallets concurrently
+	err := util.ProcessConcurrently(
+		wallets,
+		MaxConcurrentRequests,
+		ctx,
+		cancel, // pass the cancel function to stop other operations on error
+		func(ctx context.Context, w *wallt.Wallet) error {
+			select {
+			case <-ctx.Done():
+				// stop processing if the context is canceled
+				return ctx.Err()
+			default:
+				utxos, err := w.GetWalletUTXOS()
+				if err != nil {
+					return fmt.Errorf("error getting wallet UTXOs: %w", err)
+				}
 
-		balanceMu.Lock()
-		balance += localBalance
-		balanceMu.Unlock()
+				localBalance := uint(0)
+				for _, utxo := range utxos {
+					localBalance += utxo.Amount()
+				}
 
-		return nil
-	})
+				// Safely add the local balance to the total balance
+				balanceMu.Lock()
+				balance += localBalance
+				balanceMu.Unlock()
+
+				return nil
+			}
+		},
+	)
 
 	if err != nil {
 		return 0, err
@@ -495,42 +531,4 @@ func (hda *Account) createWallet(change changeType, walletNum uint32) (*wallt.Wa
 	}
 
 	return wallet, nil
-}
-
-// processWalletsConcurrently processes a list of wallets concurrently limiting the number of goroutines to
-// maxConcurrency. Can modify the behaviour by providing a custom process function that will be executed
-func processWalletsConcurrently(
-	wallets []*wallt.Wallet,
-	maxConcurrency int,
-	process func(w *wallt.Wallet) error,
-) error {
-	// use a buffered channel as a semaphore to limit the number of concurrent goroutines
-	semaphore := make(chan struct{}, maxConcurrency)
-	var wg sync.WaitGroup
-	var overallErr error
-	var overallErrMu sync.Mutex // protects access to overallErr
-
-	for _, wallet := range wallets {
-		// acquire a slot
-		semaphore <- struct{}{}
-		wg.Add(1)
-
-		go func(w *wallt.Wallet) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // release the slot
-
-			if err := process(w); err != nil {
-				overallErrMu.Lock()
-				if overallErr == nil {
-					// capture the first error
-					overallErr = err
-				}
-				overallErrMu.Unlock()
-			}
-		}(wallet)
-	}
-
-	// wait for all goroutines to finish
-	wg.Wait()
-	return overallErr
 }
