@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
 	"time"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
@@ -257,6 +255,7 @@ func NewNodeP2P(
 	encoder encoding.Encoding,
 	explorer *explorer.ChainExplorer,
 	mempoolExplorer *mempool.MemPoolExplorer,
+	registry *prometheus.Registry,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
 	options := []p2pConfig.Option{}
@@ -295,18 +294,16 @@ func NewNodeP2P(
 		options = append(options, libp2p.Identity(p2pPrivKey))
 	}
 
-	reg := prometheus.NewRegistry()
-	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
-	go func() {
-		http.ListenAndServe(":2112", nil) // Any port is fine
-	}()
-
-	options = append(options, libp2p.PrometheusRegisterer(reg))
+	// add prometheus metrics to options, ideally we should have this attached from RegisterMetrics function, but
+	// we need to pass the registry to the libp2p.New function and there are no better alternatives
+	options = append(options, libp2p.PrometheusRegisterer(registry))
+	//options = append(options, libp2p.BandwidthReporter(metrics.NewBandwidthCounter()))
 
 	// create host
 	host, err := libp2p.New(
 		options...,
 	)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
@@ -522,7 +519,11 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 	}
 }
 
-func (n *NodeP2P) RegisterMetrics(_ *prometheus.Registry) {
+func (n *NodeP2P) RegisterMetrics(registerer *prometheus.Registry) {
+	// this module contains the metrics outside the libp2p native ones. We can't register the libp2p metrics from
+	// here because the libp2p host is created outside this module and can't be modified after creation
+	// this function remains for non-libp2p core metrics
+
 	// todo(): figure how to parse the metrics from the pubsub and the discovery
 	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
 	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards

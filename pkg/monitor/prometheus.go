@@ -106,3 +106,7 @@ func (prom *PromExporter) Stop() error {
 	prom.isActive = false
 	return nil
 }
+
+func (prom *PromExporter) Registry() *prometheus.Registry {
+	return prom.registry
+}

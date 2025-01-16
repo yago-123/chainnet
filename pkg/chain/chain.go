@@ -132,7 +132,7 @@ func NewBlockchain(
 	}, nil
 }
 
-func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*network.NodeP2P, error) {
+func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject, registry *prometheus.Registry) (*network.NodeP2P, error) {
 	var p2pNet *network.NodeP2P
 
 	// check if the network is supposed to be enabled
@@ -150,7 +150,7 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*network.Node
 	mempoolExplorer := mempool.NewMemPoolExplorer(bc.mempool)
 	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
 
-	p2pNet, err := network.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
+	p2pNet, err := network.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer, registry)
 	if err != nil {
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
