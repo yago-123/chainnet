@@ -8,7 +8,7 @@ import (
 const (
 	// ChainnetCoinAmount number of smaller units (Channoshis) that represent 1 Chainnet coin
 	ChainnetCoinAmount   = 100000000
-	MaxNumberTxsPerBlock = 16000
+	MaxNumberTxsPerBlock = 300
 )
 
 type BlockHeader struct {

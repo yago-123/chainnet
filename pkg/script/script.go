@@ -259,13 +259,20 @@ func CanBeUnlockedWith(scriptPubKey string, publicKey []byte, version byte) bool
 		// compare pub key with the publicKey provided
 		return literals[0] == string(publicKey)
 	case P2PKH:
+		// generate the P2PKH address and extract the pub key hashed from the address. In the script pub key we
+		// persist pub key hashed
 		p2pkhAddress, errAddress := util_p2pkh.GenerateP2PKHAddrFromPubKey(publicKey, version)
 		if errAddress != nil {
 			return false
 		}
 
-		// compare the P2PKH address from the script with the one generated from the publicKey
-		return bytes.Equal([]byte(literals[2]), p2pkhAddress)
+		pubKeyHashed, _, errAddress := util_p2pkh.ExtractPubKeyHashedFromP2PKHAddr(p2pkhAddress)
+		if errAddress != nil {
+			return false
+		}
+
+		// check if the values match
+		return bytes.Equal([]byte(literals[2]), pubKeyHashed)
 	case UndefinedScriptType:
 	default:
 		break

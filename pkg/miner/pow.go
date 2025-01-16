@@ -17,6 +17,8 @@ import (
 const (
 	HashLength = 256
 	MaxNonce   = ^uint(0)
+
+	CPUDivisionFactor = 2
 )
 
 var ErrMiningCancelled = errors.New("mining cancelled by context")
@@ -66,7 +68,7 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	// calculate the number of goroutines to use. We use half of the available CPUs because in our case the miner
 	// will have other tasks to do (like listening for new blocks) and we don't want to starve the system (in miner only
 	// scenarios, we could use all CPUs)
-	numGoroutines := int(math.Max(1, float64(runtime.NumCPU()/2)))
+	numGoroutines := int(math.Max(1, float64(runtime.NumCPU()/CPUDivisionFactor)))
 	nonceRange := MaxNonce / uint(numGoroutines)
 
 	// if one of the goroutines finds a block, use this context to propagate the cancellation. This cancellation

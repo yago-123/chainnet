@@ -215,7 +215,7 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 
 		// iterate through each transaction in the block
 		for _, tx := range nextBlock.Transactions {
-			txID := hex.EncodeToString(tx.ID)
+			txID := fmt.Sprintf("%x", tx.ID)
 
 			for outIdx, out := range tx.Vout {
 				// in case is already spent, continue
@@ -267,7 +267,7 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 		return []*kernel.UTXO{}, err
 	}
 
-	// get the blockchain revIterator
+	// get the blockchain reverted iterator
 	_ = it.Initialize(lastBlock.Hash)
 
 	for it.HasNext() {

@@ -1,4 +1,4 @@
-package hd
+package hdwallet
 
 import (
 	"fmt"
@@ -128,7 +128,7 @@ const (
 // DeriveChildStepHardened derives a child key based on a master private key, master chain code and index. The main
 // difference between this function and DeriveChildStepNonHardened is that this function prepends a constant to the
 // private key before derivation starts. Hardened keys are more secure in theory due to the fact that even the master
-// pub key being compromised the child wallets are still secure. Based on BIP-44 standard the first 3 levels of
+// pub key being compromised the child externalWallets are still secure. Based on BIP-44 standard the first 3 levels of
 // the derivation path (purpose, coin type and account) are hardened keys due to security reasons.
 // Arguments:
 // - privateKey: the private key in DER format (will be decoded to raw format during the operation)

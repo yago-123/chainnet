@@ -1,9 +1,11 @@
 package util
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/kernel"
@@ -148,6 +150,44 @@ func IsValidHash(hash []byte) bool {
 	}
 
 	return true
+}
+
+// ProcessConcurrently processes a list of items concurrently with a maximum number of goroutines
+func ProcessConcurrently[T any](
+	ctx context.Context,
+	items []T,
+	maxConcurrency int,
+	cancel context.CancelFunc,
+	process func(ctx context.Context, item T) error,
+) error {
+	semaphore := make(chan struct{}, maxConcurrency)
+	var wg sync.WaitGroup
+	var overallErr error
+	var overallErrMu sync.Mutex // protects access to overallErr
+
+	for _, item := range items {
+		semaphore <- struct{}{} // acquire a slot
+		wg.Add(1)
+
+		go func(it T) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // release the slot
+
+			if err := process(ctx, it); err != nil {
+				overallErrMu.Lock()
+				if overallErr == nil { // capture the first error
+					overallErr = err
+					if cancel != nil {
+						cancel() // stop other operations if a cancel function is provided
+					}
+				}
+				overallErrMu.Unlock()
+			}
+		}(item)
+	}
+
+	wg.Wait() // wait for all goroutines to finish
+	return overallErr
 }
 
 // GetBalanceUTXOs calculates the total balance of a list of UTXOs

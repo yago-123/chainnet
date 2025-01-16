@@ -165,7 +165,7 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/mine
 After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this, 
 you must first install Grafana:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/grafana.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/visualization.yml
 ```
 
 Once Grafana is installed, you can configure your domain or access the Grafana instance via `http://localhost:3000` and 
@@ -174,7 +174,7 @@ you can run `Certbot` using the following playbook and then rerun the Grafana pl
 updates the HTTPS endpoint:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/install-SSL.yml
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/grafana.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/visualization.yml
 ```
 
 Once the chain is running and Grafana is up and accessible, you can install monitoring and/or logging via the following

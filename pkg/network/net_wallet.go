@@ -65,8 +65,6 @@ func NewWalletHTTPConn(
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
 
-	cfg.Logger.Debugf("host created for peer discovery: %s", host.ID())
-
 	// initialize discovery module
 	disco, err := discovery.NewDHTDiscovery(host)
 	if err != nil {

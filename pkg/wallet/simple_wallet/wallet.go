@@ -1,9 +1,12 @@
-package wallet
+package simplewallet
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
+	"github.com/btcsuite/btcutil/base58"
+
+	common "github.com/yago-123/chainnet/pkg/wallet"
 
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
@@ -21,8 +24,8 @@ import (
 
 type Wallet struct {
 	version    byte
-	PrivateKey []byte
-	PublicKey  []byte
+	privateKey []byte
+	publicKey  []byte
 
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
@@ -81,8 +84,8 @@ func NewWalletWithKeys(
 	return &Wallet{
 		cfg:             cfg,
 		version:         version,
-		PrivateKey:      privateKey,
-		PublicKey:       publicKey,
+		privateKey:      privateKey,
+		publicKey:       publicKey,
 		validator:       validator,
 		signer:          signer,
 		p2pNet:          p2pNet,
@@ -118,14 +121,6 @@ func (w *Wallet) GetAddresses() ([][]byte, error) {
 	return addresses, nil
 }
 
-func (w *Wallet) GetP2PKAddress() []byte {
-	return w.PublicKey
-}
-
-func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
-	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.PublicKey, w.version)
-}
-
 func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 	addresses, err := w.GetAddresses()
 	if err != nil {
@@ -140,7 +135,7 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 		// retrieve UTXOs for each address
 		utxo, errUtxos := w.p2pNet.GetWalletUTXOS(ctx, address)
 		if errUtxos != nil {
-			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
 
 		utxos = append(utxos, utxo...)
@@ -164,7 +159,7 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 		// retrieve txs for each address
 		tx, errUtxos := w.p2pNet.GetWalletTxs(ctx, address)
 		if errUtxos != nil {
-			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %x: %w", address, errUtxos)
+			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
 
 		txs = append(txs, tx...)
@@ -174,15 +169,18 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 }
 
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, addresses []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction
-	inputs, totalBalance, err := generateInputs(utxos, targetAmount+txFee)
+	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
 	if err != nil {
 		return &kernel.Transaction{}, err
 	}
 
 	// create the outputs necessary for the transaction
-	outputs := generateOutputs(scriptType, targetAmount, txFee, totalBalance, to, string(w.PublicKey))
+	outputs, err := common.GenerateOutputs(scriptType, []uint{targetAmount}, [][]byte{addresses}, txFee, totalBalance, w.publicKey, w.version)
+	if err != nil {
+		return &kernel.Transaction{}, err
+	}
 
 	// generate transaction
 	tx := kernel.NewTransaction(
@@ -217,19 +215,19 @@ func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, to string,
 // be used
 func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
-	scripSigs := []string{}
+	scriptSigs := []string{}
 	for _, vin := range tx.Vin {
 		unlocked := false
 
 		for _, utxo := range utxos {
 			if utxo.EqualInput(vin) {
 				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
-				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.PublicKey, w.PrivateKey, tx)
+				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.publicKey, w.privateKey, tx)
 				if err != nil {
 					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
 				}
 
-				scripSigs = append(scripSigs, scriptSig)
+				scriptSigs = append(scriptSigs, scriptSig)
 
 				unlocked = true
 				continue
@@ -238,12 +236,12 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 
 		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
 		if !unlocked {
-			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %s and index %d", vin.Txid, vin.Vout)
+			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %x and index %d", vin.Txid, vin.Vout)
 		}
 	}
 
 	for i := range len(tx.Vin) {
-		tx.Vin[i].ScriptSig = scripSigs[i]
+		tx.Vin[i].ScriptSig = scriptSigs[i]
 	}
 
 	return tx, nil
@@ -258,35 +256,23 @@ func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) er
 	return nil
 }
 
-// generateInputs set up the inputs for the transaction and returns the total balance of the UTXOs that are going to be
-// spent in the transaction
-func generateInputs(utxos []*kernel.UTXO, targetAmount uint) ([]kernel.TxInput, uint, error) {
-	// for now simple FIFO method, first outputs are the first to be spent
-	balance := uint(0)
-	inputs := []kernel.TxInput{}
-
-	for _, utxo := range utxos {
-		balance += utxo.Output.Amount
-		inputs = append(inputs, kernel.NewInput(utxo.TxID, utxo.OutIdx, "", utxo.Output.PubKey))
-		if balance >= targetAmount {
-			return inputs, balance, nil
-		}
-	}
-
-	return []kernel.TxInput{}, balance, errors.New("not enough funds to perform the transaction")
+func (w *Wallet) Version() byte {
+	return w.version
 }
 
-// generateOutputs set up the outputs for the transaction
-func generateOutputs(scriptType script.ScriptType, targetAmount, txFee, totalBalance uint, receiver, changeReceiver string) []kernel.TxOutput {
-	change := totalBalance - txFee - targetAmount
+func (w *Wallet) PublicKey() []byte {
+	return w.publicKey
+}
 
-	txOutput := []kernel.TxOutput{}
-	txOutput = append(txOutput, kernel.NewOutput(targetAmount, scriptType, receiver))
+// todo(): REMOVE THIS, THIS FEELS SO WRONG, NEED TO RETHINK THE RELATION ACCOUNT / WALLET / HD WALLET
+func (w *Wallet) PrivateKey() []byte {
+	return w.privateKey
+}
 
-	// add output corresponding to the spare changeType
-	if change > 0 {
-		txOutput = append(txOutput, kernel.NewOutput(totalBalance-txFee-targetAmount, scriptType, changeReceiver))
-	}
+func (w *Wallet) GetP2PKAddress() []byte {
+	return w.publicKey
+}
 
-	return txOutput
+func (w *Wallet) GetP2PKHAddress() ([]byte, error) {
+	return util_p2pkh.GenerateP2PKHAddrFromPubKey(w.publicKey, w.version)
 }
