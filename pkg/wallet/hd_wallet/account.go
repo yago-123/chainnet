@@ -374,9 +374,9 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 
 	// use the unified helper function to process wallets concurrently
 	err := util.ProcessConcurrently(
+		ctx,
 		wallets,
 		MaxConcurrentRequests,
-		ctx,
 		cancel, // Pass the cancel function to stop other operations on error
 		func(ctx context.Context, w *wallt.Wallet) error {
 			select {
@@ -422,9 +422,9 @@ func (hda *Account) GetBalance() (uint, error) {
 
 	// Use the unified helper function to process wallets concurrently
 	err := util.ProcessConcurrently(
+		ctx,
 		wallets,
 		MaxConcurrentRequests,
-		ctx,
 		cancel, // pass the cancel function to stop other operations on error
 		func(ctx context.Context, w *wallt.Wallet) error {
 			select {

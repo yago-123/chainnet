@@ -240,9 +240,9 @@ func (hd *Wallet) GetBalance() (uint, error) {
 
 	// use the unified helper function to process accounts concurrently
 	err := util.ProcessConcurrently(
+		ctx,
 		hd.accounts,
 		MaxConcurrentRequests,
-		ctx,
 		cancel,
 		func(ctx context.Context, acc *Account) error {
 			select {

@@ -154,9 +154,9 @@ func IsValidHash(hash []byte) bool {
 
 // ProcessConcurrently processes a list of items concurrently with a maximum number of goroutines
 func ProcessConcurrently[T any](
+	ctx context.Context,
 	items []T,
 	maxConcurrency int,
-	ctx context.Context,
 	cancel context.CancelFunc,
 	process func(ctx context.Context, item T) error,
 ) error {

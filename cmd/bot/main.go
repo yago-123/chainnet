@@ -341,6 +341,14 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) {
 	}
 }
 
+// SaveMetadataPeriodically saves the metadata of the HD wallet periodically
+func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
+	for {
+		time.Sleep(PeriodMetadataBackup)
+		hd_wallet.SaveMetadata(MetadataPath, hdWallet.GetMetadata())
+	}
+}
+
 // getRandomAmounts generates random amounts to be distributed among a number of addresses. The total balance is split
 func getRandomAmounts(totalBalance, numAddresses uint) []uint {
 	if numAddresses == 0 || totalBalance == 0 {
@@ -368,13 +376,6 @@ func getRandomAmounts(totalBalance, numAddresses uint) []uint {
 	return balances
 }
 
-func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
-	for {
-		time.Sleep(PeriodMetadataBackup)
-		hd_wallet.SaveMetadata(MetadataPath, hdWallet.GetMetadata())
-	}
-}
-
 func randomizedSleep(minDuration, maxDuration time.Duration) {
 	// do nothing if the range is invalid
 	if maxDuration <= minDuration {
@@ -395,7 +396,6 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 	if acc.GetInternalWalletIndex() >= MaxNumberWalletsPerAccount {
 		wallet, err = acc.GetInternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
 	}
-
 	if acc.GetInternalWalletIndex() < MaxNumberWalletsPerAccount {
 		wallet, err = acc.GetNewInternalWallet()
 	}
