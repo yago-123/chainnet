@@ -53,7 +53,7 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 	return &PromExporter{
 		monitors: monitors,
 		r:        r,
-		registry: prometheus.NewRegistry(),
+		registry: registry,
 		logger:   cfg.Logger,
 		cfg:      cfg,
 	}
