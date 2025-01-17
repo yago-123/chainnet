@@ -260,6 +260,34 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
+	monitor.NewMetric(register, monitor.Gauge, "mempool_num_inputs", "Number of inputs in the mempool",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			numInputs := uint(0)
+			for _, pair := range m.pairs {
+				numInputs += uint(len(pair.Transaction.Vin))
+			}
+
+			return float64(numInputs)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "mempool_num_outputs", "Number of outputs in the mempool",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			numOutputs := uint(0)
+			for _, pair := range m.pairs {
+				numOutputs += uint(len(pair.Transaction.Vout))
+			}
+
+			return float64(numOutputs)
+		},
+	)
+
 	// todo(): add histogram reflecting the distribution of fees in the mempool
 	// todo(): add histogram reflecting the distribution of transaction sizes in the mempool
 	// todo(): add histogram reflecting the distribution of transaction fees per byte in the mempool
