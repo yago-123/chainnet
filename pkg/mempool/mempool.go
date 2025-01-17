@@ -192,7 +192,7 @@ func (m *MemPool) OnTxAddition(_ *kernel.Transaction) {
 
 // RegisterMetrics registers the UTXO set metrics to the prometheus registry
 func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
-	monitor.NewMetric(register, monitor.Gauge, "mempool_txs_size", "Number of transactions in the mempool",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_num_txs", "Number of transactions in the mempool",
 		func() float64 {
 			m.mu.Lock()
 			defer m.mu.Unlock()
