@@ -95,6 +95,7 @@ func main() {
 	subjectChain.Register(boltdb)
 	subjectChain.Register(mempool)
 	subjectChain.Register(utxoSet)
+
 	// the chain network is an special case regarding prometheus, see why inside the network module
 	network, err := chain.InitNetwork(netSubject)
 	if err != nil {

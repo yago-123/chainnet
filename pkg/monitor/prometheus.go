@@ -22,6 +22,12 @@ const (
 	PrometheusExporterShutdownTimeout = 10 * time.Second
 )
 
+const (
+	OperationLabel = "operation"
+	ProtocolLabel  = "protocol"
+	PeerLabel      = "peer_id"
+)
+
 type PromExporter struct {
 	monitors []Monitor
 	r        *httprouter.Router

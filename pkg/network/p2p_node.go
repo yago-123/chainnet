@@ -365,18 +365,19 @@ func NewNodeP2P(
 	host.SetStreamHandler(AskAllHeaders, handler.handleAskAllHeaders)
 
 	return &NodeP2P{
-		cfg:        cfg,
-		host:       host,
-		netSubject: netSubject,
-		ctx:        ctx,
-		discoDHT:   discoDHT,
-		discoMDNS:  discoMDNS,
-		pubsub:     pubsub,
-		encoder:    encoder,
-		router:     router,
-		explorer:   explorer,
-		bufferSize: cfg.P2P.BufferSize,
-		logger:     cfg.Logger,
+		cfg:             cfg,
+		host:            host,
+		netSubject:      netSubject,
+		ctx:             ctx,
+		discoDHT:        discoDHT,
+		discoMDNS:       discoMDNS,
+		pubsub:          pubsub,
+		encoder:         encoder,
+		router:          router,
+		explorer:        explorer,
+		bandwithCounter: bandwithCounter,
+		bufferSize:      cfg.P2P.BufferSize,
+		logger:          cfg.Logger,
 	}, nil
 }
 
@@ -539,17 +540,6 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 }
 
 func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
-	// this module contains the metrics outside the libp2p core ones. We can't register the libp2p metrics from
-	// here because the libp2p host is created outside this module and can't be modified after creation
-	// this function remains for non-libp2p core metrics
-
-	// GetBandwidthByPeer() map[peer.ID]Stats -> now worth IMO, not scalable
-	// GetBandwidthByProtocol() map[protocol.ID]Stats -> this is better than GetBandwidthForProtocol I think (we don't have many protocols)
-
-	//totalInMetric = prometheus.NewCounter(prometheus.CounterOpts{
-	//	Name: "libp2p_total_in_bytes",
-	//	Help: "Total incoming bandwidth in bytes.",
-	//})
 	monitor.NewMetric(register, monitor.Counter, "libp2p_total_in_bytes", "Total incoming bandwidth in bytes",
 		func() float64 {
 			return float64(n.bandwithCounter.GetBandwidthTotals().TotalIn)
@@ -574,66 +564,67 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
-	/*
-		labels := []string{"protocol"}
-
-		monitor.NewMetricWithLabels(register, monitor.Gauge, "libp2p_bandwidth_total_in", "Total incoming bandwidth by protocol", labels,
-			func(metricVec interface{}) {
-				gaugeVec := metricVec.(*prometheus.GaugeVec)
-				for {
-					stats := n.bandwithCounter.GetBandwidthByProtocol()
-					for protocol, stat := range stats {
-						gaugeVec.WithLabelValues(string(protocol)).Set(float64(stat.TotalIn))
-					}
-					time.Sleep(10 * time.Second)
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_protocol", "Bandwidth total statistics by protocol",
+		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
+		func(metricVec interface{}) {
+			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			for {
+				stats := n.bandwithCounter.GetBandwidthByProtocol()
+				for protocol, stat := range stats {
+					gaugeVec.WithLabelValues("in", string(protocol)).Set(float64(stat.TotalIn))
+					gaugeVec.WithLabelValues("out", string(protocol)).Set(float64(stat.TotalOut))
 				}
-			})
+				time.Sleep(n.cfg.Prometheus.UpdateInterval)
+			}
+		})
 
-
-	*/
-	/*
-		// Incoming bandwidth rate
-		NewMetric(registry, Gauge, "libp2p_bandwidth_rate_in", "Incoming bandwidth rate by protocol", labels,
-			func(metricVec interface{}) {
-				gaugeVec := metricVec.(*prometheus.GaugeVec)
-				for {
-					stats := bwc.GetBandwidthByProtocol()
-					for protocol, stat := range stats {
-						gaugeVec.WithLabelValues(string(protocol)).Set(stat.RateIn)
-					}
-					time.Sleep(10 * time.Second)
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_protocol", "Bandwidth rate statistics by protocol",
+		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
+		func(metricVec interface{}) {
+			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			for {
+				stats := n.bandwithCounter.GetBandwidthByProtocol()
+				for protocol, stat := range stats {
+					gaugeVec.WithLabelValues("in", string(protocol)).Set(stat.RateIn)
+					gaugeVec.WithLabelValues("out", string(protocol)).Set(stat.RateOut)
 				}
-			})
+				time.Sleep(n.cfg.Prometheus.UpdateInterval)
+			}
+		})
 
-		// Total outgoing bandwidth
-		NewMetric(registry, Gauge, "libp2p_bandwidth_total_out", "Total outgoing bandwidth by protocol", labels,
-			func(metricVec interface{}) {
-				gaugeVec := metricVec.(*prometheus.GaugeVec)
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_peer", "Bandwidth total statistics by peer",
+		[]string{monitor.OperationLabel, monitor.PeerLabel},
+		func(metricVec interface{}) {
+			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			go func() {
 				for {
-					stats := bwc.GetBandwidthByProtocol()
-					for protocol, stat := range stats {
-						gaugeVec.WithLabelValues(string(protocol)).Set(float64(stat.TotalOut))
-					}
-					time.Sleep(10 * time.Second)
-				}
-			})
+					stats := n.bandwithCounter.GetBandwidthByPeer()
+					for peerID, stat := range stats {
+						gaugeVec.WithLabelValues("in", peerID.String()).Set(float64(stat.TotalIn))
+						gaugeVec.WithLabelValues("out", peerID.String()).Set(float64(stat.TotalOut))
 
-		// Outgoing bandwidth rate
-		NewMetric(registry, Gauge, "libp2p_bandwidth_rate_out", "Outgoing bandwidth rate by protocol", labels,
-			func(metricVec interface{}) {
-				gaugeVec := metricVec.(*prometheus.GaugeVec)
+					}
+
+					time.Sleep(n.cfg.Prometheus.UpdateInterval)
+				}
+			}()
+		})
+
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_peer", "Bandwidth rate statistics by peer",
+		[]string{monitor.OperationLabel, monitor.PeerLabel},
+		func(metricVec interface{}) {
+			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			go func() {
 				for {
-					stats := bwc.GetBandwidthByProtocol()
-					for protocol, stat := range stats {
-						gaugeVec.WithLabelValues(string(protocol)).Set(stat.RateOut)
+					stats := n.bandwithCounter.GetBandwidthByPeer()
+					for peerID, stat := range stats {
+						gaugeVec.WithLabelValues("in", peerID.String()).Set(float64(stat.RateIn))
+						gaugeVec.WithLabelValues("out", peerID.String()).Set(float64(stat.RateOut))
+
 					}
-					time.Sleep(10 * time.Second)
+
+					time.Sleep(n.cfg.Prometheus.UpdateInterval)
 				}
-			})
-
-	*/
-
-	// todo(): figure how to parse the metrics from the pubsub and the discovery
-	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
-	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards
+			}()
+		})
 }
