@@ -1,24 +1,26 @@
 package mempool
 
 import (
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	"sort"
 	"sync"
+	"unsafe"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/monitor"
-
-	"errors"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
 const MemPoolObserverID = "mempool-observer"
 
-var ErrMemPoolFull = errors.New("mempool does not have enough space")
-
 type TxFeePair struct {
 	Transaction *kernel.Transaction
 	Fee         uint
+}
+
+func (t TxFeePair) Size() uint {
+	return t.Transaction.Size() + uint(unsafe.Sizeof(t.Fee))
 }
 
 type MemPool struct {
@@ -55,7 +57,7 @@ func (m *MemPool) AppendTransaction(tx *kernel.Transaction, fee uint) error {
 	defer m.mu.Unlock()
 
 	if uint(len(m.pairs)) >= m.maxNumberTxs {
-		return ErrMemPoolFull
+		return cerror.ErrMemPoolFull
 	}
 
 	// append the transaction to the mempool
@@ -190,7 +192,7 @@ func (m *MemPool) OnTxAddition(_ *kernel.Transaction) {
 
 // RegisterMetrics registers the UTXO set metrics to the prometheus registry
 func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
-	monitor.NewMetric(register, monitor.Gauge, "mempool_size", "A gauge containing the number of transactions in the mempool",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_txs_size", "Number of transactions in the mempool",
 		func() float64 {
 			m.mu.Lock()
 			defer m.mu.Unlock()
@@ -199,7 +201,7 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Gauge, "mempool_total_fee", "A gauge containing the total fee of the transactions in the mempool",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_total_fee", "Total fee of the transactions in the mempool",
 		func() float64 {
 			m.mu.Lock()
 			defer m.mu.Unlock()
@@ -212,18 +214,49 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Gauge, "mempool_max_size", "A gauge containing the maximum number of transactions the mempool can hold",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_max_size", "Maximum number of transactions the mempool can hold",
 		func() float64 {
 			return float64(m.maxNumberTxs)
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Gauge, "mempool_inputs_tracked", "A gauge containing the number of inputs being tracked in the mempool",
+	monitor.NewMetric(register, monitor.Gauge, "mempool_inputs_tracked", "Number of inputs being tracked in the mempool",
 		func() float64 {
 			m.mu.Lock()
 			defer m.mu.Unlock()
 
 			return float64(len(m.inputSet))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "mempool_txs_balance", "Total balance of the transactions in mempool",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			totalBalance := uint(0)
+			for _, pair := range m.pairs {
+				totalBalance += pair.Fee
+				for _, out := range pair.Transaction.Vout {
+					totalBalance += out.Amount
+				}
+			}
+
+			return kernel.ConvertFromChannoshisToCoins(totalBalance)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "mempool_storage_size", "Size of the mempool in bytes",
+		func() float64 {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			size := uint(0)
+			for _, pair := range m.pairs {
+				size += pair.Size()
+			}
+
+			return float64(size)
 		},
 	)
 
