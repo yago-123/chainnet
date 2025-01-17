@@ -58,7 +58,7 @@ const (
 
 	DefaultPrometheusEnabled        = true
 	DefaultPrometheusPort           = 9090
-	DefaultPrometheusLibp2pPort     = 9095
+	DefaultPrometheusLibp2pPort     = 9099
 	DefaultPrometheusPath           = "/metrics"
 	DefaultPrometheusUpdateInterval = 10 * time.Second
 
