@@ -100,9 +100,23 @@ This `wallet.pem` file will contain both the private and public keys.
 ### Step 2: Use the Wallet to Send Transactions
 You can use this wallet by running the `chainnet-nespv` wallet to send transactions as follows:
 ```bash
-$ ./bin/chainnet-nespv send --config default-config.yaml --address random --amount 1 --fee 10 --wallet-key-path <wallet.pem>
+$ ./bin/chainnet-nespv send            \
+          --config default-config.yaml \
+          --address random             \
+          --amount 23.5 --fee 0.001    \
+          --wallet-key-path <wallet.pem>
 ```
 
+By default transactions use `P2PK` payments, if you want to use `P2PKH` payments you can use the `--pay-type` flag:
+```bash
+$ ./bin/chainnet-nespv send            \
+          --config default-config.yaml \
+          --address random             \
+          --amount 23.5 --fee 0.001    \
+          --pay-type P2PKH             \ 
+          --wallet-key-path <wallet.pem>
+```
+```
 `todo()`: add example with P2PKH payment too  
 
 ### Step 3: Extract the Public Key in Base58 Format
@@ -143,30 +157,41 @@ Running the `chainnet-node`:
 ```bash 
 $ mkdir /path/to/data
 $ cp config/examples/docker-config.yaml /path/to/data/config.yaml
-$ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-node:latest
+$ docker run -v ./path/to/data:/data           \
+             -e CONFIG_FILE=/data/config.yaml  \
+             -p 8080:8080                      \
+             yagoninja/chainnet-node:latest
 ```
 Running the `chainnet-miner`: 
 ```bash 
 $ mkdir /path/to/data
 $ cp config/examples/docker-config.yaml /path/to/data/config.yaml
-$ docker run -v ./path/to/data:/data -e CONFIG_FILE=/data/config.yaml -p 8080:8080 yagoninja/chainnet-miner:latest
+$ docker run -v ./path/to/data:/data            \
+             -e CONFIG_FILE=/data/config.yaml   \
+             -p 8080:8080                       \
+             yagoninja/chainnet-miner:latest
 ```
 
 ### Remote Nodes with Ansible
 To run the `chainnet-node` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/node-seed.yml ansible/playbooks/blockchain.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   -e @ansible/config/node-seed.yml      \
+                   ansible/playbooks/blockchain.yml
 ```
 
 To run the `chainnet-miner` on a remote node:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini -e @ansible/config/miner-seed.yml ansible/playbooks/blockchain.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   -e @ansible/config/miner-seed.yml     \
+                   ansible/playbooks/blockchain.yml
 ```
 
 After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this, 
 you must first install Grafana:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/visualization.yml
+$  ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   ansible/playbooks/visualization.yml
 ```
 
 Once Grafana is installed, you can configure your domain or access the Grafana instance via `http://localhost:3000` and 
@@ -174,15 +199,19 @@ enter the new password (default credentials: `admin`/`admin`). If you need to in
 you can run `Certbot` using the following playbook and then rerun the Grafana playbook to ensure the reverse proxy 
 updates the HTTPS endpoint:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/install-SSL.yml
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/visualization.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   ansible/playbooks/install-SSL.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   ansible/playbooks/visualization.yml
 ```
 
 Once the chain is running and Grafana is up and accessible, you can install monitoring and/or logging via the following
 playbooks:
 ```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/monitoring.yml
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/logging.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   ansible/playbooks/monitoring.yml
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
+                   ansible/playbooks/logging.yml
 ```
 
 There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
@@ -191,7 +220,8 @@ loading real data.
 ### Run in Kubernetes 
 Deploy the helm chart:
 ```bash
-$ helm install chainnet-release ./helm --set-file configFile=config/examples/kubernetes-config.yaml
+$ helm install chainnet-release ./helm \
+  --set-file configFile=config/examples/kubernetes-config.yaml
 ```
 
 Uninstall the helm chart:
@@ -203,27 +233,6 @@ $ helm uninstall chainnet
 Generate a ECDSA `secp256r1` private key in PEM format: 
 ```bash
 $ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
-```
-
-## Setting up monitoring with Prometheus and Grafana
-In order to provide monitoring Grafana, Prometheus and Nginx must be installed. You can do so by running the following 
-Ansible playbook: 
-```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/monitoring.yml
-```
-
-In order to install logging: 
-```bash 
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini ansible/playbooks/logging.yml
-```
-
-Once the monitoring stack is installed and you have configured the domain requested to the correct IP, you can access 
-the Grafana dashboard at `URL` and admin credentials. 
-
-If you need to enable HTTPS, you can use `Certbot` to generate the keys and certificates for the domain via the following 
-playbook: 
-```bash
-$ ansible-playbook -i ansible/inventories/seed/hosts.ini -l seed-1.chainnet.yago.ninja ansible/playbooks/monitoringTLS.yml -e "domain=dashboard.chainnet.yago.ninja certificate_email=me@yago.ninja"
 ```
 
 ## Architecture
