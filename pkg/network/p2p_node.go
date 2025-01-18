@@ -540,25 +540,25 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 }
 
 func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
-	monitor.NewMetric(register, monitor.Counter, "libp2p_total_in_bytes", "Total incoming bandwidth in bytes",
+	monitor.NewMetric(register, monitor.Counter, "bandwidth_total_incoming_bytes", "Total incoming bandwidth in bytes",
 		func() float64 {
 			return float64(n.bandwithCounter.GetBandwidthTotals().TotalIn)
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Counter, "libp2p_total_out_bytes", "Total outgoing bandwidth in bytes",
+	monitor.NewMetric(register, monitor.Counter, "bandwidth_total_outgoing_bytes", "Total outgoing bandwidth in bytes",
 		func() float64 {
 			return float64(n.bandwithCounter.GetBandwidthTotals().TotalOut)
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Gauge, "libp2p_rate_in_bytes_per_second", "Incoming bandwidth rate in bytes per second",
+	monitor.NewMetric(register, monitor.Gauge, "bandwidth_rate_incoming_bytes", "Incoming bandwidth rate in bytes per second",
 		func() float64 {
 			return float64(n.bandwithCounter.GetBandwidthTotals().RateIn)
 		},
 	)
 
-	monitor.NewMetric(register, monitor.Gauge, "libp2p_rate_out_bytes_per_second", "Outgoing bandwidth rate in bytes per second",
+	monitor.NewMetric(register, monitor.Gauge, "bandwidth_rate_outgoing_bytes", "Outgoing bandwidth rate in bytes per second",
 		func() float64 {
 			return float64(n.bandwithCounter.GetBandwidthTotals().RateOut)
 		},
