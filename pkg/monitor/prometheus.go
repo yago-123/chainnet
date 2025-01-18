@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"net/http"
 	"time"
 
@@ -56,6 +57,14 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 	for _, monitor := range monitors {
 		monitor.RegisterMetrics(registry)
 	}
+
+	// register the metrics for the Go runtime and the current process
+	registry.MustRegister(
+		collectors.NewGoCollector(), // metrics about golang runtime: GC stats, memory usage and other
+		collectors.NewProcessCollector( // metrics about the process: CPU usage, file descriptors and other
+			collectors.ProcessCollectorOpts{},
+		),
+	)
 
 	return &PromExporter{
 		monitors: monitors,
