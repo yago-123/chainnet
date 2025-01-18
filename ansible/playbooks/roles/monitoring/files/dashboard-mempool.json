@@ -790,16 +790,28 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineWidth": 1,
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 3,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -827,28 +839,55 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-yellow",
+                  "fixedColor": "semi-dark-purple",
                   "mode": "fixed"
                 }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.3
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "B"
+              "options": "num transactions"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.lineStyle"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "D"
             },
             "properties": [
               {
                 "id": "displayName",
                 "value": "fee per byte"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
               },
               {
                 "id": "custom.axisPlacement",
@@ -857,6 +896,10 @@
               {
                 "id": "unit",
                 "value": "none"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
               }
             ]
           }
@@ -870,25 +913,16 @@
       },
       "id": 14,
       "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
-        "orientation": "auto",
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
           "mode": "multi",
           "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 200
+        }
       },
       "pluginVersion": "11.4.0",
       "targets": [
@@ -916,12 +950,29 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "expr": "mempool_num_txs",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "num transactions",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P4468B563915BF94D"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "expr": "mempool_total_fee",
           "fullMetaSearch": false,
           "hide": true,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "total fee",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "C",
           "useBackend": false
@@ -932,14 +983,14 @@
             "type": "__expr__",
             "uid": "__expr__"
           },
-          "expression": "$C /  $A",
+          "expression": "$C / $A",
           "hide": false,
-          "refId": "B",
+          "refId": "D",
           "type": "math"
         }
       ],
       "title": "Mempool Size",
-      "type": "barchart"
+      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -957,6 +1008,6 @@
   "timezone": "browser",
   "title": "Mempool",
   "uid": "cea9wamj3ad4wf",
-  "version": 38,
+  "version": 40,
   "weekStart": ""
 }
