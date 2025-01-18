@@ -287,10 +287,4 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 			return float64(numOutputs)
 		},
 	)
-
-	// todo(): add histogram reflecting the distribution of fees in the mempool
-	// todo(): add histogram reflecting the distribution of transaction sizes in the mempool
-	// todo(): add histogram reflecting the distribution of transaction fees per byte in the mempool
-	// todo(): add histogram reflecting the number of inputs per transaction in the mempool
-	// todo(): add histogram reflecting the number of outputs per transaction in the mempool
 }
