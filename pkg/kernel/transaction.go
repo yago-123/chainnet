@@ -204,7 +204,7 @@ func (in *TxInput) UniqueTxoKey() string {
 }
 
 func (tx *TxInput) Size() uint {
-	return uint(len(tx.Txid) + int(unsafe.Sizeof(tx.Vout)) + len(tx.ScriptSig) + len(tx.PubKey))
+	return uint(len(tx.Txid) + int(unsafe.Sizeof(uint(0))) + len(tx.ScriptSig) + len(tx.PubKey))
 }
 
 // NewCoinbaseInput creates a special transaction input called a Coinbase input. This type of input represents
@@ -295,5 +295,5 @@ func (out *TxOutput) String() string {
 }
 
 func (out *TxOutput) Size() uint {
-	return uint(int(unsafe.Sizeof(out.Amount)) + len(out.ScriptPubKey) + len(out.PubKey))
+	return uint(int(unsafe.Sizeof(uint(0))) + len(out.ScriptPubKey) + len(out.PubKey))
 }
