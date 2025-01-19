@@ -731,7 +731,7 @@
           "showLegend": true
         },
         "orientation": "auto",
-        "showValue": "auto",
+        "showValue": "never",
         "stacking": "normal",
         "tooltip": {
           "mode": "multi",
@@ -1001,13 +1001,13 @@
     "list": []
   },
   "time": {
-    "from": "2025-01-17T18:53:57.734Z",
-    "to": "2025-01-17T21:13:11.325Z"
+    "from": "2025-01-18T17:56:19.979Z",
+    "to": "2025-01-18T18:23:02.098Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mempool",
   "uid": "cea9wamj3ad4wf",
-  "version": 41,
+  "version": 42,
   "weekStart": ""
 }
