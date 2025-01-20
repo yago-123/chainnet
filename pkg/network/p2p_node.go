@@ -564,7 +564,7 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
-	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_protocol", "Bandwidth total statistics by protocol",
+	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_total_bytes_by_protocol", "Bandwidth total statistics by protocol",
 		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
 		func(metricVec interface{}) {
 			gaugeVec := metricVec.(*prometheus.GaugeVec)
@@ -578,7 +578,7 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 			}
 		})
 
-	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_protocol", "Bandwidth rate statistics by protocol",
+	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_rate_bytes_by_protocol", "Bandwidth rate statistics by protocol",
 		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
 		func(metricVec interface{}) {
 			gaugeVec := metricVec.(*prometheus.GaugeVec)
@@ -592,7 +592,7 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 			}
 		})
 
-	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_peer", "Bandwidth total statistics by peer",
+	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_total_bytes_by_peer", "Bandwidth total statistics by peer",
 		[]string{monitor.OperationLabel, monitor.PeerLabel},
 		func(metricVec interface{}) {
 			gaugeVec := metricVec.(*prometheus.GaugeVec)
@@ -610,7 +610,7 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 			}()
 		})
 
-	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_peer", "Bandwidth rate statistics by peer",
+	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_rate_bytes_by_peer", "Bandwidth rate statistics by peer",
 		[]string{monitor.OperationLabel, monitor.PeerLabel},
 		func(metricVec interface{}) {
 			gaugeVec := metricVec.(*prometheus.GaugeVec)

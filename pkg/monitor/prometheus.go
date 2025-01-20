@@ -27,6 +27,7 @@ const (
 	OperationLabel = "operation"
 	ProtocolLabel  = "protocol"
 	PeerLabel      = "peer_id"
+	StorageLabel   = "storage"
 )
 
 type PromExporter struct {

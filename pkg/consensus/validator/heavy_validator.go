@@ -86,7 +86,7 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 }
 
 func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
-	atomic.AddUint64(&hv.metrics.headerMetrics.totalAnalyzed, 1)
+	defer atomic.AddUint64(&hv.metrics.headerMetrics.totalAnalyzed, 1)
 
 	validations := []HeaderFunc{
 		hv.lv.ValidateHeader,
