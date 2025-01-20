@@ -135,7 +135,7 @@ func (u *UTXOSet) RegisterMetrics(register *prometheus.Registry) {
 				totalBalance += utxo.Amount()
 			}
 
-			return float64(totalBalance)
+			return kernel.ConvertFromChannoshisToCoins(totalBalance)
 		},
 	)
 }
