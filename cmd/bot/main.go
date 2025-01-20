@@ -489,25 +489,25 @@ func getRandomAccountAddresses(min, max uint, account *hd_wallet.Account) ([][]b
 
 func splitArrayRandomized[T any](array []T, maxLengthGroups int) [][]T {
 	if maxLengthGroups <= 0 {
-		panic("maxLengthGroups must be greater than 0")
+		logger.Fatalf("maxLengthGroups must be greater than 0")
 	}
 
-	// Initialize a new random number generator with a seed based on the current time.
+	// initialize a new random number generator with a seed based on the current time.
 	seed := time.Now().UnixNano()
 	rng := rand.New(rand.NewPCG(uint64(seed), 0))
 
 	var result [][]T
 	for len(array) > 0 {
-		// Determine the size of the next group (random, up to maxLengthGroups)
+		// determine the size of the next group (random, up to maxLengthGroups)
 		groupSize := rng.IntN(maxLengthGroups) + 1
 		if groupSize > len(array) {
 			groupSize = len(array)
 		}
 
-		// Extract the group and append to the result
+		// extract the group and append to the result
 		result = append(result, array[:groupSize])
 
-		// Remove the group from the original array
+		// remove the group from the original array
 		array = array[groupSize:]
 	}
 
