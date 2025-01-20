@@ -19,6 +19,7 @@ miner:
 prometheus:
   enabled: true                           # Enable or disable prometheus metrics
   port: 9091                              # Port exposed for prometheus metrics
+  libp2p-port: 9099
   path: "/metrics"                        # Path for prometheus metrics endpoint
 
 p2p:

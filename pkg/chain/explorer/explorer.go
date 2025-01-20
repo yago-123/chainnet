@@ -15,6 +15,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/storage"
 )
 
+const (
+	RetrieveAllElements = -1
+)
+
 // ChainExplorer is a module that allows to explore the chain, retrieve blocks, headers, etc. It is used to split the
 // chain module from the rest of the modules that need to interact with the chain but don't need to know the internals
 // this helps to avoid circular dependencies and to define clear boundaries. This module relies on the storage module
@@ -252,12 +256,13 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 	return unspentTXs, nil
 }
 
-func (explorer *ChainExplorer) FindUnspentOutputs(address string) ([]*kernel.UTXO, error) {
-	return explorer.findUnspentOutputs(address, iterator.NewReverseBlockIterator(explorer.store))
+func (explorer *ChainExplorer) FindUnspentOutputs(address string, maxRetrievalNum int) ([]*kernel.UTXO, error) {
+	return explorer.findUnspentOutputs(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
-// findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
-func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.BlockIterator) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
+// findUnspentOutputs finds all unspent outputs that can be unlocked with the given address and returns them. It contains
+// a limit of retrievals in order to avoid expensive loops in case of a large chain
+func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.BlockIterator, maxRetrievalNum int) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	unspentTXOs := []*kernel.UTXO{}
 	spentTXOs := make(map[string][]uint)
@@ -270,7 +275,13 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 	// get the blockchain reverted iterator
 	_ = it.Initialize(lastBlock.Hash)
 
+	// iterate through the blocks until we find the unspent transactions
 	for it.HasNext() {
+		// check if the limit number of retrievals have been reached. If the max number is -1, this limit is disabled
+		if maxRetrievalNum != RetrieveAllElements && maxRetrievalNum < len(unspentTXOs) {
+			break
+		}
+
 		// get the next block using the revIterator
 		nextBlock, err = it.GetNextBlock()
 		if err != nil {

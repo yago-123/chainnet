@@ -3,6 +3,7 @@ package utxoset
 import (
 	"fmt"
 	"sync"
+	"unsafe"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/monitor"
@@ -110,9 +111,31 @@ func (u *UTXOSet) OnTxAddition(_ *kernel.Transaction) {
 
 // RegisterMetrics registers the UTXO set metrics to the prometheus registry
 func (u *UTXOSet) RegisterMetrics(register *prometheus.Registry) {
-	monitor.NewMetric(register, monitor.Gauge, "utxo_set_size", "A gauge containing the number of UTXOs in the UTXO set",
+	monitor.NewMetric(register, monitor.Gauge, "utxo_set_num_outputs", "Number of outputs in the UTXO set",
 		func() float64 {
 			return float64(len(u.utxos))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "utxo_set_storage_size", "Size of the UTXO set in bytes",
+		func() float64 {
+			storage := uint(0)
+			for _, utxo := range u.utxos {
+				storage += utxo.Output.Size() + uint(len(utxo.TxID)) + uint(unsafe.Sizeof(uint(0)))
+			}
+
+			return float64(storage)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "utxo_set_output_balance", "A gauge containing the total balance of the UTXO set",
+		func() float64 {
+			totalBalance := uint(0)
+			for _, utxo := range u.utxos {
+				totalBalance += utxo.Amount()
+			}
+
+			return kernel.ConvertFromChannoshisToCoins(totalBalance)
 		},
 	)
 }

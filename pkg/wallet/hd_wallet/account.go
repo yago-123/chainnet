@@ -24,6 +24,10 @@ import (
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 )
 
+const (
+	MaxConcurrentWalletRequests = 5
+)
+
 type Account struct {
 	// derivedPubAccountKey public key derived from the master private key to be used for this account
 	// in other words, level 3 of the HD wallet derivation path
@@ -377,7 +381,7 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	err := util.ProcessConcurrently(
 		ctx,
 		wallets,
-		MaxConcurrentRequests,
+		MaxConcurrentWalletRequests,
 		cancel, // Pass the cancel function to stop other operations on error
 		func(ctx context.Context, w *wallt.Wallet) error {
 			select {
@@ -425,7 +429,7 @@ func (hda *Account) GetBalance() (uint, error) {
 	err := util.ProcessConcurrently(
 		ctx,
 		wallets,
-		MaxConcurrentRequests,
+		MaxConcurrentWalletRequests,
 		cancel, // pass the cancel function to stop other operations on error
 		func(ctx context.Context, w *wallt.Wallet) error {
 			select {

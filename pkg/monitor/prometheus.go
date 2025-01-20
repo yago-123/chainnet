@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"net/http"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/yago-123/chainnet/config"
 )
@@ -19,6 +21,13 @@ const (
 	IdleTimeout      = 10 * time.Second
 
 	PrometheusExporterShutdownTimeout = 10 * time.Second
+)
+
+const (
+	OperationLabel = "operation"
+	ProtocolLabel  = "protocol"
+	PeerLabel      = "peer_id"
+	StorageLabel   = "storage"
 )
 
 type PromExporter struct {
@@ -50,10 +59,18 @@ func NewPrometheusExporter(cfg *config.Config, monitors []Monitor) *PromExporter
 		monitor.RegisterMetrics(registry)
 	}
 
+	// register the metrics for the Go runtime and the current process
+	registry.MustRegister(
+		collectors.NewGoCollector(), // metrics about golang runtime: GC stats, memory usage and other
+		collectors.NewProcessCollector( // metrics about the process: CPU usage, file descriptors and other
+			collectors.ProcessCollectorOpts{},
+		),
+	)
+
 	return &PromExporter{
 		monitors: monitors,
 		r:        r,
-		registry: prometheus.NewRegistry(),
+		registry: registry,
 		logger:   cfg.Logger,
 		cfg:      cfg,
 	}

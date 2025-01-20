@@ -43,10 +43,14 @@ type Storage interface {
 	RetrieveBlockByHash(hash []byte) (*kernel.Block, error)
 	// RetrieveHeaderByHash retrieves the block header that corresponds to the block hash
 	RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error)
+	// Typ returns the type of storage used
+	Typ() string
 	// ID returns the key StorageObserverID used for running Observer code
 	ID() string
 	// OnBlockAddition called when a new block is added to the chain, in the case of storage must be async
 	OnBlockAddition(block *kernel.Block)
+	// OnTxAddition called when a new tx is added to the mempool, in the case of storage must be async
+	OnTxAddition(block *kernel.Transaction)
 	// Close finishes the connection with the DB
 	Close() error
 }
