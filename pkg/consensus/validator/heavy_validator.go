@@ -65,7 +65,7 @@ func NewHeavyValidator(
 }
 
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
-	atomic.AddUint64(&hv.metrics.txMetrics.totalAnalyzed, 1)
+	defer atomic.AddUint64(&hv.metrics.txMetrics.totalAnalyzed, 1)
 
 	validations := []TxFunc{
 		hv.lv.ValidateTxLight,
