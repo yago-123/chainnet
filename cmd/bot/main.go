@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 100
+	MaxNumberConcurrentAccounts = 20
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
-	MaxNumberWalletsPerAccount = 10
+	MaxNumberWalletsPerAccount = 5
 	FoundationAccountIndex     = 0
 
 	// todo(): make this a flag?
@@ -72,7 +72,7 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet.pem"
+	privKeyPath := "wallet-test.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -286,7 +286,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 // account can operate in an isolated way without having to rely on external funds (until the tx fees waste all the
 // funds)
 func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // this is a core func for bot, it's OK to be long here
-	logrus.Infof("Starting funds distribution for account %d", acc.GetAccountID())
+	logrus.Infof("starting funds distribution for account %d", acc.GetAccountID())
 
 	// sleep for a random amount of time before starting the distribution so that we avoid all accounts asking
 	// for UTXOs at the same time
@@ -331,8 +331,8 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // 
 			}
 
 			// create and send the transaction
-			amounts := getRandomAmounts(utxo.Amount(), uint(len(addresses)))
-			if errTx := createAndSendTransaction(acc, addresses, amounts, 0, []*kernel.UTXO{utxo}); errTx != nil {
+			amounts := getRandomAmounts(utxo.Amount(), uint(len(addresses)+1)) // add one for the tx fee
+			if errTx := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], []*kernel.UTXO{utxo}); errTx != nil {
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}
 
