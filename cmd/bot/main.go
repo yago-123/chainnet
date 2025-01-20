@@ -299,6 +299,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // 
 		accUTXOs, err := acc.GetAccountUTXOs()
 		if err != nil {
 			logger.Warnf("error getting UTXOs for account %d: %v", acc.GetAccountID(), err)
+			randomizedSleep(MinTimeBetweenTransactions, MaxTimeBetweenTransactions)
 			continue
 		}
 

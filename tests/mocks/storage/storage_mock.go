@@ -55,12 +55,20 @@ func (ms *MockStorage) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, e
 	return args.Get(0).(*kernel.BlockHeader), args.Error(1)
 }
 
+func (ms *MockStorage) Typ() string {
+	return "mock"
+}
+
 func (ms *MockStorage) ID() string {
 	return ms.Called().String(0)
 }
 
 func (ms *MockStorage) OnBlockAddition(block *kernel.Block) {
 	ms.Called(block)
+}
+
+func (ms *MockStorage) OnTxAddition(tx *kernel.Transaction) {
+	ms.Called(tx)
 }
 
 func (ms *MockStorage) Close() error {

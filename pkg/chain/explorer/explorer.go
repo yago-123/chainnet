@@ -369,13 +369,13 @@ func (explorer *ChainExplorer) FindAmountSpendableOutputs(address string, amount
 	return accumulated, unspentOutputs, nil
 }
 
-func (explorer *ChainExplorer) FindAllTransactions(address string) ([]*kernel.Transaction, error) {
-	return explorer.findAllTransactions(address, iterator.NewReverseBlockIterator(explorer.store))
+func (explorer *ChainExplorer) FindAllTransactions(address string, maxRetrievalNum int) ([]*kernel.Transaction, error) {
+	return explorer.findAllTransactions(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
-func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.BlockIterator) ([]*kernel.Transaction, error) {
+func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.BlockIterator, maxRetrievalNum int) ([]*kernel.Transaction, error) {
 	var nextBlock *kernel.Block
-	var unspentTXs []*kernel.Transaction
+	var txs []*kernel.Transaction
 
 	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
@@ -386,6 +386,11 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 	_ = it.Initialize(lastBlock.Hash)
 
 	for it.HasNext() {
+		// check if the limit number of retrievals have been reached. If the max number is -1, this limit is disabled
+		if maxRetrievalNum != RetrieveAllElements && maxRetrievalNum < len(txs) {
+			break
+		}
+
 		// get the next block using the revIterator
 		nextBlock, err = it.GetNextBlock()
 		if err != nil {
@@ -402,7 +407,7 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 			for _, out := range tx.Vout {
 				// check if the output can be unlocked with the given address
 				if out.CanBeUnlockedWith(address) {
-					unspentTXs = append(unspentTXs, tx)
+					txs = append(txs, tx)
 				}
 			}
 
@@ -414,7 +419,7 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 	}
 
 	// return the list of unspent transactions
-	return unspentTXs, nil
+	return txs, nil
 }
 
 func (explorer *ChainExplorer) FindUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error) {

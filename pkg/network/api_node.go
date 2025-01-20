@@ -115,7 +115,7 @@ func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Reques
 		return
 	}
 
-	txs, err := router.explorer.FindAllTransactions(addr)
+	txs, err := router.explorer.FindAllTransactions(addr, MaxNumberRetrievals)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to retrieve transactions: %s", err.Error()), http.StatusInternalServerError, err)
 		return
