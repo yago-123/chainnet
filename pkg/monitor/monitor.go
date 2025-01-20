@@ -37,17 +37,9 @@ func NewMetricWithLabelsSync(
 	typ MetricType,
 	name, help string,
 	labels []string,
-	executor func(metricVec interface{}),
+	executor func(metricVec *prometheus.GaugeVec),
 ) {
 	switch typ {
-	case Counter:
-		metric := prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: name,
-			Help: help,
-		}, labels)
-		registry.MustRegister(metric)
-		executor(metric)
-
 	case Gauge:
 		metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: name,

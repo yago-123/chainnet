@@ -143,9 +143,7 @@ func (ms *MeteredStorage) Close() error {
 func (ms *MeteredStorage) RegisterMetrics(register *prometheus.Registry) {
 	monitor.NewMetricWithLabelsSync(register, monitor.Gauge, "storage_num_persisted_blocks", "Number of persisted blocks",
 		[]string{monitor.StorageLabel},
-		func(metricVec interface{}) {
-			gaugeVec := metricVec.(*prometheus.GaugeVec)
-
+		func(gaugeVec *prometheus.GaugeVec) {
 			gaugeVec.WithLabelValues(ms.inner.Typ()).Set(float64(atomic.LoadUint64(&ms.persistedBlocks)))
 		},
 	)
