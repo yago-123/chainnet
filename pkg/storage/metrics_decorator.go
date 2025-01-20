@@ -141,6 +141,7 @@ func (ms *MeteredStorage) Close() error {
 }
 
 func (ms *MeteredStorage) RegisterMetrics(register *prometheus.Registry) {
+	// todo() the type of storage should be added to the labels, but for that we must use the prometheus.NewCounterVec
 	monitor.NewMetric(register, monitor.Counter, "storage_num_persisted_blocks", "Number of persisted blocks", func() float64 {
 		return float64(atomic.LoadUint64(&ms.persistedBlocks))
 	})
