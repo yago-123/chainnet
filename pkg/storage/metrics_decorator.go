@@ -141,15 +141,83 @@ func (ms *MeteredStorage) Close() error {
 }
 
 func (ms *MeteredStorage) RegisterMetrics(register *prometheus.Registry) {
+	monitor.NewMetric(register, monitor.Counter, "storage_num_persisted_blocks", "Number of persisted blocks", func() float64 {
+		return float64(atomic.LoadUint64(&ms.persistedBlocks))
+	})
 
-	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "storage_num_persisted_blocks", "Number of persisted blocks",
-		[]string{monitor.StorageLabel},
-		func(metricVec interface{}) {
-			gaugeVec := metricVec.(*prometheus.GaugeVec)
-			for {
-				gaugeVec.WithLabelValues(ms.inner.Typ()).Set(float64(atomic.LoadUint64(&ms.persistedBlocks)))
-				time.Sleep(5 * time.Second)
-			}
-		})
+	monitor.NewMetric(register, monitor.Counter, "storage_num_persisted_headers", "Number of persisted headers", func() float64 {
+		return float64(atomic.LoadUint64(&ms.persistedHeaders))
+	})
 
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_last_block", "Number of retrieved last block", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedLastBlock))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_last_header", "Number of retrieved last header", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedLastHeader))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_last_block_hash", "Number of retrieved last block hash", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedLastBlockHash))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_genesis_block", "Number of retrieved genesis block", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedGenesisBlock))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_genesis_header", "Number of retrieved genesis header", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedGenesisHeader))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_block_by_hash", "Number of retrieved block by hash", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedBlockByHash))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_retrieved_header_by_hash", "Number of retrieved header by hash", func() float64 {
+		return float64(atomic.LoadUint64(&ms.retrievedHeaderByHash))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_num_on_block_addition", "Number of on block addition", func() float64 {
+		return float64(atomic.LoadUint64(&ms.onBlockAddition))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_persisted_blocks_time", "Nanoseconds taken to persist blocks", func() float64 {
+		return float64(atomic.LoadInt64(&ms.persistedBlocksTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_persisted_headers_time", "Nanoseconds taken to persist headers", func() float64 {
+		return float64(atomic.LoadInt64(&ms.persistedHeadersTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_last_block_time", "Nanoseconds taken to retrieve last block", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedLastBlockTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_last_header_time", "Nanoseconds taken to retrieve last header", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedLastHeaderTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_last_block_hash_time", "Nanoseconds taken to retrieve last block hash", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedLastBlockHashTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_genesis_block_time", "Nanoseconds taken to retrieve genesis block", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedGenesisBlockTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_genesis_header_time", "Nanoseconds taken to retrieve genesis header", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedGenesisHeaderTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_block_by_hash_time", "Nanoseconds taken to retrieve block by hash", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedBlockByHashTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_retrieved_header_by_hash_time", "Nanoseconds taken to retrieve header by hash", func() float64 {
+		return float64(atomic.LoadInt64(&ms.retrievedHeaderByHashTime))
+	})
+
+	monitor.NewMetric(register, monitor.Counter, "storage_on_block_addition_time", "Nanoseconds taken to on block addition", func() float64 {
+		return float64(atomic.LoadInt64(&ms.onBlockAdditionTime))
+	})
 }
