@@ -194,8 +194,8 @@ func (m *MemPool) OnTxAddition(_ *kernel.Transaction) {
 func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 	monitor.NewMetric(register, monitor.Gauge, "mempool_num_txs", "Number of transactions in the mempool",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			// m.mu.Lock()
+			// defer m.mu.Unlock()
 
 			return float64(len(m.pairs))
 		},
@@ -203,8 +203,8 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 
 	monitor.NewMetric(register, monitor.Gauge, "mempool_total_fee", "Total fee of the transactions in the mempool",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			//m.mu.Lock()
+			//defer m.mu.Unlock()
 
 			totalFee := uint(0)
 			for _, pair := range m.pairs {
@@ -222,8 +222,8 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 
 	monitor.NewMetric(register, monitor.Gauge, "mempool_inputs_tracked", "Number of inputs being tracked in the mempool",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			//m.mu.Lock()
+			//defer m.mu.Unlock()
 
 			return float64(len(m.inputSet))
 		},
@@ -231,8 +231,8 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 
 	monitor.NewMetric(register, monitor.Gauge, "mempool_txs_balance", "Total balance of the transactions in mempool",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			//m.mu.Lock()
+			//defer m.mu.Unlock()
 
 			totalBalance := uint(0)
 			for _, pair := range m.pairs {
@@ -248,8 +248,8 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 
 	monitor.NewMetric(register, monitor.Gauge, "mempool_storage_size", "Size of the mempool in bytes",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			//m.mu.Lock()
+			//defer m.mu.Unlock()
 
 			size := uint(0)
 			for _, pair := range m.pairs {
@@ -262,8 +262,8 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 
 	monitor.NewMetric(register, monitor.Gauge, "mempool_num_inputs", "Number of inputs in the mempool",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			//m.mu.Lock()
+			//defer m.mu.Unlock()
 
 			numInputs := uint(0)
 			for _, pair := range m.pairs {
@@ -276,8 +276,8 @@ func (m *MemPool) RegisterMetrics(register *prometheus.Registry) {
 
 	monitor.NewMetric(register, monitor.Gauge, "mempool_num_outputs", "Number of outputs in the mempool",
 		func() float64 {
-			m.mu.Lock()
-			defer m.mu.Unlock()
+			//m.mu.Lock()
+			//defer m.mu.Unlock()
 
 			numOutputs := uint(0)
 			for _, pair := range m.pairs {
