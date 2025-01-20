@@ -30,26 +30,6 @@ func NewMetric(registry *prometheus.Registry, typ MetricType, name, help string,
 	}
 }
 
-// NewMetricWithLabelsSync registers a new metric with labels and an executor function that must be run synchronously
-// like for example counters that are precalculated and don't require any async calculation
-func NewMetricWithLabelsSync(
-	registry *prometheus.Registry,
-	typ MetricType,
-	name, help string,
-	labels []string,
-	executor func(metricVec *prometheus.GaugeVec),
-) {
-	switch typ {
-	case Gauge:
-		metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: name,
-			Help: help,
-		}, labels)
-		registry.MustRegister(metric)
-		executor(metric)
-	}
-}
-
 // NewMetricWithLabelsAsync registers a new metric with an executor function that must be run asynchronously. This
 // is required for modules that contain metrics that are hard to calculate synchronously. Only support for Gauge
 func NewMetricWithLabelsAsync(
