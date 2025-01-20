@@ -509,9 +509,9 @@
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "linear",
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -1001,13 +1001,13 @@
     "list": []
   },
   "time": {
-    "from": "2025-01-18T17:56:19.979Z",
-    "to": "2025-01-18T18:23:02.098Z"
+    "from": "now-15m",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mempool",
   "uid": "cea9wamj3ad4wf",
-  "version": 42,
+  "version": 43,
   "weekStart": ""
 }
