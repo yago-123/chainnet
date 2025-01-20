@@ -118,7 +118,7 @@ func main() {
 	subjectChain.Register(network)
 
 	// add monitoring via Prometheus
-	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet, network}
+	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet, network, heavyValidator}
 	prometheusExporter := monitor.NewPrometheusExporter(cfg, monitors)
 
 	if cfg.Prometheus.Enabled {
