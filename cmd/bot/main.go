@@ -47,7 +47,7 @@ const (
 	MinTimeBetweenTransactions = 30 * time.Second
 	MaxTimeBetweenTransactions = 120 * time.Second
 
-	TimeoutSendTransaction = 5 * time.Second
+	TimeoutSendTransaction = 10 * time.Second
 	PeriodMetadataBackup   = 1 * time.Minute
 )
 
