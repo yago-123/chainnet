@@ -49,6 +49,12 @@ const (
 
 	TimeoutSendTransaction = 10 * time.Second
 	PeriodMetadataBackup   = 1 * time.Minute
+
+	// MaxInputGroupsForCreatingTx is the maximum number of input groups that can be used for creating a transaction
+	MaxInputGroupsForCreatingTx = 4
+	// MaxOutputGroupsForCreatingTx is the maximum number of output groups that can be used for creating a transaction
+	// must always be smaller than MaxNumberWalletsPerAccount
+	MaxOutputGroupsForCreatingTx = 4
 )
 
 var (
@@ -81,6 +87,10 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 	metadata, err := hd_wallet.LoadMetadata(MetadataPath)
 	if err != nil {
 		logger.Warnf("error loading metadata: %v", err)
+	}
+
+	if MaxOutputGroupsForCreatingTx > MaxNumberWalletsPerAccount {
+		logger.Fatalf("MaxOutputGroupsForCreatingTx must be smaller or equal than MaxNumberWalletsPerAccount")
 	}
 
 	if metadata == nil {
@@ -300,11 +310,11 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // 
 			continue
 		}
 
-		for _, utxo := range accUTXOs {
+		for _, utxos := range splitArrayRandomized(accUTXOs, MaxInputGroupsForCreatingTx) {
 			addresses := [][]byte{}
 
 			// if the utxo is small than the minimum transaction balance, send it to a single address
-			if utxo.Amount() <= MinimumTxBalance {
+			if util.GetBalanceUTXOs(utxos) <= MinimumTxBalance {
 				addr, errTmp := getRandomAccountAddress(acc)
 				if errTmp != nil {
 					logger.Warnf("error getting random account address: %v", errTmp)
@@ -315,8 +325,8 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // 
 			}
 
 			// otherwise, split the UTXO in a number of random addresses and amounts
-			if utxo.Amount() > MinimumTxBalance {
-				addresses, err = getRandomAccountAddresses(1, MaxNumberWalletsPerAccount, acc)
+			if util.GetBalanceUTXOs(utxos) > MinimumTxBalance {
+				addresses, err = getRandomAccountAddresses(1, MaxOutputGroupsForCreatingTx, acc)
 				if err != nil {
 					logger.Warnf("error getting random account addresses: %v", err)
 					continue
@@ -324,8 +334,8 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // 
 			}
 
 			// create and send the transaction
-			amounts := getRandomAmounts(utxo.Amount(), uint(len(addresses)+1)) // add one for the tx fee
-			if errTx := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], []*kernel.UTXO{utxo}); errTx != nil {
+			amounts := getRandomAmounts(util.GetBalanceUTXOs(utxos), uint(len(addresses)+1)) // add one for the tx fee
+			if errTx := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos); errTx != nil {
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}
 
@@ -475,4 +485,31 @@ func getRandomAccountAddresses(min, max uint, account *hd_wallet.Account) ([][]b
 	}
 
 	return addresses, nil
+}
+
+func splitArrayRandomized[T any](array []T, maxLengthGroups int) [][]T {
+	if maxLengthGroups <= 0 {
+		panic("maxLengthGroups must be greater than 0")
+	}
+
+	// Initialize a new random number generator with a seed based on the current time.
+	seed := time.Now().UnixNano()
+	rng := rand.New(rand.NewPCG(uint64(seed), 0))
+
+	var result [][]T
+	for len(array) > 0 {
+		// Determine the size of the next group (random, up to maxLengthGroups)
+		groupSize := rng.IntN(maxLengthGroups) + 1
+		if groupSize > len(array) {
+			groupSize = len(array)
+		}
+
+		// Extract the group and append to the result
+		result = append(result, array[:groupSize])
+
+		// Remove the group from the original array
+		array = array[groupSize:]
+	}
+
+	return result
 }
