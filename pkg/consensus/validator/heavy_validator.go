@@ -170,7 +170,7 @@ func (hv *HValidator) validateOwnershipAndBalanceOfInputs(tx *kernel.Transaction
 	for _, vin := range tx.Vin {
 		// fetch the unspent outputs for the input's public key
 		// todo(): would make sense to add a check via UTXO set?
-		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey)
+		utxos, _ := hv.explorer.FindUnspentOutputs(vin.PubKey, explorer.RetrieveAllElements)
 		for _, utxo := range utxos {
 			// if there is match, check that the signature is valid
 			if utxo.EqualInput(vin) {

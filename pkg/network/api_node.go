@@ -32,6 +32,10 @@ type HTTPRouter struct {
 	cfg    *config.Config
 }
 
+const (
+	MaxNumberRetrievals = 100
+)
+
 func NewHTTPRouter(
 	cfg *config.Config,
 	encoder encoding.Encoding,
@@ -136,7 +140,7 @@ func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps h
 		return
 	}
 
-	utxos, err := router.explorer.FindUnspentOutputs(addr)
+	utxos, err := router.explorer.FindUnspentOutputs(addr, MaxNumberRetrievals)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to retrieve UTXOs: %s", err.Error()), http.StatusInternalServerError, err)
 		return
