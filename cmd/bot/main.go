@@ -148,13 +148,6 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 		}
 	}
 
-	// calculate the total balance available
-	totalBalance, err := hdWallet.GetBalance()
-	if err != nil {
-		logger.Fatalf("error getting wallet balance: %v", err)
-	}
-	logger.Infof("HD wallet contains %.5f coins", kernel.ConvertFromChannoshisToCoins(totalBalance))
-
 	// distribute funds among accounts regardless of the number of accounts. This is done so that we can refill
 	// the bots by transfering funds to the foundation account and restarting the bot
 	if errDistrFund := DistributeFundsAmongAccounts(hdWallet); errDistrFund != nil {
@@ -226,7 +219,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		return fmt.Errorf("error getting foundation account balance: %w", err)
 	}
 
-	logger.Infof("foundation account contains %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
+	logger.Infof("foundation account contains approx. %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
 
 	if foundationAccountBalance < MinimumTxBalance {
 		logger.Warnf("foundation account balance is below the minimum transaction balance, skipping distribution")
