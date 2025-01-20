@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 20
+	MaxNumberConcurrentAccounts = 15
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5
@@ -44,8 +44,8 @@ const (
 	MaxTimeStartupFundDistribution = 500 * time.Second
 
 	// limits for time between transactions, apply at account level
-	MinTimeBetweenTransactions = 30 * time.Second
-	MaxTimeBetweenTransactions = 120 * time.Second
+	MinTimeBetweenTransactions = 60 * time.Second
+	MaxTimeBetweenTransactions = 200 * time.Second
 
 	TimeoutSendTransaction = 10 * time.Second
 	PeriodMetadataBackup   = 1 * time.Minute
@@ -78,7 +78,7 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet-test.pem"
+	privKeyPath := "wallet.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
