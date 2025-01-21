@@ -38,7 +38,7 @@ var (
 	)
 )
 
-func main() {
+func main() { //nolint:funlen // main function is expected to have a lot of lines
 	var block *kernel.Block
 
 	// execute the root command

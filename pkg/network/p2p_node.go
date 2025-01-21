@@ -530,7 +530,7 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 	}
 }
 
-func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
+func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) { //nolint:gocognit // this function is not complex
 	monitor.NewMetric(register, monitor.Counter, "bandwidth_total_incoming_bytes", "Total incoming bandwidth in bytes",
 		func() float64 {
 			return float64(n.bandwithCounter.GetBandwidthTotals().TotalIn)
