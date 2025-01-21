@@ -12,8 +12,8 @@ seed-nodes:                               # List of seed nodes
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
   pub-key-reward:                         # Public wallet key encoded in base58, used for receiving mining rewards
-    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTFZPkwFk6Y3yxTALWhYwRYPnc82Eb6DkamRfHf3W4nd5Jm8TnaQSL7ApSn9vuKdhkDX8M1s6JQdB2M9g4ySpZG1c9"
-  mining-interval: "5m"                  # Interval between block creation
+    "aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTK2r1ViPYeJCMAcSHrt4AEkBouG5vmbAjKMGnZ1RyjP3bPTUhJrRXfEnD3CEhB7Rumao463ayeiU2jbRhjsygwqFp"
+  mining-interval: "10m"                  # Interval between block creation
   adjustment-interval: 6                  # Number of blocks before adjusting the difficulty
 
 chain:

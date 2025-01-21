@@ -17,7 +17,7 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 3,
   "links": [],
   "panels": [
@@ -166,10 +166,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -1001,13 +997,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mempool",
   "uid": "cea9wamj3ad4wf",
-  "version": 43,
+  "version": 45,
   "weekStart": ""
 }

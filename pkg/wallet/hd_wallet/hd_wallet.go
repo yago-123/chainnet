@@ -116,7 +116,7 @@ func NewHDWalletWithMetadata(
 	}
 
 	// create accounts with the corresponding metadata
-	for i := 0; i < len(metadata.MetadataAccounts); i++ {
+	for i := range len(metadata.MetadataAccounts) {
 		accountMetadata := metadata.MetadataAccounts[i]
 		account, errAcc := hdWallet.createAccount(uint32(i), uint32(accountMetadata.NumExternalWallets), uint32(accountMetadata.NumInternalWallets)) //nolint:gosec // possibility of integer overflow is OK here
 		if errAcc != nil {

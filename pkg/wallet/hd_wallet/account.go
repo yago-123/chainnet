@@ -26,6 +26,7 @@ import (
 
 const (
 	MaxConcurrentWalletRequests = 5
+	SizeOfSyncErrChannel        = 2
 )
 
 type Account struct {
@@ -94,14 +95,14 @@ func NewHDAccount(
 		accountID:               accountNum,
 	}
 
-	for i := uint32(0); i < externalWalletsNum; i++ {
+	for i := range externalWalletsNum {
 		_, errWall := acc.getNewWallet(ExternalChangeType, &acc.externalWallets)
 		if errWall != nil {
 			return nil, fmt.Errorf("error creating external wallet %d: %w", i, errWall)
 		}
 	}
 
-	for i := uint32(0); i < internalWalletsNum; i++ {
+	for i := range internalWalletsNum {
 		_, errWall := acc.getNewWallet(InternalChangeType, &acc.internalWallets)
 		if errWall != nil {
 			return nil, fmt.Errorf("error creating internal wallet %d: %w", i, errWall)
@@ -123,7 +124,7 @@ func (hda *Account) Sync() (uint32, uint32, error) { //nolint:gocognit // it's O
 	defer hda.mu.Unlock()
 
 	var wg sync.WaitGroup
-	errCh := make(chan error, 2)
+	errCh := make(chan error, SizeOfSyncErrChannel)
 
 	// helper function to sync wallets
 	syncWallets := func(changeType changeType) ([]*wallt.Wallet, error) {

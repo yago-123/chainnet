@@ -17,7 +17,7 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 8,
   "links": [],
   "panels": [
@@ -72,7 +72,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -163,7 +164,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -270,7 +272,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -345,6 +348,6 @@
   "timezone": "browser",
   "title": "UTXO Set",
   "uid": "feaf2uurv8t1cc",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }

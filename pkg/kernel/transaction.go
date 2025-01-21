@@ -198,16 +198,6 @@ type TxInput struct {
 	PubKey string
 }
 
-// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be the STXO or
-// Spent Transaction Output. Method used for mapping UTXOs and inputs via this unique key
-func (in *TxInput) UniqueTxoKey() string {
-	return fmt.Sprintf("%x-%d", in.Txid, in.Vout)
-}
-
-func (tx *TxInput) Size() uint {
-	return uint(len(tx.Txid) + int(unsafe.Sizeof(uint(0))) + len(tx.ScriptSig) + len(tx.PubKey))
-}
-
 // NewCoinbaseInput creates a special transaction input called a Coinbase input. This type of input represents
 // the source of new coins created during mining (i.e., it does not come from previous transactions). To avoid
 // potential hash collisions (where identical transactions could produce the same hash), some randomness is
@@ -237,6 +227,16 @@ func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
 // UnlockWith solves the challenge presented by the output in order to unlock the funds
 func (in *TxInput) UnlockWith(scriptSig string) {
 	in.ScriptSig = scriptSig
+}
+
+// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be the STXO or
+// Spent Transaction Output. Method used for mapping UTXOs and inputs via this unique key
+func (in *TxInput) UniqueTxoKey() string {
+	return fmt.Sprintf("%x-%d", in.Txid, in.Vout)
+}
+
+func (in *TxInput) Size() uint {
+	return uint(len(in.Txid) + int(unsafe.Sizeof(uint(0))) + len(in.ScriptSig) + len(in.PubKey))
 }
 
 // EqualInput checks if the input is the same as the given input
