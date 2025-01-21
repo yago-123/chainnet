@@ -162,7 +162,7 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 	}
 
 	// distribute funds between wallets for each account (isolated)
-	for i := 0; i < MaxNumberConcurrentAccounts; i++ {
+	for i := range MaxNumberConcurrentAccounts {
 		// skip the foundation account
 		if i == FoundationAccountIndex {
 			continue
