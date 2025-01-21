@@ -282,19 +282,9 @@ func NewNodeP2P(
 
 	// add identity if the keys exists
 	if cfg.P2P.IdentityPath != "" {
-		privKeyBytes, errKey := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(cfg.P2P.IdentityPath)
+		p2pPrivKey, errKey := loadIdentityKeyLibP2P(cfg.P2P.IdentityPath)
 		if errKey != nil {
-			return nil, fmt.Errorf("error reading private key: %w", errKey)
-		}
-
-		priv, errKey := util_crypto.ConvertDERBytesToECDSAPriv(privKeyBytes)
-		if errKey != nil {
-			return nil, fmt.Errorf("error converting private key: %w", errKey)
-		}
-
-		p2pPrivKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
-		if errKey != nil {
-			return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
+			return nil, fmt.Errorf("failed to load identity key: %w", errKey)
 		}
 
 		// add peer identity to options
@@ -565,10 +555,10 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 		},
 	)
 
-	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_total_bytes_by_protocol", "Bandwidth total statistics by protocol",
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_protocol", "Bandwidth total statistics by protocol",
 		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
 		func(metricVec interface{}) {
-			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
 			for {
 				stats := n.bandwithCounter.GetBandwidthByProtocol()
 				for protocol, stat := range stats {
@@ -579,10 +569,10 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 			}
 		})
 
-	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_rate_bytes_by_protocol", "Bandwidth rate statistics by protocol",
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_protocol", "Bandwidth rate statistics by protocol",
 		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
 		func(metricVec interface{}) {
-			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
 			for {
 				stats := n.bandwithCounter.GetBandwidthByProtocol()
 				for protocol, stat := range stats {
@@ -593,10 +583,10 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 			}
 		})
 
-	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_total_bytes_by_peer", "Bandwidth total statistics by peer",
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_peer", "Bandwidth total statistics by peer",
 		[]string{monitor.OperationLabel, monitor.PeerLabel},
 		func(metricVec interface{}) {
-			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
 			go func() {
 				for {
 					stats := n.bandwithCounter.GetBandwidthByPeer()
@@ -610,10 +600,10 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 			}()
 		})
 
-	monitor.NewMetricWithLabelsAsync(register, monitor.Gauge, "bandwidth_rate_bytes_by_peer", "Bandwidth rate statistics by peer",
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_peer", "Bandwidth rate statistics by peer",
 		[]string{monitor.OperationLabel, monitor.PeerLabel},
 		func(metricVec interface{}) {
-			gaugeVec := metricVec.(*prometheus.GaugeVec)
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
 			go func() {
 				for {
 					stats := n.bandwithCounter.GetBandwidthByPeer()
@@ -626,4 +616,23 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 				}
 			}()
 		})
+}
+
+func loadIdentityKeyLibP2P(path string) (p2pCrypto.PrivKey, error) {
+	privKeyBytes, errKey := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(path)
+	if errKey != nil {
+		return nil, fmt.Errorf("error reading private key: %w", errKey)
+	}
+
+	priv, errKey := util_crypto.ConvertDERBytesToECDSAPriv(privKeyBytes)
+	if errKey != nil {
+		return nil, fmt.Errorf("error converting private key: %w", errKey)
+	}
+
+	p2pPrivKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
+	if errKey != nil {
+		return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
+	}
+
+	return p2pPrivKey, nil
 }
