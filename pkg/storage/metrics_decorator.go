@@ -46,73 +46,64 @@ func NewMeteredStorage(inner Storage) *MeteredStorage {
 }
 
 func (ms *MeteredStorage) PersistBlock(block kernel.Block) error {
-	atomic.AddUint64(&ms.persistedBlocks, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.persistedBlocksTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.persistedBlocks, &ms.persistedBlocksTime, startTime)
 
 	return ms.inner.PersistBlock(block)
 }
 
 func (ms *MeteredStorage) PersistHeader(blockHash []byte, blockHeader kernel.BlockHeader) error {
-	atomic.AddUint64(&ms.persistedHeaders, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.persistedHeadersTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.persistedHeaders, &ms.persistedHeadersTime, startTime)
 
 	return ms.inner.PersistHeader(blockHash, blockHeader)
 }
 
 func (ms *MeteredStorage) GetLastBlock() (*kernel.Block, error) {
-	atomic.AddUint64(&ms.retrievedLastBlock, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedLastBlockTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedLastBlock, &ms.retrievedLastBlockTime, startTime)
 
 	return ms.inner.GetLastBlock()
 }
 
 func (ms *MeteredStorage) GetLastHeader() (*kernel.BlockHeader, error) {
-	atomic.AddUint64(&ms.retrievedLastHeader, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedLastHeaderTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedLastHeader, &ms.retrievedLastHeaderTime, startTime)
 
 	return ms.inner.GetLastHeader()
 }
 
 func (ms *MeteredStorage) GetLastBlockHash() ([]byte, error) {
-	atomic.AddUint64(&ms.retrievedLastBlockHash, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedLastBlockHashTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedLastBlockHash, &ms.retrievedLastBlockHashTime, startTime)
 
 	return ms.inner.GetLastBlockHash()
 }
 
 func (ms *MeteredStorage) GetGenesisBlock() (*kernel.Block, error) {
-	atomic.AddUint64(&ms.retrievedGenesisBlock, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedGenesisBlockTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedGenesisBlock, &ms.retrievedGenesisBlockTime, startTime)
 
 	return ms.inner.GetGenesisBlock()
 }
 
 func (ms *MeteredStorage) GetGenesisHeader() (*kernel.BlockHeader, error) {
-	atomic.AddUint64(&ms.retrievedGenesisHeader, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedGenesisHeaderTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedGenesisHeader, &ms.retrievedGenesisHeaderTime, startTime)
 
 	return ms.inner.GetGenesisHeader()
 }
 
 func (ms *MeteredStorage) RetrieveBlockByHash(hash []byte) (*kernel.Block, error) {
-	atomic.AddUint64(&ms.retrievedBlockByHash, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedBlockByHashTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedBlockByHash, &ms.retrievedBlockByHashTime, startTime)
 
 	return ms.inner.RetrieveBlockByHash(hash)
 }
 
 func (ms *MeteredStorage) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, error) {
-	atomic.AddUint64(&ms.retrievedHeaderByHash, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.retrievedHeaderByHashTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.retrievedHeaderByHash, &ms.retrievedHeaderByHashTime, startTime)
 
 	return ms.inner.RetrieveHeaderByHash(hash)
 }
@@ -126,9 +117,8 @@ func (ms *MeteredStorage) ID() string {
 }
 
 func (ms *MeteredStorage) OnBlockAddition(block *kernel.Block) {
-	atomic.AddUint64(&ms.onBlockAddition, 1)
 	startTime := time.Now()
-	defer atomic.AddInt64(&ms.onBlockAdditionTime, time.Since(startTime).Nanoseconds())
+	defer recordTimeAsync(&ms.onBlockAddition, &ms.onBlockAdditionTime, startTime)
 
 	ms.inner.OnBlockAddition(block)
 }
@@ -222,4 +212,9 @@ func (ms *MeteredStorage) RegisterMetrics(register *prometheus.Registry) {
 	monitor.NewMetric(register, monitor.Counter, "storage_on_block_addition_time", "Nanoseconds taken to on block addition", func() float64 {
 		return float64(atomic.LoadInt64(&ms.onBlockAdditionTime))
 	})
+}
+
+func recordTimeAsync(counter *uint64, timeCounter *int64, startTime time.Time) {
+	atomic.AddUint64(counter, 1)
+	atomic.AddInt64(timeCounter, time.Since(startTime).Nanoseconds())
 }
