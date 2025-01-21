@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yago-123/chainnet/pkg/common"
 	"sort"
+
+	"github.com/yago-123/chainnet/pkg/common"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 

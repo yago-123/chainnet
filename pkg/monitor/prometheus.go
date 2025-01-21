@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/collectors"
 	"net/http"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/collectors"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 

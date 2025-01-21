@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"testing"
 
+	"github.com/yago-123/chainnet/pkg/common"
+
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
 	"github.com/yago-123/chainnet/pkg/utxoset"
@@ -170,28 +172,28 @@ func TestMiner_createCoinbaseTransaction(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
 	assert.NotEmpty(t, coinbase.ID)
-	assert.Equal(t, uint(InitialCoinbaseReward), coinbase.Vout[0].Amount)
+	assert.Equal(t, uint(common.InitialCoinbaseReward), coinbase.Vout[0].Amount)
 
 	coinbase, err = miner.createCoinbaseTransaction(1, 1)
 	require.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 2)
 	assert.NotEmpty(t, coinbase.ID)
-	assert.Equal(t, uint(InitialCoinbaseReward), coinbase.Vout[0].Amount)
+	assert.Equal(t, uint(common.InitialCoinbaseReward), coinbase.Vout[0].Amount)
 	assert.Equal(t, uint(1), coinbase.Vout[1].Amount)
 
-	coinbase, err = miner.createCoinbaseTransaction(0, HalvingInterval)
+	coinbase, err = miner.createCoinbaseTransaction(0, common.HalvingInterval)
 	require.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
 	assert.NotEmpty(t, coinbase.ID)
-	assert.Equal(t, uint(InitialCoinbaseReward/2), coinbase.Vout[0].Amount)
+	assert.Equal(t, uint(common.InitialCoinbaseReward/2), coinbase.Vout[0].Amount)
 
-	coinbase, err = miner.createCoinbaseTransaction(0, HalvingInterval*2)
+	coinbase, err = miner.createCoinbaseTransaction(0, common.HalvingInterval*2)
 	require.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
 	assert.NotEmpty(t, coinbase.ID)
-	assert.Equal(t, uint(InitialCoinbaseReward/4), coinbase.Vout[0].Amount)
+	assert.Equal(t, uint(common.InitialCoinbaseReward/4), coinbase.Vout[0].Amount)
 
-	coinbase, err = miner.createCoinbaseTransaction(0, HalvingInterval*64)
+	coinbase, err = miner.createCoinbaseTransaction(0, common.HalvingInterval*64)
 	require.NoError(t, err)
 	assert.Len(t, coinbase.Vout, 1)
 	assert.NotEmpty(t, coinbase.ID)
