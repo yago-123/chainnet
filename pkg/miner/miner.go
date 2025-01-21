@@ -3,8 +3,9 @@ package miner
 import (
 	"context"
 	"fmt"
-	"github.com/yago-123/chainnet/pkg/common"
 	"time"
+
+	"github.com/yago-123/chainnet/pkg/common"
 
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"

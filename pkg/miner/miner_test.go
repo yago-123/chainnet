@@ -3,8 +3,9 @@ package miner //nolint:testpackage // don't create separate package for tests
 import (
 	"context"
 	"crypto/sha256"
-	"github.com/yago-123/chainnet/pkg/common"
 	"testing"
+
+	"github.com/yago-123/chainnet/pkg/common"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 

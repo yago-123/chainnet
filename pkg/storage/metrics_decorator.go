@@ -1,11 +1,12 @@
 package storage
 
 import (
+	"sync/atomic"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/monitor"
-	"sync/atomic"
-	"time"
 )
 
 type metrics struct {
