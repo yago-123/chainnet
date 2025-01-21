@@ -285,7 +285,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 // DistributeFundsBetweenWallets distributes the funds between the wallets of an account. This is done so that the
 // account can operate in an isolated way without having to rely on external funds (until the tx fees waste all the
 // funds)
-func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,gocognit // this is a core func for bot, it's OK to be long here
+func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,gocognit,nolintlint // this is a core func for bot, it's OK to be long here
 	logrus.Infof("starting funds distribution for account %d", acc.GetAccountID())
 
 	// sleep for a random amount of time before starting the distribution so that we avoid all accounts asking
@@ -472,7 +472,7 @@ func getRandomAccountAddresses(min, max uint, account *hd_wallet.Account) ([][]b
 
 	numAddresses := rand.UintN(max-min) + min //nolint:gosec // no need for secure random here
 
-	for i := uint(0); i < numAddresses; i++ {
+	for range numAddresses {
 		address, errAddress := getRandomAccountAddress(account)
 		if errAddress != nil {
 			return [][]byte{}, fmt.Errorf("error getting random account address: %w", errAddress)
