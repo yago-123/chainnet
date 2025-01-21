@@ -467,10 +467,10 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 }
 
 // getRandomAccountAddresses retrieve a random number of addresses for an account between a minimum and maximum
-func getRandomAccountAddresses(min, max uint, account *hd_wallet.Account) ([][]byte, error) {
+func getRandomAccountAddresses(minRetrieve, maxRetrieve uint, account *hd_wallet.Account) ([][]byte, error) {
 	var addresses [][]byte
 
-	numAddresses := rand.UintN(max-min) + min //nolint:gosec // no need for secure random here
+	numAddresses := rand.UintN(maxRetrieve-minRetrieve) + minRetrieve //nolint:gosec // no need for secure random here
 
 	for range numAddresses {
 		address, errAddress := getRandomAccountAddress(account)
