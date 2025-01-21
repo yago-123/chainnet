@@ -38,7 +38,7 @@ var (
 	)
 )
 
-func main() {
+func main() { //nolint:funlen // it's OK to be long here
 	var block *kernel.Block
 
 	// execute the root command

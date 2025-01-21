@@ -603,7 +603,6 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 					for peerID, stat := range stats {
 						gaugeVec.WithLabelValues("in", peerID.String()).Set(float64(stat.TotalIn))
 						gaugeVec.WithLabelValues("out", peerID.String()).Set(float64(stat.TotalOut))
-
 					}
 
 					time.Sleep(n.cfg.Prometheus.UpdateInterval)
@@ -621,7 +620,6 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) {
 					for peerID, stat := range stats {
 						gaugeVec.WithLabelValues("in", peerID.String()).Set(float64(stat.RateIn))
 						gaugeVec.WithLabelValues("out", peerID.String()).Set(float64(stat.RateOut))
-
 					}
 
 					time.Sleep(n.cfg.Prometheus.UpdateInterval)
