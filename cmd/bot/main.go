@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 15
+	MaxNumberConcurrentAccounts = 30
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5
@@ -71,14 +71,14 @@ var (
 var logger = logrus.New()
 var cfg = config.NewConfig()
 
-func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be long here
+func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it's OK to be long here
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 	logger.SetLevel(logrus.DebugLevel)
 
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet-test.pem"
+	privKeyPath := "wallet.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
