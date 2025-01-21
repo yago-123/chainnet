@@ -52,8 +52,11 @@ func main() {
 		cfg.Logger.Fatalf("error creating bolt db: %s", err)
 	}
 
+	// decorator that wraps storage in order to provide metrics
+	meteredBoltdb := storage.NewMeteredStorage(boltdb)
+
 	// create explorer instance
-	explorer := expl.NewChainExplorer(boltdb, hash.GetHasher(consensusHasherType))
+	explorer := expl.NewChainExplorer(meteredBoltdb, hash.GetHasher(consensusHasherType))
 
 	// create mempool instance
 	mempool := mempool.NewMemPool(cfg.Chain.MaxTxsMempool)
@@ -76,7 +79,7 @@ func main() {
 	// create new chain
 	chain, err := blockchain.NewBlockchain(
 		cfg,
-		boltdb,
+		meteredBoltdb,
 		mempool,
 		utxoSet,
 		hash.GetHasher(consensusHasherType),
@@ -92,10 +95,11 @@ func main() {
 	netSubject.Register(chain)
 
 	// register chain observers
-	subjectChain.Register(boltdb)
+	subjectChain.Register(meteredBoltdb)
 	subjectChain.Register(mempool)
 	subjectChain.Register(utxoSet)
 
+	// the chain network is an special case regarding prometheus, see why inside the network module
 	network, err := chain.InitNetwork(netSubject)
 	if err != nil {
 		cfg.Logger.Fatalf("error initializing network: %s", err)
@@ -105,7 +109,7 @@ func main() {
 	subjectChain.Register(network)
 
 	// add monitoring via Prometheus
-	monitors := []monitor.Monitor{chain, boltdb, mempool, utxoSet}
+	monitors := []monitor.Monitor{chain, meteredBoltdb, mempool, utxoSet, network, heavyValidator}
 	prometheusExporter := monitor.NewPrometheusExporter(cfg, monitors)
 
 	if cfg.Prometheus.Enabled {

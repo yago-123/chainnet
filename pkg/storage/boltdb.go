@@ -6,8 +6,6 @@ import (
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 
@@ -312,6 +310,10 @@ func (bolt *BoltDB) RetrieveHeaderByHash(hash []byte) (*kernel.BlockHeader, erro
 	return bolt.encoding.DeserializeHeader(headerBytes)
 }
 
+func (bolt *BoltDB) Typ() string {
+	return "BoltDB"
+}
+
 func (bolt *BoltDB) ID() string {
 	return StorageObserverID
 }
@@ -335,10 +337,6 @@ func (bolt *BoltDB) OnTxAddition(_ *kernel.Transaction) {
 
 func (bolt *BoltDB) Close() error {
 	return bolt.db.Close()
-}
-
-func (bolt *BoltDB) RegisterMetrics(_ *prometheus.Registry) {
-	// todo(): add metrics related to number of requests, response times, etc
 }
 
 func bucketExists(bucketName string, tx *boltdb.Tx) (bool, *boltdb.Bucket) {

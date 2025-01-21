@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 100
+	MaxNumberConcurrentAccounts = 20
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
-	MaxNumberWalletsPerAccount = 10
+	MaxNumberWalletsPerAccount = 5
 	FoundationAccountIndex     = 0
 
 	// todo(): make this a flag?
@@ -72,7 +72,7 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet.pem"
+	privKeyPath := "wallet-test.pem"
 	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
@@ -162,7 +162,7 @@ func main() { //nolint:funlen,gocognit // this is a main function, it's OK to be
 	}
 
 	// distribute funds between wallets for each account (isolated)
-	for i := 0; i < MaxNumberConcurrentAccounts; i++ {
+	for i := range MaxNumberConcurrentAccounts {
 		// skip the foundation account
 		if i == FoundationAccountIndex {
 			continue
@@ -246,7 +246,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 
 		// if the limit have been reached, pick an existing random wallet
 		if account.GetExternalWalletIndex() >= MaxNumberWalletsPerAccount {
-			wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
+			wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount)) //nolint:gosec // no need for secure random here
 			if err != nil {
 				return fmt.Errorf("error getting external wallet: %w", err)
 			}
@@ -285,8 +285,8 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 // DistributeFundsBetweenWallets distributes the funds between the wallets of an account. This is done so that the
 // account can operate in an isolated way without having to rely on external funds (until the tx fees waste all the
 // funds)
-func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // this is a core func for bot, it's OK to be long here
-	logrus.Infof("Starting funds distribution for account %d", acc.GetAccountID())
+func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,gocognit,nolintlint // this is a core func for bot, it's OK to be long here
+	logrus.Infof("starting funds distribution for account %d", acc.GetAccountID())
 
 	// sleep for a random amount of time before starting the distribution so that we avoid all accounts asking
 	// for UTXOs at the same time
@@ -331,8 +331,8 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen // 
 			}
 
 			// create and send the transaction
-			amounts := getRandomAmounts(utxo.Amount(), uint(len(addresses)))
-			if errTx := createAndSendTransaction(acc, addresses, amounts, 0, []*kernel.UTXO{utxo}); errTx != nil {
+			amounts := getRandomAmounts(utxo.Amount(), uint(len(addresses)+1)) // add one for the tx fee
+			if errTx := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], []*kernel.UTXO{utxo}); errTx != nil {
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}
 
@@ -360,7 +360,7 @@ func getRandomAmounts(totalBalance, numAddresses uint) []uint {
 	// generate N-1 random points in the range [0, totalBalance]
 	randomPoints := make([]uint, numAddresses-1)
 	for i := range randomPoints {
-		randomPoints[i] = rand.UintN(totalBalance + 1)
+		randomPoints[i] = rand.UintN(totalBalance + 1) //nolint:gosec // no need for secure random here
 	}
 
 	// sort the random points to create ranges
@@ -386,7 +386,7 @@ func randomizedSleep(minDuration, maxDuration time.Duration) {
 
 	durationRange := maxDuration - minDuration
 	// generate a random duration within the range
-	randomDuration := minDuration + rand.N(durationRange)
+	randomDuration := minDuration + rand.N(durationRange) //nolint:gosec // no need for secure random here
 	time.Sleep(randomDuration)
 }
 
@@ -396,7 +396,7 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 
 	// retrieve change address by retrieving a internal wallet from the account
 	if acc.GetInternalWalletIndex() >= MaxNumberWalletsPerAccount {
-		wallet, err = acc.GetInternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
+		wallet, err = acc.GetInternalWallet(rand.UintN(MaxNumberWalletsPerAccount)) //nolint:gosec // no need for secure random here
 	}
 	if acc.GetInternalWalletIndex() < MaxNumberWalletsPerAccount {
 		wallet, err = acc.GetNewInternalWallet()
@@ -444,7 +444,7 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 
 	// if the limit have been reached, pick an existing wallet
 	if account.GetExternalWalletIndex() >= MaxNumberWalletsPerAccount {
-		wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount))
+		wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount)) //nolint:gosec // no need for secure random here
 		if err != nil {
 			return []byte{}, fmt.Errorf("error getting external wallet: %w", err)
 		}
@@ -467,12 +467,12 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 }
 
 // getRandomAccountAddresses retrieve a random number of addresses for an account between a minimum and maximum
-func getRandomAccountAddresses(min, max uint, account *hd_wallet.Account) ([][]byte, error) {
+func getRandomAccountAddresses(minRetrieve, maxRetrieve uint, account *hd_wallet.Account) ([][]byte, error) {
 	var addresses [][]byte
 
-	numAddresses := rand.UintN(max-min) + min
+	numAddresses := rand.UintN(maxRetrieve-minRetrieve) + minRetrieve //nolint:gosec // no need for secure random here
 
-	for i := uint(0); i < numAddresses; i++ {
+	for range numAddresses {
 		address, errAddress := getRandomAccountAddress(account)
 		if errAddress != nil {
 			return [][]byte{}, fmt.Errorf("error getting random account address: %w", errAddress)

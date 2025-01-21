@@ -3,12 +3,13 @@ package validator //nolint:testpackage // don't create separate package for test
 import (
 	"testing"
 
+	"github.com/yago-123/chainnet/pkg/common"
+
 	"github.com/yago-123/chainnet/config"
 
 	expl "github.com/yago-123/chainnet/pkg/chain/explorer"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/miner"
 	"github.com/yago-123/chainnet/pkg/script"
 	"github.com/yago-123/chainnet/pkg/util"
 	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
@@ -25,7 +26,7 @@ func TestHValidator_validateOwnershipAndBalanceOfInputs(_ *testing.T) {
 func TestHValidator_validateNoCoinbaseAccepted(t *testing.T) {
 	hvalidator := NewHeavyValidator(config.NewConfig(), NewLightValidator(&mockHash.FakeHashing{}), expl.NewChainExplorer(&mockStorage.MockStorage{}, &mockHash.FakeHashing{}), &mockSign.MockSign{}, &mockHash.FakeHashing{})
 
-	require.Error(t, hvalidator.ValidateTx(kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0)))
+	require.Error(t, hvalidator.ValidateTx(kernel.NewCoinbaseTransaction("to", common.InitialCoinbaseReward, 0)))
 }
 
 func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
@@ -40,14 +41,14 @@ func TestHValidator_validateNumberOfCoinbaseTxs(t *testing.T) {
 
 	blockWithTwoCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0),
-			kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", common.InitialCoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", common.InitialCoinbaseReward, 0),
 		},
 	}
 
 	blockWithOneCoinbase := &kernel.Block{
 		Transactions: []*kernel.Transaction{
-			kernel.NewCoinbaseTransaction("to", miner.InitialCoinbaseReward, 0),
+			kernel.NewCoinbaseTransaction("to", common.InitialCoinbaseReward, 0),
 		},
 	}
 

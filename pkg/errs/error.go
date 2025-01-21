@@ -16,3 +16,8 @@ var (
 var (
 	ErrCryptoPublicKeyDerivation = errors.New("failed to derive public key from private key")
 )
+
+// Errors used in the mempool package
+var (
+	ErrMemPoolFull = errors.New("mempool does not have enough space")
+)

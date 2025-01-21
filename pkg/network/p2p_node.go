@@ -4,7 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/yago-123/chainnet/pkg/monitor"
+
+	"github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
@@ -242,6 +248,8 @@ type NodeP2P struct {
 
 	router *HTTPRouter
 
+	bandwithCounter *metrics.BandwidthCounter
+
 	// bufferSize represents size of buffer for reading over the network
 	bufferSize uint
 
@@ -274,29 +282,38 @@ func NewNodeP2P(
 
 	// add identity if the keys exists
 	if cfg.P2P.IdentityPath != "" {
-		privKeyBytes, errKey := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(cfg.P2P.IdentityPath)
+		p2pPrivKey, errKey := loadIdentityKeyLibP2P(cfg.P2P.IdentityPath)
 		if errKey != nil {
-			return nil, fmt.Errorf("error reading private key: %w", errKey)
-		}
-
-		priv, errKey := util_crypto.ConvertDERBytesToECDSAPriv(privKeyBytes)
-		if errKey != nil {
-			return nil, fmt.Errorf("error converting private key: %w", errKey)
-		}
-
-		p2pPrivKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
-		if errKey != nil {
-			return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
+			return nil, fmt.Errorf("failed to load identity key: %w", errKey)
 		}
 
 		// add peer identity to options
 		options = append(options, libp2p.Identity(p2pPrivKey))
 	}
 
+	// store bandwith metrics in counter for extracting metrics in RegisterMetrics
+	bandwithCounter := metrics.NewBandwidthCounter()
+	options = append(options, libp2p.BandwidthReporter(bandwithCounter))
+
+	// add separate libp2p core metrics to a separate Prometheus registry
+	if cfg.Prometheus.Enabled {
+		registry := prometheus.NewRegistry()
+		http.Handle(cfg.Prometheus.Path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+		go func() {
+			cfg.Logger.Infof("exposing libp2p Prometheus metrics in http://localhost:%d%s", cfg.Prometheus.PortLibp2p, cfg.Prometheus.Path)
+			if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.Prometheus.PortLibp2p), nil); err != nil {
+				cfg.Logger.Errorf("failed to start metrics server: %v", err)
+			}
+		}()
+
+		options = append(options, libp2p.PrometheusRegisterer(registry))
+	}
+
 	// create host
 	host, err := libp2p.New(
 		options...,
 	)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create host during peer discovery: %w", err)
 	}
@@ -339,18 +356,19 @@ func NewNodeP2P(
 	host.SetStreamHandler(AskAllHeaders, handler.handleAskAllHeaders)
 
 	return &NodeP2P{
-		cfg:        cfg,
-		host:       host,
-		netSubject: netSubject,
-		ctx:        ctx,
-		discoDHT:   discoDHT,
-		discoMDNS:  discoMDNS,
-		pubsub:     pubsub,
-		encoder:    encoder,
-		router:     router,
-		explorer:   explorer,
-		bufferSize: cfg.P2P.BufferSize,
-		logger:     cfg.Logger,
+		cfg:             cfg,
+		host:            host,
+		netSubject:      netSubject,
+		ctx:             ctx,
+		discoDHT:        discoDHT,
+		discoMDNS:       discoMDNS,
+		pubsub:          pubsub,
+		encoder:         encoder,
+		router:          router,
+		explorer:        explorer,
+		bandwithCounter: bandwithCounter,
+		bufferSize:      cfg.P2P.BufferSize,
+		logger:          cfg.Logger,
 	}, nil
 }
 
@@ -512,8 +530,109 @@ func (n *NodeP2P) OnTxAddition(tx *kernel.Transaction) {
 	}
 }
 
-func (n *NodeP2P) RegisterMetrics(_ *prometheus.Registry) {
-	// todo(): figure how to parse the metrics from the pubsub and the discovery
-	// todo(): look at https://github.com/libp2p/go-libp2p/blob/master/p2p/host/resource-manager/stats.go#L173
-	// todo(): look at https://github.com/libp2p/go-libp2p/tree/master/examples/metrics-and-dashboards
+func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) { //nolint:gocognit // this function is not complex
+	monitor.NewMetric(register, monitor.Counter, "bandwidth_total_incoming_bytes", "Total incoming bandwidth in bytes",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().TotalIn)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "bandwidth_total_outgoing_bytes", "Total outgoing bandwidth in bytes",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().TotalOut)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "bandwidth_rate_incoming_bytes", "Incoming bandwidth rate in bytes per second",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().RateIn)
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Gauge, "bandwidth_rate_outgoing_bytes", "Outgoing bandwidth rate in bytes per second",
+		func() float64 {
+			return float64(n.bandwithCounter.GetBandwidthTotals().RateOut)
+		},
+	)
+
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_protocol", "Bandwidth total statistics by protocol",
+		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
+		func(metricVec interface{}) {
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
+			for {
+				stats := n.bandwithCounter.GetBandwidthByProtocol()
+				for protocol, stat := range stats {
+					gaugeVec.WithLabelValues("in", string(protocol)).Set(float64(stat.TotalIn))
+					gaugeVec.WithLabelValues("out", string(protocol)).Set(float64(stat.TotalOut))
+				}
+				time.Sleep(n.cfg.Prometheus.UpdateInterval)
+			}
+		})
+
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_protocol", "Bandwidth rate statistics by protocol",
+		[]string{monitor.OperationLabel, monitor.ProtocolLabel},
+		func(metricVec interface{}) {
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
+			for {
+				stats := n.bandwithCounter.GetBandwidthByProtocol()
+				for protocol, stat := range stats {
+					gaugeVec.WithLabelValues("in", string(protocol)).Set(stat.RateIn)
+					gaugeVec.WithLabelValues("out", string(protocol)).Set(stat.RateOut)
+				}
+				time.Sleep(n.cfg.Prometheus.UpdateInterval)
+			}
+		})
+
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_total_bytes_by_peer", "Bandwidth total statistics by peer",
+		[]string{monitor.OperationLabel, monitor.PeerLabel},
+		func(metricVec interface{}) {
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
+			go func() {
+				for {
+					stats := n.bandwithCounter.GetBandwidthByPeer()
+					for peerID, stat := range stats {
+						gaugeVec.WithLabelValues("in", peerID.String()).Set(float64(stat.TotalIn))
+						gaugeVec.WithLabelValues("out", peerID.String()).Set(float64(stat.TotalOut))
+					}
+
+					time.Sleep(n.cfg.Prometheus.UpdateInterval)
+				}
+			}()
+		})
+
+	monitor.NewMetricWithLabels(register, monitor.Gauge, "bandwidth_rate_bytes_by_peer", "Bandwidth rate statistics by peer",
+		[]string{monitor.OperationLabel, monitor.PeerLabel},
+		func(metricVec interface{}) {
+			gaugeVec, _ := metricVec.(*prometheus.GaugeVec)
+			go func() {
+				for {
+					stats := n.bandwithCounter.GetBandwidthByPeer()
+					for peerID, stat := range stats {
+						gaugeVec.WithLabelValues("in", peerID.String()).Set(float64(stat.RateIn))
+						gaugeVec.WithLabelValues("out", peerID.String()).Set(float64(stat.RateOut))
+					}
+
+					time.Sleep(n.cfg.Prometheus.UpdateInterval)
+				}
+			}()
+		})
+}
+
+func loadIdentityKeyLibP2P(path string) (p2pCrypto.PrivKey, error) {
+	privKeyBytes, errKey := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(path)
+	if errKey != nil {
+		return nil, fmt.Errorf("error reading private key: %w", errKey)
+	}
+
+	priv, errKey := util_crypto.ConvertDERBytesToECDSAPriv(privKeyBytes)
+	if errKey != nil {
+		return nil, fmt.Errorf("error converting private key: %w", errKey)
+	}
+
+	p2pPrivKey, _, errKey := p2pCrypto.ECDSAKeyPairFromKey(priv)
+	if errKey != nil {
+		return nil, fmt.Errorf("error creating p2p key pair: %w", errKey)
+	}
+
+	return p2pPrivKey, nil
 }

@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sync/atomic"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/yago-123/chainnet/pkg/monitor"
 
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
@@ -18,6 +22,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/util"
 )
 
+const (
+	HeavyValidatorObserverID = "heavy-validator-observer"
+)
+
 type TxFunc func(tx *kernel.Transaction) error
 type HeaderFunc func(bh *kernel.BlockHeader) error
 type BlockFunc func(b *kernel.Block) error
@@ -29,6 +37,8 @@ type HValidator struct {
 	hasher   hash.Hashing
 
 	interpreter *interpreter.RPNInterpreter
+
+	metrics *HValidatorMetrics
 
 	cfg *config.Config
 }
@@ -46,11 +56,18 @@ func NewHeavyValidator(
 		signer:      signer,
 		hasher:      hasher,
 		interpreter: interpreter.NewScriptInterpreter(signer),
-		cfg:         cfg,
+		metrics: &HValidatorMetrics{
+			txMetrics:     &HValidatorTxMetrics{},
+			headerMetrics: &HValidatorHeaderMetrics{},
+			blockMetrics:  &HValidatorBlockMetrics{},
+		},
+		cfg: cfg,
 	}
 }
 
 func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
+	defer atomic.AddUint64(&hv.metrics.txMetrics.totalAnalyzed, 1)
+
 	validations := []TxFunc{
 		hv.lv.ValidateTxLight,
 		hv.validateOwnershipAndBalanceOfInputs,
@@ -61,6 +78,7 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 
 	for _, validate := range validations {
 		if err := validate(tx); err != nil {
+			atomic.AddUint64(&hv.metrics.txMetrics.totalRejected, 1)
 			return err
 		}
 	}
@@ -69,6 +87,8 @@ func (hv *HValidator) ValidateTx(tx *kernel.Transaction) error {
 }
 
 func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
+	defer atomic.AddUint64(&hv.metrics.headerMetrics.totalAnalyzed, 1)
+
 	validations := []HeaderFunc{
 		hv.lv.ValidateHeader,
 		hv.validateGenesisHeader,
@@ -79,6 +99,7 @@ func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 
 	for _, validate := range validations {
 		if err := validate(bh); err != nil {
+			atomic.AddUint64(&hv.metrics.headerMetrics.totalRejected, 1)
 			return err
 		}
 	}
@@ -87,6 +108,8 @@ func (hv *HValidator) ValidateHeader(bh *kernel.BlockHeader) error {
 }
 
 func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
+	atomic.AddUint64(&hv.metrics.blockMetrics.totalAnalyzed, 1)
+
 	if err := hv.ValidateHeader(b.Header); err != nil {
 		return fmt.Errorf("error validating block header: %w", err)
 	}
@@ -104,6 +127,7 @@ func (hv *HValidator) ValidateBlock(b *kernel.Block) error {
 
 	for _, validate := range validations {
 		if err := validate(b); err != nil {
+			atomic.AddUint64(&hv.metrics.blockMetrics.totalRejected, 1)
 			return err
 		}
 	}
@@ -322,4 +346,46 @@ func (hv *HValidator) validateMerkleTree(b *kernel.Block) error {
 	}
 
 	return nil
+}
+
+func (hv *HValidator) ID() string {
+	return HeavyValidatorObserverID
+}
+
+func (hv *HValidator) RegisterMetrics(register *prometheus.Registry) {
+	monitor.NewMetric(register, monitor.Counter, "heavy_validator_tx_total_analyzed", "Number of transactions analyzed by the transaction heavy validator",
+		func() float64 {
+			return float64(atomic.LoadUint64(&hv.metrics.txMetrics.totalAnalyzed))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "heavy_validator_tx_total_rejected", "Number of transactions rejected by the transaction heavy validator",
+		func() float64 {
+			return float64(atomic.LoadUint64(&hv.metrics.txMetrics.totalRejected))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "heavy_validator_header_total_analyzed", "Number of headers analyzed by the header heavy validator",
+		func() float64 {
+			return float64(atomic.LoadUint64(&hv.metrics.headerMetrics.totalAnalyzed))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "heavy_validator_header_total_rejected", "Number of headers rejected by the header heavy validator",
+		func() float64 {
+			return float64(atomic.LoadUint64(&hv.metrics.headerMetrics.totalRejected))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "heavy_validator_block_total_analyzed", "Number of blocks analyzed by the block heavy validator",
+		func() float64 {
+			return float64(atomic.LoadUint64(&hv.metrics.blockMetrics.totalAnalyzed))
+		},
+	)
+
+	monitor.NewMetric(register, monitor.Counter, "heavy_validator_block_total_rejected", "Number of blocks rejected by the block heavy validator",
+		func() float64 {
+			return float64(atomic.LoadUint64(&hv.metrics.blockMetrics.totalRejected))
+		},
+	)
 }

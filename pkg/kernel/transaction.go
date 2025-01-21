@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand/v2"
+	"unsafe"
 
 	"github.com/btcsuite/btcutil/base58"
 
@@ -164,6 +165,20 @@ func (tx *Transaction) String() string {
 	return msg
 }
 
+func (tx *Transaction) Size() uint {
+	size := uint(len(tx.ID))
+
+	for _, in := range tx.Vin {
+		size += in.Size()
+	}
+
+	for _, out := range tx.Vout {
+		size += out.Size()
+	}
+
+	return size
+}
+
 // TxInput represents the source of the transaction balance
 type TxInput struct {
 	// Txid is the transaction from which we are going to unlock the input balance
@@ -181,12 +196,6 @@ type TxInput struct {
 	// PubKey is the public key that unlocked the ScriptSig
 	// todo() eventually remove once we cleared ScriptSig
 	PubKey string
-}
-
-// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be the STXO or
-// Spent Transaction Output. Method used for mapping UTXOs and inputs via this unique key
-func (in *TxInput) UniqueTxoKey() string {
-	return fmt.Sprintf("%x-%d", in.Txid, in.Vout)
 }
 
 // NewCoinbaseInput creates a special transaction input called a Coinbase input. This type of input represents
@@ -218,6 +227,16 @@ func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
 // UnlockWith solves the challenge presented by the output in order to unlock the funds
 func (in *TxInput) UnlockWith(scriptSig string) {
 	in.ScriptSig = scriptSig
+}
+
+// UniqueTxoKey represents the equivalent of UniqueKey for UTXO but for the TxInput, which would be the STXO or
+// Spent Transaction Output. Method used for mapping UTXOs and inputs via this unique key
+func (in *TxInput) UniqueTxoKey() string {
+	return fmt.Sprintf("%x-%d", in.Txid, in.Vout)
+}
+
+func (in *TxInput) Size() uint {
+	return uint(len(in.Txid) + int(unsafe.Sizeof(uint(0))) + len(in.ScriptSig) + len(in.PubKey))
 }
 
 // EqualInput checks if the input is the same as the given input
@@ -274,4 +293,8 @@ func (out *TxOutput) String() string {
 		base58.Encode([]byte(out.PubKey)),
 		out.ScriptPubKey,
 	)
+}
+
+func (out *TxOutput) Size() uint {
+	return uint(int(unsafe.Sizeof(uint(0))) + len(out.ScriptPubKey) + len(out.PubKey))
 }

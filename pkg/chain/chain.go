@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/yago-123/chainnet/pkg/common"
+
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -416,8 +418,31 @@ func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
 }
 
 func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
-	monitor.NewMetric(registry, monitor.Gauge, "blockchain_height", "A gauge of the blockchain height", func() float64 {
+	monitor.NewMetric(registry, monitor.Gauge, "chain_height", "Number of blocks in the chain", func() float64 {
 		return float64(bc.GetLastHeight())
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_circulating_supply", "Circulating supply of the chain", func() float64 {
+		totalSupply := 0.0
+		remainingHeight := bc.lastHeight
+		reward := float64(common.InitialCoinbaseReward)
+
+		for remainingHeight > 0 {
+			// determine the number of blocks in the current halving period
+			blocksInPeriod := uint(common.HalvingInterval)
+			if remainingHeight < common.HalvingInterval {
+				blocksInPeriod = remainingHeight
+			}
+
+			// calculate BTC for this halving period and add to total
+			totalSupply += float64(blocksInPeriod) * reward
+
+			// move to the next halving period
+			remainingHeight -= blocksInPeriod
+			reward /= 2
+		}
+
+		return totalSupply
 	})
 }
 

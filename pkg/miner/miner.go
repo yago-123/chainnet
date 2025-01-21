@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/yago-123/chainnet/pkg/common"
+
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -17,10 +19,6 @@ import (
 )
 
 const (
-	InitialCoinbaseReward = 50 * kernel.ChainnetCoinAmount
-	HalvingInterval       = 210000
-	MaxNumberHalvings     = 64
-
 	BlockVersion = "1"
 
 	MinerObserverID = "miner-observer"
@@ -160,9 +158,9 @@ func (m *Miner) createCoinbaseTransaction(collectedFee, height uint) (*kernel.Tr
 	reward := uint(0)
 	// calculate reward based on block height and halving interval. If height greater than 64 halvings, reward is 0
 	// to avoid dealing with bugs
-	halvings := height / HalvingInterval
-	if halvings < MaxNumberHalvings {
-		reward = uint(InitialCoinbaseReward >> halvings)
+	halvings := height / common.HalvingInterval
+	if halvings < common.MaxNumberHalvings {
+		reward = uint(common.InitialCoinbaseReward >> halvings)
 	}
 
 	// creates transaction and calculate hash
