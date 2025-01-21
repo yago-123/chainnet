@@ -33,7 +33,8 @@ type HTTPRouter struct {
 }
 
 const (
-	MaxNumberRetrievals = 100
+	NumberRetrievalsForConsideringActive = 1
+	MaxNumberRetrievals                  = 100
 )
 
 func NewHTTPRouter(
@@ -52,6 +53,7 @@ func NewHTTPRouter(
 	}
 
 	router.r.GET(fmt.Sprintf(RouterRetrieveAddressTxs, ":address"), router.listTransactions)
+	router.r.GET(fmt.Sprintf(RouterAddressIsActive, ":address"), router.checkAddressIsActive)
 	router.r.GET(fmt.Sprintf(RouterRetrieveAddressUTXOs, ":address"), router.listUTXOs)
 	router.r.POST(RouterSendTx, router.receiveTransaction)
 
@@ -128,6 +130,30 @@ func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Reques
 	}
 
 	router.writeResponse(w, txsEncoded)
+}
+
+func (router *HTTPRouter) checkAddressIsActive(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	address := ps.ByName("address")
+
+	addr, err := decodeAddress(address)
+	if err != nil {
+		router.handleError(w, fmt.Sprintf("Invalid address: %s", err.Error()), http.StatusBadRequest, err)
+		return
+	}
+
+	txs, err := router.explorer.FindAllTransactions(addr, NumberRetrievalsForConsideringActive)
+	if err != nil {
+		router.handleError(w, fmt.Sprintf("Failed to retrieve transactions: %s", err.Error()), http.StatusInternalServerError, err)
+		return
+	}
+
+	// check if there is any transaction for the address
+	active, err := router.encoder.SerializeBool(len(txs) > 0)
+	if err != nil {
+		router.handleError(w, fmt.Sprintf("Failed to encode active status: %s", err.Error()), http.StatusBadRequest, err)
+	}
+
+	router.writeResponse(w, active)
 }
 
 // listUTXOs receive a wallet address and retrieve the corresponding UTXOs

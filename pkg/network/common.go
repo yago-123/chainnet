@@ -14,6 +14,7 @@ import (
 const (
 	RouterRetrieveAddressTxs   = "/api/v1/address/%s/txs"
 	RouterRetrieveAddressUTXOs = "/api/v1/address/%s/utxos"
+	RouterAddressIsActive      = "/api/v1/address/%s/active"
 	RouterSendTx               = "/api/v1/sendTx"
 
 	ContentTypeHeader = "Content-Type"

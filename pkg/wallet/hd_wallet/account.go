@@ -138,16 +138,16 @@ func (hda *Account) Sync() (uint32, uint32, error) { //nolint:gocognit // it's O
 
 			wallets = append(wallets, wallet)
 
-			txs, err := wallet.GetWalletTxs()
+			active, err := wallet.CheckIfWalletIsActive()
 			if err != nil {
 				return []*wallt.Wallet{}, fmt.Errorf("error getting wallet transactions: %w", err)
 			}
 
-			if len(txs) == 0 {
+			if !active {
 				gapCounter++
 			}
 
-			if len(txs) > 0 {
+			if active {
 				gapCounter = 0
 			}
 
