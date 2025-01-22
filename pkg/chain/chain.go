@@ -423,26 +423,26 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
 	})
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_circulating_supply", "Circulating supply of the chain", func() float64 {
-		totalSupply := 0.0
-		remainingHeight := bc.lastHeight
-		reward := float64(common.InitialCoinbaseReward)
+		totalSupply := 0
+		remainingHeight := int(bc.lastHeight)
+		reward := common.InitialCoinbaseReward
 
 		for remainingHeight > 0 {
 			// determine the number of blocks in the current halving period
-			blocksInPeriod := uint(common.HalvingInterval)
+			blocksInPeriod := common.HalvingInterval
 			if remainingHeight < common.HalvingInterval {
 				blocksInPeriod = remainingHeight
 			}
 
-			// calculate BTC for this halving period and add to total
-			totalSupply += float64(blocksInPeriod) * reward
+			// calculate this halving period and add to total
+			totalSupply += blocksInPeriod * reward
 
 			// move to the next halving period
 			remainingHeight -= blocksInPeriod
 			reward /= 2
 		}
 
-		return totalSupply
+		return kernel.ConvertFromChannoshisToCoins(uint(totalSupply))
 	})
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_size", "Size of latest block added to chain", func() float64 {
