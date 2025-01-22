@@ -503,6 +503,34 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
 
 		return float64(len(block.Transactions))
 	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_num_inputs", "Number of inputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		inputs := 0
+		for _, tx := range block.Transactions {
+			inputs += len(tx.Vin)
+		}
+
+		return float64(inputs)
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_num_outputs", "Number of outputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		outputs := 0
+		for _, tx := range block.Transactions {
+			outputs += len(tx.Vout)
+		}
+
+		return float64(outputs)
+	})
 }
 
 func (bc *Blockchain) calculateTxFee(tx *kernel.Transaction) (uint, error) {
