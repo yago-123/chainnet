@@ -119,3 +119,16 @@ func (gobenc *GobEncoder) DeserializeUTXOs(data []byte) ([]*kernel.UTXO, error) 
 	}
 	return utxos, nil
 }
+
+func (gobenc *GobEncoder) SerializeBool(b bool) ([]byte, error) {
+	return gobenc.serialize(b)
+}
+
+func (gobenc *GobEncoder) DeserializeBool(data []byte) (bool, error) {
+	var b bool
+	if err := gobenc.deserialize(data, &b); err != nil {
+		return false, fmt.Errorf("error deserializing bool: %w", err)
+	}
+
+	return b, nil
+}

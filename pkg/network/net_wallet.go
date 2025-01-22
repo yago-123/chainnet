@@ -25,6 +25,7 @@ const RequestTimeout = 10 * time.Second
 
 type WalletNetwork interface {
 	GetWalletUTXOS(ctx context.Context, address []byte) ([]*kernel.UTXO, error)
+	AddressIsActive(ctx context.Context, address []byte) (bool, error)
 	GetWalletTxs(ctx context.Context, address []byte) ([]*kernel.Transaction, error)
 	SendTransaction(ctx context.Context, tx kernel.Transaction) error
 }
@@ -107,6 +108,17 @@ func (n *WalletHTTPConn) GetWalletTxs(ctx context.Context, address []byte) ([]*k
 	)
 }
 
+func (n *WalletHTTPConn) AddressIsActive(ctx context.Context, address []byte) (bool, error) {
+	return fetchAndDecode(
+		ctx,
+		n.baseurl,
+		address,
+		RouterAddressIsActive,
+		n.getRequest,
+		n.encoder.DeserializeBool,
+	)
+}
+
 func (n *WalletHTTPConn) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
 	url := fmt.Sprintf(
 		"http://%s%s",
@@ -136,8 +148,10 @@ func fetchAndDecode[T any](
 	address []byte,
 	routeFormat string,
 	getRequest func(context.Context, string) (*http.Response, error),
-	decodeFunc func([]byte) ([]T, error),
-) ([]T, error) {
+	decodeFunc func([]byte) (T, error),
+) (T, error) {
+	var defaultValue T
+
 	// construct the URL
 	url := fmt.Sprintf(
 		"http://%s%s",
@@ -148,20 +162,20 @@ func fetchAndDecode[T any](
 	// send GET request
 	resp, err := getRequest(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to GET from URL %s for address %s: %w", url, base58.Encode(address), err)
+		return defaultValue, fmt.Errorf("failed to GET from URL %s for address %s: %w", url, base58.Encode(address), err)
 	}
 	defer resp.Body.Close()
 
 	// read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body from URL %s for address %s: %w", url, base58.Encode(address), err)
+		return defaultValue, fmt.Errorf("failed to read response body from URL %s for address %s: %w", url, base58.Encode(address), err)
 	}
 
 	// decode response
 	data, err := decodeFunc(body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode response from URL %s for address %s: %w", url, base58.Encode(address), err)
+		return defaultValue, fmt.Errorf("failed to decode response from URL %s for address %s: %w", url, base58.Encode(address), err)
 	}
 
 	return data, nil

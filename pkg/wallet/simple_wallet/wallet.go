@@ -168,6 +168,31 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 	return txs, nil
 }
 
+// CheckAddressIsActive checks if there has been any transaction related to any of the addresses of the wallet
+func (w *Wallet) CheckIfWalletIsActive() (bool, error) {
+	addresses, err := w.GetAddresses()
+	if err != nil {
+		return false, fmt.Errorf("could not get wallet addresses: %w", err)
+	}
+
+	for _, address := range addresses {
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		defer cancel()
+
+		// check if address is active
+		active, errNet := w.p2pNet.AddressIsActive(ctx, address)
+		if errNet != nil {
+			return false, fmt.Errorf("could not check if address %s is active: %w", base58.Encode(address), errNet)
+		}
+
+		if active {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // GenerateNewTransaction creates a transaction and broadcasts it to the network
 func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, addresses []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
 	// create the inputs necessary for the transaction

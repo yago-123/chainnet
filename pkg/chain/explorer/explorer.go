@@ -15,6 +15,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/storage"
 )
 
+const (
+	RetrieveAllElements = -1
+)
+
 // ChainExplorer is a module that allows to explore the chain, retrieve blocks, headers, etc. It is used to split the
 // chain module from the rest of the modules that need to interact with the chain but don't need to know the internals
 // this helps to avoid circular dependencies and to define clear boundaries. This module relies on the storage module
@@ -252,12 +256,13 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 	return unspentTXs, nil
 }
 
-func (explorer *ChainExplorer) FindUnspentOutputs(address string) ([]*kernel.UTXO, error) {
-	return explorer.findUnspentOutputs(address, iterator.NewReverseBlockIterator(explorer.store))
+func (explorer *ChainExplorer) FindUnspentOutputs(address string, maxRetrievalNum int) ([]*kernel.UTXO, error) {
+	return explorer.findUnspentOutputs(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
-// findUnspentOutputs finds all unspent outputs that can be unlocked with the given public key
-func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.BlockIterator) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
+// findUnspentOutputs finds all unspent outputs that can be unlocked with the given address and returns them. It contains
+// a limit of retrievals in order to avoid expensive loops in case of a large chain
+func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.BlockIterator, maxRetrievalNum int) ([]*kernel.UTXO, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	unspentTXOs := []*kernel.UTXO{}
 	spentTXOs := make(map[string][]uint)
@@ -270,7 +275,13 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 	// get the blockchain reverted iterator
 	_ = it.Initialize(lastBlock.Hash)
 
+	// iterate through the blocks until we find the unspent transactions
 	for it.HasNext() {
+		// check if the limit number of retrievals have been reached. If the max number is -1, this limit is disabled
+		if maxRetrievalNum != RetrieveAllElements && maxRetrievalNum < len(unspentTXOs) {
+			break
+		}
+
 		// get the next block using the revIterator
 		nextBlock, err = it.GetNextBlock()
 		if err != nil {
@@ -358,13 +369,13 @@ func (explorer *ChainExplorer) FindAmountSpendableOutputs(address string, amount
 	return accumulated, unspentOutputs, nil
 }
 
-func (explorer *ChainExplorer) FindAllTransactions(address string) ([]*kernel.Transaction, error) {
-	return explorer.findAllTransactions(address, iterator.NewReverseBlockIterator(explorer.store))
+func (explorer *ChainExplorer) FindAllTransactions(address string, maxRetrievalNum int) ([]*kernel.Transaction, error) {
+	return explorer.findAllTransactions(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
-func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.BlockIterator) ([]*kernel.Transaction, error) {
+func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.BlockIterator, maxRetrievalNum int) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
-	var unspentTXs []*kernel.Transaction
+	var txs []*kernel.Transaction
 
 	lastBlock, err := explorer.store.GetLastBlock()
 	if err != nil {
@@ -375,6 +386,11 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 	_ = it.Initialize(lastBlock.Hash)
 
 	for it.HasNext() {
+		// check if the limit number of retrievals have been reached. If the max number is -1, this limit is disabled
+		if maxRetrievalNum != RetrieveAllElements && maxRetrievalNum < len(txs) {
+			break
+		}
+
 		// get the next block using the revIterator
 		nextBlock, err = it.GetNextBlock()
 		if err != nil {
@@ -391,7 +407,7 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 			for _, out := range tx.Vout {
 				// check if the output can be unlocked with the given address
 				if out.CanBeUnlockedWith(address) {
-					unspentTXs = append(unspentTXs, tx)
+					txs = append(txs, tx)
 				}
 			}
 
@@ -403,7 +419,7 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 	}
 
 	// return the list of unspent transactions
-	return unspentTXs, nil
+	return txs, nil
 }
 
 func (explorer *ChainExplorer) FindUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error) {

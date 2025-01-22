@@ -54,3 +54,4 @@ message Block {
   repeated Transaction transactions = 2;
   bytes hash = 3;
 }
+

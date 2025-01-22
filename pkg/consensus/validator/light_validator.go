@@ -30,20 +30,20 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 		return errors.New("transaction has no outputs")
 	}
 
-	// validate there are not multiple Vins with same source
-	if err := lv.validateInputsDontMatch(tx); err != nil {
-		return err
+	validations := []TxFunc{
+		lv.validateInputsDontMatch,
+		lv.validateTxID,
+		lv.validateAllOutputsContainNonZeroAmounts,
+		// todo(): set limit to the number of inputs and outputs
+		// todo(): make sure that transaction size is within limits
+		// todo(): make sure number of sigops is within limits
 	}
 
-	// validate transaction hash match the transaction ID field
-	if err := lv.validateTxID(tx); err != nil {
-		return err
+	for _, validate := range validations {
+		if err := validate(tx); err != nil {
+			return err
+		}
 	}
-	// todo(): set limit to the number of inputs and outputs
-
-	// todo(): make sure that transaction size is within limits
-
-	// todo(): make sure number of sigops is within limits
 
 	return nil
 }
@@ -112,4 +112,15 @@ func (lv *LValidator) validateInputsDontMatch(tx *kernel.Transaction) error {
 // validateTxID checks that the hash of the transaction matches the ID field
 func (lv *LValidator) validateTxID(tx *kernel.Transaction) error {
 	return util.VerifyTxHash(tx, tx.ID, lv.hasher)
+}
+
+// validateAllOutputsContainNonZeroAmounts make sure that no empty outputs can be accepted
+func (lv *LValidator) validateAllOutputsContainNonZeroAmounts(tx *kernel.Transaction) error {
+	for i, out := range tx.Vout {
+		if out.Amount == 0 {
+			return fmt.Errorf("transaction %x contain output %d empty", tx.ID, i)
+		}
+	}
+
+	return nil
 }

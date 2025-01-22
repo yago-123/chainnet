@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	MaxConcurrentRequests = 5
+	MaxConcurrentAccountRequests = 3
 )
 
 // Wallet represents a Hierarchical Deterministic wallet
@@ -244,7 +244,7 @@ func (hd *Wallet) GetBalance() (uint, error) {
 	err := util.ProcessConcurrently(
 		ctx,
 		hd.accounts,
-		MaxConcurrentRequests,
+		MaxConcurrentAccountRequests,
 		cancel,
 		func(ctx context.Context, acc *Account) error {
 			select {

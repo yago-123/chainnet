@@ -31,7 +31,7 @@ func NewMetric(registry *prometheus.Registry, typ MetricType, name, help string,
 }
 
 // NewMetricWithLabels registers a new metric with an executor function that must be run asynchronously. This
-// is required for modules that contain metrics that are hard to calculate synchronously. Only support for Gauge
+// is required for modules that contain metrics that are hard to calculate synchronously.
 func NewMetricWithLabels(
 	registry *prometheus.Registry,
 	typ MetricType,

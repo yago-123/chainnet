@@ -19,6 +19,7 @@ type Encoding interface {
 	SerializeTransactions(txs []*kernel.Transaction) ([]byte, error)
 	SerializeUTXO(utxo kernel.UTXO) ([]byte, error)
 	SerializeUTXOs(utxos []*kernel.UTXO) ([]byte, error)
+	SerializeBool(b bool) ([]byte, error)
 
 	DeserializeBlock(data []byte) (*kernel.Block, error)
 	DeserializeHeader(data []byte) (*kernel.BlockHeader, error)
@@ -27,4 +28,5 @@ type Encoding interface {
 	DeserializeTransactions(data []byte) ([]*kernel.Transaction, error)
 	DeserializeUTXO(data []byte) (*kernel.UTXO, error)
 	DeserializeUTXOs(data []byte) ([]*kernel.UTXO, error)
+	DeserializeBool(data []byte) (bool, error)
 }

@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	SizeOfSyncErrChannel = 2
+	MaxConcurrentWalletRequests = 5
+	SizeOfSyncErrChannel        = 2
 )
 
 type Account struct {
@@ -138,16 +139,16 @@ func (hda *Account) Sync() (uint32, uint32, error) { //nolint:gocognit // it's O
 
 			wallets = append(wallets, wallet)
 
-			txs, err := wallet.GetWalletTxs()
+			active, err := wallet.CheckIfWalletIsActive()
 			if err != nil {
 				return []*wallt.Wallet{}, fmt.Errorf("error getting wallet transactions: %w", err)
 			}
 
-			if len(txs) == 0 {
+			if !active {
 				gapCounter++
 			}
 
-			if len(txs) > 0 {
+			if active {
 				gapCounter = 0
 			}
 
@@ -381,7 +382,7 @@ func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
 	err := util.ProcessConcurrently(
 		ctx,
 		wallets,
-		MaxConcurrentRequests,
+		MaxConcurrentWalletRequests,
 		cancel, // Pass the cancel function to stop other operations on error
 		func(ctx context.Context, w *wallt.Wallet) error {
 			select {
@@ -429,7 +430,7 @@ func (hda *Account) GetBalance() (uint, error) {
 	err := util.ProcessConcurrently(
 		ctx,
 		wallets,
-		MaxConcurrentRequests,
+		MaxConcurrentWalletRequests,
 		cancel, // pass the cancel function to stop other operations on error
 		func(ctx context.Context, w *wallt.Wallet) error {
 			select {

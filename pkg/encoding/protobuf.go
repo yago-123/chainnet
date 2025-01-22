@@ -10,6 +10,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	LengthBoolEncoded = 1
+)
+
 type Protobuf struct {
 }
 
@@ -247,6 +251,28 @@ func (p *Protobuf) DeserializeUTXOs(data []byte) ([]*kernel.UTXO, error) {
 	}
 
 	return utxos, nil
+}
+
+func (p *Protobuf) SerializeBool(b bool) ([]byte, error) {
+	if b {
+		return []byte{1}, nil
+	}
+	return []byte{0}, nil
+}
+
+func (p *Protobuf) DeserializeBool(data []byte) (bool, error) {
+	if len(data) != LengthBoolEncoded {
+		return false, fmt.Errorf("invalid data length: %d", len(data))
+	}
+
+	switch data[0] {
+	case 1:
+		return true, nil // 1 means true
+	case 0:
+		return false, nil // 0 means false
+	default:
+		return false, fmt.Errorf("invalid boolean value: %d", data[0])
+	}
 }
 
 func convertToProtobufBlock(b kernel.Block) (*pb.Block, error) {
