@@ -49,6 +49,9 @@ const (
 	AskAllHeaders            = "/askAllHeaders/0.1.0"
 
 	ServerAPIShutdownTimeout = 10 * time.Second
+
+	PrometheusReadWriteTimeout = 5 * time.Second
+	PrometheusIdleTimeout      = 10 * time.Second
 )
 
 type nodeP2PHandler struct {
@@ -298,13 +301,7 @@ func NewNodeP2P(
 	// add separate libp2p core metrics to a separate Prometheus registry
 	if cfg.Prometheus.Enabled {
 		registry := prometheus.NewRegistry()
-		http.Handle(cfg.Prometheus.Path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-		go func() {
-			cfg.Logger.Infof("exposing libp2p Prometheus metrics in http://localhost:%d%s", cfg.Prometheus.PortLibp2p, cfg.Prometheus.Path)
-			if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.Prometheus.PortLibp2p), nil); err != nil {
-				cfg.Logger.Errorf("failed to start metrics server: %v", err)
-			}
-		}()
+		startPrometheusLibP2PMetricsServer(cfg, registry)
 
 		options = append(options, libp2p.PrometheusRegisterer(registry))
 	}
@@ -616,6 +613,26 @@ func (n *NodeP2P) RegisterMetrics(register *prometheus.Registry) { //nolint:goco
 				}
 			}()
 		})
+}
+
+// startPrometheusLibP2PMetricsServer starts a Prometheus server for the libp2p core metrics (different from the metrics
+// registered in RegisterMetrics
+func startPrometheusLibP2PMetricsServer(cfg *config.Config, registry *prometheus.Registry) {
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.Prometheus.PortLibp2p),
+		ReadTimeout:  PrometheusReadWriteTimeout,
+		WriteTimeout: PrometheusReadWriteTimeout,
+		IdleTimeout:  PrometheusIdleTimeout,
+	}
+
+	http.Handle(cfg.Prometheus.Path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+
+	cfg.Logger.Infof("exposing libp2p Prometheus metrics at http://localhost:%d%s", cfg.Prometheus.PortLibp2p, cfg.Prometheus.Path)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			cfg.Logger.Errorf("Failed to start metrics server: %v", err)
+		}
+	}()
 }
 
 func loadIdentityKeyLibP2P(path string) (p2pCrypto.PrivKey, error) {

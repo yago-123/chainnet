@@ -495,7 +495,7 @@ func splitArrayRandomized[T any](array []T, maxLengthGroups int) [][]T {
 
 	// initialize a new random number generator with a seed based on the current time.
 	seed := time.Now().UnixNano()
-	rng := rand.New(rand.NewPCG(uint64(seed), 0))
+	rng := rand.New(rand.NewPCG(uint64(seed), 0)) //nolint:gosec // no need for secure random here
 
 	var result [][]T
 	for len(array) > 0 {

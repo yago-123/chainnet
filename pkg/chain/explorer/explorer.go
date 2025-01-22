@@ -373,7 +373,7 @@ func (explorer *ChainExplorer) FindAllTransactions(address string, maxRetrievalN
 	return explorer.findAllTransactions(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
-func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.BlockIterator, maxRetrievalNum int) ([]*kernel.Transaction, error) {
+func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.BlockIterator, maxRetrievalNum int) ([]*kernel.Transaction, error) { //nolint:gocognit // ok for now
 	var nextBlock *kernel.Block
 	var txs []*kernel.Transaction
 
