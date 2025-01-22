@@ -485,6 +485,16 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
 
 		return float64(outputSize)
 	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_header_size", "Size of header in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		return float64(block.Header.Size())
+	})
+
 	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_txs", "Number of transactions in latest block added to chain", func() float64 {
 		block, err := bc.store.GetLastBlock()
 		if err != nil {
