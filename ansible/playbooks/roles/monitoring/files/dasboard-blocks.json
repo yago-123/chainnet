@@ -1033,7 +1033,7 @@
           "type": "math"
         }
       ],
-      "title": "Last Block Inputs vs. Outputs %",
+      "title": "Last Block Number Inputs vs. Outputs %",
       "type": "barchart"
     },
     {
@@ -1149,13 +1149,13 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Blocks",
   "uid": "cearxht0w68e8d",
-  "version": 22,
+  "version": 23,
   "weekStart": ""
 }
