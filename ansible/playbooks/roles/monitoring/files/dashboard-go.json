@@ -131,7 +131,7 @@
           "useBackend": false
         }
       ],
-      "title": "Total Used Memory",
+      "title": "Total Allocated Memory",
       "type": "timeseries"
     },
     {
@@ -1006,6 +1006,6 @@
   "timezone": "browser",
   "title": "Golang Runtime",
   "uid": "ceash8duu81kwf",
-  "version": 18,
+  "version": 19,
   "weekStart": ""
 }

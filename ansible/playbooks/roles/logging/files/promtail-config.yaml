@@ -16,3 +16,19 @@ scrape_configs:
         labels:
           job: varlogs
           __path__: /var/log/chainnet/*log
+
+    pipeline_stages:
+      - regex:
+          expression: 'time="(?P<time>[^"]+)" level=(?P<level>\w+) msg="(?P<msg>[^"]+)"'
+      - labels:
+          time: time
+          level: level
+      - json:
+          expressions:
+            tx_hash: msg
+            block_hash: msg
+            block_height: msg
+            tx_count: msg
+            nonce: msg
+      - drop:
+          expression: 'msg=".*"'
