@@ -33,7 +33,7 @@ func (lv *LValidator) ValidateTxLight(tx *kernel.Transaction) error {
 	validations := []TxFunc{
 		lv.validateInputsDontMatch,
 		lv.validateTxID,
-		lv.validateAllInputsContainAmounts,
+		lv.validateAllOutputsContainNonZeroAmounts,
 		// todo(): set limit to the number of inputs and outputs
 		// todo(): make sure that transaction size is within limits
 		// todo(): make sure number of sigops is within limits
@@ -114,8 +114,8 @@ func (lv *LValidator) validateTxID(tx *kernel.Transaction) error {
 	return util.VerifyTxHash(tx, tx.ID, lv.hasher)
 }
 
-// validateAllInputsContainAmounts make sure that no empty outputs can be accepted
-func (lv *LValidator) validateAllInputsContainAmounts(tx *kernel.Transaction) error {
+// validateAllOutputsContainNonZeroAmounts make sure that no empty outputs can be accepted
+func (lv *LValidator) validateAllOutputsContainNonZeroAmounts(tx *kernel.Transaction) error {
 	for i, out := range tx.Vout {
 		if out.Amount == 0 {
 			return fmt.Errorf("transaction %x contain output %d empty", tx.ID, i)
