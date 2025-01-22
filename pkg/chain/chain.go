@@ -444,6 +444,55 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
 
 		return totalSupply
 	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_size", "Size of latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		return float64(block.Size())
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_inputs_size", "Size of inputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		inputSize := uint(0)
+		for _, tx := range block.Transactions {
+			for _, in := range tx.Vin {
+				inputSize += in.Size()
+			}
+		}
+
+		return float64(inputSize)
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_outputs_size", "Size of outputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		outputSize := uint(0)
+		for _, tx := range block.Transactions {
+			for _, out := range tx.Vout {
+				outputSize += out.Size()
+			}
+		}
+
+		return float64(outputSize)
+	})
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_txs", "Number of transactions in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		return float64(len(block.Transactions))
+	})
 }
 
 func (bc *Blockchain) calculateTxFee(tx *kernel.Transaction) (uint, error) {

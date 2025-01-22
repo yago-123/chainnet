@@ -3,6 +3,7 @@ package kernel
 import (
 	"bytes"
 	"fmt"
+	"unsafe"
 )
 
 const (
@@ -67,6 +68,10 @@ func (bh *BlockHeader) Assemble() []byte {
 	return bytes.Join(data, []byte{})
 }
 
+func (bh *BlockHeader) Size() uint {
+	return uint(len(bh.Version) + len(bh.PrevBlockHash) + len(bh.MerkleRoot) + int(unsafe.Sizeof(uint(0)))*3 + int(unsafe.Sizeof(int64(0))))
+}
+
 type Block struct {
 	Header       *BlockHeader
 	Transactions []*Transaction
@@ -89,6 +94,15 @@ func NewGenesisBlock(blockHeader *BlockHeader, transactions []*Transaction, bloc
 
 func (block *Block) IsGenesisBlock() bool {
 	return len(block.Header.PrevBlockHash) == 0 && block.Header.Height == 0
+}
+
+func (block *Block) Size() uint {
+	totalTxSize := uint(0)
+	for _, tx := range block.Transactions {
+		totalTxSize += tx.Size()
+	}
+
+	return totalTxSize + block.Header.Size() + uint(len(block.Hash))
 }
 
 func ConvertFromChannoshisToCoins(channoshis uint) float64 {
