@@ -346,8 +346,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "UTXO Set",
+  "title": "04 - UTXO Set",
   "uid": "feaf2uurv8t1cc",
-  "version": 6,
+  "version": 7,
   "weekStart": ""
 }

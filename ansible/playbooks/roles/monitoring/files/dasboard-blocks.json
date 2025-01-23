@@ -1084,8 +1084,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1153,9 +1152,9 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "Blocks",
+  "timezone": "Europe/Madrid",
+  "title": "02 - Blocks",
   "uid": "cearxht0w68e8d",
-  "version": 23,
+  "version": 24,
   "weekStart": ""
 }

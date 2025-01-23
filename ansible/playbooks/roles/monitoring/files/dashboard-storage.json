@@ -1189,9 +1189,9 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "Storage",
+  "timezone": "Europe/Madrid",
+  "title": "05 - Storage",
   "uid": "beakmt1bsketcf",
-  "version": 21,
+  "version": 22,
   "weekStart": ""
 }

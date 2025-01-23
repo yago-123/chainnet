@@ -25,4 +25,3 @@ scrape_configs:
           level:
       - output:
           source: message
-

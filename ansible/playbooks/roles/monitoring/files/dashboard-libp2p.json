@@ -1357,8 +1357,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1520,9 +1519,9 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "LibP2P",
+  "timezone": "Europe/Madrid",
+  "title": "07 - LibP2P",
   "uid": "aeaefdc0vp0xsa",
-  "version": 35,
+  "version": 36,
   "weekStart": ""
 }

@@ -997,13 +997,13 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Mempool",
+  "title": "01 - Mempool",
   "uid": "cea9wamj3ad4wf",
-  "version": 45,
+  "version": 46,
   "weekStart": ""
 }

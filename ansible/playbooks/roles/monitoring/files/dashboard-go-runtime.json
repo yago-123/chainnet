@@ -551,8 +551,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -674,8 +673,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -813,8 +811,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -905,8 +902,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -999,13 +995,13 @@
     "list": []
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "Golang Runtime",
+  "timezone": "Europe/Madrid",
+  "title": "06 - Golang Runtime",
   "uid": "ceash8duu81kwf",
-  "version": 19,
+  "version": 21,
   "weekStart": ""
 }

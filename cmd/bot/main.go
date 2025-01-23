@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 30
+	MaxNumberConcurrentAccounts = 15
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5

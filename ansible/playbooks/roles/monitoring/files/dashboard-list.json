@@ -27,8 +27,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 16,
-        "w": 11,
+        "h": 12,
+        "w": 8,
         "x": 0,
         "y": 0
       },
@@ -40,7 +40,7 @@
         "maxItems": 10,
         "query": "",
         "showFolderNames": true,
-        "showHeadings": true,
+        "showHeadings": false,
         "showRecentlyViewed": false,
         "showSearch": false,
         "showStarred": true,
@@ -65,6 +65,6 @@
   "timezone": "browser",
   "title": "List Charts",
   "uid": "aeas45dcaj30gf",
-  "version": 4,
+  "version": 6,
   "weekStart": ""
 }
