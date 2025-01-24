@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 11,
+  "id": 6,
   "links": [],
   "panels": [
     {
@@ -1148,13 +1148,13 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "Europe/Madrid",
   "title": "02 - Blocks",
   "uid": "cearxht0w68e8d",
-  "version": 24,
+  "version": 4,
   "weekStart": ""
 }

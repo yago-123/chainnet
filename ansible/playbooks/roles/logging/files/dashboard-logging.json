@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 17,
+  "id": 10,
   "links": [],
   "panels": [
     {
@@ -316,13 +316,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Logging",
   "uid": "ceat0e1ne8jr4c",
-  "version": 7,
+  "version": 2,
   "weekStart": ""
 }

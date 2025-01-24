@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 4,
+  "id": 7,
   "links": [],
   "panels": [
     {
@@ -1515,13 +1515,13 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "Europe/Madrid",
   "title": "07 - LibP2P",
   "uid": "aeaefdc0vp0xsa",
-  "version": 36,
+  "version": 4,
   "weekStart": ""
 }

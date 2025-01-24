@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 3,
+  "id": 8,
   "links": [],
   "panels": [
     {
@@ -997,13 +997,13 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "01 - Mempool",
   "uid": "cea9wamj3ad4wf",
-  "version": 46,
+  "version": 4,
   "weekStart": ""
 }
