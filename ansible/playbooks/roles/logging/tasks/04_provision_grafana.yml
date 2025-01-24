@@ -6,7 +6,7 @@
 
 - name: Ensure the provisioning directory exists
   file:
-    path: /etc/grafana/provisioning/dashboards/custom
+    path: /etc/grafana/provisioning/dashboards/logging
     state: directory
     owner: grafana
     group: grafana
@@ -23,7 +23,7 @@
 - name: Copy the dashboard JSON file
   copy:
     src: files/dashboard-logging.json
-    dest: /etc/grafana/provisioning/dashboards/custom/dashboard-logging.json
+    dest: /etc/grafana/provisioning/dashboards/logging/dashboard-logging.json
     owner: grafana
     group: grafana
     mode: '0644'

@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 15,
+  "id": 8,
   "links": [],
   "panels": [
     {
@@ -1002,6 +1002,6 @@
   "timezone": "Europe/Madrid",
   "title": "06 - Golang Runtime",
   "uid": "ceash8duu81kwf",
-  "version": 21,
+  "version": 1,
   "weekStart": ""
 }

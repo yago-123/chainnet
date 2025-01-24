@@ -21,7 +21,7 @@ Default configuration:
 ```yaml
 seed-nodes:                               # List of seed nodes
   - address: "seed-1.chainnet.yago.ninja"
-    peer-id: "QmNXM4W7om3FdYDutuPjYCgTsazRNWhNn6fNyimf7SUHhR"
+    peer-id: "QmVQ8bj9KPfTiN23vX7sbqn4oXjTSycfULL4oApAZccWL5"
     port: 9100
   - address: "seed-2.chainnet.yago.ninja"
     peer-id: "peerID-2"
@@ -190,7 +190,7 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
 After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this, 
 you must first install Grafana:
 ```bash
-$  ansible-playbook -i ansible/inventories/seed/hosts.ini \
+$ ansible-playbook -i ansible/inventories/seed/hosts.ini \
                    ansible/playbooks/visualization.yml
 ```
 

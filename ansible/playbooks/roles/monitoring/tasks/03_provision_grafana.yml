@@ -12,6 +12,14 @@
     group: grafana
     mode: '0755'
 
+- name: Ensure the provisioning directory for list charts exists
+  file:
+    path: /etc/grafana/provisioning/dashboards/list
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+
 - name: Copy the dashboard provisioning YAML
   copy:
     src: files/dashboard_provision_monitoring.yml
@@ -20,10 +28,28 @@
     group: grafana
     mode: '0644'
 
-- name: Copy the dashboard JSON file
+- name: Copy the dashboard provisioning YAML for chart list
   copy:
-    src: files/dashboard-monitoring.json
-    dest: /etc/grafana/provisioning/dashboards/custom/dashboard-monitoring.json
+    src: files/dashboard_provision_monitoring.yml
+    dest: /etc/grafana/provisioning/dashboards/dashboard_provision_list.yml
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Copy all dashboard provisioning YAML files
+  copy:
+    src: "{{ item }}"
+    dest: /etc/grafana/provisioning/dashboards/custom
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  with_fileglob:
+    - files/dashboards/*.json
+
+- name: Copy the list of dashboard JSON files
+  copy:
+    src: files/dashboard-list.json
+    dest: /etc/grafana/provisioning/dashboards/list
     owner: grafana
     group: grafana
     mode: '0644'

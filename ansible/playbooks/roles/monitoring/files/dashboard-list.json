@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 13,
+  "id": 9,
   "links": [],
   "panels": [
     {
@@ -34,7 +34,7 @@
       },
       "id": 2,
       "options": {
-        "folderUID": "",
+        "folderUID": "eeayo59agmltsb",
         "includeVars": false,
         "keepTime": true,
         "maxItems": 10,
@@ -42,8 +42,8 @@
         "showFolderNames": true,
         "showHeadings": false,
         "showRecentlyViewed": false,
-        "showSearch": false,
-        "showStarred": true,
+        "showSearch": true,
+        "showStarred": false,
         "tags": []
       },
       "pluginVersion": "11.4.0",
@@ -65,6 +65,6 @@
   "timezone": "browser",
   "title": "List Charts",
   "uid": "aeas45dcaj30gf",
-  "version": 6,
+  "version": 1,
   "weekStart": ""
 }
