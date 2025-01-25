@@ -417,14 +417,14 @@ func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
 	}
 }
 
-func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
+func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) { //nolint:funlen,gocognit // no problem in this func being long
 	monitor.NewMetric(registry, monitor.Gauge, "chain_height", "Number of blocks in the chain", func() float64 {
 		return float64(bc.GetLastHeight())
 	})
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_circulating_supply", "Circulating supply of the chain", func() float64 {
 		totalSupply := 0
-		remainingHeight := int(bc.lastHeight)
+		remainingHeight := int(bc.lastHeight) //nolint:gosec // no risk of overflow here
 		reward := common.InitialCoinbaseReward
 
 		for remainingHeight > 0 {
