@@ -2,6 +2,12 @@ server {
     listen 80;
     server_name {{ domain }};
 
+    # Redirect /list to the specific Grafana dashboard
+    location /list {
+        rewrite ^/list$ /d/eeazamyajw2kgc/dashboard-list?orgId=1&from=now-24h&to=now&timezone=browser permanent;
+    }
+
+    # Proxy all other requests to Grafana
     location / {
         proxy_pass http://localhost:3000;
         proxy_set_header Host $host;

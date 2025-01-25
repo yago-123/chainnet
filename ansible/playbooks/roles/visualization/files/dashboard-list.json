@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 9,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -27,19 +27,19 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 8,
+        "h": 15,
+        "w": 12,
         "x": 0,
         "y": 0
       },
-      "id": 2,
+      "id": 1,
       "options": {
-        "folderUID": "eeayo59agmltsb",
+        "folderUID": "eeb08oxzioi68d",
         "includeVars": false,
-        "keepTime": true,
+        "keepTime": false,
         "maxItems": 10,
         "query": "",
-        "showFolderNames": true,
+        "showFolderNames": false,
         "showHeadings": false,
         "showRecentlyViewed": false,
         "showSearch": true,
@@ -47,7 +47,36 @@
         "tags": []
       },
       "pluginVersion": "11.4.0",
-      "title": "",
+      "title": "Monitoring List",
+      "type": "dashlist"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "folderUID": "beb093zy0dkaoa",
+        "includeVars": false,
+        "keepTime": false,
+        "maxItems": 10,
+        "query": "",
+        "showFolderNames": true,
+        "showHeadings": false,
+        "showRecentlyViewed": false,
+        "showSearch": true,
+        "showStarred": true,
+        "tags": []
+      },
+      "pluginVersion": "11.4.0",
+      "title": "Logging List",
       "type": "dashlist"
     }
   ],
@@ -58,13 +87,15 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "hidden": true
+  },
   "timezone": "browser",
-  "title": "List Charts",
-  "uid": "aeas45dcaj30gf",
+  "title": "Dashboard List",
+  "uid": "eeazamyajw2kgc",
   "version": 1,
   "weekStart": ""
 }
