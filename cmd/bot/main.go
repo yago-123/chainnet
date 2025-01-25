@@ -281,6 +281,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		return fmt.Errorf("error getting foundation account UTXOs: %w", err)
 	}
 
+	// todo() limit the tx to a maximum number of inputs
 	if err = createAndSendTransaction(foundationAccount, addresses, targetAmounts, 0, foundationAccountUTXOs); err != nil {
 		return fmt.Errorf("error creating and sending transaction: %w", err)
 	}
