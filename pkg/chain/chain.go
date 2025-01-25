@@ -417,32 +417,119 @@ func (bc *Blockchain) OnUnconfirmedTxIDReceived(peer peer.ID, txID []byte) {
 	}
 }
 
-func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) {
+func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) { //nolint:funlen,gocognit // no problem in this func being long
 	monitor.NewMetric(registry, monitor.Gauge, "chain_height", "Number of blocks in the chain", func() float64 {
 		return float64(bc.GetLastHeight())
 	})
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_circulating_supply", "Circulating supply of the chain", func() float64 {
-		totalSupply := 0.0
-		remainingHeight := bc.lastHeight
-		reward := float64(common.InitialCoinbaseReward)
+		totalSupply := 0
+		remainingHeight := int(bc.lastHeight) //nolint:gosec // no risk of overflow here
+		reward := common.InitialCoinbaseReward
 
 		for remainingHeight > 0 {
 			// determine the number of blocks in the current halving period
-			blocksInPeriod := uint(common.HalvingInterval)
+			blocksInPeriod := common.HalvingInterval
 			if remainingHeight < common.HalvingInterval {
 				blocksInPeriod = remainingHeight
 			}
 
-			// calculate BTC for this halving period and add to total
-			totalSupply += float64(blocksInPeriod) * reward
+			// calculate this halving period and add to total
+			totalSupply += blocksInPeriod * reward
 
 			// move to the next halving period
 			remainingHeight -= blocksInPeriod
 			reward /= 2
 		}
 
-		return totalSupply
+		return kernel.ConvertFromChannoshisToCoins(uint(totalSupply))
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_size", "Size of latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		return float64(block.Size())
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_inputs_size", "Size of inputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		inputSize := uint(0)
+		for _, tx := range block.Transactions {
+			for _, in := range tx.Vin {
+				inputSize += in.Size()
+			}
+		}
+
+		return float64(inputSize)
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_outputs_size", "Size of outputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		outputSize := uint(0)
+		for _, tx := range block.Transactions {
+			for _, out := range tx.Vout {
+				outputSize += out.Size()
+			}
+		}
+
+		return float64(outputSize)
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_header_size", "Size of header in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		return float64(block.Header.Size())
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_txs", "Number of transactions in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		return float64(len(block.Transactions))
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_num_inputs", "Number of inputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		inputs := 0
+		for _, tx := range block.Transactions {
+			inputs += len(tx.Vin)
+		}
+
+		return float64(inputs)
+	})
+
+	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_num_outputs", "Number of outputs in latest block added to chain", func() float64 {
+		block, err := bc.store.GetLastBlock()
+		if err != nil {
+			return 0.0
+		}
+
+		outputs := 0
+		for _, tx := range block.Transactions {
+			outputs += len(tx.Vout)
+		}
+
+		return float64(outputs)
 	})
 }
 

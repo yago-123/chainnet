@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 8,
+  "id": 4,
   "links": [],
   "panels": [
     {
@@ -341,13 +341,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "UTXO Set",
+  "title": "04 - UTXO Set",
   "uid": "feaf2uurv8t1cc",
-  "version": 6,
+  "version": 4,
   "weekStart": ""
 }

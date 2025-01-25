@@ -18,13 +18,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 10,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "loki",
-        "uid": "ae8pr32girzswd"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -37,28 +37,16 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 80,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -69,34 +57,196 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
+                "color": "green",
+                "value": null
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "info"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "debug"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 24,
+        "h": 8,
+        "w": 19,
         "x": 0,
         "y": 0
       },
-      "id": 2,
+      "id": 3,
       "options": {
+        "barRadius": 0,
+        "barWidth": 0.81,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
+        "orientation": "auto",
+        "showValue": "never",
+        "stacking": "normal",
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 200
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "editorMode": "code",
+          "expr": "count_over_time({filename=\"/var/log/chainnet/service.err.log\"} |= `` [$__auto])",
+          "legendFormat": "{{level}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs Count",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "debug"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "info"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "pluginVersion": "11.4.0",
@@ -104,40 +254,41 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "ae8pr32girzswd"
+            "uid": "P8E80F9AEF21F6940"
           },
-          "editorMode": "builder",
-          "expr": "count(rate({filename=\"/var/log/chainnet/service.err.log\"} |= `` [$__auto]))",
+          "editorMode": "code",
+          "expr": "sum(count_over_time({filename=\"/var/log/chainnet/service.err.log\"}[$__range])) by (level)",
+          "legendFormat": "{{level}}",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Panel Title",
-      "type": "timeseries"
+      "title": "",
+      "type": "piechart"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "ae8pr32girzswd"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "gridPos": {
-        "h": 16,
+        "h": 13,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 8
       },
-      "id": 1,
+      "id": 2,
       "options": {
-        "dedupStrategy": "exact",
+        "dedupStrategy": "none",
         "enableLogDetails": true,
         "prettifyLogMessage": false,
         "showCommonLabels": false,
         "showLabels": false,
-        "showTime": true,
+        "showTime": false,
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
@@ -146,7 +297,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "ae8pr32girzswd"
+            "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
           "expr": "{filename=\"/var/log/chainnet/service.err.log\"} |= ``",
@@ -154,7 +305,7 @@
           "refId": "A"
         }
       ],
-      "title": "Panel Title",
+      "title": "",
       "type": "logs"
     }
   ],
@@ -165,13 +316,13 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "logs",
-  "uid": "be8ptv4k41gxsa",
-  "version": 8,
+  "title": "Logging",
+  "uid": "ceat0e1ne8jr4c",
+  "version": 2,
   "weekStart": ""
 }
