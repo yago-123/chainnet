@@ -20,13 +20,15 @@
     group: grafana
     mode: '0644'
 
-- name: Copy the dashboard JSON file
+- name: Copy all dashboard provisioning YAML files
   copy:
-    src: files/dashboard-monitoring.json
-    dest: /etc/grafana/provisioning/dashboards/custom/dashboard-monitoring.json
+    src: "{{ item }}"
+    dest: /etc/grafana/provisioning/dashboards/custom
     owner: grafana
     group: grafana
     mode: '0644'
+  with_fileglob:
+    - files/dashboards/*.json
 
 - name: Restart Grafana service
   systemd:

@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 9,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -1185,13 +1185,13 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "Storage",
+  "timezone": "Europe/Madrid",
+  "title": "05 - Storage",
   "uid": "beakmt1bsketcf",
-  "version": 21,
+  "version": 4,
   "weekStart": ""
 }

@@ -16,6 +16,6 @@
         name: visualization
       when: grafana_installed
 
-    - name: Set up monitoring
+    - name: Set up logging
       include_role:
         name: logging

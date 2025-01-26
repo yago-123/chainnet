@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"flag"
 	"fmt"
 	"math/rand/v2"
 	"sort"
@@ -28,14 +29,11 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 30
+	MaxNumberConcurrentAccounts = 15
 	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
 	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
 	MaxNumberWalletsPerAccount = 5
 	FoundationAccountIndex     = 0
-
-	// todo(): make this a flag?
-	MetadataPath = "hd_wallet.data"
 
 	MinimumTxBalance = 100000
 
@@ -71,20 +69,25 @@ var (
 var logger = logrus.New()
 var cfg = config.NewConfig()
 
+// usage: ./bin/chainnet-bot --key-path wallet.pem --metadata wallet.data
+var privKeyPath = flag.String("key-path", "wallet.pem", "Path to the HD wallet key")
+var metadataPath = flag.String("metadata", "hd_wallet.data", "Path to the HD wallet metadata")
+
 func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it's OK to be long here
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 	logger.SetLevel(logrus.DebugLevel)
 
+	flag.Parse()
+
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKeyPath := "wallet.pem"
-	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(privKeyPath)
+	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(*privKeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
 	}
 
-	metadata, err := hd_wallet.LoadMetadata(MetadataPath)
+	metadata, err := hd_wallet.LoadMetadata(*metadataPath)
 	if err != nil {
 		logger.Warnf("error loading metadata: %v", err)
 	}
@@ -278,6 +281,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		return fmt.Errorf("error getting foundation account UTXOs: %w", err)
 	}
 
+	// todo() limit the tx to a maximum number of inputs
 	if err = createAndSendTransaction(foundationAccount, addresses, targetAmounts, 0, foundationAccountUTXOs); err != nil {
 		return fmt.Errorf("error creating and sending transaction: %w", err)
 	}
@@ -349,7 +353,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 	for {
 		time.Sleep(PeriodMetadataBackup)
-		if err := hd_wallet.SaveMetadata(MetadataPath, hdWallet.GetMetadata()); err != nil {
+		if err := hd_wallet.SaveMetadata(*metadataPath, hdWallet.GetMetadata()); err != nil {
 			logger.Warnf("error saving metadata: %v", err)
 		}
 	}

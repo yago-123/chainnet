@@ -1,10 +1,10 @@
 apiVersion: 1
 providers:
-  - name: 'Monitoring Dashboards'
+  - name: 'Chart List'
     orgId: 1
-    folder: 'Monitoring'
+    folder: ''
     type: file
     disableDeletion: true
     updateIntervalSeconds: 10
     options:
-      path: /etc/grafana/provisioning/dashboards/custom/
+      path: /etc/grafana/provisioning/dashboards/list/dashboard-list.json

@@ -22,7 +22,12 @@ server {
     #ssl_prefer_server_ciphers on;
     # ssl_dhparam /etc/ssl/certs/dhparam.pem;
 
-    # Your proxy settings
+    # Redirect /list to the specific Grafana dashboard
+    location /list {
+        rewrite ^/list$ /d/eeazamyajw2kgc/dashboard-list?orgId=1&from=now-24h&to=now&timezone=browser permanent;
+    }
+
+    # Your proxy settings for all other requests
     location / {
         proxy_pass http://localhost:3000;
         proxy_set_header Host $host;

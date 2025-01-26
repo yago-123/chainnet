@@ -14,5 +14,14 @@ scrape_configs:
       - targets:
           - localhost
         labels:
-          job: varlogs
           __path__: /var/log/chainnet/*log
+    pipeline_stages:
+      - regex:
+          expression: 'time="(?P<timestamp>[^"]+)" level=(?P<level>[a-zA-Z]+) msg="(?P<message>.*)"'
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02 15:04:05.000"
+      - labels:
+          level:
+      - output:
+          source: message

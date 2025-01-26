@@ -1,0 +1,28 @@
+- name: Ensure the provisioning directory for list charts exists
+  file:
+    path: /etc/grafana/provisioning/dashboards/list
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+
+- name: Copy the dashboard provisioning YAML for chart list
+  copy:
+    src: files/dashboard_provision_list.yml
+    dest: /etc/grafana/provisioning/dashboards/dashboard_provision_list.yml
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Copy the list of dashboard JSON files
+  copy:
+    src: files/dashboard-list.json
+    dest: /etc/grafana/provisioning/dashboards/list
+    owner: grafana
+    group: grafana
+    mode: '0644'
+
+- name: Restart Grafana service
+  systemd:
+    name: grafana-server
+    state: restarted
