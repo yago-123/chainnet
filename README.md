@@ -84,8 +84,6 @@ Building a `chainnet-nespv` wallet:
 $ make nespv 
 ````
 
-Here's the corrected documentation:
-
 ## Creating and Running Wallets
 
 ### Step 1: Generate a Private Key
@@ -152,25 +150,6 @@ Running the `chainnet-miner`:
 ```bash
 $ ./bin/chainnet-miner --config default-config.yaml 
 ```
-### Docker
-Running the `chainnet-node`: 
-```bash 
-$ mkdir /path/to/data
-$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
-$ docker run -v ./path/to/data:/data           \
-             -e CONFIG_FILE=/data/config.yaml  \
-             -p 8080:8080                      \
-             yagoninja/chainnet-node:latest
-```
-Running the `chainnet-miner`: 
-```bash 
-$ mkdir /path/to/data
-$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
-$ docker run -v ./path/to/data:/data            \
-             -e CONFIG_FILE=/data/config.yaml   \
-             -p 8080:8080                       \
-             yagoninja/chainnet-miner:latest
-```
 
 ### Remote Nodes with Ansible
 To run the `chainnet-node` on a remote node:
@@ -217,7 +196,27 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
 There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
 loading real data.
 
-### Run in Kubernetes 
+### Run in Docker (currently not mantained)
+Running the `chainnet-node`:
+```bash 
+$ mkdir /path/to/data
+$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
+$ docker run -v ./path/to/data:/data           \
+             -e CONFIG_FILE=/data/config.yaml  \
+             -p 8080:8080                      \
+             yagoninja/chainnet-node:latest
+```
+Running the `chainnet-miner`:
+```bash 
+$ mkdir /path/to/data
+$ cp config/examples/docker-config.yaml /path/to/data/config.yaml
+$ docker run -v ./path/to/data:/data            \
+             -e CONFIG_FILE=/data/config.yaml   \
+             -p 8080:8080                       \
+             yagoninja/chainnet-miner:latest
+```
+
+### Run in Kubernetes (currently not mantained)
 Deploy the helm chart:
 ```bash
 $ helm install chainnet-release ./helm \
@@ -229,17 +228,23 @@ Uninstall the helm chart:
 $ helm uninstall chainnet
 ```
 
-## Generating node identities
-Generate a ECDSA `secp256r1` private key in PEM format: 
-```bash
-$ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
-```
+## Generating Node Identities
+To authenticate nodes in P2P connections, you can generate a node identity. Start by generating an ECDSA `secp256r1` private key in PEM format:
+```bash  
+$ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem  
+```  
 
-## Architecture
-```ascii
-┌──────────────────┐                 ┌──────────────────┐
-│                  │                 │                  │
-│  ChainNet Node   ├────────────────►│  ChainNet Miner  │
-│                  │                 │                  │
-└──────────────────┘                 └──────────────────┘
-```
+Next, reference the identity path in the configuration file:
+```yaml  
+p2p:  
+  enabled: true                           # Enable or disable network communication  
+  identity-path: "ecdsa-priv-key.pem"     # Path to the ECDSA peer private key in PEM format (leave empty to generate a random identity)  
+```  
+
+Note that this identity can also be used to authenticate the seed nodes via the `peer-id` field:
+```yaml  
+seed-nodes:                               # List of seed nodes  
+  - address: "seed-1.chainnet.yago.ninja"  
+    peer-id: "QmNXM4W7om3FdYDutuPjYCgTsazRNWhNn6fNyimf7SUHhR"  
+    port: 9100  
+```  
