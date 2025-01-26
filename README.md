@@ -23,12 +23,12 @@ seed-nodes:                               # List of seed nodes
   - address: "seed-1.chainnet.yago.ninja"
     peer-id: "QmVQ8bj9KPfTiN23vX7sbqn4oXjTSycfULL4oApAZccWL5"
     port: 9100
-  - address: "seed-2.chainnet.yago.ninja"
-    peer-id: "peerID-2"
-    port: 9200
-  - address: "seed-3.chainnet.yago.ninja"
-    peer-id: "peerID-3"
-    port: 9300
+#  - address: "seed-2.chainnet.yago.ninja"
+#    peer-id: "peerID-2"
+#    port: 8081
+#  - address: "seed-3.chainnet.yago.ninja"
+#    peer-id: "peerID-3"
+#    port: 8082
 
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
@@ -43,7 +43,7 @@ chain:
 prometheus:
   enabled: true                           # Enable or disable prometheus metrics
   port: 9091                              # Port exposed for prometheus metrics
-  libp2p-port: 9099                       # Port exposed for core libp2p metrics
+  libp2p-port: 9099                       # Port exposed for prometheus core libp2p metrics
   path: "/metrics"                        # Path for prometheus metrics endpoint
 
 p2p:
