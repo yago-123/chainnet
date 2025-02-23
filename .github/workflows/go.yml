@@ -15,7 +15,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
+          go-version: '1.24'
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
@@ -33,7 +33,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: 'v1.60.2'
+          version: 'v1.64.5'
 
       - name: Build Node
         run: make node

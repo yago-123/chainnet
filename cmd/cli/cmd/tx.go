@@ -69,7 +69,6 @@ func init() {
 	rootCmd.AddCommand(listTxsCmd)
 
 	// sub commands
-	// todo() change address to pub key?
 	listTxsCmd.Flags().String(FlagAddress, "", "Destination address to send coins")
 
 	// required flags

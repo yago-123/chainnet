@@ -87,6 +87,10 @@ clean:
 imports: 
 	@find . -name "*.go" | xargs goimports -w
 
+.PHONY: fmt
+fmt:
+	@go fmt ./...
+
 .PHONY: debug
 debug: node
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet-node -- --config default-config.yaml
