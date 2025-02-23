@@ -109,6 +109,12 @@ $ ./bin/chainnet-nespv send            \
           --wallet-key-path <wallet.pem>
 ```
 
+You can use the `addresses` subcommand to list the addresses attached to this wallet:
+```bash
+$ ./bin/chainnet-nespv addresses \
+           --wallet-key-path <wallet.pem>
+```
+
 ### Step 3: Extract the Public Key in Base58 Format
 To receive rewards, you'll need to extract the public key from the wallet in `base58` format. This can be done as follows:
 ```bash
