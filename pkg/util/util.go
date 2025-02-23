@@ -69,7 +69,7 @@ func SafeUintToInt(u uint) (int, error) {
 		return 0, errors.New("uint value exceeds int range")
 	}
 
-	return int(u), nil //nolint:gosec // This has been already checked
+	return int(u), nil
 }
 
 // IsFirstNBitsZero checks if the first n bits of the array are zero

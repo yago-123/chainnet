@@ -259,7 +259,7 @@ type NodeP2P struct {
 	logger *logrus.Logger
 }
 
-func NewNodeP2P(
+func NewNodeP2P( //nolint:funlen // this function requires a lot of parameters
 	ctx context.Context,
 	cfg *config.Config,
 	netSubject observer.NetSubject,

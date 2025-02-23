@@ -53,7 +53,6 @@ var sendCmd = &cobra.Command{
 
 		// process key from path or from content
 		if privKeyCont != "" {
-			// todo(): this is encoded somehow?
 			privKey = base58.Decode(privKeyCont)
 		}
 

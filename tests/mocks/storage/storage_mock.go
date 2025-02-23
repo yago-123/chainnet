@@ -1,4 +1,4 @@
-// storage.go
+//nolint:errcheck // this is a mock
 package storage
 
 import (

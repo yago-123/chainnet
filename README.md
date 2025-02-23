@@ -1,21 +1,6 @@
-# ChainNet
-## Setup
-Install dependencies: 
-```bash
-$ sudo apt install protobuf-compiler base58
-```
+# Chainnet distributed chain 
+Access live Chainnet metrics from the main seed node at  [dashboard.chainnet.yago.ninja/list](https://dashboard.chainnet.yago.ninja/list).
 
-Install go packages: 
-```bash
-$ go install google.golang.org/protobuf/cmd/protoc-gen-go
-$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-```
-
-Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes) P2P communication:  
-```bash
-$ sudo sysctl -w net.core.rmem_max=7500000
-$ sudo sysctl -w net.core.wmem_max=7500000
-```
 ## Configuration
 Default configuration:
 ```yaml
@@ -23,12 +8,7 @@ seed-nodes:                               # List of seed nodes
   - address: "seed-1.chainnet.yago.ninja"
     peer-id: "QmVQ8bj9KPfTiN23vX7sbqn4oXjTSycfULL4oApAZccWL5"
     port: 9100
-#  - address: "seed-2.chainnet.yago.ninja"
-#    peer-id: "peerID-2"
-#    port: 8081
-#  - address: "seed-3.chainnet.yago.ninja"
-#    peer-id: "peerID-3"
-#    port: 8082
+#  ... more seed nodes ...
 
 storage-file: "bin/miner-storage"         # File used for persisting the chain status
 miner:
@@ -63,6 +43,25 @@ wallet:
   server-address: "seed-1.chainnet.yago.ninja"
   server-port: 8080
 ```
+
+## Setup
+Install dependencies: 
+```bash
+$ sudo apt install protobuf-compiler base58
+```
+
+Install go packages: 
+```bash
+$ go install google.golang.org/protobuf/cmd/protoc-gen-go
+$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+```
+
+Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes) P2P communication:  
+```bash
+$ sudo sysctl -w net.core.rmem_max=7500000
+$ sudo sysctl -w net.core.wmem_max=7500000
+```
+
 ## Build
 Building the `chainnet-nespv` wallet:
 ```bash
@@ -78,11 +77,6 @@ Building the `chainnet-miner` node:
 ```bash
 $ make miner
 ```
-
-Building a `chainnet-nespv` wallet:
-```bash
-$ make nespv 
-````
 
 ## Creating and Running Wallets
 
@@ -113,6 +107,12 @@ $ ./bin/chainnet-nespv send            \
           --amount 23.5 --fee 0.001    \
           --pay-type P2PKH             \ 
           --wallet-key-path <wallet.pem>
+```
+
+You can use the `addresses` subcommand to list the addresses attached to this wallet:
+```bash
+$ ./bin/chainnet-nespv addresses \
+           --wallet-key-path <wallet.pem>
 ```
 
 ### Step 3: Extract the Public Key in Base58 Format
