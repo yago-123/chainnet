@@ -94,12 +94,13 @@ func TestCanBeUnlockedWithForP2PKH(t *testing.T) {
 		scriptPubKey string
 		address      []byte
 	}
+
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
-		{"correct pubkey and address", args{NewScript(P2PKH, base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")), base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")}, true},
+		{"correct pubkey and address", args{NewScript(P2PKH, base58.Decode("XsyV9e37GnmCsqsKucyfe5scFpPRFTKth")), base58.Decode("aSq9DsNNvGhYxYyqA9wd2eduEAZ5AXWgJTbTFiUHFDpSgR5ZaWVxcEgVr3C7VoLSwpFsZYKiG1QGdcWvoVdA9FrNvRQieoMUfS73arccNJ7GiuFpZVTBxWrH3ZU6")}, true},
 		{"incorrect pubkey and address", args{NewScript(P2PKH, base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")), base58.Decode("hVb8js1bpmyYsQrKQFfWyaUs111111111")}, false},
 		{"empty pubkey", args{NewScript(P2PKH, []byte("")), base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")}, false},
 		{"empty address", args{NewScript(P2PKH, base58.Decode("hVb8js1bpmyYsQrKQFfWyaUski2wPrqew")), []byte{}}, false},

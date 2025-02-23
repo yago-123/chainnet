@@ -60,7 +60,7 @@ func (u *UTXOSet) AddBlock(block *kernel.Block) error {
 		for index, output := range tx.Vout {
 			utxo := kernel.UTXO{
 				TxID:   tx.ID,
-				OutIdx: uint(index),
+				OutIdx: uint(index), //nolint:gosec // int to uint is safe
 				Output: output,
 			}
 
