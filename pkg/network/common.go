@@ -33,7 +33,7 @@ func extractAddrInfo(addr string, port uint, id string) (*peer.AddrInfo, error) 
 
 func connectToSeeds(cfg *config.Config, host host.Host) error {
 	for _, seed := range cfg.SeedNodes {
-		addr, err := extractAddrInfo(seed.Address, uint(seed.Port), seed.PeerID)
+		addr, err := extractAddrInfo(seed.Address, uint(seed.Port), seed.PeerID) //nolint:gosec // this int to uint is safe
 		if err != nil {
 			cfg.Logger.Errorf("failed to extract address info from seed node %s: %v", seed.Address, err)
 			continue

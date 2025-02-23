@@ -382,10 +382,10 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 		nodeSeeds := viper.GetStringSlice(KeyNodeSeeds)
 		seeds, err := parseSeedNodes(nodeSeeds)
 		if err != nil {
-			cfg.Logger.Errorf("error parsing seed nodes: %v", err)
-		} else {
-			cfg.SeedNodes = seeds
+			cfg.Logger.Fatalf("error parsing seed nodes: %v", err)
 		}
+
+		cfg.SeedNodes = seeds
 	}
 	if cmd.Flags().Changed(KeyStorageFile) {
 		cfg.StorageFile = viper.GetString(KeyStorageFile)
