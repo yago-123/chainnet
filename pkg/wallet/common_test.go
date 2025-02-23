@@ -2,10 +2,10 @@ package wallet //nolint:testpackage // don't create separate package for tests
 
 import "testing"
 
-func TestGenerateInputs(t *testing.T) {
+func TestGenerateInputs(_ *testing.T) {
 	// todo: implement
 }
 
-func TestGenerateOutputs(t *testing.T) {
+func TestGenerateOutputs(_ *testing.T) {
 	// todo: implement
 }

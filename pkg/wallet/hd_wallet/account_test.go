@@ -9,6 +9,6 @@ AwEHoUQDQgAETm+qq1qRGebJyaGa6lBmgkC0NlaAo4iKOGEDczvj5A3lK6TLLe9u
 -----END EC PRIVATE KEY-----
 `
 
-func TestHDAccount_Sync(t *testing.T) {
+func TestHDAccount_Sync(_ *testing.T) {
 	// todo: implement
 }
