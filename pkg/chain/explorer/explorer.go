@@ -223,7 +223,7 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 
 			for outIdx, out := range tx.Vout {
 				// in case is already spent, continue
-				if isOutputSpent(spentTXOs, txID, uint(outIdx)) {
+				if isOutputSpent(spentTXOs, txID, uint(outIdx)) { //nolint:gosec // int to uint is safe
 					continue
 				}
 
@@ -297,7 +297,7 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 		for _, tx := range nextBlock.Transactions {
 			for outIdx, out := range tx.Vout {
 				// in case is already spent, continue
-				if isOutputSpent(spentTXOs, string(tx.ID), uint(outIdx)) {
+				if isOutputSpent(spentTXOs, string(tx.ID), uint(outIdx)) { //nolint:gosec // int to uint is safe
 					continue
 				}
 
@@ -305,7 +305,7 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 				if out.CanBeUnlockedWith(address) {
 					unspentTXOs = append(unspentTXOs, &kernel.UTXO{
 						TxID:   tx.ID,
-						OutIdx: uint(outIdx),
+						OutIdx: uint(outIdx), //nolint:gosec // int to uint is safe
 						Output: out,
 					})
 				}
@@ -355,7 +355,7 @@ func (explorer *ChainExplorer) FindAmountSpendableOutputs(address string, amount
 		for outIdx, out := range tx.Vout {
 			if out.CanBeUnlockedWith(address) {
 				accumulated += out.Amount
-				unspentOutputs[txID] = append(unspentOutputs[txID], uint(outIdx))
+				unspentOutputs[txID] = append(unspentOutputs[txID], uint(outIdx)) //nolint:gosec // int to uint is safe
 
 				// return once we reached the required amount
 				if accumulated >= amount {

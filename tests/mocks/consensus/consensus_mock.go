@@ -1,3 +1,4 @@
+//nolint:errcheck // this is a mock
 package consensus
 
 import (
