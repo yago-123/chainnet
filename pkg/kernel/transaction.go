@@ -194,7 +194,7 @@ type TxInput struct {
 	ScriptSig string
 
 	// PubKey is the public key that unlocked the ScriptSig
-	// todo() eventually remove once we cleared ScriptSig
+	// todo() eventually remove once we clear ScriptSig
 	PubKey string
 }
 

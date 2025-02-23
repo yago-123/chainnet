@@ -229,6 +229,7 @@ func (bc *Blockchain) AddTransaction(tx *kernel.Transaction) error {
 	return nil
 }
 
+// todo(): implement generalSync
 // func (bc *Blockchain) generalSync() {
 // 	try to sync regularly with other nodes to see if there is some sort of fork (take into account that +6 blocks of
 // 	difference is already considered kind of a fork)
@@ -344,7 +345,6 @@ func (bc *Blockchain) OnNodeDiscovered(peerID peer.ID) {
 		ctx, cancel := context.WithTimeout(context.Background(), bc.cfg.P2P.ConnTimeout)
 		defer cancel()
 
-		// todo(): revisit this, not sure if makes sense at all this lock type
 		bc.syncMutex.Lock(ctx)
 		defer bc.syncMutex.Unlock()
 		if err := bc.syncWithPeer(ctx, peerID); err != nil {
