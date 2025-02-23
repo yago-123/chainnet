@@ -194,7 +194,7 @@ type TxInput struct {
 	ScriptSig string
 
 	// PubKey is the public key that unlocked the ScriptSig
-	// todo() eventually remove once we clear ScriptSig
+	// todo() eventually remove once we clear extracting addresses from ScriptSig
 	PubKey string
 }
 
@@ -220,6 +220,7 @@ func NewInput(txid []byte, vout uint, scriptSig string, pubKey string) TxInput {
 }
 
 // CanUnlockOutputWith checks if the input can unlock the output
+// todo() eventually remove once we clear extracting addresses from ScriptSig
 func (in *TxInput) CanUnlockOutputWith(pubKey string) bool {
 	return in.PubKey == pubKey
 }
@@ -236,7 +237,7 @@ func (in *TxInput) UniqueTxoKey() string {
 }
 
 func (in *TxInput) Size() uint {
-	return uint(len(in.Txid) + int(unsafe.Sizeof(uint(0))) + len(in.ScriptSig) + len(in.PubKey))
+	return uint(len(in.Txid) + int(unsafe.Sizeof(uint(0))) + len(in.ScriptSig) + len(in.PubKey)) //nolint:gosec // this is used for metrics only
 }
 
 // EqualInput checks if the input is the same as the given input
@@ -281,7 +282,8 @@ func NewOutput(amount uint, scriptType script.ScriptType, pubKey string) TxOutpu
 	}
 }
 
-// canBeUnlockedWith checks if the output can be unlocked with the given public key
+// CanBeUnlockedWith checks if the output can be unlocked with the given public key
+// todo() eventually remove once we clear extracting addresses from ScriptPubKey
 func (out *TxOutput) CanBeUnlockedWith(pubKey string) bool {
 	return out.PubKey == pubKey
 }
@@ -296,5 +298,5 @@ func (out *TxOutput) String() string {
 }
 
 func (out *TxOutput) Size() uint {
-	return uint(int(unsafe.Sizeof(uint(0))) + len(out.ScriptPubKey) + len(out.PubKey))
+	return uint(int(unsafe.Sizeof(uint(0))) + len(out.ScriptPubKey) + len(out.PubKey)) //nolint:gosec // this is used for metrics only
 }

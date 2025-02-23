@@ -1,4 +1,4 @@
-//nolint:errcheck
+//nolint:errcheck // this is a mock
 package encoding
 
 import (

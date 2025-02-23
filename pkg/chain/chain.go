@@ -442,7 +442,7 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) { //nolint:
 			reward /= 2
 		}
 
-		return kernel.ConvertFromChannoshisToCoins(uint(totalSupply))
+		return kernel.ConvertFromChannoshisToCoins(uint(totalSupply)) //nolint:gosec // int to uint is safe
 	})
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_size", "Size of latest block added to chain", func() float64 {
