@@ -270,7 +270,7 @@ func CanBeUnlockedWith(scriptPubKey string, publicKey []byte, version byte) bool
 		if errAddress != nil {
 			return false
 		}
-
+		
 		// check if the values match
 		return bytes.Equal([]byte(literals[2]), pubKeyHashed)
 	case UndefinedScriptType:
