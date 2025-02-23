@@ -69,7 +69,7 @@ func (bh *BlockHeader) Assemble() []byte {
 }
 
 func (bh *BlockHeader) Size() uint {
-	return uint(len(bh.Version) + len(bh.PrevBlockHash) + len(bh.MerkleRoot) + int(unsafe.Sizeof(uint(0)))*3 + int(unsafe.Sizeof(int64(0))))
+	return uint(len(bh.Version) + len(bh.PrevBlockHash) + len(bh.MerkleRoot) + int(unsafe.Sizeof(uint(0)))*3 + int(unsafe.Sizeof(int64(0)))) //nolint:gosec // this is used for metrics only
 }
 
 type Block struct {
