@@ -1,0 +1,55 @@
+version: 2
+
+project_name: chainnet
+
+before:
+  hooks:
+    - make protobuf
+    - make test
+
+builds:
+  - id: node
+    main: ./cmd/node
+    binary: node
+    env: ["CGO_ENABLED=0"]
+    goos: [linux]
+    goarch: [amd64]
+  - id: miner
+    main: ./cmd/miner
+    binary: miner
+    env: ["CGO_ENABLED=0"]
+    goos: [linux]
+    goarch: [amd64]
+  - id: nespv
+    main: ./cmd/nespv
+    binary: nespv
+    env: ["CGO_ENABLED=0"]
+    goos: [linux]
+    goarch: [amd64]
+  - id: cli
+    main: ./cmd/cli
+    binary: cli
+    env: ["CGO_ENABLED=0"]
+    goos: [linux]
+    goarch: [amd64]
+
+archives:
+  - formats: [ 'tar.gz' ]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: yago-123
+    name: chainnet
+
+nfpms:
+  - package_name: chainnet
+    vendor: yago-123
+    homepage: "https://github.com/yago-123/chainnet"
+    maintainer: "yago-123 <me@yago.ninja>"
+    formats: [deb]
