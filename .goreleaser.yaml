@@ -28,7 +28,7 @@ builds:
     goarch: [amd64]
   - id: cli
     main: ./cmd/cli
-    binary: cli
+    binary: chainnet-cli
     env: ["CGO_ENABLED=0"]
     goos: [linux]
     goarch: [amd64]
