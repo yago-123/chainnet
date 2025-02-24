@@ -5,3 +5,5 @@ bin/
 *.pem
 *.data
 _fixture/
+# Added by goreleaser init:
+dist/
