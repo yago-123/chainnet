@@ -10,19 +10,19 @@ before:
 builds:
   - id: node
     main: ./cmd/node
-    binary: node
+    binary: chainnet-node
     env: ["CGO_ENABLED=0"]
     goos: [linux]
     goarch: [amd64]
   - id: miner
     main: ./cmd/miner
-    binary: miner
+    binary: chainnet-miner
     env: ["CGO_ENABLED=0"]
     goos: [linux]
     goarch: [amd64]
   - id: nespv
     main: ./cmd/nespv
-    binary: nespv
+    binary: chainnet-nespv
     env: ["CGO_ENABLED=0"]
     goos: [linux]
     goarch: [amd64]
