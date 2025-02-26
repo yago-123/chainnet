@@ -7,10 +7,10 @@ toolchain go1.24.0
 require (
 	github.com/boltdb/bolt v1.3.1
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/ipfs/go-datastore v0.7.0
+	github.com/ipfs/go-datastore v0.8.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/libp2p/go-libp2p v0.40.0
-	github.com/libp2p/go-libp2p-kad-dht v0.29.1
+	github.com/libp2p/go-libp2p v0.41.0
+	github.com/libp2p/go-libp2p-kad-dht v0.29.2
 	github.com/libp2p/go-libp2p-pubsub v0.13.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.21.0
@@ -59,9 +59,8 @@ require (
 	github.com/ipld/go-ipld-prime v0.21.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
-	github.com/jbenet/goprocess v0.1.4 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/koron/go-ssdp v0.0.5 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
@@ -71,7 +70,6 @@ require (
 	github.com/libp2p/go-libp2p-record v0.3.1 // indirect
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.4 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
-	github.com/libp2p/go-nat v0.2.0 // indirect
 	github.com/libp2p/go-netroute v0.2.2 // indirect
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/libp2p/go-yamux/v5 v5.0.0 // indirect
@@ -87,7 +85,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
-	github.com/multiformats/go-multiaddr v0.14.0 // indirect
+	github.com/multiformats/go-multiaddr v0.15.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.4.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.2.0 // indirect
@@ -111,7 +109,7 @@ require (
 	github.com/pion/randutil v0.1.0 // indirect
 	github.com/pion/rtcp v1.2.15 // indirect
 	github.com/pion/rtp v1.8.11 // indirect
-	github.com/pion/sctp v1.8.35 // indirect
+	github.com/pion/sctp v1.8.36 // indirect
 	github.com/pion/sdp/v3 v3.0.10 // indirect
 	github.com/pion/srtp/v3 v3.0.4 // indirect
 	github.com/pion/stun v0.6.1 // indirect
@@ -119,14 +117,14 @@ require (
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.0 // indirect
-	github.com/pion/webrtc/v4 v4.0.9 // indirect
+	github.com/pion/webrtc/v4 v4.0.10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/polydawn/refmt v0.89.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.49.0 // indirect
+	github.com/quic-go/quic-go v0.50.0 // indirect
 	github.com/quic-go/webtransport-go v0.8.1-0.20241018022711-4ac2c9250e66 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
@@ -140,7 +138,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
-	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
@@ -161,5 +158,5 @@ require (
 	gonum.org/v1/gonum v0.15.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	lukechampine.com/blake3 v1.3.0 // indirect
+	lukechampine.com/blake3 v1.4.0 // indirect
 )
