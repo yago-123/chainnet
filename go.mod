@@ -7,7 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/boltdb/bolt v1.3.1
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/ipfs/go-datastore v0.8.1
+	github.com/ipfs/go-datastore v0.8.2
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/libp2p/go-libp2p v0.41.0
 	github.com/libp2p/go-libp2p-kad-dht v0.29.2
