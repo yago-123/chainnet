@@ -35,7 +35,7 @@ const (
 	MaxNumberWalletsPerAccount = 5
 	FoundationAccountIndex     = 0
 
-	MinimumTxBalance = 100000
+	MinimumTxBalance = 100000000
 
 	// limits for startup of fund distribution, prevents all bots asking for funds at the same time
 	MinTimeStartupFundDistribution = 1 * time.Second
