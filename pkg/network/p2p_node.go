@@ -57,7 +57,7 @@ const (
 type nodeP2PHandler struct {
 	logger          *logrus.Logger
 	encoder         encoding.Encoding
-	explorer        *explorer.ChainExplorer
+	explorer        explorer.Explorer
 	mempoolExplorer *mempool.MemPoolExplorer
 
 	netSubject observer.NetSubject
@@ -68,7 +68,7 @@ type nodeP2PHandler struct {
 func newNodeP2PHandler(
 	cfg *config.Config,
 	encoder encoding.Encoding,
-	explorer *explorer.ChainExplorer,
+	explorer explorer.Explorer,
 	mempoolExplorer *mempool.MemPoolExplorer,
 	netSubject observer.NetSubject,
 ) *nodeP2PHandler {
@@ -247,7 +247,7 @@ type NodeP2P struct {
 	pubsub pubsub.PubSub
 	// encoder contains the communication data serialization between peers
 	encoder  encoding.Encoding
-	explorer *explorer.ChainExplorer
+	explorer explorer.Explorer
 
 	router *HTTPRouter
 
@@ -264,7 +264,7 @@ func NewNodeP2P( //nolint:funlen // this function requires a lot of parameters
 	cfg *config.Config,
 	netSubject observer.NetSubject,
 	encoder encoding.Encoding,
-	explorer *explorer.ChainExplorer,
+	explorer explorer.Explorer,
 	mempoolExplorer *mempool.MemPoolExplorer,
 ) (*NodeP2P, error) {
 	// options represent the configuration options for the libp2p host
