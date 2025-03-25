@@ -194,7 +194,7 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
 There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
 loading real data.
 
-### Run in Docker (currently not mantained)
+### Run in Docker (currently not maintained)
 Running the `chainnet-node`:
 ```bash 
 $ mkdir /path/to/data
@@ -214,7 +214,7 @@ $ docker run -v ./path/to/data:/data            \
              yagoninja/chainnet-miner:latest
 ```
 
-### Run in Kubernetes (currently not mantained)
+### Run in Kubernetes (currently not maintained)
 Deploy the helm chart:
 ```bash
 $ helm install chainnet-release ./helm \
