@@ -22,7 +22,7 @@ type HTTPRouter struct {
 	r       *httprouter.Router
 	encoder encoding.Encoding
 
-	explorer   *explorer.ChainExplorer
+	explorer   explorer.Explorer
 	netSubject observer.NetSubject
 
 	isActive bool
@@ -40,7 +40,7 @@ const (
 func NewHTTPRouter(
 	cfg *config.Config,
 	encoder encoding.Encoding,
-	explorer *explorer.ChainExplorer,
+	explorer explorer.Explorer,
 	netSubject observer.NetSubject,
 ) *HTTPRouter {
 	router := &HTTPRouter{
@@ -80,6 +80,7 @@ func (router *HTTPRouter) Start() error {
 		err := srv.ListenAndServe()
 		if errors.Is(err, http.ErrServerClosed) {
 			router.logger.Infof("HTTP API server stopped successfully")
+			return
 		}
 
 		if err != nil {
@@ -117,7 +118,7 @@ func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Reques
 		return
 	}
 
-	txs, err := router.explorer.FindAllTransactions(addr, MaxNumberRetrievals)
+	txs, err := router.explorer.GetAllTransactions(addr, MaxNumberRetrievals)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to retrieve transactions: %s", err.Error()), http.StatusInternalServerError, err)
 		return
@@ -141,7 +142,7 @@ func (router *HTTPRouter) checkAddressIsActive(w http.ResponseWriter, _ *http.Re
 		return
 	}
 
-	txs, err := router.explorer.FindAllTransactions(addr, NumberRetrievalsForConsideringActive)
+	txs, err := router.explorer.GetAllTransactions(addr, NumberRetrievalsForConsideringActive)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to retrieve transactions: %s", err.Error()), http.StatusInternalServerError, err)
 		return
@@ -166,7 +167,7 @@ func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps h
 		return
 	}
 
-	utxos, err := router.explorer.FindUnspentOutputs(addr, MaxNumberRetrievals)
+	utxos, err := router.explorer.GetUnspentOutputs(addr, MaxNumberRetrievals)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to retrieve UTXOs: %s", err.Error()), http.StatusInternalServerError, err)
 		return
