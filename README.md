@@ -1,4 +1,4 @@
-![Alt text](https://github.com/user-attachments/assets/fcb7c040-e008-4c36-b86c-2b3bd647b213)
+![Alt text](https://github.com/user-attachments/assets/3f5f540a-4f28-402f-818b-c44e7bb8ed3e)
 
 # Chainnet: distributed chain
 **Access live Chainnet metrics from the main seed node at  [dashboard.chainnet.yago.ninja/list](https://dashboard.chainnet.yago.ninja/list).**
