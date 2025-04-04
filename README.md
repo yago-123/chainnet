@@ -1,5 +1,7 @@
-# Chainnet distributed chain 
-Access live Chainnet metrics from the main seed node at  [dashboard.chainnet.yago.ninja/list](https://dashboard.chainnet.yago.ninja/list).
+![Alt text](https://github.com/user-attachments/assets/fcb7c040-e008-4c36-b86c-2b3bd647b213)
+
+# Chainnet: distributed chain
+**Access live Chainnet metrics from the main seed node at  [dashboard.chainnet.yago.ninja/list](https://dashboard.chainnet.yago.ninja/list).**
 
 ## Configuration
 Default configuration:
@@ -45,18 +47,18 @@ wallet:
 ```
 
 ## Setup
-Install dependencies: 
+Install dependencies:
 ```bash
 $ sudo apt install protobuf-compiler base58
 ```
 
-Install go packages: 
+Install go packages:
 ```bash
 $ go install google.golang.org/protobuf/cmd/protoc-gen-go
 $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 ```
 
-Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes) P2P communication:  
+Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes) P2P communication:
 ```bash
 $ sudo sysctl -w net.core.rmem_max=7500000
 $ sudo sysctl -w net.core.wmem_max=7500000
@@ -68,7 +70,7 @@ Building the `chainnet-nespv` wallet:
 $ make nespv 
 ```
 
-Building the `chainnet-node`: 
+Building the `chainnet-node`:
 ```bash
 $ make node
 ```
@@ -121,7 +123,7 @@ To receive rewards, you'll need to extract the public key from the wallet in `ba
 $ openssl ec -in <wallet.pem> -pubout -outform DER 2>/dev/null | base58
 ```
 
-**Note:** You can copy and paste the key obtained for using the wallet directly into the configuration file. The chain uses 
+**Note:** You can copy and paste the key obtained for using the wallet directly into the configuration file. The chain uses
 the encoded DER format for keys, as it remains unclear which signing algorithm will be used in the future.
 
 ### Step 4: Configure the Miner for Rewards
@@ -137,14 +139,14 @@ miner:
 
 This ensures your mining rewards will be sent to the public key generated from your wallet.
 
-## Creating and running nodes and miners 
+## Creating and running nodes and miners
 ### Bare metal
-Running the `chainnet-node`: 
+Running the `chainnet-node`:
 ```bash
 $ ./bin/chainnet-node --config default-config.yaml 
 ```
 
-Running the `chainnet-miner`: 
+Running the `chainnet-miner`:
 ```bash
 $ ./bin/chainnet-miner --config default-config.yaml 
 ```
@@ -164,16 +166,16 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
                    ansible/playbooks/blockchain.yml
 ```
 
-After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this, 
+After the initial chain has been set up, you can also install logging and monitoring with default dashboards. To do this,
 you must first install Grafana:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
                    ansible/playbooks/visualization.yml
 ```
 
-Once Grafana is installed, you can configure your domain or access the Grafana instance via `http://localhost:3000` and 
-enter the new password (default credentials: `admin`/`admin`). If you need to install HTTPS certificates for the domain, 
-you can run `Certbot` using the following playbook and then rerun the Grafana playbook to ensure the reverse proxy 
+Once Grafana is installed, you can configure your domain or access the Grafana instance via `http://localhost:3000` and
+enter the new password (default credentials: `admin`/`admin`). If you need to install HTTPS certificates for the domain,
+you can run `Certbot` using the following playbook and then rerun the Grafana playbook to ensure the reverse proxy
 updates the HTTPS endpoint:
 ```bash
 $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
@@ -191,7 +193,7 @@ $ ansible-playbook -i ansible/inventories/seed/hosts.ini \
                    ansible/playbooks/logging.yml
 ```
 
-There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start 
+There is a set of default dashboards available to monitor the chain; however, it may take a few minutes for them to start
 loading real data.
 
 ### Run in Docker (currently not mantained)
@@ -234,7 +236,7 @@ $ openssl ecparam -name prime256v1 -genkey -noout -out ecdsa-priv-key.pem
 
 Next, reference the identity path in the configuration file:
 ```yaml  
-p2p:  
+p2p:
   enabled: true                           # Enable or disable network communication  
   identity-path: "ecdsa-priv-key.pem"     # Path to the ECDSA peer private key in PEM format (leave empty to generate a random identity)  
 ```  
@@ -242,7 +244,7 @@ p2p:
 Note that this identity can also be used to authenticate the seed nodes via the `peer-id` field:
 ```yaml  
 seed-nodes:                               # List of seed nodes  
-  - address: "seed-1.chainnet.yago.ninja"  
-    peer-id: "QmNXM4W7om3FdYDutuPjYCgTsazRNWhNn6fNyimf7SUHhR"  
+  - address: "seed-1.chainnet.yago.ninja"
+    peer-id: "QmNXM4W7om3FdYDutuPjYCgTsazRNWhNn6fNyimf7SUHhR"
     port: 9100  
 ```  
