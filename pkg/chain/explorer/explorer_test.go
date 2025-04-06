@@ -190,39 +190,39 @@ func TestExplorer_FindUnspentTransactions(t *testing.T) {
 	explorer := NewChainExplorer(storageInstance, &mockHash.FakeHashing{})
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
-	txs, err := explorer.FindUnspentTransactions("pubKey-1")
+	txs, err := explorer.GetUnspentTransactions("pubKey-1")
 	require.NoError(t, err)
 	assert.Empty(t, txs)
 
-	txs, err = explorer.FindUnspentTransactions("pubKey-2")
+	txs, err = explorer.GetUnspentTransactions("pubKey-2")
 	require.NoError(t, err)
 	assert.Len(t, txs, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), txs[1].ID)
 
-	txs, err = explorer.FindUnspentTransactions("pubKey-3")
+	txs, err = explorer.GetUnspentTransactions("pubKey-3")
 	require.NoError(t, err)
 	assert.Len(t, txs, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), txs[0].ID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[1].ID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), txs[2].ID)
 
-	txs, err = explorer.FindUnspentTransactions("pubKey-4")
+	txs, err = explorer.GetUnspentTransactions("pubKey-4")
 	require.NoError(t, err)
 	assert.Len(t, txs, 2)
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(txs[0].ID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(txs[1].ID))
 
-	txs, err = explorer.FindUnspentTransactions("pubKey-5")
+	txs, err = explorer.GetUnspentTransactions("pubKey-5")
 	require.NoError(t, err)
 	assert.Empty(t, txs)
 
-	txs, err = explorer.FindUnspentTransactions("pubKey-6")
+	txs, err = explorer.GetUnspentTransactions("pubKey-6")
 	require.NoError(t, err)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), txs[0].ID)
 
-	txs, err = explorer.FindUnspentTransactions("pubKey-7")
+	txs, err = explorer.GetUnspentTransactions("pubKey-7")
 	require.NoError(t, err)
 	assert.Len(t, txs, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), txs[0].ID)
@@ -236,39 +236,39 @@ func TestExplorer_findUnspentOutputs(t *testing.T) {
 
 	// todo(): split each pubKey check into a separate test so is more descriptive
 	// todo(): add additional checks for the other fields in the TxOutput struct
-	utxo, err := explorer.FindUnspentOutputs("pubKey-1", RetrieveAllElements)
+	utxo, err := explorer.GetUnspentOutputs("pubKey-1", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Empty(t, utxo)
 
-	utxo, err = explorer.FindUnspentOutputs("pubKey-2", RetrieveAllElements)
+	utxo, err = explorer.GetUnspentOutputs("pubKey-2", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Len(t, utxo, 2)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxID)
 	assert.Equal(t, []byte("regular-transaction-block-2-id"), utxo[1].TxID)
 
-	utxo, err = explorer.FindUnspentOutputs("pubKey-3", RetrieveAllElements)
+	utxo, err = explorer.GetUnspentOutputs("pubKey-3", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Len(t, utxo, 3)
 	assert.Equal(t, []byte("regular-transaction-block-3-id"), utxo[0].TxID)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[1].TxID)
 	assert.Equal(t, []byte("coinbase-transaction-block-2-id"), utxo[2].TxID)
 
-	utxo, err = explorer.FindUnspentOutputs("pubKey-4", RetrieveAllElements)
+	utxo, err = explorer.GetUnspentOutputs("pubKey-4", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Len(t, utxo, 2)
 	assert.Equal(t, "coinbase-transaction-block-3-id", string(utxo[0].TxID))
 	assert.Equal(t, "regular-transaction-block-3-id", string(utxo[1].TxID))
 
-	utxo, err = explorer.FindUnspentOutputs("pubKey-5", RetrieveAllElements)
+	utxo, err = explorer.GetUnspentOutputs("pubKey-5", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Empty(t, utxo)
 
-	utxo, err = explorer.FindUnspentOutputs("pubKey-6", RetrieveAllElements)
+	utxo, err = explorer.GetUnspentOutputs("pubKey-6", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Len(t, utxo, 1, utxo)
 	assert.Equal(t, []byte("regular-transaction-2-block-3-id"), utxo[0].TxID)
 
-	utxo, err = explorer.FindUnspentOutputs("pubKey-7", RetrieveAllElements)
+	utxo, err = explorer.GetUnspentOutputs("pubKey-7", RetrieveAllElements)
 	require.NoError(t, err)
 	assert.Len(t, utxo, 1)
 	assert.Equal(t, []byte("coinbase-transaction-block-4-id"), utxo[0].TxID)
