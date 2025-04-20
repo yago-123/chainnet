@@ -3,6 +3,27 @@
 # Chainnet: distributed chain
 **Access live Chainnet metrics from the main seed node at  [dashboard.chainnet.yago.ninja/list](https://dashboard.chainnet.yago.ninja/list).**
 
+## Features
+- [x] Decentralized peer-to-peer connectivity and synchronization
+- [x] Node discovery via seed nodes and Kademlia DHT
+- [x] Stack based RPN interpreter for payments 
+  - [x] P2PK (Pay to Public Key)
+  - [x] P2PKH (Pay to Public Key Hash)
+  - [ ] P2SH (Pay to Script Hash)
+- [x] Block rewards for mining
+- [x] Transaction fees 
+- [ ] Wallets
+  - [x] ECDSA key generation
+  - [x] ECDSA signing
+  - [x] Hierarchical Deterministic (HD) Wallet
+  - [ ] Mnemonic generation
+- [x] Block and transaction validation
+- [x] Block and transaction propagation
+- [x] Mempool holding validated, unconfirmed transactions
+- [x] UTXO set for tracking all unspent outputs and balances
+- [ ] Block conflict resolution during synchronization
+- [ ] Bloom filter for efficient lightweight client support
+
 ## Configuration
 Default configuration:
 ```yaml
