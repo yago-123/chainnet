@@ -19,6 +19,21 @@ const (
 	RetrieveAllElements = -1
 )
 
+type Explorer interface {
+	GetLastBlock() (*kernel.Block, error)
+	GetBlockByHash(hash []byte) (*kernel.Block, error)
+	GetHeaderByHeight(height uint) (*kernel.BlockHeader, error)
+	GetLastHeader() (*kernel.BlockHeader, error)
+	GetMiningTarget(height uint, difficultyAdjustmentInterval uint, expectedMiningInterval time.Duration) (uint, error)
+	GetAllHeaders() ([]*kernel.BlockHeader, error)
+	GetUnspentTransactions(address string) ([]*kernel.Transaction, error)
+	GetUnspentOutputs(address string, maxRetrievalNum int) ([]*kernel.UTXO, error)
+	GetAddressBalance(address string) (uint, error)
+	GetAmountSpendableOutputs(address string, amount uint) (uint, map[string][]uint, error)
+	GetAllTransactions(address string, maxRetrievalNum int) ([]*kernel.Transaction, error)
+	GetUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error)
+}
+
 // ChainExplorer is a module that allows to explore the chain, retrieve blocks, headers, etc. It is used to split the
 // chain module from the rest of the modules that need to interact with the chain but don't need to know the internals
 // this helps to avoid circular dependencies and to define clear boundaries. This module relies on the storage module
@@ -183,7 +198,7 @@ func (explorer *ChainExplorer) GetAllHeaders() ([]*kernel.BlockHeader, error) {
 	return headers, nil
 }
 
-func (explorer *ChainExplorer) FindUnspentTransactions(address string) ([]*kernel.Transaction, error) {
+func (explorer *ChainExplorer) GetUnspentTransactions(address string) ([]*kernel.Transaction, error) {
 	return explorer.findUnspentTransactions(address, iterator.NewReverseBlockIterator(explorer.store))
 }
 
@@ -256,7 +271,7 @@ func (explorer *ChainExplorer) findUnspentTransactions(address string, it iterat
 	return unspentTXs, nil
 }
 
-func (explorer *ChainExplorer) FindUnspentOutputs(address string, maxRetrievalNum int) ([]*kernel.UTXO, error) {
+func (explorer *ChainExplorer) GetUnspentOutputs(address string, maxRetrievalNum int) ([]*kernel.UTXO, error) {
 	return explorer.findUnspentOutputs(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
@@ -330,8 +345,8 @@ func (explorer *ChainExplorer) findUnspentOutputs(address string, it iterator.Bl
 	return unspentTXOs, nil
 }
 
-func (explorer *ChainExplorer) CalculateAddressBalance(address string) (uint, error) {
-	unspentTXs, err := explorer.FindUnspentTransactionsOutputs(address)
+func (explorer *ChainExplorer) GetAddressBalance(address string) (uint, error) {
+	unspentTXs, err := explorer.GetUnspentTransactionsOutputs(address)
 	if err != nil {
 		return 0, err
 	}
@@ -339,9 +354,9 @@ func (explorer *ChainExplorer) CalculateAddressBalance(address string) (uint, er
 	return retrieveBalanceFromUTXOs(unspentTXs), nil
 }
 
-func (explorer *ChainExplorer) FindAmountSpendableOutputs(address string, amount uint) (uint, map[string][]uint, error) {
+func (explorer *ChainExplorer) GetAmountSpendableOutputs(address string, amount uint) (uint, map[string][]uint, error) {
 	unspentOutputs := make(map[string][]uint)
-	unspentTXs, err := explorer.FindUnspentTransactions(address)
+	unspentTXs, err := explorer.GetUnspentTransactions(address)
 	if err != nil {
 		return uint(0), unspentOutputs, err
 	}
@@ -369,7 +384,7 @@ func (explorer *ChainExplorer) FindAmountSpendableOutputs(address string, amount
 	return accumulated, unspentOutputs, nil
 }
 
-func (explorer *ChainExplorer) FindAllTransactions(address string, maxRetrievalNum int) ([]*kernel.Transaction, error) {
+func (explorer *ChainExplorer) GetAllTransactions(address string, maxRetrievalNum int) ([]*kernel.Transaction, error) {
 	return explorer.findAllTransactions(address, iterator.NewReverseBlockIterator(explorer.store), maxRetrievalNum)
 }
 
@@ -422,8 +437,8 @@ func (explorer *ChainExplorer) findAllTransactions(address string, it iterator.B
 	return txs, nil
 }
 
-func (explorer *ChainExplorer) FindUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error) {
-	unspentTransactions, err := explorer.FindUnspentTransactions(address)
+func (explorer *ChainExplorer) GetUnspentTransactionsOutputs(address string) ([]kernel.TxOutput, error) {
+	unspentTransactions, err := explorer.GetUnspentTransactions(address)
 	if err != nil {
 		return []kernel.TxOutput{}, err
 	}
