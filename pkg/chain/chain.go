@@ -150,26 +150,31 @@ func (bc *Blockchain) InitNetwork(netSubject observer.NetSubject) (*network.Node
 	// create new P2P node
 	chainExplorer := explorer.NewChainExplorer(bc.store, bc.hasher)
 	mempoolExplorer := mempool.NewMemPoolExplorer(bc.mempool)
-	bc.p2pCtx, bc.p2pCancelCtx = context.WithCancel(context.Background())
+	p2pCtx, p2pCancelCtx := context.WithCancel(context.Background())
 
-	p2pNet, err := network.NewNodeP2P(bc.p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
+	p2pNet, err := network.NewNodeP2P(p2pCtx, bc.cfg, netSubject, bc.p2pEncoder, chainExplorer, mempoolExplorer)
 	if err != nil {
+		p2pCancelCtx()
 		return nil, fmt.Errorf("error creating p2p node discovery: %w", err)
 	}
 
 	// start the p2p node
 	if err = p2pNet.Start(); err != nil {
+		p2pCancelCtx()
 		return nil, fmt.Errorf("error starting p2p node: %w", err)
 	}
-
-	bc.p2pNet = p2pNet
-	bc.p2pActive = true
 
 	// todo() relocate this, in general this InitNetwork method seems OFF
 	// connect to node seeds
 	if err = p2pNet.ConnectToSeeds(); err != nil {
+		p2pCancelCtx()
 		return nil, fmt.Errorf("error connecting to seeds: %w", err)
 	}
+
+	bc.p2pCtx = p2pCtx
+	bc.p2pCancelCtx = p2pCancelCtx
+	bc.p2pNet = p2pNet
+	bc.p2pActive = true
 
 	return p2pNet, nil
 }
@@ -442,7 +447,7 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) { //nolint:
 			reward /= 2
 		}
 
-		return kernel.ConvertFromChannoshisToCoins(uint(totalSupply)) //nolint:gosec // int to uint is safe
+		return kernel.ConvertFromChannoshisToCoins(uint(totalSupply))
 	})
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_last_block_size", "Size of latest block added to chain", func() float64 {

@@ -1,6 +1,7 @@
 package hdwallet
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -213,7 +214,7 @@ func deriveChildStep(derivedKey []byte, chainCode []byte, index uint32) ([]byte,
 
 	// serialize index value as a 4-byte big-endian representation in byte array form
 	data = append(data, derivedKey...)
-	data = append(data, byte(index>>24), byte(index>>16), byte(index>>8), byte(index)) //nolint:mnd // 4 bytes, no const needed
+	data = binary.BigEndian.AppendUint32(data, index)
 
 	// apply initial hmac
 	hmacOutput, err := util_crypto.CalculateHMACSha512(chainCode, data)

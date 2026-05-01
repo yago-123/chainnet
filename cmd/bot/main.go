@@ -175,7 +175,7 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 		}
 
 		// retrieve account and start the generation of transactions among the wallets contained
-		account, errAcc := hdWallet.GetAccount(uint(i)) //nolint:gosec // safe conversion from int to uint
+		account, errAcc := hdWallet.GetAccount(uint(i))
 		if errAcc != nil {
 			logger.Fatalf("error getting account: %v", errAcc)
 		}
@@ -245,7 +245,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		targetAmounts = append(targetAmounts, distributeFundsAmount)
 
 		// retrieve the account and choose the wallet to send the funds to
-		account, errAccount := hdWallet.GetAccount(uint(i)) //nolint:gosec // safe conversion from int to uint
+		account, errAccount := hdWallet.GetAccount(uint(i))
 		if errAccount != nil {
 			return fmt.Errorf("error getting account: %w", errAccount)
 		}
@@ -339,7 +339,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 			}
 
 			// create/send transaction and add one tx for the fee recipient
-			amounts := getRandomAmounts(util.GetBalanceUTXOs(utxos), uint(len(addresses)+1)) //nolint:gosec // safe conversion from int to uint
+			amounts := getRandomAmounts(util.GetBalanceUTXOs(utxos), uint(len(addresses)+1))
 			if errTx := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos); errTx != nil {
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}

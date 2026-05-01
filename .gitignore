@@ -1,5 +1,6 @@
 __debug_bin*
 .idea
+.tools/
 bin/
 *.pb.go
 *.pem

@@ -80,7 +80,7 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	// split work and ranges among go routines
 	for i := range make([]int, numGoroutines) {
 		pow.wg.Add(1)
-		go pow.startMining(blockMinedCtx, *pow.bh, nonceRange, uint(i)*nonceRange) //nolint:gosec // int to uint is safe
+		go pow.startMining(blockMinedCtx, *pow.bh, nonceRange, uint(i)*nonceRange)
 	}
 
 	// wait for all go routines to finish

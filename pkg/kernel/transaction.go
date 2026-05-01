@@ -237,7 +237,7 @@ func (in *TxInput) UniqueTxoKey() string {
 }
 
 func (in *TxInput) Size() uint {
-	return uint(len(in.Txid) + int(unsafe.Sizeof(uint(0))) + len(in.ScriptSig) + len(in.PubKey)) //nolint:gosec // this is used for metrics only
+	return uint(len(in.Txid) + int(unsafe.Sizeof(uint(0))) + len(in.ScriptSig) + len(in.PubKey))
 }
 
 // EqualInput checks if the input is the same as the given input
@@ -298,5 +298,5 @@ func (out *TxOutput) String() string {
 }
 
 func (out *TxOutput) Size() uint {
-	return uint(int(unsafe.Sizeof(uint(0))) + len(out.ScriptPubKey) + len(out.PubKey)) //nolint:gosec // this is used for metrics only
+	return uint(int(unsafe.Sizeof(uint(0))) + len(out.ScriptPubKey) + len(out.PubKey))
 }
