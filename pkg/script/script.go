@@ -170,7 +170,7 @@ func (s Script) String(arg []byte) string {
 				literalRendered = pubKeyHash
 			}
 
-			toRender = fmt.Sprintf("%c%s", byte(element.ToUint()), base58.Encode(literalRendered))
+			toRender = fmt.Sprintf("%c%s", element, base58.Encode(literalRendered))
 		}
 
 		// render operators
