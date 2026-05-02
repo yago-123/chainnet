@@ -35,14 +35,9 @@ jobs:
         with:
           working_directory: chainnet-sdk-go
 
-      - name: Sync OpenAPI spec
-        run: |
-          mkdir -p chainnet-sdk-go/api
-          cp chainnet/api/openapi.yaml chainnet-sdk-go/api/openapi.yaml
-
       - name: Generate SDK
         working-directory: chainnet-sdk-go
-        run: make openapi-generate
+        run: make openapi-generate OPENAPI_SPEC=../chainnet/api/openapi.yaml
 
       - name: Test SDK
         working-directory: chainnet-sdk-go
@@ -54,5 +49,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git diff --cached --quiet || git commit -m "Update Go SDK from chainnet OpenAPI"
+          if git diff --cached --quiet; then
+            echo "No SDK changes to publish"
+            exit 0
+          fi
+          git commit -m "Update Go SDK from chainnet OpenAPI"
           git push
