@@ -1,0 +1,58 @@
+name: Publish Go SDK
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "api/openapi.yaml"
+      - ".github/workflows/publish-sdk-go.yml"
+  workflow_dispatch:
+
+jobs:
+  publish-sdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout chainnet
+        uses: actions/checkout@v4
+        with:
+          path: chainnet
+
+      - name: Checkout chainnet-sdk-go
+        uses: actions/checkout@v4
+        with:
+          repository: yago-123/chainnet-sdk-go
+          path: chainnet-sdk-go
+          token: ${{ secrets.SDK_REPO_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: chainnet-sdk-go/go.mod
+
+      - name: Install mise tools
+        uses: jdx/mise-action@v2
+        with:
+          working_directory: chainnet-sdk-go
+
+      - name: Sync OpenAPI spec
+        run: |
+          mkdir -p chainnet-sdk-go/api
+          cp chainnet/api/openapi.yaml chainnet-sdk-go/api/openapi.yaml
+
+      - name: Generate SDK
+        working-directory: chainnet-sdk-go
+        run: make openapi-generate
+
+      - name: Test SDK
+        working-directory: chainnet-sdk-go
+        run: make test
+
+      - name: Commit and push SDK update
+        working-directory: chainnet-sdk-go
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "Update Go SDK from chainnet OpenAPI"
+          git push
