@@ -17,6 +17,17 @@ const (
 	RouterAddressIsActive      = "/api/v1/address/%s/active"
 	RouterSendTx               = "/api/v1/sendTx"
 
+	RouterV1BetaRetrieveAddressTxs   = "/api/v1beta/addresses/%s/transactions"
+	RouterV1BetaRetrieveAddressUTXOs = "/api/v1beta/addresses/%s/utxos"
+	RouterV1BetaAddressIsActive      = "/api/v1beta/addresses/%s/activity"
+	RouterV1BetaSendTx               = "/api/v1beta/transactions"
+	RouterV1BetaTransactionByID      = "/api/v1beta/transactions/%s"
+	RouterV1BetaLatestBlock          = "/api/v1beta/blocks/latest"
+	RouterV1BetaBlockByHash          = "/api/v1beta/blocks/%s"
+	RouterV1BetaLatestHeader         = "/api/v1beta/headers/latest"
+	RouterV1BetaHeaderByHeight       = "/api/v1beta/headers/%s"
+	RouterV1BetaHeaders              = "/api/v1beta/headers"
+
 	ContentTypeHeader = "Content-Type"
 )
 
