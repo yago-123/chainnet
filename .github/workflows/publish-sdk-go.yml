@@ -5,6 +5,7 @@ on:
     branches: ["master"]
     paths:
       - "api/openapi.yaml"
+      - "sdk/go/v1beta/**"
       - ".github/workflows/publish-sdk-go.yml"
   workflow_dispatch:
 
@@ -34,6 +35,14 @@ jobs:
         uses: jdx/mise-action@v2
         with:
           working_directory: chainnet-sdk-go
+
+      - name: Sync SDK wrapper
+        run: |
+          mkdir -p chainnet-sdk-go/v1beta
+          for source in chainnet/sdk/go/v1beta/*.go.tmpl; do
+            target="chainnet-sdk-go/v1beta/$(basename "${source}" .tmpl)"
+            cp "${source}" "${target}"
+          done
 
       - name: Generate SDK
         working-directory: chainnet-sdk-go
