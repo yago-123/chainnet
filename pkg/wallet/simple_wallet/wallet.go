@@ -16,9 +16,9 @@ import (
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/network"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
+	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 	"github.com/yago-123/chainnet/pkg/util"
 )
 
@@ -29,10 +29,9 @@ type Wallet struct {
 
 	validator consensus.LightValidator
 	// signer used for signing transactions and creating pub and private keys
-	signer sign.Signature
-	// p2pNet used for broadcasting transactions
-	p2pNet  network.WalletNetwork
-	encoder encoding.Encoding
+	signer     sign.Signature
+	nodeClient *sdkv1beta.Client
+	encoder    encoding.Encoding
 
 	// hasher used for deriving blockchain related values (tx ID for example)
 	consensusHasher hash.Hashing
@@ -76,9 +75,9 @@ func NewWalletWithKeys(
 	privateKey []byte,
 	publicKey []byte,
 ) (*Wallet, error) {
-	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
+	nodeClient, err := sdkv1beta.NewClientFromConfig(cfg, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
+		return nil, fmt.Errorf("could not create wallet node client: %w", err)
 	}
 
 	return &Wallet{
@@ -88,7 +87,7 @@ func NewWalletWithKeys(
 		publicKey:       publicKey,
 		validator:       validator,
 		signer:          signer,
-		p2pNet:          p2pNet,
+		nodeClient:      nodeClient,
 		encoder:         encoder,
 		consensusHasher: consensusHasher,
 		interpreter:     rpnInter.NewScriptInterpreter(signer),
@@ -133,7 +132,7 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 		defer cancel()
 
 		// retrieve UTXOs for each address
-		utxo, errUtxos := w.p2pNet.GetWalletUTXOS(ctx, address)
+		utxo, errUtxos := w.nodeClient.GetAddressUTXOs(ctx, address)
 		if errUtxos != nil {
 			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
@@ -157,7 +156,7 @@ func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
 		defer cancel()
 
 		// retrieve txs for each address
-		tx, errUtxos := w.p2pNet.GetWalletTxs(ctx, address)
+		tx, errUtxos := w.nodeClient.GetAddressTransactions(ctx, address)
 		if errUtxos != nil {
 			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
@@ -180,7 +179,7 @@ func (w *Wallet) CheckIfWalletIsActive() (bool, error) {
 		defer cancel()
 
 		// check if address is active
-		active, errNet := w.p2pNet.AddressIsActive(ctx, address)
+		active, errNet := w.nodeClient.AddressIsActive(ctx, address)
 		if errNet != nil {
 			return false, fmt.Errorf("could not check if address %s is active: %w", base58.Encode(address), errNet)
 		}
@@ -274,7 +273,7 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 
 // SendTransaction propagates a transaction to the network
 func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
-	if err := w.p2pNet.SendTransaction(ctx, *tx); err != nil {
+	if err := w.nodeClient.SendTransaction(ctx, *tx); err != nil {
 		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
 	}
 
