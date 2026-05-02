@@ -343,7 +343,7 @@ func NewNodeP2P(
 	}
 
 	// initialize HTTP router for handling HTTP requests (wallet, information requests...)
-	router := NewHTTPRouter(cfg, encoder, explorer, netSubject)
+	router := NewHTTPRouter(cfg, explorer, netSubject)
 
 	// initialize handlers
 	handler := newNodeP2PHandler(cfg, encoder, explorer, mempoolExplorer, netSubject)

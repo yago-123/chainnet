@@ -4,18 +4,22 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/yago-123/chainnet/pkg/encoding"
-
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/yago-123/chainnet/config"
 )
 
 const (
-	RouterRetrieveAddressTxs   = "/api/v1/address/%s/txs"
-	RouterRetrieveAddressUTXOs = "/api/v1/address/%s/utxos"
-	RouterAddressIsActive      = "/api/v1/address/%s/active"
-	RouterSendTx               = "/api/v1/sendTx"
+	RouterV1BetaRetrieveAddressTxs   = "/api/v1beta/addresses/%s/transactions"
+	RouterV1BetaRetrieveAddressUTXOs = "/api/v1beta/addresses/%s/utxos"
+	RouterV1BetaAddressIsActive      = "/api/v1beta/addresses/%s/activity"
+	RouterV1BetaSendTx               = "/api/v1beta/transactions"
+	RouterV1BetaTransactionByID      = "/api/v1beta/transactions/%s"
+	RouterV1BetaLatestBlock          = "/api/v1beta/blocks/latest"
+	RouterV1BetaBlockByHash          = "/api/v1beta/blocks/%s"
+	RouterV1BetaLatestHeader         = "/api/v1beta/headers/latest"
+	RouterV1BetaHeaderByHeight       = "/api/v1beta/headers/%s"
+	RouterV1BetaHeaders              = "/api/v1beta/headers"
 
 	ContentTypeHeader = "Content-Type"
 )
@@ -50,15 +54,4 @@ func connectToSeeds(cfg *config.Config, host host.Host) error {
 	}
 
 	return nil
-}
-
-func getContentTypeFrom(encoder encoding.Encoding) string {
-	switch encoder.Type() {
-	case encoding.GobEncodingType:
-		return "application/gob"
-	case encoding.ProtoEncodingType:
-		return "application/x-protobuf"
-	default:
-		return "application/octet-stream"
-	}
 }

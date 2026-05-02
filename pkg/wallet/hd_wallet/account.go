@@ -6,9 +6,9 @@ import (
 	"sync"
 
 	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/network"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
+	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 	"github.com/yago-123/chainnet/pkg/util"
 	common "github.com/yago-123/chainnet/pkg/wallet"
 
@@ -50,7 +50,7 @@ type Account struct {
 	// signer used for signing transactions and creating pub and private keys
 	signer sign.Signature
 
-	p2pNet network.WalletNetwork
+	nodeClient *sdkv1beta.Client
 
 	encoder encoding.Encoding
 
@@ -75,9 +75,9 @@ func NewHDAccount(
 	externalWalletsNum uint32,
 	internalWalletsNum uint32,
 ) (*Account, error) {
-	p2pNet, err := network.NewWalletHTTPConn(cfg, encoder)
+	nodeClient, err := sdkv1beta.NewClientFromConfig(cfg, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not create wallet p2p network: %w", err)
+		return nil, fmt.Errorf("could not create wallet node client: %w", err)
 	}
 
 	acc := &Account{
@@ -86,7 +86,7 @@ func NewHDAccount(
 		walletVersion:           walletVersion,
 		validator:               validator,
 		signer:                  signer,
-		p2pNet:                  p2pNet,
+		nodeClient:              nodeClient,
 		consensusHasher:         consensusHasher,
 		interpreter:             rpnInter.NewScriptInterpreter(signer),
 		encoder:                 encoder,
@@ -358,7 +358,7 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 
 // SendTransaction propagates a transaction to the network
 func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
-	if err := hda.p2pNet.SendTransaction(ctx, *tx); err != nil {
+	if err := hda.nodeClient.SendTransaction(ctx, *tx); err != nil {
 		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
 	}
 

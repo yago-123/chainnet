@@ -73,6 +73,15 @@ Install dependencies:
 $ sudo apt install protobuf-compiler base58
 ```
 
+Development tools are managed with [mise](https://mise.jdx.dev/) and pinned in `mise.toml`.
+
+Install pinned tools:
+```bash
+$ mise install
+```
+
+Make sure `mise` is activated in your shell so pinned tools are available on `PATH` when running Make targets.
+
 Install go packages:
 ```bash
 $ go install google.golang.org/protobuf/cmd/protoc-gen-go

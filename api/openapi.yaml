@@ -1,0 +1,460 @@
+openapi: 3.0.3
+info:
+  title: Chainnet Public Node API
+  version: v1beta
+  description: |
+    Public HTTP API for clients that communicate with Chainnet nodes, including
+    wallets, bots, nespv, and SDK consumers.
+
+    This specification covers client-to-node communication only. Internal
+    node-to-node protocols such as libp2p discovery, gossip, synchronization,
+    and peer messaging are intentionally excluded.
+
+    The v1beta API uses JSON DTOs at the HTTP boundary. Native Go kernel
+    structs remain internal and are mapped to/from these DTOs by the JSON
+    encoder.
+servers:
+  - url: http://localhost:8080/api/v1beta
+    description: Local Chainnet node
+tags:
+  - name: Addresses
+    description: Address-scoped wallet queries
+  - name: Transactions
+    description: Transaction submission and lookup
+  - name: Blocks
+    description: Block retrieval
+  - name: Headers
+    description: Block header retrieval
+paths:
+  /addresses/{address}/utxos:
+    get:
+      operationId: getAddressUTXOs
+      tags:
+        - Addresses
+      summary: List unspent outputs for an address
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          description: UTXO collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UTXO"
+        "400":
+          $ref: "#/components/responses/InvalidAddress"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /addresses/{address}/transactions:
+    get:
+      operationId: getAddressTransactions
+      tags:
+        - Addresses
+      summary: List transactions related to an address
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          description: Transaction collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/InvalidAddress"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /addresses/{address}/activity:
+    get:
+      operationId: getAddressActivity
+      tags:
+        - Addresses
+      summary: Check whether an address has chain activity
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          description: True if the address has at least one related transaction.
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "400":
+          $ref: "#/components/responses/InvalidAddress"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /transactions:
+    post:
+      operationId: submitTransaction
+      tags:
+        - Transactions
+      summary: Submit a signed transaction
+      description: |
+        Submits a signed transaction to the receiving node so it can be
+        validated, accepted into local unconfirmed transaction handling, and
+        propagated through the node network.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Transaction"
+      responses:
+        "200":
+          description: Transaction accepted for node processing. The current handler returns an empty body.
+        "400":
+          description: Transaction was decoded but rejected by node processing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /transactions/{tx_id}:
+    get:
+      operationId: getTransaction
+      tags:
+        - Transactions
+      summary: Retrieve a confirmed transaction by ID
+      description: |
+        Retrieves a confirmed transaction by its transaction ID. This endpoint
+        scans blockchain storage only and does not inspect the mempool.
+      parameters:
+        - $ref: "#/components/parameters/TransactionID"
+      responses:
+        "200":
+          description: Confirmed transaction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/InvalidHash"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /blocks/latest:
+    get:
+      operationId: getLatestBlock
+      tags:
+        - Blocks
+      summary: Retrieve the latest block
+      responses:
+        "200":
+          description: Latest block.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Block"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /blocks/{hash}:
+    get:
+      operationId: getBlockByHash
+      tags:
+        - Blocks
+      summary: Retrieve a block by hash
+      parameters:
+        - $ref: "#/components/parameters/BlockHash"
+      responses:
+        "200":
+          description: Block.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Block"
+        "400":
+          $ref: "#/components/responses/InvalidHash"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /headers/latest:
+    get:
+      operationId: getLatestHeader
+      tags:
+        - Headers
+      summary: Retrieve the latest block header
+      responses:
+        "200":
+          description: Latest block header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockHeader"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /headers/{height}:
+    get:
+      operationId: getHeaderByHeight
+      tags:
+        - Headers
+      summary: Retrieve a block header by height
+      parameters:
+        - $ref: "#/components/parameters/Height"
+      responses:
+        "200":
+          description: Block header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockHeader"
+        "400":
+          description: Invalid height.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /headers:
+    get:
+      operationId: getHeaders
+      tags:
+        - Headers
+      summary: Retrieve block headers
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of headers to return.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: order
+          in: query
+          required: false
+          description: Header ordering in the response.
+          schema:
+            type: string
+            enum:
+              - newest_first
+              - oldest_first
+            default: newest_first
+      responses:
+        "200":
+          description: Block header collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlockHeader"
+        "400":
+          description: Invalid headers query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  parameters:
+    Address:
+      name: address
+      in: path
+      required: true
+      description: Chainnet wallet address using the existing base58 address format.
+      schema:
+        type: string
+        minLength: 1
+    TransactionID:
+      name: tx_id
+      in: path
+      required: true
+      description: Hex-encoded transaction ID.
+      schema:
+        type: string
+        minLength: 1
+    BlockHash:
+      name: hash
+      in: path
+      required: true
+      description: Hex-encoded block hash.
+      schema:
+        type: string
+        minLength: 1
+    Height:
+      name: height
+      in: path
+      required: true
+      description: Block height.
+      schema:
+        type: integer
+        minimum: 0
+  responses:
+    InvalidAddress:
+      description: Address is not valid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InvalidHash:
+      description: Hash path value is not valid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Requested chain object was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Node failed to process the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    Transaction:
+      type: object
+      required:
+        - id
+        - vin
+        - vout
+      properties:
+        id:
+          type: string
+          description: Hex-encoded transaction ID.
+        vin:
+          type: array
+          items:
+            $ref: "#/components/schemas/TxInput"
+        vout:
+          type: array
+          items:
+            $ref: "#/components/schemas/TxOutput"
+      additionalProperties: false
+    TxInput:
+      type: object
+      required:
+        - txid
+        - vout
+        - script_sig
+        - pub_key
+      properties:
+        txid:
+          type: string
+          description: Hex-encoded transaction ID for the spent output.
+        vout:
+          type: integer
+          minimum: 0
+        script_sig:
+          type: string
+        pub_key:
+          type: string
+      additionalProperties: false
+    TxOutput:
+      type: object
+      required:
+        - amount
+        - script_pub_key
+        - pub_key
+      properties:
+        amount:
+          type: integer
+          minimum: 0
+          description: Amount in channoshis.
+        script_pub_key:
+          type: string
+        pub_key:
+          type: string
+      additionalProperties: false
+    UTXO:
+      type: object
+      required:
+        - txid
+        - vout
+        - output
+      properties:
+        txid:
+          type: string
+          description: Hex-encoded transaction ID.
+        vout:
+          type: integer
+          minimum: 0
+        output:
+          $ref: "#/components/schemas/TxOutput"
+      additionalProperties: false
+    BlockHeader:
+      type: object
+      required:
+        - version
+        - prev_block_hash
+        - merkle_root
+        - height
+        - timestamp
+        - target
+        - nonce
+      properties:
+        version:
+          type: string
+          description: Hex-encoded block version bytes.
+        prev_block_hash:
+          type: string
+          description: Hex-encoded previous block hash.
+        merkle_root:
+          type: string
+          description: Hex-encoded merkle root.
+        height:
+          type: integer
+          minimum: 0
+        timestamp:
+          type: integer
+          format: int64
+        target:
+          type: integer
+          minimum: 0
+        nonce:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    Block:
+      type: object
+      required:
+        - header
+        - transactions
+        - hash
+      properties:
+        header:
+          $ref: "#/components/schemas/BlockHeader"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        hash:
+          type: string
+          description: Hex-encoded block hash.
+      additionalProperties: false
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          examples:
+            - invalid_address
+            - not_found
+            - invalid_transaction
+            - internal_error
+        message:
+          type: string
+          description: Human-readable error message.
+      additionalProperties: false

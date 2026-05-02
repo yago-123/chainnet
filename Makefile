@@ -2,6 +2,9 @@
 OUTPUT_DIR := bin
 TOOLS_DIR := .tools
 NODE_PROTOBUF_DIR := pkg/network/protobuf
+OPENAPI_SPEC := api/openapi.yaml
+OPENAPI_GENERATED_DIR := pkg/sdk/v1beta/generated
+OPENAPI_GENERATED_FILE := $(OPENAPI_GENERATED_DIR)/openapi.gen.go
 
 CLI_BINARY_NAME   := chainnet-cli
 MINER_BINARY_NAME := chainnet-miner
@@ -64,6 +67,17 @@ protobuf:
 	@echo "Generating protobuf files..."
 	@protoc --go_out=. --go_opt=paths=source_relative $(NODE_PROTOBUF_SOURCE)
 
+.PHONY: openapi-check
+openapi-check:
+	@echo "Checking OpenAPI spec..."
+	@ruby -e 'require "yaml"; YAML.load_file(ARGV.fetch(0)); puts "OpenAPI spec YAML is valid: #{ARGV[0]}"' $(OPENAPI_SPEC)
+
+.PHONY: openapi-generate
+openapi-generate:
+	@echo "Generating OpenAPI SDK code..."
+	@mkdir -p $(OPENAPI_GENERATED_DIR)
+	@oapi-codegen -generate types,client -package generated -o $(OPENAPI_GENERATED_FILE) $(OPENAPI_SPEC)
+
 .PHONY: output-dir
 output-dir:
 	@mkdir -p $(OUTPUT_DIR)
@@ -85,6 +99,11 @@ lint: protobuf lint-tools
 test: protobuf
 	@echo "Running tests..."
 	@go test -v -cover ./... -tags '!e2e'
+
+.PHONY: e2e
+e2e: protobuf
+	@echo "Running e2e tests..."
+	@go test -v ./tests/e2e -tags e2e
 
 .PHONY: clean
 clean:

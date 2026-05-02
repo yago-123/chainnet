@@ -7,6 +7,7 @@ import (
 const (
 	GobEncodingType   = "gob"
 	ProtoEncodingType = "protobuf"
+	JSONEncodingType  = "json"
 )
 
 type Encoding interface {
