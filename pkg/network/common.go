@@ -58,6 +58,8 @@ func getContentTypeFrom(encoder encoding.Encoding) string {
 		return "application/gob"
 	case encoding.ProtoEncodingType:
 		return "application/x-protobuf"
+	case encoding.JSONEncodingType:
+		return "application/json"
 	default:
 		return "application/octet-stream"
 	}
