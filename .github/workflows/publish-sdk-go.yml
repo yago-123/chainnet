@@ -1,6 +1,6 @@
 name: Publish Go SDK
 
-on:
+"on":
   push:
     paths:
       - "api/openapi.yaml"
@@ -99,11 +99,15 @@ jobs:
             exit 0
           fi
 
+          cat > sdk-pr-body.md <<EOF
+          Generated from chainnet branch \`${GITHUB_REF_NAME}\`.
+
+          Latest source commit: \`${GITHUB_SHA}\`.
+          EOF
+
           gh pr create \
             --repo yago-123/chainnet-sdk-go \
             --head "${SDK_BRANCH}" \
             --base master \
             --title "Update Go SDK from chainnet ${GITHUB_REF_NAME}" \
-            --body "Generated from chainnet branch \`${GITHUB_REF_NAME}\`.
-
-Latest source commit: \`${GITHUB_SHA}\`."
+            --body-file sdk-pr-body.md
