@@ -2,7 +2,6 @@ name: Publish Go SDK
 
 on:
   push:
-    branches: ["master"]
     paths:
       - "api/openapi.yaml"
       - "sdk/go/v1beta/**"
@@ -12,6 +11,8 @@ on:
 jobs:
   publish-sdk:
     runs-on: ubuntu-latest
+    env:
+      SDK_BRANCH: chainnet/${{ github.ref_name }}
 
     steps:
       - name: Checkout chainnet
@@ -36,6 +37,18 @@ jobs:
         with:
           working_directory: chainnet-sdk-go
 
+      - name: Prepare SDK PR branch
+        working-directory: chainnet-sdk-go
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${SDK_BRANCH}" || true
+          if git show-ref --verify --quiet "refs/remotes/origin/${SDK_BRANCH}"; then
+            git checkout -B "${SDK_BRANCH}" "origin/${SDK_BRANCH}"
+          else
+            git checkout -B "${SDK_BRANCH}"
+          fi
+
       - name: Sync SDK wrapper
         run: |
           mkdir -p chainnet-sdk-go/v1beta
@@ -52,15 +65,45 @@ jobs:
         working-directory: chainnet-sdk-go
         run: make test
 
-      - name: Commit and push SDK update
+      - name: Commit SDK update
+        id: commit-sdk
         working-directory: chainnet-sdk-go
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           if git diff --cached --quiet; then
             echo "No SDK changes to publish"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "Update Go SDK from chainnet OpenAPI"
-          git push
+          git commit -m "Update Go SDK from chainnet ${GITHUB_REF_NAME}" \
+            -m "Source commit: ${GITHUB_SHA}"
+          git push origin "${SDK_BRANCH}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open SDK PR if needed
+        if: steps.commit-sdk.outputs.changed == 'true'
+        working-directory: chainnet-sdk-go
+        env:
+          GH_TOKEN: ${{ secrets.SDK_REPO_TOKEN }}
+        run: |
+          existing_pr="$(gh pr list \
+            --repo yago-123/chainnet-sdk-go \
+            --head "${SDK_BRANCH}" \
+            --base master \
+            --state open \
+            --json number \
+            --jq '.[0].number')"
+
+          if [ -n "${existing_pr}" ]; then
+            echo "SDK PR already exists: #${existing_pr}"
+            exit 0
+          fi
+
+          gh pr create \
+            --repo yago-123/chainnet-sdk-go \
+            --head "${SDK_BRANCH}" \
+            --base master \
+            --title "Update Go SDK from chainnet ${GITHUB_REF_NAME}" \
+            --body "Generated from chainnet branch \`${GITHUB_REF_NAME}\`.
+
+Latest source commit: \`${GITHUB_SHA}\`."
