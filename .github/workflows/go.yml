@@ -33,6 +33,9 @@ jobs:
       - name: Generate protobuf files
         run: make protobuf
 
+      - name: Generate OpenAPI SDK files
+        run: make openapi-generate
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
