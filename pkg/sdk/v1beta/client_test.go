@@ -145,6 +145,10 @@ func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smok
 	block := kernel.NewBlock(header, []*kernel.Transaction{}, []byte("block-hash"))
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v1beta/chain/latest", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"height":7,"hash":"626c6f636b2d68617368","timestamp":123}`))
+	})
 	mux.HandleFunc("/api/v1beta/blocks/latest", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		data, err := encoder.SerializeBlock(*block)
@@ -192,6 +196,14 @@ func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smok
 	client, err := NewClient(server.URL, server.Client())
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	gotTip, err := client.GetLatestChain(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotTip.Height != 7 || gotTip.Hash != "626c6f636b2d68617368" {
+		t.Fatalf("unexpected chain tip: %#v", gotTip)
 	}
 
 	gotBlock, err := client.GetLatestBlock(context.Background())
