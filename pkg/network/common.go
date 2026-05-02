@@ -4,19 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/yago-123/chainnet/pkg/encoding"
-
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/yago-123/chainnet/config"
 )
 
 const (
-	RouterRetrieveAddressTxs   = "/api/v1/address/%s/txs"
-	RouterRetrieveAddressUTXOs = "/api/v1/address/%s/utxos"
-	RouterAddressIsActive      = "/api/v1/address/%s/active"
-	RouterSendTx               = "/api/v1/sendTx"
-
 	RouterV1BetaRetrieveAddressTxs   = "/api/v1beta/addresses/%s/transactions"
 	RouterV1BetaRetrieveAddressUTXOs = "/api/v1beta/addresses/%s/utxos"
 	RouterV1BetaAddressIsActive      = "/api/v1beta/addresses/%s/activity"
@@ -61,17 +54,4 @@ func connectToSeeds(cfg *config.Config, host host.Host) error {
 	}
 
 	return nil
-}
-
-func getContentTypeFrom(encoder encoding.Encoding) string {
-	switch encoder.Type() {
-	case encoding.GobEncodingType:
-		return "application/gob"
-	case encoding.ProtoEncodingType:
-		return "application/x-protobuf"
-	case encoding.JSONEncodingType:
-		return "application/json"
-	default:
-		return "application/octet-stream"
-	}
 }

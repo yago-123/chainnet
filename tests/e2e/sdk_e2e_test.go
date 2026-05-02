@@ -104,7 +104,7 @@ func TestSDK_SubmitTransactionsMineBlockAndReadBack(t *testing.T) {
 	fundingBlock2, err := blockMiner.MineBlock()
 	require.NoError(t, err)
 
-	router := network.NewHTTPRouter(cfg, encoding.NewGobEncoder(), chainExplorer, netSubject)
+	router := network.NewHTTPRouter(cfg, chainExplorer, netSubject)
 	require.NoError(t, router.Start())
 	t.Cleanup(func() { require.NoError(t, router.Stop()) })
 

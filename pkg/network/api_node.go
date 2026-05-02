@@ -24,7 +24,6 @@ import (
 
 type HTTPRouter struct {
 	r          *httprouter.Router
-	encoder    encoding.Encoding
 	apiEncoder encoding.Encoding
 
 	explorer   *explorer.ChainExplorer
@@ -44,14 +43,12 @@ const (
 
 func NewHTTPRouter(
 	cfg *config.Config,
-	encoder encoding.Encoding,
 	explorer *explorer.ChainExplorer,
 	netSubject observer.NetSubject,
 ) *HTTPRouter {
 	router := &HTTPRouter{
-		r:       httprouter.New(),
-		encoder: encoder,
-		// by default the api encoder must be JSON due to openAPI spec genreation
+		r: httprouter.New(),
+		// by default the API encoder must be JSON due to OpenAPI spec generation.
 		apiEncoder: encoding.NewJSONEncoder(),
 		explorer:   explorer,
 		netSubject: netSubject,
@@ -59,15 +56,10 @@ func NewHTTPRouter(
 		cfg:        cfg,
 	}
 
-	router.r.GET(fmt.Sprintf(RouterRetrieveAddressTxs, ":address"), router.listTransactions)
-	router.r.GET(fmt.Sprintf(RouterAddressIsActive, ":address"), router.checkAddressIsActive)
-	router.r.GET(fmt.Sprintf(RouterRetrieveAddressUTXOs, ":address"), router.listUTXOs)
-	router.r.POST(RouterSendTx, router.receiveTransaction)
-
-	router.r.GET(fmt.Sprintf(RouterV1BetaRetrieveAddressTxs, ":address"), router.listTransactionsJSON)
-	router.r.GET(fmt.Sprintf(RouterV1BetaAddressIsActive, ":address"), router.checkAddressIsActiveJSON)
-	router.r.GET(fmt.Sprintf(RouterV1BetaRetrieveAddressUTXOs, ":address"), router.listUTXOsJSON)
-	router.r.POST(RouterV1BetaSendTx, router.receiveTransactionJSON)
+	router.r.GET(fmt.Sprintf(RouterV1BetaRetrieveAddressTxs, ":address"), router.listTransactions)
+	router.r.GET(fmt.Sprintf(RouterV1BetaAddressIsActive, ":address"), router.checkAddressIsActive)
+	router.r.GET(fmt.Sprintf(RouterV1BetaRetrieveAddressUTXOs, ":address"), router.listUTXOs)
+	router.r.POST(RouterV1BetaSendTx, router.receiveTransaction)
 	router.r.GET(fmt.Sprintf(RouterV1BetaTransactionByID, ":tx_id"), router.getTransactionByID)
 	router.r.GET(fmt.Sprintf(RouterV1BetaBlockByHash, ":hash"), router.getBlock)
 	router.r.GET(fmt.Sprintf(RouterV1BetaHeaderByHeight, ":height"), router.getHeader)
@@ -122,18 +114,8 @@ func (router *HTTPRouter) Stop() error {
 	return nil
 }
 
-// todo(): right now there is 0 usage for this
 // listTransactions receive a wallet address and retrieve the unspent txs
 func (router *HTTPRouter) listTransactions(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	router.listTransactionsWithEncoder(w, ps, router.encoder)
-}
-
-// todo: not sure if we really want to have separate endpoints
-func (router *HTTPRouter) listTransactionsJSON(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	router.listTransactionsWithEncoder(w, ps, router.apiEncoder)
-}
-
-func (router *HTTPRouter) listTransactionsWithEncoder(w http.ResponseWriter, ps httprouter.Params, encoder encoding.Encoding) {
 	address := ps.ByName("address")
 
 	addr, err := decodeAddress(address)
@@ -148,24 +130,16 @@ func (router *HTTPRouter) listTransactionsWithEncoder(w http.ResponseWriter, ps 
 		return
 	}
 
-	txsEncoded, err := encoder.SerializeTransactions(txs)
+	txsEncoded, err := router.apiEncoder.SerializeTransactions(txs)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to encode transactions: %s", err.Error()), http.StatusBadRequest, err)
 		return
 	}
 
-	router.writeResponse(w, txsEncoded, encoder)
+	router.writeResponse(w, txsEncoded)
 }
 
 func (router *HTTPRouter) checkAddressIsActive(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	router.checkAddressIsActiveWithEncoder(w, ps, router.encoder)
-}
-
-func (router *HTTPRouter) checkAddressIsActiveJSON(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	router.checkAddressIsActiveWithEncoder(w, ps, router.apiEncoder)
-}
-
-func (router *HTTPRouter) checkAddressIsActiveWithEncoder(w http.ResponseWriter, ps httprouter.Params, encoder encoding.Encoding) {
 	address := ps.ByName("address")
 
 	addr, err := decodeAddress(address)
@@ -181,24 +155,16 @@ func (router *HTTPRouter) checkAddressIsActiveWithEncoder(w http.ResponseWriter,
 	}
 
 	// check if there is any transaction for the address
-	active, err := encoder.SerializeBool(len(txs) > 0)
+	active, err := router.apiEncoder.SerializeBool(len(txs) > 0)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to encode active status: %s", err.Error()), http.StatusBadRequest, err)
 	}
 
-	router.writeResponse(w, active, encoder)
+	router.writeResponse(w, active)
 }
 
 // listUTXOs receive a wallet address and retrieve the corresponding UTXOs
 func (router *HTTPRouter) listUTXOs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	router.listUTXOsWithEncoder(w, ps, router.encoder)
-}
-
-func (router *HTTPRouter) listUTXOsJSON(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
-	router.listUTXOsWithEncoder(w, ps, router.apiEncoder)
-}
-
-func (router *HTTPRouter) listUTXOsWithEncoder(w http.ResponseWriter, ps httprouter.Params, encoder encoding.Encoding) {
 	address := ps.ByName("address")
 
 	addr, err := decodeAddress(address)
@@ -213,32 +179,24 @@ func (router *HTTPRouter) listUTXOsWithEncoder(w http.ResponseWriter, ps httprou
 		return
 	}
 
-	utxosEncoded, err := encoder.SerializeUTXOs(utxos)
+	utxosEncoded, err := router.apiEncoder.SerializeUTXOs(utxos)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to encode UTXOs: %s", err.Error()), http.StatusBadRequest, err)
 		return
 	}
 
-	router.writeResponse(w, utxosEncoded, encoder)
+	router.writeResponse(w, utxosEncoded)
 }
 
 // receiveTransaction receives txs sent by the wallets in order to be appended into the chain mempool via POST request
 func (router *HTTPRouter) receiveTransaction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	router.receiveTransactionWithEncoder(w, r, router.encoder)
-}
-
-func (router *HTTPRouter) receiveTransactionJSON(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	router.receiveTransactionWithEncoder(w, r, router.apiEncoder)
-}
-
-func (router *HTTPRouter) receiveTransactionWithEncoder(w http.ResponseWriter, r *http.Request, encoder encoding.Encoding) {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to read payload: %s", err.Error()), http.StatusInternalServerError, err)
 		return
 	}
 
-	tx, err := encoder.DeserializeTransaction(data)
+	tx, err := router.apiEncoder.DeserializeTransaction(data)
 	if err != nil {
 		router.handleError(w, fmt.Sprintf("Failed to decode transaction: %s", err.Error()), http.StatusInternalServerError, err)
 		return
@@ -268,7 +226,7 @@ func (router *HTTPRouter) getTransactionByID(w http.ResponseWriter, _ *http.Requ
 		return
 	}
 
-	router.writeResponse(w, txEncoded, router.apiEncoder)
+	router.writeResponse(w, txEncoded)
 }
 
 func (router *HTTPRouter) getLatestBlock(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
@@ -284,7 +242,7 @@ func (router *HTTPRouter) getLatestBlock(w http.ResponseWriter, _ *http.Request,
 		return
 	}
 
-	router.writeResponse(w, blockEncoded, router.apiEncoder)
+	router.writeResponse(w, blockEncoded)
 }
 
 func (router *HTTPRouter) getBlock(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -315,7 +273,7 @@ func (router *HTTPRouter) getBlockByHash(w http.ResponseWriter, _ *http.Request,
 		return
 	}
 
-	router.writeResponse(w, blockEncoded, router.apiEncoder)
+	router.writeResponse(w, blockEncoded)
 }
 
 func (router *HTTPRouter) getLatestHeader(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
@@ -331,7 +289,7 @@ func (router *HTTPRouter) getLatestHeader(w http.ResponseWriter, _ *http.Request
 		return
 	}
 
-	router.writeResponse(w, headerEncoded, router.apiEncoder)
+	router.writeResponse(w, headerEncoded)
 }
 
 func (router *HTTPRouter) getHeader(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -362,7 +320,7 @@ func (router *HTTPRouter) getHeaderByHeight(w http.ResponseWriter, _ *http.Reque
 		return
 	}
 
-	router.writeResponse(w, headerEncoded, router.apiEncoder)
+	router.writeResponse(w, headerEncoded)
 }
 
 func (router *HTTPRouter) listHeaders(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -384,11 +342,11 @@ func (router *HTTPRouter) listHeaders(w http.ResponseWriter, r *http.Request, _ 
 		return
 	}
 
-	router.writeResponse(w, headersEncoded, router.apiEncoder)
+	router.writeResponse(w, headersEncoded)
 }
 
-func (router *HTTPRouter) writeResponse(w http.ResponseWriter, data []byte, encoder encoding.Encoding) {
-	w.Header().Set(ContentTypeHeader, getContentTypeFrom(encoder))
+func (router *HTTPRouter) writeResponse(w http.ResponseWriter, data []byte) {
+	w.Header().Set(ContentTypeHeader, "application/json")
 	if _, err := w.Write(data); err != nil {
 		router.logger.Errorf("failed to write response: %v", err)
 	}
