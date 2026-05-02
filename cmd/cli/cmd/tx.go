@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/spf13/cobra"
 	"github.com/yago-123/chainnet/config"
-	"github.com/yago-123/chainnet/pkg/encoding"
-	"github.com/yago-123/chainnet/pkg/network"
+	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 )
 
 const FlagAddress = "address"
@@ -26,33 +24,17 @@ var listTxsCmd = &cobra.Command{
 			logger.Fatalf("address must be provided")
 		}
 
-		url := fmt.Sprintf(
-			"http://%s/%s",
+		client, err := sdkv1beta.NewClient(
 			net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort)),
-			fmt.Sprintf(network.RouterRetrieveAddressTxs, address),
+			nil,
 		)
+		if err != nil {
+			logger.Fatalf("failed to create SDK client: %v", err)
+		}
 
-		// send request
-		resp, err := http.Get(url) //nolint:gosec // this is OK for a CLI tool
+		txs, err := client.GetAddressTransactions(cmd.Context(), base58.Decode(address))
 		if err != nil {
 			logger.Fatalf("failed to get transactions: %v", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			logger.Fatalf("failed to get transactions: %v", resp.Status)
-		}
-
-		// decode response
-		encoder := encoding.NewProtobufEncoder()
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			logger.Fatalf("failed to read response body: %v", err)
-		}
-
-		txs, err := encoder.DeserializeTransactions(data)
-		if err != nil {
-			logger.Fatalf("failed to deserialize transactions: %v", err)
 		}
 
 		// print transactions
