@@ -17,6 +17,8 @@ servers:
   - url: http://localhost:8080/api/v1beta
     description: Local Chainnet node
 tags:
+  - name: Chain
+    description: Chain-level metadata
   - name: Addresses
     description: Address-scoped wallet queries
   - name: Transactions
@@ -26,6 +28,26 @@ tags:
   - name: Headers
     description: Block header retrieval
 paths:
+  /chain/latest:
+    get:
+      operationId: getLatestChain
+      tags:
+        - Chain
+      summary: Retrieve the latest chain metadata
+      description: |
+        Returns lightweight metadata for the current chain tip without
+        returning the full latest block.
+      responses:
+        "200":
+          description: Latest chain metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChainTip"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /addresses/{address}/utxos:
     get:
       operationId: getAddressUTXOs
@@ -320,6 +342,25 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    ChainTip:
+      type: object
+      required:
+        - height
+        - hash
+        - timestamp
+      properties:
+        height:
+          type: integer
+          minimum: 0
+          description: Latest block height.
+        hash:
+          type: string
+          description: Hex-encoded latest block hash.
+        timestamp:
+          type: integer
+          format: int64
+          description: Latest block timestamp.
+      additionalProperties: false
     Transaction:
       type: object
       required:

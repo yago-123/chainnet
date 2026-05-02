@@ -148,6 +148,12 @@ func TestSDK_SubmitTransactionsMineBlockAndReadBack(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, minedBlock.Header.Height, latestHeader.Height)
 
+	latestChain, err := client.GetLatestChain(ctx)
+	require.NoError(t, err)
+	require.Equal(t, int(minedBlock.Header.Height), latestChain.Height) //nolint:gosec // e2e heights are tiny
+	require.Equal(t, hex.EncodeToString(minedBlock.Hash), latestChain.Hash)
+	require.Equal(t, minedBlock.Header.Timestamp, latestChain.Timestamp)
+
 	active, err := client.AddressIsActive(ctx, []byte("sdk-e2e-recipient-1"))
 	require.NoError(t, err)
 	require.True(t, active)

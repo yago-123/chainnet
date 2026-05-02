@@ -38,6 +38,20 @@ func NewClientFromConfig(cfg *config.Config, httpClient *http.Client) (*Client, 
 	return NewClient(baseURL, httpClient)
 }
 
+func (c *Client) GetLatestChain(ctx context.Context) (*generated.ChainTip, error) {
+	resp, err := c.client.GetLatestChainWithResponse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest chain metadata: %w", err)
+	}
+
+	tip, err := expectOK("get latest chain metadata", resp.StatusCode(), resp.Body, resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tip, nil
+}
+
 func (c *Client) GetAddressUTXOs(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
 	resp, err := c.client.GetAddressUTXOsWithResponse(ctx, base58.Encode(address))
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	RouterV1BetaLatestChain          = "/api/v1beta/chain/latest"
 	RouterV1BetaRetrieveAddressTxs   = "/api/v1beta/addresses/%s/transactions"
 	RouterV1BetaRetrieveAddressUTXOs = "/api/v1beta/addresses/%s/utxos"
 	RouterV1BetaAddressIsActive      = "/api/v1beta/addresses/%s/activity"
