@@ -109,6 +109,25 @@ paths:
           $ref: "#/components/responses/InvalidAddress"
         "500":
           $ref: "#/components/responses/InternalError"
+  /addresses/{address}/activity2:
+    get:
+      operationId: getAddressActivity
+      tags:
+        - Addresses
+      summary: Check whether an address has chain activity
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          description: True if the address has at least one related transaction.
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "400":
+          $ref: "#/components/responses/InvalidAddress"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /transactions:
     post:
       operationId: submitTransaction
