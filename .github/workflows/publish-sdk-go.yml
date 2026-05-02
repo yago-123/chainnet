@@ -56,7 +56,7 @@ jobs:
             target="chainnet-sdk-go/v1beta/$(basename "${source}" .tmpl)"
             cp "${source}" "${target}"
           done
-          
+
       - name: Generate SDK
         working-directory: chainnet-sdk-go
         run: make openapi-generate OPENAPI_SPEC=../chainnet/api/openapi.yaml
