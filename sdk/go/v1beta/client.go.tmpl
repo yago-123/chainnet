@@ -3,14 +3,11 @@ package v1beta
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/yago-123/chainnet/config"
-	"github.com/yago-123/chainnet/pkg/kernel"
-	"github.com/yago-123/chainnet/pkg/sdk/v1beta/generated"
+	"github.com/yago-123/chainnet-sdk-go/v1beta/generated"
 )
 
 const apiBasePath = "/api/v1beta"
@@ -19,13 +16,13 @@ type Client struct {
 	client *generated.ClientWithResponses
 }
 
-func NewClient(baseurl string, httpClient *http.Client) (*Client, error) {
+func NewClient(baseURL string, httpClient *http.Client) (*Client, error) {
 	opts := []generated.ClientOption{}
 	if httpClient != nil {
 		opts = append(opts, generated.WithHTTPClient(httpClient))
 	}
 
-	client, err := generated.NewClientWithResponses(normalizeServerURL(baseurl), opts...)
+	client, err := generated.NewClientWithResponses(normalizeServerURL(baseURL), opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create generated v1beta client: %w", err)
 	}
@@ -33,12 +30,11 @@ func NewClient(baseurl string, httpClient *http.Client) (*Client, error) {
 	return &Client{client: client}, nil
 }
 
-func NewClientFromConfig(cfg *config.Config, httpClient *http.Client) (*Client, error) {
-	baseURL := net.JoinHostPort(cfg.Wallet.ServerAddress, fmt.Sprintf("%d", cfg.Wallet.ServerPort))
-	return NewClient(baseURL, httpClient)
+func (c *Client) RawClient() *generated.ClientWithResponses {
+	return c.client
 }
 
-func (c *Client) GetLatestChain(ctx context.Context) (*generated.ChainTip, error) {
+func (c *Client) GetLatestChain(ctx context.Context) (*ChainTip, error) {
 	resp, err := c.client.GetLatestChainWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest chain metadata: %w", err)
@@ -52,36 +48,38 @@ func (c *Client) GetLatestChain(ctx context.Context) (*generated.ChainTip, error
 	return &tip, nil
 }
 
-func (c *Client) GetAddressUTXOs(ctx context.Context, address []byte) ([]*kernel.UTXO, error) {
-	resp, err := c.client.GetAddressUTXOsWithResponse(ctx, base58.Encode(address))
+func (c *Client) GetAddressUTXOs(ctx context.Context, address []byte) ([]UTXO, error) {
+	return c.GetAddressUTXOsByAddress(ctx, base58.Encode(address))
+}
+
+func (c *Client) GetAddressUTXOsByAddress(ctx context.Context, address string) ([]UTXO, error) {
+	resp, err := c.client.GetAddressUTXOsWithResponse(ctx, address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get address UTXOs: %w", err)
 	}
 
-	utxos, err := expectOK("get address UTXOs", resp.StatusCode(), resp.Body, resp.JSON200)
-	if err != nil {
-		return nil, err
-	}
-
-	return utxosFromGenerated(utxos)
+	return expectOK("get address UTXOs", resp.StatusCode(), resp.Body, resp.JSON200)
 }
 
-func (c *Client) GetAddressTransactions(ctx context.Context, address []byte) ([]*kernel.Transaction, error) {
-	resp, err := c.client.GetAddressTransactionsWithResponse(ctx, base58.Encode(address))
+func (c *Client) GetAddressTransactions(ctx context.Context, address []byte) ([]Transaction, error) {
+	return c.GetAddressTransactionsByAddress(ctx, base58.Encode(address))
+}
+
+func (c *Client) GetAddressTransactionsByAddress(ctx context.Context, address string) ([]Transaction, error) {
+	resp, err := c.client.GetAddressTransactionsWithResponse(ctx, address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get address transactions: %w", err)
 	}
 
-	transactions, err := expectOK("get address transactions", resp.StatusCode(), resp.Body, resp.JSON200)
-	if err != nil {
-		return nil, err
-	}
-
-	return transactionsFromGenerated(transactions)
+	return expectOK("get address transactions", resp.StatusCode(), resp.Body, resp.JSON200)
 }
 
 func (c *Client) AddressIsActive(ctx context.Context, address []byte) (bool, error) {
-	resp, err := c.client.GetAddressActivityWithResponse(ctx, base58.Encode(address))
+	return c.AddressStringIsActive(ctx, base58.Encode(address))
+}
+
+func (c *Client) AddressStringIsActive(ctx context.Context, address string) (bool, error) {
+	resp, err := c.client.GetAddressActivityWithResponse(ctx, address)
 	if err != nil {
 		return false, fmt.Errorf("failed to get address activity: %w", err)
 	}
@@ -89,13 +87,8 @@ func (c *Client) AddressIsActive(ctx context.Context, address []byte) (bool, err
 	return expectOK("get address activity", resp.StatusCode(), resp.Body, resp.JSON200)
 }
 
-func (c *Client) SendTransaction(ctx context.Context, tx kernel.Transaction) error {
-	body, err := transactionToGenerated(tx)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.client.SubmitTransactionWithResponse(ctx, body)
+func (c *Client) SendTransaction(ctx context.Context, tx Transaction) error {
+	resp, err := c.client.SubmitTransactionWithResponse(ctx, tx)
 	if err != nil {
 		return fmt.Errorf("failed to submit transaction: %w", err)
 	}
@@ -103,8 +96,12 @@ func (c *Client) SendTransaction(ctx context.Context, tx kernel.Transaction) err
 	return expectStatusOK("submit transaction", resp.StatusCode(), resp.Body)
 }
 
-func (c *Client) GetTransactionByID(ctx context.Context, txID []byte) (*kernel.Transaction, error) {
-	resp, err := c.client.GetTransactionWithResponse(ctx, encodeHash(txID))
+func (c *Client) GetTransactionByID(ctx context.Context, txID []byte) (*Transaction, error) {
+	return c.GetTransactionByIDHex(ctx, encodeHex(txID))
+}
+
+func (c *Client) GetTransactionByIDHex(ctx context.Context, txID string) (*Transaction, error) {
+	resp, err := c.client.GetTransactionWithResponse(ctx, txID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
@@ -114,10 +111,10 @@ func (c *Client) GetTransactionByID(ctx context.Context, txID []byte) (*kernel.T
 		return nil, err
 	}
 
-	return transactionFromGenerated(tx)
+	return &tx, nil
 }
 
-func (c *Client) GetLatestBlock(ctx context.Context) (*kernel.Block, error) {
+func (c *Client) GetLatestBlock(ctx context.Context) (*Block, error) {
 	resp, err := c.client.GetLatestBlockWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest block: %w", err)
@@ -128,11 +125,15 @@ func (c *Client) GetLatestBlock(ctx context.Context) (*kernel.Block, error) {
 		return nil, err
 	}
 
-	return blockFromGenerated(block)
+	return &block, nil
 }
 
-func (c *Client) GetBlockByHash(ctx context.Context, hash []byte) (*kernel.Block, error) {
-	resp, err := c.client.GetBlockByHashWithResponse(ctx, encodeHash(hash))
+func (c *Client) GetBlockByHash(ctx context.Context, hash []byte) (*Block, error) {
+	return c.GetBlockByHashHex(ctx, encodeHex(hash))
+}
+
+func (c *Client) GetBlockByHashHex(ctx context.Context, hash string) (*Block, error) {
+	resp, err := c.client.GetBlockByHashWithResponse(ctx, hash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get block by hash: %w", err)
 	}
@@ -142,10 +143,10 @@ func (c *Client) GetBlockByHash(ctx context.Context, hash []byte) (*kernel.Block
 		return nil, err
 	}
 
-	return blockFromGenerated(block)
+	return &block, nil
 }
 
-func (c *Client) GetLatestHeader(ctx context.Context) (*kernel.BlockHeader, error) {
+func (c *Client) GetLatestHeader(ctx context.Context) (*BlockHeader, error) {
 	resp, err := c.client.GetLatestHeaderWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest header: %w", err)
@@ -156,10 +157,10 @@ func (c *Client) GetLatestHeader(ctx context.Context) (*kernel.BlockHeader, erro
 		return nil, err
 	}
 
-	return headerFromGenerated(header)
+	return &header, nil
 }
 
-func (c *Client) GetHeaderByHeight(ctx context.Context, height uint) (*kernel.BlockHeader, error) {
+func (c *Client) GetHeaderByHeight(ctx context.Context, height uint) (*BlockHeader, error) {
 	convertedHeight, err := uintToInt("height", height)
 	if err != nil {
 		return nil, err
@@ -175,34 +176,29 @@ func (c *Client) GetHeaderByHeight(ctx context.Context, height uint) (*kernel.Bl
 		return nil, err
 	}
 
-	return headerFromGenerated(header)
+	return &header, nil
 }
 
-func (c *Client) GetHeaders(ctx context.Context) ([]*kernel.BlockHeader, error) {
-	resp, err := c.client.GetHeadersWithResponse(ctx, nil)
+func (c *Client) GetHeaders(ctx context.Context, opts *GetHeadersOptions) ([]BlockHeader, error) {
+	resp, err := c.client.GetHeadersWithResponse(ctx, getHeadersParams(opts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get headers: %w", err)
 	}
 
-	headers, err := expectOK("get headers", resp.StatusCode(), resp.Body, resp.JSON200)
-	if err != nil {
-		return nil, err
-	}
-
-	return headersFromGenerated(headers)
+	return expectOK("get headers", resp.StatusCode(), resp.Body, resp.JSON200)
 }
 
-func normalizeServerURL(baseurl string) string {
-	if !strings.HasPrefix(baseurl, "http://") && !strings.HasPrefix(baseurl, "https://") {
-		baseurl = "http://" + baseurl
+func normalizeServerURL(baseURL string) string {
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		baseURL = "http://" + baseURL
 	}
 
-	baseurl = strings.TrimRight(baseurl, "/")
-	if strings.HasSuffix(baseurl, apiBasePath) {
-		return baseurl
+	baseURL = strings.TrimRight(baseURL, "/")
+	if strings.HasSuffix(baseURL, apiBasePath) {
+		return baseURL
 	}
 
-	return baseurl + apiBasePath
+	return baseURL + apiBasePath
 }
 
 func expectOK[T any](operation string, statusCode int, body []byte, payload *T) (T, error) {

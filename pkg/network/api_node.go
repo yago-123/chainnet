@@ -56,6 +56,7 @@ func NewHTTPRouter(
 		cfg:        cfg,
 	}
 
+	router.r.GET(RouterV1BetaLatestChain, router.getLatestChain)
 	router.r.GET(fmt.Sprintf(RouterV1BetaRetrieveAddressTxs, ":address"), router.listTransactions)
 	router.r.GET(fmt.Sprintf(RouterV1BetaAddressIsActive, ":address"), router.checkAddressIsActive)
 	router.r.GET(fmt.Sprintf(RouterV1BetaRetrieveAddressUTXOs, ":address"), router.listUTXOs)
@@ -66,6 +67,23 @@ func NewHTTPRouter(
 	router.r.GET(RouterV1BetaHeaders, router.listHeaders)
 
 	return router
+}
+
+func (router *HTTPRouter) getLatestChain(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	block, err := router.explorer.GetLastBlock()
+	if err != nil {
+		router.handleExplorerError(w, fmt.Sprintf("Failed to retrieve latest chain tip: %s", err.Error()), err)
+		return
+	}
+
+	data := []byte(fmt.Sprintf(
+		`{"height":%d,"hash":"%s","timestamp":%d}`,
+		block.Header.Height,
+		hex.EncodeToString(block.Hash),
+		block.Header.Timestamp,
+	))
+
+	router.writeResponse(w, data)
 }
 
 func (router *HTTPRouter) Start() error {
