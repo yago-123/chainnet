@@ -17,6 +17,9 @@ jobs:
         with:
           go-version: '1.26'
 
+      - name: Install mise tools
+        uses: jdx/mise-action@v2
+
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
         with:
