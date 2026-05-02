@@ -1,7 +1,6 @@
 package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
-	"errors"
 	"os"
 	"testing"
 
@@ -325,7 +324,7 @@ func TestExplorer_GetTransactionByID(t *testing.T) {
 	assert.Equal(t, []byte("coinbase-transaction-genesis-id"), tx.ID)
 
 	_, err = explorer.GetTransactionByID([]byte("missing-transaction-id"))
-	assert.True(t, errors.Is(err, cerror.ErrStorageElementNotFound))
+	assert.ErrorIs(t, err, cerror.ErrStorageElementNotFound)
 }
 
 func initializeStorage(t *testing.T, blocks []Block) storage.Storage {

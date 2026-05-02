@@ -327,10 +327,7 @@ func convertFromJSONTransaction(tx jsonTransaction) (kernel.Transaction, error) 
 		return kernel.Transaction{}, err
 	}
 
-	outputs, err := convertFromJSONTxOutputs(tx.Vout)
-	if err != nil {
-		return kernel.Transaction{}, err
-	}
+	outputs := convertFromJSONTxOutputs(tx.Vout)
 
 	return kernel.Transaction{
 		ID:   id,
@@ -447,12 +444,12 @@ func convertToJSONTxOutputs(outputs []kernel.TxOutput) []jsonTxOutput {
 	return ret
 }
 
-func convertFromJSONTxOutputs(outputs []jsonTxOutput) ([]kernel.TxOutput, error) {
+func convertFromJSONTxOutputs(outputs []jsonTxOutput) []kernel.TxOutput {
 	ret := make([]kernel.TxOutput, 0, len(outputs))
 	for _, output := range outputs {
 		ret = append(ret, convertFromJSONTxOutput(output))
 	}
-	return ret, nil
+	return ret
 }
 
 func decodeHexField(field string, value string) ([]byte, error) {

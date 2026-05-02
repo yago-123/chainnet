@@ -1,4 +1,4 @@
-package encoding
+package encoding //nolint:testpackage // keep tests in package for unexported JSON DTO coverage
 
 import (
 	"testing"

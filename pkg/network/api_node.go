@@ -456,13 +456,14 @@ func filterHeaders(headers []*kernel.BlockHeader, r *http.Request) ([]*kernel.Bl
 		return nil, fmt.Errorf("limit must be greater than 0")
 	}
 
-	if int(limit) > MaxNumberRetrievals {
+	if limit > uint64(MaxNumberRetrievals) {
 		return nil, fmt.Errorf("limit must be less than or equal to %d", MaxNumberRetrievals)
 	}
 
-	if int(limit) > len(headers) {
+	limitInt := int(limit)
+	if limitInt > len(headers) {
 		return headers, nil
 	}
 
-	return headers[:limit], nil
+	return headers[:limitInt], nil
 }

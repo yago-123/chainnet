@@ -275,7 +275,7 @@ func intToUint(field string, value int) (uint, error) {
 }
 
 func uintToInt(field string, value uint) (int, error) {
-	maxInt := uint(^uint(0) >> 1)
+	maxInt := ^uint(0) >> 1
 	if value > maxInt {
 		return 0, fmt.Errorf("%s exceeds int max", field)
 	}

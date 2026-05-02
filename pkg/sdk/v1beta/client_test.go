@@ -1,4 +1,4 @@
-package v1beta
+package v1beta //nolint:testpackage // keep tests in package to exercise unexported helpers during SDK iteration
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/yago-123/chainnet/pkg/kernel"
 )
 
-func TestClientWalletEndpoints(t *testing.T) {
+func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smoke test is intentionally linear
 	encoder := encoding.NewJSONEncoder()
 
 	utxos := []*kernel.UTXO{
@@ -58,7 +58,7 @@ func TestClientWalletEndpoints(t *testing.T) {
 		}
 		_, _ = w.Write(data)
 	})
-	mux.HandleFunc("/api/v1beta/transactions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1beta/transactions", func(_ http.ResponseWriter, r *http.Request) {
 		if got, want := r.Header.Get("Content-Type"), "application/json"; got != want {
 			t.Fatalf("content type = %q, want %q", got, want)
 		}
@@ -117,8 +117,8 @@ func TestClientWalletEndpoints(t *testing.T) {
 		t.Fatal("expected address to be active")
 	}
 
-	if err := client.SendTransaction(context.Background(), *txs[0]); err != nil {
-		t.Fatal(err)
+	if sendErr := client.SendTransaction(context.Background(), *txs[0]); sendErr != nil {
+		t.Fatal(sendErr)
 	}
 
 	tx, err := client.GetTransactionByID(context.Background(), []byte("tx-id"))
@@ -130,7 +130,7 @@ func TestClientWalletEndpoints(t *testing.T) {
 	}
 }
 
-func TestClientChainEndpoints(t *testing.T) {
+func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smoke test is intentionally linear
 	encoder := encoding.NewJSONEncoder()
 
 	header := kernel.NewBlockHeader(
