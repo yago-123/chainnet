@@ -1,6 +1,7 @@
 package explorer
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -54,6 +55,34 @@ func (explorer *ChainExplorer) GetBlockByHash(hash []byte) (*kernel.Block, error
 	}
 
 	return block, nil
+}
+
+// GetTransactionByID scans persisted blocks from newest to oldest and returns the confirmed transaction matching txID.
+func (explorer *ChainExplorer) GetTransactionByID(txID []byte) (*kernel.Transaction, error) {
+	lastBlock, err := explorer.store.GetLastBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	it := iterator.NewReverseBlockIterator(explorer.store)
+	if err = it.Initialize(lastBlock.Hash); err != nil {
+		return nil, err
+	}
+
+	for it.HasNext() {
+		block, errBlock := it.GetNextBlock()
+		if errBlock != nil {
+			return nil, errBlock
+		}
+
+		for _, tx := range block.Transactions {
+			if bytes.Equal(tx.ID, txID) {
+				return tx, nil
+			}
+		}
+	}
+
+	return nil, cerror.ErrStorageElementNotFound
 }
 
 // GetHeaderByHeight returns the block corresponding to the height provided

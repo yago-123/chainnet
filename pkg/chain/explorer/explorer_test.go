@@ -1,10 +1,12 @@
 package explorer //nolint:testpackage // don't create separate package for tests
 
 import (
+	"errors"
 	"os"
 	"testing"
 
 	"github.com/yago-123/chainnet/pkg/encoding"
+	cerror "github.com/yago-123/chainnet/pkg/errs"
 	. "github.com/yago-123/chainnet/pkg/kernel" //nolint:revive // it's fine to use dot imports in tests
 	"github.com/yago-123/chainnet/pkg/script"
 	"github.com/yago-123/chainnet/pkg/storage"
@@ -306,6 +308,24 @@ func TestExplorer_retrieveBalanceFrom(t *testing.T) {
 	}
 
 	assert.Equal(t, uint(103), retrieveBalanceFromUTXOs(utxos))
+}
+
+func TestExplorer_GetTransactionByID(t *testing.T) {
+	storageInstance := initializeStorage(t, []Block{GenesisBlock, Block1, Block2, Block3, Block4})
+	defer storageInstance.Close()
+
+	explorer := NewChainExplorer(storageInstance, &mockHash.FakeHashing{})
+
+	tx, err := explorer.GetTransactionByID([]byte("regular-transaction-block-2-id"))
+	require.NoError(t, err)
+	assert.Equal(t, []byte("regular-transaction-block-2-id"), tx.ID)
+
+	tx, err = explorer.GetTransactionByID([]byte("coinbase-transaction-genesis-id"))
+	require.NoError(t, err)
+	assert.Equal(t, []byte("coinbase-transaction-genesis-id"), tx.ID)
+
+	_, err = explorer.GetTransactionByID([]byte("missing-transaction-id"))
+	assert.True(t, errors.Is(err, cerror.ErrStorageElementNotFound))
 }
 
 func initializeStorage(t *testing.T, blocks []Block) storage.Storage {

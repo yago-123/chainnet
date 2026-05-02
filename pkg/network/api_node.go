@@ -249,8 +249,27 @@ func (router *HTTPRouter) receiveTransactionWithEncoder(w http.ResponseWriter, r
 	}
 }
 
-func (router *HTTPRouter) writeResponse(w http.ResponseWriter, data []byte) {
-	w.Header().Set(ContentTypeHeader, getContentTypeFrom(router.encoder))
+func (router *HTTPRouter) getTransactionByID(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	txID, err := decodeHash(ps.ByName("tx_id"))
+	if err != nil {
+		router.handleError(w, fmt.Sprintf("Invalid transaction ID: %s", err.Error()), http.StatusBadRequest, err)
+		return
+	}
+
+	tx, err := router.explorer.GetTransactionByID(txID)
+	if err != nil {
+		router.handleExplorerError(w, fmt.Sprintf("Failed to retrieve transaction: %s", err.Error()), err)
+		return
+	}
+
+	txEncoded, err := router.apiEncoder.SerializeTransaction(*tx)
+	if err != nil {
+		router.handleError(w, fmt.Sprintf("Failed to encode transaction: %s", err.Error()), http.StatusInternalServerError, err)
+		return
+	}
+
+	router.writeResponse(w, txEncoded, router.apiEncoder)
+}
 
 func (router *HTTPRouter) getLatestBlock(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	block, err := router.explorer.GetLastBlock()
