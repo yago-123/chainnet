@@ -2,8 +2,6 @@
 OUTPUT_DIR := bin
 NODE_PROTOBUF_DIR := pkg/network/protobuf
 OPENAPI_SPEC := api/openapi.yaml
-OPENAPI_GENERATED_DIR := pkg/sdk/v1beta/generated
-OPENAPI_GENERATED_FILE := $(OPENAPI_GENERATED_DIR)/openapi.gen.go
 
 CLI_BINARY_NAME   := chainnet-cli
 MINER_BINARY_NAME := chainnet-miner
@@ -35,27 +33,27 @@ DOCKERFILE_NODE    := ./build/docker/node/Dockerfile
 all: test lint miner node nespv cli bot
 
 .PHONY: miner
-miner: protobuf openapi-generate output-dir
+miner: protobuf output-dir
 	@echo "Building chainnet miner..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(MINER_BINARY_NAME) $(MINER_SOURCE)
 
 .PHONY: node
-node: protobuf openapi-generate output-dir
+node: protobuf output-dir
 	@echo "Building chainnet node..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NODE_BINARY_NAME) $(NODE_SOURCE)
 
 .PHONY: nespv
-nespv: protobuf openapi-generate output-dir
+nespv: protobuf output-dir
 	@echo "Building chainnet nespv..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(NESPV_BINARY_NAME) $(NESPV_SOURCE)
 
 .PHONY: cli 
-cli: protobuf openapi-generate output-dir
+cli: protobuf output-dir
 	@echo "Building chainnet CLI..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(CLI_BINARY_NAME) $(CLI_SOURCE)
 
 .PHONY: bot
-bot: protobuf openapi-generate output-dir
+bot: protobuf output-dir
 	@echo "Building chainnet bot..."
 	@go build $(GCFLAGS) -o $(OUTPUT_DIR)/$(BOT_BINARY_NAME) $(BOT_SOURCE)
 
@@ -72,28 +70,22 @@ openapi-check:
 	rm -f "$$tmp_file"; \
 	echo "OpenAPI spec is valid: $(OPENAPI_SPEC)"
 
-.PHONY: openapi-generate
-openapi-generate:
-	@echo "Generating OpenAPI SDK code..."
-	@mkdir -p $(OPENAPI_GENERATED_DIR)
-	@oapi-codegen -generate types,client -package generated -o $(OPENAPI_GENERATED_FILE) $(OPENAPI_SPEC)
-
 .PHONY: output-dir
 output-dir:
 	@mkdir -p $(OUTPUT_DIR)
 
 .PHONY: lint
-lint: protobuf openapi-generate
+lint: protobuf
 	@echo "Running linter..."
 	@golangci-lint run ./...
 
 .PHONY: test
-test: protobuf openapi-generate
+test: protobuf
 	@echo "Running tests..."
 	@go test -v -cover ./... -tags '!e2e'
 
 .PHONY: e2e
-e2e: protobuf openapi-generate
+e2e: protobuf
 	@echo "Running e2e tests..."
 	@go test -v ./tests/e2e -tags e2e
 
@@ -104,7 +96,6 @@ clean:
 	@rm -f __debug_bin*
 	@rm -f _fixture/*
 	@rm -f $(NODE_PROTOBUF_PB_SOURCE)
-	@rm -f $(OPENAPI_GENERATED_FILE)
 
 .PHONY: imports
 imports: 

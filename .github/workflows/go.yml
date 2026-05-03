@@ -20,9 +20,6 @@ jobs:
       - name: Generate protobuf files
         run: make protobuf
 
-      - name: Generate OpenAPI SDK files
-        run: make openapi-generate
-
       - name: Run golangci-lint
         run: make lint
 
