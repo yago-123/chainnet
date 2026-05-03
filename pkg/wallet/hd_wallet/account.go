@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
+	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
-	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 	"github.com/yago-123/chainnet/pkg/util"
 	common "github.com/yago-123/chainnet/pkg/wallet"
 
@@ -75,7 +75,10 @@ func NewHDAccount(
 	externalWalletsNum uint32,
 	internalWalletsNum uint32,
 ) (*Account, error) {
-	nodeClient, err := sdkv1beta.NewClientFromConfig(cfg, nil)
+	nodeClient, err := sdkv1beta.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Wallet.ServerAddress, cfg.Wallet.ServerPort),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet node client: %w", err)
 	}
@@ -256,7 +259,8 @@ func (hda *Account) GetInternalWallet(idx uint) (*wallt.Wallet, error) {
 	return hda.internalWallets[idx], nil
 }
 
-func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, changeReceiverPubKey []byte, changeReceiverVersion byte, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+// GenerateNewTransaction creates a transaction using wallet-owned SDK types.
+func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, addresses [][]byte, targetAmount []uint, txFee uint, changeReceiverPubKey []byte, changeReceiverVersion byte, utxos []sdkv1beta.UTXO) (*sdkv1beta.Transaction, error) {
 	hda.mu.Lock()
 	defer hda.mu.Unlock()
 
@@ -266,9 +270,9 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, address
 		totalTargetAmount += amount
 	}
 
-	inputs, totalBalance, err := common.GenerateInputs(utxos, totalTargetAmount+txFee)
+	inputs, totalBalance, err := common.GenerateInputs(common.SDKUTXOsToKernel(utxos), totalTargetAmount+txFee)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	outputs, err := common.GenerateOutputs(scriptType, targetAmount, addresses, txFee, totalBalance, changeReceiverPubKey, changeReceiverVersion)
@@ -283,42 +287,46 @@ func (hda *Account) GenerateNewTransaction(scriptType script.ScriptType, address
 	)
 
 	// unlock the funds from the UTXOs
-	tx, err = hda.UnlockTxFunds(tx, utxos)
+	sdkTx := common.KernelTransactionToSDK(*tx)
+	sdkTxPtr, err := hda.UnlockTxFunds(&sdkTx, utxos)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	// generate tx hash
-	txHash, err := util.CalculateTxHash(tx, hda.consensusHasher)
+	txHash, err := util.CalculateTxHash(common.SDKTransactionToKernel(sdkTxPtr), hda.consensusHasher)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	// assign the tx hash
-	tx.SetID(txHash)
+	sdkTxPtr.ID = txHash
 
 	// perform simple validations (light validator) before broadcasting the transaction
-	if err = hda.validator.ValidateTxLight(tx); err != nil {
-		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
+	if err = hda.validator.ValidateTxLight(common.SDKTransactionToKernel(sdkTxPtr)); err != nil {
+		return &sdkv1beta.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
 	}
 
-	return tx, nil
+	return sdkTxPtr, nil
 }
 
 // UnlockTxFunds unlocks the funds from the UTXOs by generating the scriptSigs for the inputs
-func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (hda *Account) UnlockTxFunds(tx *sdkv1beta.Transaction, utxos []sdkv1beta.UTXO) (*sdkv1beta.Transaction, error) {
 	// precompute wallets for lookup
 	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // simpler to use a single append
 
 	// map UTXOs so that can be easily accessed for generating the scriptSigs for the inputs
+	kernelTx := common.SDKTransactionToKernel(tx)
+	kernelUtxos := common.SDKUTXOsToKernel(utxos)
+
 	utxoMap := make(map[string]*kernel.UTXO)
-	for _, utxo := range utxos {
+	for _, utxo := range kernelUtxos {
 		utxoMap[utxo.UniqueKey()] = utxo
 	}
 
-	scriptSigs := make([]string, len(tx.Vin))
+	scriptSigs := make([]string, len(kernelTx.Vin))
 	// iterate through each input and unlock the funds
-	for i, vin := range tx.Vin {
+	for i, vin := range kernelTx.Vin {
 		// retrieve the UTXO that will spend the input so that the scriptPubKey can be analyzed and unlocked
 		utxo, found := utxoMap[vin.UniqueTxoKey()]
 		if !found {
@@ -331,7 +339,7 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 		for _, wallet := range wallets {
 			if script.CanBeUnlockedWith(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.Version()) {
 				// generate the unlocking script
-				scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.PrivateKey(), tx)
+				scriptSig, err := hda.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, wallet.PublicKey(), wallet.PrivateKey(), kernelTx)
 				if err != nil {
 					return nil, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
 				}
@@ -349,29 +357,26 @@ func (hda *Account) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) 
 	}
 
 	// assign scriptSigs to transaction inputs
-	for i := range tx.Vin {
-		tx.Vin[i].ScriptSig = scriptSigs[i]
+	for i := range kernelTx.Vin {
+		kernelTx.Vin[i].ScriptSig = scriptSigs[i]
 	}
 
-	return tx, nil
+	sdkTx := common.KernelTransactionToSDK(*kernelTx)
+	return &sdkTx, nil
 }
 
 // SendTransaction propagates a transaction to the network
-func (hda *Account) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
-	if err := hda.nodeClient.SendTransaction(ctx, *tx); err != nil {
-		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
-	}
-
-	return nil
+func (hda *Account) SendTransaction(ctx context.Context, tx sdkv1beta.Transaction) error {
+	return hda.nodeClient.SendTransaction(ctx, tx)
 }
 
 // GetAccountUTXOs retrieves the UTXOs from both external and internal wallets
-func (hda *Account) GetAccountUTXOs() ([]*kernel.UTXO, error) {
+func (hda *Account) GetAccountUTXOs() ([]sdkv1beta.UTXO, error) {
 	hda.mu.Lock()
 	wallets := append(hda.externalWallets, hda.internalWallets...) //nolint:gocritic // simpler to use a single append
 	hda.mu.Unlock()
 
-	var utxosCollection []*kernel.UTXO
+	var utxosCollection []sdkv1beta.UTXO
 	var utxosMu sync.Mutex
 
 	// create a context with cancellation
