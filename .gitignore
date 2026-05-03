@@ -6,6 +6,5 @@ bin/
 *.pem
 *.data
 _fixture/
-pkg/sdk/v1beta/generated/*.go
 # Added by goreleaser init:
 dist/
