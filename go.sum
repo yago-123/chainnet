@@ -520,8 +520,8 @@ github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 h1:EKhdz
 github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1/go.mod h1:8UvriyWtv5Q5EOgjHaSseUEdkQfvwFv1I/In/O2M9gc=
 github.com/wlynxg/anet v0.0.5 h1:J3VJGi1gvo0JwZ/P1/Yc/8p63SoW98B5dHkYDmpgvvU=
 github.com/wlynxg/anet v0.0.5/go.mod h1:eay5PRQr7fIVAMbTbchTnO9gG65Hg/uYGdc7mguHxoA=
-github.com/yago-123/chainnet-sdk-go v0.2.0-rc.1 h1:b8CuqVticZiYwnfSxu9apj/kVHiL3TFhzvPjC1Drw+s=
-github.com/yago-123/chainnet-sdk-go v0.2.0-rc.1/go.mod h1:42LunTOF6znd1iWgbBKzHJfS5cehMltH6T29BhcYKb4=
+github.com/yago-123/chainnet-sdk-go v0.2.0 h1:lX62nnO6aEE2tA4UIu0hYky5A5XXqlcSa6ySnI6prrM=
+github.com/yago-123/chainnet-sdk-go v0.2.0/go.mod h1:42LunTOF6znd1iWgbBKzHJfS5cehMltH6T29BhcYKb4=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
