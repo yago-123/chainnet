@@ -58,20 +58,30 @@ func (c *Client) GetAddressUTXOsByAddress(ctx context.Context, address string) (
 		return nil, fmt.Errorf("failed to get address UTXOs: %w", err)
 	}
 
-	return expectOK("get address UTXOs", resp.StatusCode(), resp.Body, resp.JSON200)
+	utxos, err := expectOK("get address UTXOs", resp.StatusCode(), resp.Body, resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return utxosFromGenerated(utxos)
 }
 
-func (c *Client) GetAddressTransactions(ctx context.Context, address []byte) ([]Transaction, error) {
+func (c *Client) GetAddressTransactions(ctx context.Context, address []byte) ([]*Transaction, error) {
 	return c.GetAddressTransactionsByAddress(ctx, base58.Encode(address))
 }
 
-func (c *Client) GetAddressTransactionsByAddress(ctx context.Context, address string) ([]Transaction, error) {
+func (c *Client) GetAddressTransactionsByAddress(ctx context.Context, address string) ([]*Transaction, error) {
 	resp, err := c.client.GetAddressTransactionsWithResponse(ctx, address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get address transactions: %w", err)
 	}
 
-	return expectOK("get address transactions", resp.StatusCode(), resp.Body, resp.JSON200)
+	transactions, err := expectOK("get address transactions", resp.StatusCode(), resp.Body, resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactionsFromGenerated(transactions)
 }
 
 func (c *Client) AddressIsActive(ctx context.Context, address []byte) (bool, error) {
@@ -88,7 +98,12 @@ func (c *Client) AddressStringIsActive(ctx context.Context, address string) (boo
 }
 
 func (c *Client) SendTransaction(ctx context.Context, tx Transaction) error {
-	resp, err := c.client.SubmitTransactionWithResponse(ctx, tx)
+	body, err := transactionToGenerated(tx)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.SubmitTransactionWithResponse(ctx, body)
 	if err != nil {
 		return fmt.Errorf("failed to submit transaction: %w", err)
 	}
@@ -111,7 +126,7 @@ func (c *Client) GetTransactionByIDHex(ctx context.Context, txID string) (*Trans
 		return nil, err
 	}
 
-	return &tx, nil
+	return transactionFromGenerated(tx)
 }
 
 func (c *Client) GetLatestBlock(ctx context.Context) (*Block, error) {
@@ -125,7 +140,7 @@ func (c *Client) GetLatestBlock(ctx context.Context) (*Block, error) {
 		return nil, err
 	}
 
-	return &block, nil
+	return blockFromGenerated(block)
 }
 
 func (c *Client) GetBlockByHash(ctx context.Context, hash []byte) (*Block, error) {
@@ -143,7 +158,7 @@ func (c *Client) GetBlockByHashHex(ctx context.Context, hash string) (*Block, er
 		return nil, err
 	}
 
-	return &block, nil
+	return blockFromGenerated(block)
 }
 
 func (c *Client) GetLatestHeader(ctx context.Context) (*BlockHeader, error) {
@@ -157,7 +172,7 @@ func (c *Client) GetLatestHeader(ctx context.Context) (*BlockHeader, error) {
 		return nil, err
 	}
 
-	return &header, nil
+	return headerFromGenerated(header)
 }
 
 func (c *Client) GetHeaderByHeight(ctx context.Context, height uint) (*BlockHeader, error) {
@@ -176,16 +191,21 @@ func (c *Client) GetHeaderByHeight(ctx context.Context, height uint) (*BlockHead
 		return nil, err
 	}
 
-	return &header, nil
+	return headerFromGenerated(header)
 }
 
-func (c *Client) GetHeaders(ctx context.Context, opts *GetHeadersOptions) ([]BlockHeader, error) {
+func (c *Client) GetHeaders(ctx context.Context, opts *GetHeadersOptions) ([]*BlockHeader, error) {
 	resp, err := c.client.GetHeadersWithResponse(ctx, getHeadersParams(opts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get headers: %w", err)
 	}
 
-	return expectOK("get headers", resp.StatusCode(), resp.Body, resp.JSON200)
+	headers, err := expectOK("get headers", resp.StatusCode(), resp.Body, resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return headersFromGenerated(headers)
 }
 
 func normalizeServerURL(baseURL string) string {
