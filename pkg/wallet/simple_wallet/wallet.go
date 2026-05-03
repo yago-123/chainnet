@@ -281,11 +281,7 @@ func (w *Wallet) UnlockTxFunds(tx *sdkv1beta.Transaction, utxos []sdkv1beta.UTXO
 
 // SendTransaction propagates a transaction to the network
 func (w *Wallet) SendTransaction(ctx context.Context, tx sdkv1beta.Transaction) error {
-	if err := w.nodeClient.SendTransaction(ctx, tx); err != nil {
-		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
-	}
-
-	return nil
+	return w.nodeClient.SendTransaction(ctx, tx)
 }
 
 func (w *Wallet) Version() byte {
