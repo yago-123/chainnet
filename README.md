@@ -70,22 +70,14 @@ wallet:
 ## Setup
 Install dependencies:
 ```bash
-$ sudo apt install protobuf-compiler base58
+$ sudo apt install base58
 ```
 
-Development tools are managed with [mise](https://mise.jdx.dev/) and pinned in `mise.toml`.
+Repo-managed development tools are pinned in [mise](https://mise.jdx.dev/) via `mise.toml`.
 
 Install pinned tools:
 ```bash
 $ mise install
-```
-
-Make sure `mise` is activated in your shell so pinned tools are available on `PATH` when running Make targets.
-
-Install go packages:
-```bash
-$ go install google.golang.org/protobuf/cmd/protoc-gen-go
-$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 ```
 
 Increase UDP size to [optimize](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes) P2P communication:
