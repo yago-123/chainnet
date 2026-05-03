@@ -1,6 +1,5 @@
 # Define directories
 OUTPUT_DIR := bin
-TOOLS_DIR := .tools
 NODE_PROTOBUF_DIR := pkg/network/protobuf
 OPENAPI_SPEC := api/openapi.yaml
 OPENAPI_GENERATED_DIR := pkg/sdk/v1beta/generated
@@ -11,8 +10,6 @@ MINER_BINARY_NAME := chainnet-miner
 NESPV_BINARY_NAME := chainnet-nespv
 NODE_BINARY_NAME  := chainnet-node
 BOT_BINARY_NAME   := chainnet-bot
-GOLANGCI_LINT_VERSION := v2.11.4
-GOLANGCI_LINT := $(TOOLS_DIR)/golangci-lint
 
 # Define the source file for the CLI application
 CLI_SOURCE   := $(wildcard cmd/cli/*.go)
@@ -70,7 +67,10 @@ protobuf:
 .PHONY: openapi-check
 openapi-check:
 	@echo "Checking OpenAPI spec..."
-	@ruby -e 'require "yaml"; YAML.load_file(ARGV.fetch(0)); puts "OpenAPI spec YAML is valid: #{ARGV[0]}"' $(OPENAPI_SPEC)
+	@tmp_file="$$(mktemp)"; \
+	oapi-codegen -generate types -package generated -o "$$tmp_file" $(OPENAPI_SPEC); \
+	rm -f "$$tmp_file"; \
+	echo "OpenAPI spec is valid: $(OPENAPI_SPEC)"
 
 .PHONY: openapi-generate
 openapi-generate:
@@ -82,18 +82,10 @@ openapi-generate:
 output-dir:
 	@mkdir -p $(OUTPUT_DIR)
 
-.PHONY: lint-tools
-lint-tools: $(GOLANGCI_LINT)
-
-$(GOLANGCI_LINT):
-	@echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."
-	@mkdir -p $(TOOLS_DIR)
-	@GOBIN=$(CURDIR)/$(TOOLS_DIR) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-
 .PHONY: lint
-lint: protobuf openapi-generate lint-tools
+lint: protobuf openapi-generate
 	@echo "Running linter..."
-	@$(GOLANGCI_LINT) run ./...
+	@golangci-lint run ./...
 
 .PHONY: test
 test: protobuf openapi-generate

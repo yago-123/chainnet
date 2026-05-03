@@ -46,6 +46,8 @@ release:
   github:
     owner: yago-123
     name: chainnet
+  prerelease: auto
+  make_latest: "{{ if .Prerelease }}false{{ else }}true{{ end }}"
 
 nfpms:
   - package_name: chainnet
