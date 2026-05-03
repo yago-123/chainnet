@@ -67,7 +67,10 @@ protobuf:
 .PHONY: openapi-check
 openapi-check:
 	@echo "Checking OpenAPI spec..."
-	@ruby -e 'require "yaml"; YAML.load_file(ARGV.fetch(0)); puts "OpenAPI spec YAML is valid: #{ARGV[0]}"' $(OPENAPI_SPEC)
+	@tmp_file="$$(mktemp)"; \
+	oapi-codegen -generate types -package generated -o "$$tmp_file" $(OPENAPI_SPEC); \
+	rm -f "$$tmp_file"; \
+	echo "OpenAPI spec is valid: $(OPENAPI_SPEC)"
 
 .PHONY: openapi-generate
 openapi-generate:
