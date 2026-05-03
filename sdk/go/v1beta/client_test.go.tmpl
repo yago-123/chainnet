@@ -7,27 +7,29 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/yago-123/chainnet-sdk-go/v1beta/generated"
 )
 
 func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smoke test is intentionally linear
-	utxos := []UTXO{
+	utxos := []generated.UTXO{
 		{
 			Txid: "74782d6964",
 			Vout: 1,
-			Output: TxOutput{
+			Output: generated.TxOutput{
 				Amount:       10,
 				ScriptPubKey: "script",
 				PubKey:       "pub-key",
 			},
 		},
 	}
-	txs := []Transaction{
+	txs := []generated.Transaction{
 		{
 			Id: "74782d6964",
-			Vin: []TxInput{
+			Vin: []generated.TxInput{
 				{Txid: "74782d6964", Vout: 1, ScriptSig: "script-sig", PubKey: "pub-key"},
 			},
-			Vout: []TxOutput{
+			Vout: []generated.TxOutput{
 				{Amount: 10, ScriptPubKey: "script", PubKey: "pub-key"},
 			},
 		},
@@ -47,7 +49,7 @@ func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smo
 			t.Fatal(err)
 		}
 
-		var tx Transaction
+		var tx generated.Transaction
 		if err := json.Unmarshal(body, &tx); err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +73,7 @@ func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smo
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(gotUTXOs) != 1 || gotUTXOs[0].Vout != 1 {
+	if len(gotUTXOs) != 1 || gotUTXOs[0].OutIdx != 1 {
 		t.Fatalf("unexpected UTXOs: %#v", gotUTXOs)
 	}
 
@@ -79,7 +81,7 @@ func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smo
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(gotTxs) != 1 || gotTxs[0].Id != "74782d6964" {
+	if len(gotTxs) != 1 || string(gotTxs[0].ID) != "tx-id" {
 		t.Fatalf("unexpected transactions: %#v", gotTxs)
 	}
 
@@ -91,7 +93,15 @@ func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smo
 		t.Fatal("expected address to be active")
 	}
 
-	if sendErr := client.SendTransaction(context.Background(), txs[0]); sendErr != nil {
+	if sendErr := client.SendTransaction(context.Background(), Transaction{
+		ID: []byte("tx-id"),
+		Vin: []TxInput{
+			{Txid: []byte("tx-id"), Vout: 1, ScriptSig: "script-sig", PubKey: "pub-key"},
+		},
+		Vout: []TxOutput{
+			{Amount: 10, ScriptPubKey: "script", PubKey: "pub-key"},
+		},
+	}); sendErr != nil {
 		t.Fatal(sendErr)
 	}
 
@@ -99,13 +109,13 @@ func TestClientWalletEndpoints(t *testing.T) { //nolint:gocognit // endpoint smo
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tx.Id != "74782d6964" {
-		t.Fatalf("tx ID = %q, want %q", tx.Id, "74782d6964")
+	if string(tx.ID) != "tx-id" {
+		t.Fatalf("tx ID = %q, want %q", tx.ID, "tx-id")
 	}
 }
 
 func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smoke test is intentionally linear
-	header := BlockHeader{
+	header := generated.BlockHeader{
 		Version:       "7631",
 		PrevBlockHash: "70726576696f75732d626c6f636b2d68617368",
 		MerkleRoot:    "6d65726b6c652d726f6f74",
@@ -114,9 +124,9 @@ func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smok
 		Target:        1,
 		Nonce:         42,
 	}
-	block := Block{
+	block := generated.Block{
 		Header:       header,
-		Transactions: []Transaction{},
+		Transactions: []generated.Transaction{},
 		Hash:         "626c6f636b2d68617368",
 	}
 	tip := ChainTip{
@@ -138,7 +148,7 @@ func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smok
 		if got, want := r.URL.Query().Get("order"), string(HeaderOrderOldestFirst); got != want {
 			t.Fatalf("order = %q, want %q", got, want)
 		}
-		writeJSON(t, []BlockHeader{header})(w, r)
+		writeJSON(t, []generated.BlockHeader{header})(w, r)
 	})
 
 	server := httptest.NewServer(mux)
@@ -161,16 +171,16 @@ func TestClientChainEndpoints(t *testing.T) { //nolint:gocognit // endpoint smok
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotBlock.Hash != "626c6f636b2d68617368" {
-		t.Fatalf("latest block hash = %q, want %q", gotBlock.Hash, "626c6f636b2d68617368")
+	if string(gotBlock.Hash) != "block-hash" {
+		t.Fatalf("latest block hash = %q, want %q", gotBlock.Hash, "block-hash")
 	}
 
 	gotBlock, err = client.GetBlockByHash(context.Background(), []byte("block-hash"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotBlock.Hash != "626c6f636b2d68617368" {
-		t.Fatalf("block hash = %q, want %q", gotBlock.Hash, "626c6f636b2d68617368")
+	if string(gotBlock.Hash) != "block-hash" {
+		t.Fatalf("block hash = %q, want %q", gotBlock.Hash, "block-hash")
 	}
 
 	gotHeader, err := client.GetLatestHeader(context.Background())
