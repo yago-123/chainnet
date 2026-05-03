@@ -6,8 +6,8 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/spf13/cobra"
+	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
 	"github.com/yago-123/chainnet/config"
-	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 )
 
 const FlagAddress = "address"
@@ -39,8 +39,7 @@ var listTxsCmd = &cobra.Command{
 
 		// print transactions
 		for _, tx := range txs {
-
-			logger.Infof("{\n%s}\n", tx.String())
+			logger.Infof("{\n%+v}\n", tx)
 		}
 	},
 }

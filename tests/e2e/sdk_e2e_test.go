@@ -17,6 +17,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
 	"github.com/yago-123/chainnet/config"
 	blockchain "github.com/yago-123/chainnet/pkg/chain"
 	"github.com/yago-123/chainnet/pkg/chain/explorer"
@@ -31,10 +32,10 @@ import (
 	"github.com/yago-123/chainnet/pkg/observer"
 	"github.com/yago-123/chainnet/pkg/script"
 	"github.com/yago-123/chainnet/pkg/script/interpreter"
-	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 	"github.com/yago-123/chainnet/pkg/storage"
 	"github.com/yago-123/chainnet/pkg/util"
 	"github.com/yago-123/chainnet/pkg/utxoset"
+	common "github.com/yago-123/chainnet/pkg/wallet"
 )
 
 const (
@@ -118,19 +119,19 @@ func TestSDK_SubmitTransactionsMineBlockAndReadBack(t *testing.T) {
 	tx1 := newSignedSpendTx(t, signer, hasher, pubKey, privKey, fundingBlock1.Transactions[0], 0, []byte("sdk-e2e-recipient-1"), 10, 1)
 	tx2 := newSignedSpendTx(t, signer, hasher, pubKey, privKey, fundingBlock2.Transactions[0], 0, []byte("sdk-e2e-recipient-2"), 20, 1)
 
-	require.NoError(t, client.SendTransaction(ctx, *tx1))
-	require.NoError(t, client.SendTransaction(ctx, *tx2))
+	require.NoError(t, client.SendTransaction(ctx, common.KernelTransactionToSDK(*tx1)))
+	require.NoError(t, client.SendTransaction(ctx, common.KernelTransactionToSDK(*tx2)))
 
 	minedBlock, err := blockMiner.MineBlock()
 	require.NoError(t, err)
-	require.True(t, containsTxID(minedBlock, tx1.ID), "mined block does not contain tx1")
-	require.True(t, containsTxID(minedBlock, tx2.ID), "mined block does not contain tx2")
+	require.True(t, containsKernelTxID(minedBlock, tx1.ID), "mined block does not contain tx1")
+	require.True(t, containsKernelTxID(minedBlock, tx2.ID), "mined block does not contain tx2")
 
 	latestBlock, err := client.GetLatestBlock(ctx)
 	require.NoError(t, err)
 	require.Equal(t, minedBlock.Hash, latestBlock.Hash)
-	require.True(t, containsTxID(latestBlock, tx1.ID), "latest block does not contain tx1")
-	require.True(t, containsTxID(latestBlock, tx2.ID), "latest block does not contain tx2")
+	require.True(t, containsSDKTxID(latestBlock, tx1.ID), "latest block does not contain tx1")
+	require.True(t, containsSDKTxID(latestBlock, tx2.ID), "latest block does not contain tx2")
 
 	blockByHash, err := client.GetBlockByHash(ctx, minedBlock.Hash)
 	require.NoError(t, err)
@@ -249,7 +250,17 @@ func (testSignature) Verify(signature []byte, payload []byte, _ []byte) (bool, e
 	return bytes.Equal(signature, expected), nil
 }
 
-func containsTxID(block *kernel.Block, txID []byte) bool {
+func containsKernelTxID(block *kernel.Block, txID []byte) bool {
+	for _, tx := range block.Transactions {
+		if bytes.Equal(tx.ID, txID) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containsSDKTxID(block *sdkv1beta.Block, txID []byte) bool {
 	for _, tx := range block.Transactions {
 		if bytes.Equal(tx.ID, txID) {
 			return true

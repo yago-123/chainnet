@@ -10,6 +10,7 @@ import (
 
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
+	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
@@ -18,7 +19,6 @@ import (
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
 	rpnInter "github.com/yago-123/chainnet/pkg/script/interpreter"
-	sdkv1beta "github.com/yago-123/chainnet/pkg/sdk/v1beta"
 	"github.com/yago-123/chainnet/pkg/util"
 )
 
@@ -75,7 +75,10 @@ func NewWalletWithKeys(
 	privateKey []byte,
 	publicKey []byte,
 ) (*Wallet, error) {
-	nodeClient, err := sdkv1beta.NewClientFromConfig(cfg, nil)
+	nodeClient, err := sdkv1beta.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Wallet.ServerAddress, cfg.Wallet.ServerPort),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet node client: %w", err)
 	}
@@ -120,13 +123,13 @@ func (w *Wallet) GetAddresses() ([][]byte, error) {
 	return addresses, nil
 }
 
-func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
+func (w *Wallet) GetWalletUTXOS() ([]sdkv1beta.UTXO, error) {
 	addresses, err := w.GetAddresses()
 	if err != nil {
-		return []*kernel.UTXO{}, fmt.Errorf("could not get wallet addresses: %w", err)
+		return []sdkv1beta.UTXO{}, fmt.Errorf("could not get wallet addresses: %w", err)
 	}
 
-	utxos := make([]*kernel.UTXO, 0)
+	utxos := make([]sdkv1beta.UTXO, 0)
 	for _, address := range addresses {
 		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
 		defer cancel()
@@ -134,7 +137,7 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 		// retrieve UTXOs for each address
 		utxo, errUtxos := w.nodeClient.GetAddressUTXOs(ctx, address)
 		if errUtxos != nil {
-			return []*kernel.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
+			return []sdkv1beta.UTXO{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
 		}
 
 		utxos = append(utxos, utxo...)
@@ -144,21 +147,21 @@ func (w *Wallet) GetWalletUTXOS() ([]*kernel.UTXO, error) {
 }
 
 // GetWalletTxs retrieves all the transactions that are related to the wallet
-func (w *Wallet) GetWalletTxs() ([]*kernel.Transaction, error) {
+func (w *Wallet) GetWalletTxs() ([]*sdkv1beta.Transaction, error) {
 	addresses, err := w.GetAddresses()
 	if err != nil {
-		return []*kernel.Transaction{}, fmt.Errorf("could not get wallet addresses: %w", err)
+		return []*sdkv1beta.Transaction{}, fmt.Errorf("could not get wallet addresses: %w", err)
 	}
 
-	txs := make([]*kernel.Transaction, 0)
+	txs := make([]*sdkv1beta.Transaction, 0)
 	for _, address := range addresses {
 		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
 		defer cancel()
 
 		// retrieve txs for each address
-		tx, errUtxos := w.nodeClient.GetAddressTransactions(ctx, address)
-		if errUtxos != nil {
-			return []*kernel.Transaction{}, fmt.Errorf("could not get wallet UTXOs for address %s: %w", base58.Encode(address), errUtxos)
+		tx, errTxs := w.nodeClient.GetAddressTransactions(ctx, address)
+		if errTxs != nil {
+			return []*sdkv1beta.Transaction{}, fmt.Errorf("could not get wallet transactions for address %s: %w", base58.Encode(address), errTxs)
 		}
 
 		txs = append(txs, tx...)
@@ -192,18 +195,18 @@ func (w *Wallet) CheckIfWalletIsActive() (bool, error) {
 	return false, nil
 }
 
-// GenerateNewTransaction creates a transaction and broadcasts it to the network
-func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, addresses []byte, targetAmount uint, txFee uint, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+// GenerateNewTransaction creates a transaction using wallet-owned SDK types.
+func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, addresses []byte, targetAmount uint, txFee uint, utxos []sdkv1beta.UTXO) (*sdkv1beta.Transaction, error) {
 	// create the inputs necessary for the transaction
-	inputs, totalBalance, err := common.GenerateInputs(utxos, targetAmount+txFee)
+	inputs, totalBalance, err := common.GenerateInputs(common.SDKUTXOsToKernel(utxos), targetAmount+txFee)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	// create the outputs necessary for the transaction
 	outputs, err := common.GenerateOutputs(scriptType, []uint{targetAmount}, [][]byte{addresses}, txFee, totalBalance, w.publicKey, w.version)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	// generate transaction
@@ -213,42 +216,46 @@ func (w *Wallet) GenerateNewTransaction(scriptType script.ScriptType, addresses 
 	)
 
 	// unlock the funds from the UTXOs
-	tx, err = w.UnlockTxFunds(tx, utxos)
+	sdkTx := common.KernelTransactionToSDK(*tx)
+	sdkTxPtr, err := w.UnlockTxFunds(&sdkTx, utxos)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	// generate tx hash
-	txHash, err := util.CalculateTxHash(tx, w.consensusHasher)
+	txHash, err := util.CalculateTxHash(common.SDKTransactionToKernel(sdkTxPtr), w.consensusHasher)
 	if err != nil {
-		return &kernel.Transaction{}, err
+		return &sdkv1beta.Transaction{}, err
 	}
 
 	// assign the tx hash
-	tx.SetID(txHash)
+	sdkTxPtr.ID = txHash
 
 	// perform simple validations (light validator) before broadcasting the transaction
-	if err = w.validator.ValidateTxLight(tx); err != nil {
-		return &kernel.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
+	if err = w.validator.ValidateTxLight(common.SDKTransactionToKernel(sdkTxPtr)); err != nil {
+		return &sdkv1beta.Transaction{}, fmt.Errorf("error validating transaction: %w", err)
 	}
 
-	return tx, nil
+	return sdkTxPtr, nil
 }
 
 // UnlockTxFunds take a tx that is being built and unlocks the UTXOs from which the input funds are going to
 // be used
-func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*kernel.Transaction, error) {
+func (w *Wallet) UnlockTxFunds(tx *sdkv1beta.Transaction, utxos []sdkv1beta.UTXO) (*sdkv1beta.Transaction, error) {
 	// todo() for now, this only applies to P2PK, be able to extend once pkg/script/interpreter.go is created
+	kernelTx := common.SDKTransactionToKernel(tx)
+	kernelUtxos := common.SDKUTXOsToKernel(utxos)
+
 	scriptSigs := []string{}
-	for _, vin := range tx.Vin {
+	for _, vin := range kernelTx.Vin {
 		unlocked := false
 
-		for _, utxo := range utxos {
+		for _, utxo := range kernelUtxos {
 			if utxo.EqualInput(vin) {
 				// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
-				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.publicKey, w.privateKey, tx)
+				scriptSig, err := w.interpreter.GenerateScriptSig(utxo.Output.ScriptPubKey, w.publicKey, w.privateKey, kernelTx)
 				if err != nil {
-					return &kernel.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
+					return &sdkv1beta.Transaction{}, fmt.Errorf("couldn't generate scriptSig for input with ID %x and index %d: %w", vin.Txid, vin.Vout, err)
 				}
 
 				scriptSigs = append(scriptSigs, scriptSig)
@@ -260,24 +267,21 @@ func (w *Wallet) UnlockTxFunds(tx *kernel.Transaction, utxos []*kernel.UTXO) (*k
 
 		// todo(): modify to allow multiple inputs with different scriptPubKeys owners (multiple wallets)
 		if !unlocked {
-			return &kernel.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %x and index %d", vin.Txid, vin.Vout)
+			return &sdkv1beta.Transaction{}, fmt.Errorf("couldn't unlock funds for input with ID %x and index %d", vin.Txid, vin.Vout)
 		}
 	}
 
-	for i := range len(tx.Vin) {
-		tx.Vin[i].ScriptSig = scriptSigs[i]
+	for i := range len(kernelTx.Vin) {
+		kernelTx.Vin[i].ScriptSig = scriptSigs[i]
 	}
 
-	return tx, nil
+	sdkTx := common.KernelTransactionToSDK(*kernelTx)
+	return &sdkTx, nil
 }
 
 // SendTransaction propagates a transaction to the network
-func (w *Wallet) SendTransaction(ctx context.Context, tx *kernel.Transaction) error {
-	if err := w.nodeClient.SendTransaction(ctx, *tx); err != nil {
-		return fmt.Errorf("error sending transaction %x to the network: %w", tx.ID, err)
-	}
-
-	return nil
+func (w *Wallet) SendTransaction(ctx context.Context, tx sdkv1beta.Transaction) error {
+	return w.nodeClient.SendTransaction(ctx, tx)
 }
 
 func (w *Wallet) Version() byte {

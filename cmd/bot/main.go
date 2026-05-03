@@ -11,10 +11,10 @@ import (
 
 	hd_wallet "github.com/yago-123/chainnet/pkg/wallet/hd_wallet"
 
-	"github.com/yago-123/chainnet/pkg/util"
 	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
 
 	"github.com/btcsuite/btcutil/base58"
+	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
 
@@ -319,7 +319,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 			addresses := [][]byte{}
 
 			// if the utxo is small than the minimum transaction balance, send it to a single address
-			if util.GetBalanceUTXOs(utxos) <= MinimumTxBalance {
+			if balanceSDKUTXOs(utxos) <= MinimumTxBalance {
 				addr, errTmp := getRandomAccountAddress(acc)
 				if errTmp != nil {
 					logger.Warnf("error getting random account address: %v", errTmp)
@@ -330,7 +330,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 			}
 
 			// otherwise, split the UTXO in a number of random addresses and amounts
-			if util.GetBalanceUTXOs(utxos) > MinimumTxBalance {
+			if balanceSDKUTXOs(utxos) > MinimumTxBalance {
 				addresses, err = getRandomAccountAddresses(1, MaxOutputGroupsForCreatingTx, acc)
 				if err != nil {
 					logger.Warnf("error getting random account addresses: %v", err)
@@ -339,7 +339,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 			}
 
 			// create/send transaction and add one tx for the fee recipient
-			amounts := getRandomAmounts(util.GetBalanceUTXOs(utxos), uint(len(addresses)+1))
+			amounts := getRandomAmounts(balanceSDKUTXOs(utxos), uint(len(addresses)+1))
 			if errTx := createAndSendTransaction(acc, addresses, amounts[:len(amounts)-1], amounts[len(amounts)-1], utxos); errTx != nil {
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}
@@ -398,7 +398,7 @@ func randomizedSleep(minDuration, maxDuration time.Duration) {
 	time.Sleep(randomDuration)
 }
 
-func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []*kernel.UTXO) error {
+func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amounts []uint, txFee uint, utxos []sdkv1beta.UTXO) error {
 	var err error
 	var wallet *wallt.Wallet
 
@@ -430,18 +430,27 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
 	defer cancel()
 
-	if errSend := acc.SendTransaction(ctx, tx); errSend != nil {
+	if errSend := acc.SendTransaction(ctx, *tx); errSend != nil {
 		return fmt.Errorf("error sending transaction: %w", errSend)
 	}
 
 	logger.Debugf("account %d distributed %f coins to %d addresses: %s",
 		acc.GetAccountID(),
-		kernel.ConvertFromChannoshisToCoins(util.GetBalanceUTXOs(utxos)),
+		kernel.ConvertFromChannoshisToCoins(balanceSDKUTXOs(utxos)),
 		len(addresses),
-		tx.String(),
+		fmt.Sprintf("%+v", tx),
 	)
 
 	return nil
+}
+
+func balanceSDKUTXOs(utxos []sdkv1beta.UTXO) uint {
+	var balance uint
+	for _, utxo := range utxos {
+		balance += utxo.Amount()
+	}
+
+	return balance
 }
 
 // getRandomAccountAddress retrieves a random address for an account. If the limit of wallets per account has been

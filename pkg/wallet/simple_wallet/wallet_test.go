@@ -3,6 +3,7 @@ package simplewallet //nolint:testpackage // don't create separate package for t
 import (
 	"testing"
 
+	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
 	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/encoding"
@@ -17,11 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var utxos = []*kernel.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
-	{TxID: []byte("random-id-0"), OutIdx: 1, Output: kernel.NewOutput(1, script.P2PK, "pubkey-2")},
-	{TxID: []byte("random-id-1"), OutIdx: 3, Output: kernel.NewOutput(2, script.P2PK, "pubkey-2")},
-	{TxID: []byte("random-id-2"), OutIdx: 1, Output: kernel.NewOutput(5, script.P2PK, "pubkey-2")},
-	{TxID: []byte("random-id-3"), OutIdx: 8, Output: kernel.NewOutput(5, script.P2PK, "pubkey-2")},
+var utxos = []sdkv1beta.UTXO{ //nolint:gochecknoglobals // data that is used across all test funcs
+	{TxID: []byte("random-id-0"), OutIdx: 1, Output: sdkv1beta.TxOutput{Amount: 1, ScriptPubKey: kernel.NewOutput(1, script.P2PK, "pubkey-2").ScriptPubKey, PubKey: "pubkey-2"}},
+	{TxID: []byte("random-id-1"), OutIdx: 3, Output: sdkv1beta.TxOutput{Amount: 2, ScriptPubKey: kernel.NewOutput(2, script.P2PK, "pubkey-2").ScriptPubKey, PubKey: "pubkey-2"}},
+	{TxID: []byte("random-id-2"), OutIdx: 1, Output: sdkv1beta.TxOutput{Amount: 5, ScriptPubKey: kernel.NewOutput(5, script.P2PK, "pubkey-2").ScriptPubKey, PubKey: "pubkey-2"}},
+	{TxID: []byte("random-id-3"), OutIdx: 8, Output: sdkv1beta.TxOutput{Amount: 5, ScriptPubKey: kernel.NewOutput(5, script.P2PK, "pubkey-2").ScriptPubKey, PubKey: "pubkey-2"}},
 }
 
 func TestWallet_SendTransaction(t *testing.T) {
@@ -44,7 +45,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 	require.Error(t, err)
 
 	// send transaction without utxos
-	_, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 10, 1, []*kernel.UTXO{})
+	_, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 10, 1, []sdkv1beta.UTXO{})
 	require.Error(t, err)
 
 	// send transaction with incorrect utxos unlocking scripts
@@ -67,17 +68,17 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 10, 0, utxos)
-	expectedTx := &kernel.Transaction{
+	expectedTx := &sdkv1beta.Transaction{
 		ID: tx.ID,
-		Vin: []kernel.TxInput{
-			kernel.NewInput([]byte("random-id-0"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
-			kernel.NewInput([]byte("random-id-1"), 3, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
-			kernel.NewInput([]byte("random-id-2"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
-			kernel.NewInput([]byte("random-id-3"), 8, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+		Vin: []sdkv1beta.TxInput{
+			{Txid: []byte("random-id-0"), Vout: 1, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
+			{Txid: []byte("random-id-1"), Vout: 3, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
+			{Txid: []byte("random-id-2"), Vout: 1, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
+			{Txid: []byte("random-id-3"), Vout: 8, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo68 OP_CHECKSIGpubkey-13\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
 		},
-		Vout: []kernel.TxOutput{
-			kernel.NewOutput(10, script.P2PK, "pubkey-1"),
-			kernel.NewOutput(3, script.P2PK, "pubkey-2"),
+		Vout: []sdkv1beta.TxOutput{
+			{Amount: 10, ScriptPubKey: kernel.NewOutput(10, script.P2PK, "pubkey-1").ScriptPubKey, PubKey: "pubkey-1"},
+			{Amount: 3, ScriptPubKey: kernel.NewOutput(3, script.P2PK, "pubkey-2").ScriptPubKey, PubKey: "pubkey-2"},
 		},
 	}
 	require.NoError(t, err)
@@ -85,17 +86,17 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 
 	// send transaction with correct target and some tx fee
 	tx, err = wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-3"), 10, 2, utxos)
-	expectedTx2 := &kernel.Transaction{
+	expectedTx2 := &sdkv1beta.Transaction{
 		ID: tx.ID,
-		Vin: []kernel.TxInput{
-			kernel.NewInput([]byte("random-id-0"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
-			kernel.NewInput([]byte("random-id-1"), 3, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
-			kernel.NewInput([]byte("random-id-2"), 1, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
-			kernel.NewInput([]byte("random-id-3"), 8, base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), "pubkey-2"),
+		Vin: []sdkv1beta.TxInput{
+			{Txid: []byte("random-id-0"), Vout: 1, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
+			{Txid: []byte("random-id-1"), Vout: 3, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
+			{Txid: []byte("random-id-2"), Vout: 1, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
+			{Txid: []byte("random-id-3"), Vout: 8, ScriptSig: base58.Encode([]byte("Inputs:random-id-01random-id-13random-id-21random-id-38Outputs:10\x00KozLnpdoo6A OP_CHECKSIGpubkey-31\x00KozLnpdoo69 OP_CHECKSIGpubkey-2-signed")), PubKey: "pubkey-2"},
 		},
-		Vout: []kernel.TxOutput{
-			kernel.NewOutput(10, script.P2PK, "pubkey-3"),
-			kernel.NewOutput(1, script.P2PK, "pubkey-2"),
+		Vout: []sdkv1beta.TxOutput{
+			{Amount: 10, ScriptPubKey: kernel.NewOutput(10, script.P2PK, "pubkey-3").ScriptPubKey, PubKey: "pubkey-3"},
+			{Amount: 1, ScriptPubKey: kernel.NewOutput(1, script.P2PK, "pubkey-2").ScriptPubKey, PubKey: "pubkey-2"},
 		},
 	}
 	require.NoError(t, err)
