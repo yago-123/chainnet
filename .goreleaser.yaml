@@ -32,6 +32,12 @@ builds:
     env: ["CGO_ENABLED=0"]
     goos: [linux]
     goarch: [amd64]
+  - id: bot
+    main: ./cmd/bot
+    binary: chainnet-bot
+    env: ["CGO_ENABLED=0"]
+    goos: [linux]
+    goarch: [amd64]
 
 archives:
   - formats: [ 'tar.gz' ]
@@ -50,7 +56,37 @@ release:
   make_latest: "{{ if .Prerelease }}false{{ else }}true{{ end }}"
 
 nfpms:
-  - package_name: chainnet
+  - id: node
+    ids: [node]
+    package_name: chainnet-node
+    vendor: yago-123
+    homepage: "https://github.com/yago-123/chainnet"
+    maintainer: "yago-123 <me@yago.ninja>"
+    formats: [deb]
+  - id: miner
+    ids: [miner]
+    package_name: chainnet-miner
+    vendor: yago-123
+    homepage: "https://github.com/yago-123/chainnet"
+    maintainer: "yago-123 <me@yago.ninja>"
+    formats: [deb]
+  - id: nespv
+    ids: [nespv]
+    package_name: chainnet-nespv
+    vendor: yago-123
+    homepage: "https://github.com/yago-123/chainnet"
+    maintainer: "yago-123 <me@yago.ninja>"
+    formats: [deb]
+  - id: cli
+    ids: [cli]
+    package_name: chainnet-cli
+    vendor: yago-123
+    homepage: "https://github.com/yago-123/chainnet"
+    maintainer: "yago-123 <me@yago.ninja>"
+    formats: [deb]
+  - id: bot
+    ids: [bot]
+    package_name: chainnet-bot
     vendor: yago-123
     homepage: "https://github.com/yago-123/chainnet"
     maintainer: "yago-123 <me@yago.ninja>"
