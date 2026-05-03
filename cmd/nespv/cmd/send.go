@@ -101,12 +101,12 @@ var sendCmd = &cobra.Command{
 		context, cancel := context.WithTimeout(context.Background(), cfg.P2P.ConnTimeout)
 		defer cancel()
 
-		err = wallet.SendTransaction(context, tx)
+		err = wallet.SendTransaction(context, *tx)
 		if err != nil {
 			logger.Fatalf("error sending transaction: %v", err)
 		}
 
-		logger.Infof("Sent transaction: %s", tx.String())
+		logger.Infof("Sent transaction: %+v", tx)
 	},
 }
 
