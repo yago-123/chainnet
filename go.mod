@@ -1,8 +1,8 @@
 module github.com/yago-123/chainnet
 
-go 1.26
+go 1.26.2
 
-toolchain go1.26.0
+toolchain go1.26.2
 
 require (
 	github.com/boltdb/bolt v1.3.1
