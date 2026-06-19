@@ -1,8 +1,8 @@
 module github.com/yago-123/chainnet
 
-go 1.26
+go 1.26.4
 
-toolchain go1.26.0
+toolchain go1.26.4
 
 require (
 	github.com/boltdb/bolt v1.3.1
@@ -19,7 +19,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/yago-123/chainnet-sdk-go v0.2.0
-	golang.org/x/crypto v0.52.0
+	golang.org/x/crypto v0.53.0
 	google.golang.org/protobuf v1.36.11
 )
 
