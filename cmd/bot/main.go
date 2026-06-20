@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/sha256"
-	"flag"
 	"fmt"
 	"math/rand/v2"
 	"sort"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
+	botconfig "github.com/yago-123/chainnet/config/bot"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
 
@@ -29,30 +29,7 @@ import (
 )
 
 const (
-	MaxNumberConcurrentAccounts = 15
-	// MaxNumberWalletsPerAccount is the maximum number of wallets that can be created per account. This limit could be
-	// removed, but we don't want to overflow the servers with requests. Each bot will hold 20.000 wallets
-	MaxNumberWalletsPerAccount = 5
-	FoundationAccountIndex     = 0
-
-	MinimumTxBalance = 100000000
-
-	// limits for startup of fund distribution, prevents all bots asking for funds at the same time
-	MinTimeStartupFundDistribution = 1 * time.Second
-	MaxTimeStartupFundDistribution = 500 * time.Second
-
-	// limits for time between transactions, apply at account level
-	MinTimeBetweenTransactions = 60 * time.Second
-	MaxTimeBetweenTransactions = 200 * time.Second
-
-	TimeoutSendTransaction = 10 * time.Second
-	PeriodMetadataBackup   = 1 * time.Minute
-
-	// MaxInputGroupsForCreatingTx is the maximum number of input groups that can be used for creating a transaction
-	MaxInputGroupsForCreatingTx = 4
-	// MaxOutputGroupsForCreatingTx is the maximum number of output groups that can be used for creating a transaction
-	// must always be smaller than MaxNumberWalletsPerAccount
-	MaxOutputGroupsForCreatingTx = 4
+	FoundationAccountIndex = 0
 )
 
 var (
@@ -68,32 +45,45 @@ var (
 
 var logger = logrus.New()
 var cfg = config.NewConfig()
-
-// usage: ./bin/chainnet-bot --key-path wallet.pem --metadata wallet.data
-var privKeyPath = flag.String("key-path", "wallet.pem", "Path to the HD wallet key")
-var metadataPath = flag.String("metadata", "hd_wallet.data", "Path to the HD wallet metadata")
+var botCfg = botconfig.NewConfig()
 
 func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it's OK to be long here
+	Execute(logger)
+
 	cfg.Logger.SetLevel(logrus.DebugLevel)
 	logger.SetLevel(logrus.DebugLevel)
-
-	flag.Parse()
 
 	var hdWallet *hd_wallet.Wallet
 
 	// load the wallet "seed"
-	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(*privKeyPath)
+	privKey, err := util_crypto.ReadECDSAPemToPrivateKeyDerBytes(botCfg.Bot.KeyPath)
 	if err != nil {
 		logger.Fatalf("error reading private key: %v", err)
 	}
 
-	metadata, err := hd_wallet.LoadMetadata(*metadataPath)
+	metadata, err := hd_wallet.LoadMetadata(botCfg.Bot.MetadataPath)
 	if err != nil {
 		logger.Warnf("error loading metadata: %v", err)
 	}
 
-	if MaxOutputGroupsForCreatingTx > MaxNumberWalletsPerAccount {
-		logger.Fatalf("MaxOutputGroupsForCreatingTx must be smaller or equal than MaxNumberWalletsPerAccount")
+	if botCfg.Bot.MaxOutputGroupsForCreatingTx > botCfg.Bot.MaxWalletsPerAccount {
+		logger.Fatalf("bot max output groups must be smaller or equal than bot max wallets per account")
+	}
+
+	if botCfg.Bot.MaxConcurrentAccounts == 0 {
+		logger.Fatalf("bot max concurrent accounts must be greater than 0")
+	}
+
+	if botCfg.Bot.MaxWalletsPerAccount == 0 {
+		logger.Fatalf("bot max wallets per account must be greater than 0")
+	}
+
+	if botCfg.Bot.MaxInputGroupsForCreatingTx <= 0 {
+		logger.Fatalf("bot max input groups for creating tx must be greater than 0")
+	}
+
+	if botCfg.Bot.MaxOutputGroupsForCreatingTx == 0 {
+		logger.Fatalf("bot max output groups for creating tx must be greater than 0")
 	}
 
 	if metadata == nil {
@@ -151,9 +141,9 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 
 	// create remaining accounts if needed so that we can operate them in parallel without problems
 	numAccounts = hdWallet.GetNumAccounts()
-	if numAccounts < MaxNumberConcurrentAccounts {
-		logger.Infof("creating remaining %d accounts...", MaxNumberConcurrentAccounts-numAccounts)
-		for i := numAccounts; i < MaxNumberConcurrentAccounts; i++ {
+	if numAccounts < botCfg.Bot.MaxConcurrentAccounts {
+		logger.Infof("creating remaining %d accounts...", botCfg.Bot.MaxConcurrentAccounts-numAccounts)
+		for i := numAccounts; i < botCfg.Bot.MaxConcurrentAccounts; i++ {
 			_, errAccount := hdWallet.GetNewAccount()
 			if errAccount != nil {
 				logger.Fatalf("error creating account: %v", errAccount)
@@ -168,7 +158,7 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 	}
 
 	// distribute funds between wallets for each account (isolated)
-	for i := range MaxNumberConcurrentAccounts {
+	for i := range botCfg.Bot.MaxConcurrentAccounts {
 		// skip the foundation account
 		if i == FoundationAccountIndex {
 			continue
@@ -234,14 +224,14 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 
 	logger.Infof("foundation account contains approx. %.5f coins", kernel.ConvertFromChannoshisToCoins(foundationAccountBalance))
 
-	if foundationAccountBalance < MinimumTxBalance {
+	if foundationAccountBalance < botCfg.Bot.MinimumTxBalance {
 		logger.Warnf("foundation account balance is below the minimum transaction balance, skipping distribution")
 		return nil
 	}
 
 	// generate one output for each account by distributing the funds equally
-	distributeFundsAmount := foundationAccountBalance / MaxNumberConcurrentAccounts
-	for i := range MaxNumberConcurrentAccounts {
+	distributeFundsAmount := foundationAccountBalance / botCfg.Bot.MaxConcurrentAccounts
+	for i := range botCfg.Bot.MaxConcurrentAccounts {
 		targetAmounts = append(targetAmounts, distributeFundsAmount)
 
 		// retrieve the account and choose the wallet to send the funds to
@@ -251,15 +241,15 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		}
 
 		// if the limit have been reached, pick an existing random wallet
-		if account.GetExternalWalletIndex() >= MaxNumberWalletsPerAccount {
-			wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount)) //nolint:gosec // no need for secure random here
+		if account.GetExternalWalletIndex() >= botCfg.Bot.MaxWalletsPerAccount {
+			wallet, err = account.GetExternalWallet(rand.UintN(botCfg.Bot.MaxWalletsPerAccount)) //nolint:gosec // no need for secure random here
 			if err != nil {
 				return fmt.Errorf("error getting external wallet: %w", err)
 			}
 		}
 
 		// if the limit have not been reached, create a new wallet
-		if account.GetExternalWalletIndex() < MaxNumberWalletsPerAccount {
+		if account.GetExternalWalletIndex() < botCfg.Bot.MaxWalletsPerAccount {
 			wallet, err = account.GetNewExternalWallet()
 			if err != nil {
 				return fmt.Errorf("error getting new wallet: %w", err)
@@ -297,29 +287,29 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 
 	// sleep for a random amount of time before starting the distribution so that we avoid all accounts asking
 	// for UTXOs at the same time
-	randomizedSleep(MinTimeStartupFundDistribution, MaxTimeStartupFundDistribution)
+	randomizedSleep(botCfg.Bot.MinStartupFundDistribution, botCfg.Bot.MaxStartupFundDistribution)
 
 	for {
 		accUTXOs, err := acc.GetAccountUTXOs()
 		if err != nil {
 			logger.Warnf("error getting UTXOs for account %d: %v", acc.GetAccountID(), err)
-			randomizedSleep(MinTimeBetweenTransactions, MaxTimeBetweenTransactions)
+			randomizedSleep(botCfg.Bot.MinTimeBetweenTransactions, botCfg.Bot.MaxTimeBetweenTransactions)
 			continue
 		}
 
 		// if the account has no UTXOs, skip the execution
 		if len(accUTXOs) == 0 {
 			logger.Warnf("no UTXOs found for account %d, skipping execution", acc.GetAccountID())
-			randomizedSleep(MinTimeBetweenTransactions, MaxTimeBetweenTransactions)
+			randomizedSleep(botCfg.Bot.MinTimeBetweenTransactions, botCfg.Bot.MaxTimeBetweenTransactions)
 
 			continue
 		}
 
-		for _, utxos := range splitArrayRandomized(accUTXOs, MaxInputGroupsForCreatingTx) {
+		for _, utxos := range splitArrayRandomized(accUTXOs, botCfg.Bot.MaxInputGroupsForCreatingTx) {
 			addresses := [][]byte{}
 
 			// if the utxo is small than the minimum transaction balance, send it to a single address
-			if balanceSDKUTXOs(utxos) <= MinimumTxBalance {
+			if balanceSDKUTXOs(utxos) <= botCfg.Bot.MinimumTxBalance {
 				addr, errTmp := getRandomAccountAddress(acc)
 				if errTmp != nil {
 					logger.Warnf("error getting random account address: %v", errTmp)
@@ -330,8 +320,8 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 			}
 
 			// otherwise, split the UTXO in a number of random addresses and amounts
-			if balanceSDKUTXOs(utxos) > MinimumTxBalance {
-				addresses, err = getRandomAccountAddresses(1, MaxOutputGroupsForCreatingTx, acc)
+			if balanceSDKUTXOs(utxos) > botCfg.Bot.MinimumTxBalance {
+				addresses, err = getRandomAccountAddresses(1, botCfg.Bot.MaxOutputGroupsForCreatingTx, acc)
 				if err != nil {
 					logger.Warnf("error getting random account addresses: %v", err)
 					continue
@@ -344,7 +334,7 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 				logger.Warnf("error creating and sending transaction: %v", errTx)
 			}
 
-			randomizedSleep(MinTimeBetweenTransactions, MaxTimeBetweenTransactions)
+			randomizedSleep(botCfg.Bot.MinTimeBetweenTransactions, botCfg.Bot.MaxTimeBetweenTransactions)
 		}
 	}
 }
@@ -352,8 +342,8 @@ func DistributeFundsBetweenWallets(acc *hd_wallet.Account) { //nolint:funlen,goc
 // SaveMetadataPeriodically saves the metadata of the HD wallet periodically
 func SaveMetadataPeriodically(hdWallet *hd_wallet.Wallet) {
 	for {
-		time.Sleep(PeriodMetadataBackup)
-		if err := hd_wallet.SaveMetadata(*metadataPath, hdWallet.GetMetadata()); err != nil {
+		time.Sleep(botCfg.Bot.MetadataBackupPeriod)
+		if err := hd_wallet.SaveMetadata(botCfg.Bot.MetadataPath, hdWallet.GetMetadata()); err != nil {
 			logger.Warnf("error saving metadata: %v", err)
 		}
 	}
@@ -403,10 +393,10 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 	var wallet *wallt.Wallet
 
 	// retrieve change address by retrieving a internal wallet from the account
-	if acc.GetInternalWalletIndex() >= MaxNumberWalletsPerAccount {
-		wallet, err = acc.GetInternalWallet(rand.UintN(MaxNumberWalletsPerAccount)) //nolint:gosec // no need for secure random here
+	if acc.GetInternalWalletIndex() >= botCfg.Bot.MaxWalletsPerAccount {
+		wallet, err = acc.GetInternalWallet(rand.UintN(botCfg.Bot.MaxWalletsPerAccount)) //nolint:gosec // no need for secure random here
 	}
-	if acc.GetInternalWalletIndex() < MaxNumberWalletsPerAccount {
+	if acc.GetInternalWalletIndex() < botCfg.Bot.MaxWalletsPerAccount {
 		wallet, err = acc.GetNewInternalWallet()
 	}
 
@@ -427,7 +417,7 @@ func createAndSendTransaction(acc *hd_wallet.Account, addresses [][]byte, amount
 		return fmt.Errorf("error generating transaction (create and send): %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSendTransaction)
+	ctx, cancel := context.WithTimeout(context.Background(), botCfg.Bot.SendTransactionTimeout)
 	defer cancel()
 
 	if errSend := acc.SendTransaction(ctx, *tx); errSend != nil {
@@ -460,15 +450,15 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 	var wallet *wallt.Wallet
 
 	// if the limit have been reached, pick an existing wallet
-	if account.GetExternalWalletIndex() >= MaxNumberWalletsPerAccount {
-		wallet, err = account.GetExternalWallet(rand.UintN(MaxNumberWalletsPerAccount)) //nolint:gosec // no need for secure random here
+	if account.GetExternalWalletIndex() >= botCfg.Bot.MaxWalletsPerAccount {
+		wallet, err = account.GetExternalWallet(rand.UintN(botCfg.Bot.MaxWalletsPerAccount)) //nolint:gosec // no need for secure random here
 		if err != nil {
 			return []byte{}, fmt.Errorf("error getting external wallet: %w", err)
 		}
 	}
 
 	// if not all wallets have been created, create a new one
-	if account.GetExternalWalletIndex() < MaxNumberWalletsPerAccount {
+	if account.GetExternalWalletIndex() < botCfg.Bot.MaxWalletsPerAccount {
 		wallet, err = account.GetNewExternalWallet()
 		if err != nil {
 			return []byte{}, fmt.Errorf("error getting new wallet: %w", err)
@@ -487,7 +477,10 @@ func getRandomAccountAddress(account *hd_wallet.Account) ([]byte, error) {
 func getRandomAccountAddresses(minRetrieve, maxRetrieve uint, account *hd_wallet.Account) ([][]byte, error) {
 	var addresses [][]byte
 
-	numAddresses := rand.UintN(maxRetrieve-minRetrieve) + minRetrieve //nolint:gosec // no need for secure random here
+	numAddresses := minRetrieve
+	if maxRetrieve > minRetrieve {
+		numAddresses = rand.UintN(maxRetrieve-minRetrieve) + minRetrieve //nolint:gosec // no need for secure random here
+	}
 
 	for range numAddresses {
 		address, errAddress := getRandomAccountAddress(account)

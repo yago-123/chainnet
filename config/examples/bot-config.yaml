@@ -1,0 +1,18 @@
+wallet:
+  server-address: "seed-1.chainnet.yago.ninja"  # Server address for wallet API requests
+  server-port: 8080                             # Server port for wallet API requests
+
+bot:
+  key-path: "wallet.pem"                  # HD wallet private key path in PEM format
+  metadata-path: "hd_wallet.data"         # HD wallet metadata path
+  max-concurrent-accounts: 15             # Maximum number of bot accounts running in parallel
+  max-wallets-per-account: 5              # Maximum number of wallets created per account
+  minimum-tx-balance: 100000000           # Minimum balance used before splitting transaction outputs
+  min-startup-fund-distribution: "1s"     # Minimum startup delay before distributing funds
+  max-startup-fund-distribution: "500s"   # Maximum startup delay before distributing funds
+  min-time-between-transactions: "60s"    # Minimum delay between generated transactions
+  max-time-between-transactions: "200s"   # Maximum delay between generated transactions
+  send-transaction-timeout: "10s"         # Timeout for sending each transaction
+  metadata-backup-period: "1m"            # Period for saving HD wallet metadata
+  max-input-groups-for-creating-tx: 4     # Maximum number of UTXO input groups per transaction
+  max-output-groups-for-creating-tx: 4    # Maximum number of output groups per transaction
