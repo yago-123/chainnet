@@ -120,21 +120,25 @@ fmt:
 debug: node
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/chainnet-node -- --config default-config.yaml
 
-.PHONY: miner-image
-miner-image: miner
-	@echo "Building Docker image for chainnet miner..."
-	docker build -t $(DOCKER_IMAGE_MINER) -f $(DOCKERFILE_MINER) .
+.PHONY: image-binaries
+image-binaries: $(addprefix image-binary-,$(COMPONENTS))
 
-.PHONY: node-image
-node-image: node
-	@echo "Building Docker image for chainnet node..."
-	docker build -t $(DOCKER_IMAGE_NODE) -f $(DOCKERFILE_NODE) .
+.PHONY: image-binary-%
+image-binary-%: protobuf output-dir
+	@echo "Building chainnet $* binary for container image..."
+	@CGO_ENABLED=0 GOOS=$(IMAGE_BUILD_GOOS) GOARCH=$(IMAGE_BUILD_GOARCH) go build $(IMAGE_BUILD_FLAGS) -o $(OUTPUT_DIR)/chainnet-$* ./cmd/$*
+
+.PHONY: %-image
+%-image: image-binary-%
+	@echo "Building Docker image for chainnet $*..."
+	$(DOCKER) build --build-arg COMPONENT=$* -t $(IMAGE_REPOSITORY)/chainnet-$*:$(IMAGE_TAG) -f $(DOCKERFILE) .
 
 .PHONY: images
-images: miner-image node-image
+images: $(addsuffix -image,$(COMPONENTS))
 
 .PHONY: push
-push: miner-image node-image
+push: images
 	@echo "Pushing Docker images to Docker Hub..."
-	docker push $(DOCKER_IMAGE_MINER)
-	docker push $(DOCKER_IMAGE_NODE)
+	@for component in $(COMPONENTS); do \
+		$(DOCKER) push $(IMAGE_REPOSITORY)/chainnet-$$component:$(IMAGE_TAG); \
+	done
