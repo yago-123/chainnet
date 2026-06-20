@@ -9,13 +9,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
+	common "github.com/yago-123/chainnet/pkg/wallet"
 )
 
 const (
@@ -51,11 +51,11 @@ type Wallet struct {
 	consensusHasher hash.Hashing
 
 	logger *logrus.Logger
-	cfg    *config.Config
+	cfg    common.ClientConfig
 }
 
 func NewHDWalletWithKeys(
-	cfg *config.Config,
+	cfg common.ClientConfig,
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
@@ -87,7 +87,7 @@ func NewHDWalletWithKeys(
 
 	return &Wallet{
 		cfg:             cfg,
-		logger:          cfg.Logger,
+		logger:          cfg.Log(),
 		walletVersion:   version,
 		PrivateKey:      privateKey,
 		masterPrivKey:   masterPrivateKeyDER,
@@ -101,7 +101,7 @@ func NewHDWalletWithKeys(
 }
 
 func NewHDWalletWithMetadata(
-	cfg *config.Config,
+	cfg common.ClientConfig,
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,

@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
 
-	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
@@ -59,11 +58,11 @@ type Account struct {
 	interpreter     *rpnInter.RPNInterpreter
 
 	logger *logrus.Logger
-	cfg    *config.Config
+	cfg    common.ClientConfig
 }
 
 func NewHDAccount(
-	cfg *config.Config,
+	cfg common.ClientConfig,
 	walletVersion byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
@@ -75,17 +74,14 @@ func NewHDAccount(
 	externalWalletsNum uint32,
 	internalWalletsNum uint32,
 ) (*Account, error) {
-	nodeClient, err := sdkv1beta.NewClient(
-		fmt.Sprintf("%s:%d", cfg.Wallet.ServerAddress, cfg.Wallet.ServerPort),
-		nil,
-	)
+	nodeClient, err := sdkv1beta.NewClient(cfg.BaseURL(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet node client: %w", err)
 	}
 
 	acc := &Account{
 		cfg:                     cfg,
-		logger:                  cfg.Logger,
+		logger:                  cfg.Log(),
 		walletVersion:           walletVersion,
 		validator:               validator,
 		signer:                  signer,
