@@ -176,8 +176,6 @@ func NewConfig() *Config {
 
 // LoadConfig loads configuration from the specified file
 func LoadConfig(cfgFile string) (*Config, error) {
-	var cfg Config
-
 	if cfgFile == "" {
 		return nil, fmt.Errorf("config file not specified")
 	}
@@ -189,13 +187,14 @@ func LoadConfig(cfgFile string) (*Config, error) {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
-	if err := viper.Unmarshal(&cfg); err != nil {
+	cfg := NewConfig()
+	if err := viper.Unmarshal(cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode into struct: %w", err)
 	}
 
 	cfg.Logger = logrus.New()
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 // InitConfig initializes configuration, loading from file and applying flags
@@ -278,6 +277,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyWalletKeyPairPath, cmd.Flags().Lookup(KeyWalletKeyPairPath))
 	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
 	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
+
 }
 
 // GetConfigFilePath retrieves the configuration file path from command flags

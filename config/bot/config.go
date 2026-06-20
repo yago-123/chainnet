@@ -7,14 +7,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/yago-123/chainnet/config"
+	walletcommon "github.com/yago-123/chainnet/pkg/wallet"
 )
 
 const (
 	KeyConfigFile = "config"
 
-	KeyWalletServerAddress = "wallet.server-address"
-	KeyWalletServerPort    = "wallet.server-port"
+	KeyWalletServerAddress  = "wallet.server-address"
+	KeyWalletServerPort     = "wallet.server-port"
+	KeyWalletRequestTimeout = "wallet.request-timeout"
 
 	KeyBotKeyPath                      = "bot.key-path"
 	KeyBotMetadataPath                 = "bot.metadata-path"
@@ -67,16 +68,17 @@ type BotConfig struct {
 
 type Config struct {
 	Logger *logrus.Logger
-	Wallet config.WalletConfig `mapstructure:"wallet"`
-	Bot    BotConfig           `mapstructure:"bot"`
+	Wallet walletcommon.ClientConfig `mapstructure:"wallet"`
+	Bot    BotConfig                 `mapstructure:"bot"`
 }
 
 func NewConfig() *Config {
 	return &Config{
 		Logger: logrus.New(),
-		Wallet: config.WalletConfig{
-			ServerAddress: config.DefaultServerAddress,
-			ServerPort:    config.DefaultServerPort,
+		Wallet: walletcommon.ClientConfig{
+			ServerAddress:  walletcommon.DefaultServerAddress,
+			ServerPort:     walletcommon.DefaultServerPort,
+			RequestTimeout: walletcommon.DefaultRequestTimeout,
 		},
 		Bot: BotConfig{
 			KeyPath:                      DefaultKeyPath,
@@ -134,8 +136,9 @@ func InitConfig(cmd *cobra.Command) *Config {
 
 func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
-	cmd.Flags().String(KeyWalletServerAddress, config.DefaultServerAddress, "Server address for wallet API requests")
-	cmd.Flags().Uint(KeyWalletServerPort, config.DefaultServerPort, "Server port for wallet API requests")
+	cmd.Flags().String(KeyWalletServerAddress, walletcommon.DefaultServerAddress, "Server address for wallet API requests")
+	cmd.Flags().Uint(KeyWalletServerPort, walletcommon.DefaultServerPort, "Server port for wallet API requests")
+	cmd.Flags().Duration(KeyWalletRequestTimeout, walletcommon.DefaultRequestTimeout, "Timeout for wallet API requests")
 
 	cmd.Flags().String(KeyBotKeyPath, DefaultKeyPath, "Path to the HD wallet key")
 	cmd.Flags().String(KeyBotMetadataPath, DefaultMetadataPath, "Path to the HD wallet metadata")
@@ -154,6 +157,7 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
 	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
 	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
+	_ = viper.BindPFlag(KeyWalletRequestTimeout, cmd.Flags().Lookup(KeyWalletRequestTimeout))
 
 	_ = viper.BindPFlag(KeyBotKeyPath, cmd.Flags().Lookup(KeyBotKeyPath))
 	_ = viper.BindPFlag(KeyBotMetadataPath, cmd.Flags().Lookup(KeyBotMetadataPath))
@@ -183,6 +187,9 @@ func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	}
 	if cmd.Flags().Changed(KeyWalletServerPort) {
 		cfg.Wallet.ServerPort = viper.GetUint(KeyWalletServerPort)
+	}
+	if cmd.Flags().Changed(KeyWalletRequestTimeout) {
+		cfg.Wallet.RequestTimeout = viper.GetDuration(KeyWalletRequestTimeout)
 	}
 	if cmd.Flags().Changed(KeyBotKeyPath) {
 		cfg.Bot.KeyPath = viper.GetString(KeyBotKeyPath)
