@@ -50,7 +50,7 @@ const (
 	DefaultMaxOutputGroupsForCreatingTx = uint(4)
 )
 
-type BotConfig struct {
+type BotConfig struct { //nolint:revive // BotConfig is a configuration struct for the bot.
 	KeyPath                      string        `mapstructure:"key-path"`
 	MetadataPath                 string        `mapstructure:"metadata-path"`
 	MaxConcurrentAccounts        uint          `mapstructure:"max-concurrent-accounts"`
