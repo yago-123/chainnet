@@ -53,25 +53,6 @@ const (
 	DefaultMaxOutputGroupsForCreatingTx = uint(4)
 )
 
-var configKeys = []string{
-	KeyWalletServerAddress,
-	KeyWalletServerPort,
-	KeyWalletRequestTimeout,
-	KeyBotKeyPath,
-	KeyBotMetadataPath,
-	KeyBotMaxConcurrentAccounts,
-	KeyBotMaxWalletsPerAccount,
-	KeyBotMinimumTxBalance,
-	KeyBotMinStartupFundDistribution,
-	KeyBotMaxStartupFundDistribution,
-	KeyBotMinTimeBetweenTransactions,
-	KeyBotMaxTimeBetweenTransactions,
-	KeyBotSendTransactionTimeout,
-	KeyBotMetadataBackupPeriod,
-	KeyBotMaxInputGroupsForCreatingTx,
-	KeyBotMaxOutputGroupsForCreatingTx,
-}
-
 type BotConfig struct { //nolint:revive // BotConfig is a configuration struct for the bot.
 	KeyPath                      string        `mapstructure:"key-path"`
 	MetadataPath                 string        `mapstructure:"metadata-path"`
@@ -148,11 +129,32 @@ func newConfigViper() *viper.Viper {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 
-	for _, key := range configKeys {
+	for _, key := range configKeys() {
 		_ = v.BindEnv(key)
 	}
 
 	return v
+}
+
+func configKeys() []string {
+	return []string{
+		KeyWalletServerAddress,
+		KeyWalletServerPort,
+		KeyWalletRequestTimeout,
+		KeyBotKeyPath,
+		KeyBotMetadataPath,
+		KeyBotMaxConcurrentAccounts,
+		KeyBotMaxWalletsPerAccount,
+		KeyBotMinimumTxBalance,
+		KeyBotMinStartupFundDistribution,
+		KeyBotMaxStartupFundDistribution,
+		KeyBotMinTimeBetweenTransactions,
+		KeyBotMaxTimeBetweenTransactions,
+		KeyBotSendTransactionTimeout,
+		KeyBotMetadataBackupPeriod,
+		KeyBotMaxInputGroupsForCreatingTx,
+		KeyBotMaxOutputGroupsForCreatingTx,
+	}
 }
 
 func InitConfig(cmd *cobra.Command) *Config {
@@ -164,12 +166,14 @@ func InitConfig(cmd *cobra.Command) *Config {
 		cfg.Logger.Infof("relying on default bot configuration")
 	}
 
-	if err := ApplyEnvToConfig(cfg); err != nil {
+	err = ApplyEnvToConfig(cfg)
+	if err != nil {
 		cfg.Logger.Fatalf("error applying environment configuration: %v", err)
 	}
 
 	ApplyFlagsToConfig(cmd, cfg)
-	if err := cfg.Validate(); err != nil {
+	err = cfg.Validate()
+	if err != nil {
 		cfg.Logger.Fatalf("invalid bot configuration: %v", err)
 	}
 

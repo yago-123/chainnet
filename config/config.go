@@ -80,34 +80,6 @@ const (
 	DefaultWalletRequestTimeout = 20 * time.Second
 )
 
-var configKeys = []string{
-	KeyNodeSeeds,
-	KeyStorageFile,
-	KeyMiningPubKeyReward,
-	KeyMiningInterval,
-	KeyMiningIntervalAdjustment,
-	KeyChainMaxTxsMempool,
-	KeyPrometheusEnabled,
-	KeyPrometheusPort,
-	KeyPrometheusLibp2pPort,
-	KeyPrometheusPath,
-	KeyPrometheusUpdateInterval,
-	KeyP2PEnabled,
-	KeyP2PPeerIdentityPath,
-	KeyP2PPeerPort,
-	KeyP2PRouterPort,
-	KeyP2PMinNumConn,
-	KeyP2PMaxNumConn,
-	KeyP2PConnTimeout,
-	KeyP2PWriteTimeout,
-	KeyP2PReadTimeout,
-	KeyP2PBufferSize,
-	KeyWalletKeyPairPath,
-	KeyWalletServerAddress,
-	KeyWalletServerPort,
-	KeyWalletRequestTimeout,
-}
-
 const (
 	SeedNodeNumberArguments = 3
 )
@@ -239,8 +211,38 @@ func configureEnv(v *viper.Viper) {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 
-	for _, key := range configKeys {
+	for _, key := range configKeys() {
 		_ = v.BindEnv(key)
+	}
+}
+
+func configKeys() []string {
+	return []string{
+		KeyNodeSeeds,
+		KeyStorageFile,
+		KeyMiningPubKeyReward,
+		KeyMiningInterval,
+		KeyMiningIntervalAdjustment,
+		KeyChainMaxTxsMempool,
+		KeyPrometheusEnabled,
+		KeyPrometheusPort,
+		KeyPrometheusLibp2pPort,
+		KeyPrometheusPath,
+		KeyPrometheusUpdateInterval,
+		KeyP2PEnabled,
+		KeyP2PPeerIdentityPath,
+		KeyP2PPeerPort,
+		KeyP2PRouterPort,
+		KeyP2PMinNumConn,
+		KeyP2PMaxNumConn,
+		KeyP2PConnTimeout,
+		KeyP2PWriteTimeout,
+		KeyP2PReadTimeout,
+		KeyP2PBufferSize,
+		KeyWalletKeyPairPath,
+		KeyWalletServerAddress,
+		KeyWalletServerPort,
+		KeyWalletRequestTimeout,
 	}
 }
 
@@ -261,7 +263,8 @@ func InitConfig(cmd *cobra.Command) *Config {
 		cfg.Logger.Infof("relying on default configuration")
 	}
 
-	if err := ApplyEnvToConfig(cfg); err != nil {
+	err = ApplyEnvToConfig(cfg)
+	if err != nil {
 		cfg.Logger.Fatalf("error applying environment configuration: %v", err)
 	}
 
@@ -273,6 +276,19 @@ func InitConfig(cmd *cobra.Command) *Config {
 func ApplyEnvToConfig(cfg *Config) error {
 	v := newEnvViper()
 
+	if err := applySeedEnv(v, cfg); err != nil {
+		return err
+	}
+
+	applyMinerEnv(v, cfg)
+	applyPrometheusEnv(v, cfg)
+	applyP2PEnv(v, cfg)
+	applyWalletEnv(v, cfg)
+
+	return nil
+}
+
+func applySeedEnv(v *viper.Viper, cfg *Config) error {
 	if v.IsSet(KeyNodeSeeds) {
 		seeds, err := parseSeedNodes(getStringSlice(v, KeyNodeSeeds))
 		if err != nil {
@@ -284,6 +300,11 @@ func ApplyEnvToConfig(cfg *Config) error {
 	if v.IsSet(KeyStorageFile) {
 		cfg.StorageFile = v.GetString(KeyStorageFile)
 	}
+
+	return nil
+}
+
+func applyMinerEnv(v *viper.Viper, cfg *Config) {
 	if v.IsSet(KeyMiningPubKeyReward) {
 		cfg.Miner.PubKey = v.GetString(KeyMiningPubKeyReward)
 	}
@@ -296,6 +317,9 @@ func ApplyEnvToConfig(cfg *Config) error {
 	if v.IsSet(KeyChainMaxTxsMempool) {
 		cfg.Chain.MaxTxsMempool = v.GetUint(KeyChainMaxTxsMempool)
 	}
+}
+
+func applyPrometheusEnv(v *viper.Viper, cfg *Config) {
 	if v.IsSet(KeyPrometheusEnabled) {
 		cfg.Prometheus.Enabled = v.GetBool(KeyPrometheusEnabled)
 	}
@@ -311,6 +335,9 @@ func ApplyEnvToConfig(cfg *Config) error {
 	if v.IsSet(KeyPrometheusUpdateInterval) {
 		cfg.Prometheus.UpdateInterval = v.GetDuration(KeyPrometheusUpdateInterval)
 	}
+}
+
+func applyP2PEnv(v *viper.Viper, cfg *Config) {
 	if v.IsSet(KeyP2PEnabled) {
 		cfg.P2P.Enabled = v.GetBool(KeyP2PEnabled)
 	}
@@ -341,6 +368,9 @@ func ApplyEnvToConfig(cfg *Config) error {
 	if v.IsSet(KeyP2PBufferSize) {
 		cfg.P2P.BufferSize = v.GetUint(KeyP2PBufferSize)
 	}
+}
+
+func applyWalletEnv(v *viper.Viper, cfg *Config) {
 	if v.IsSet(KeyWalletKeyPairPath) {
 		cfg.Wallet.KeyPairPath = v.GetString(KeyWalletKeyPairPath)
 	}
@@ -353,8 +383,6 @@ func ApplyEnvToConfig(cfg *Config) error {
 	if v.IsSet(KeyWalletRequestTimeout) {
 		cfg.Wallet.RequestTimeout = v.GetDuration(KeyWalletRequestTimeout)
 	}
-
-	return nil
 }
 
 func getStringSlice(v *viper.Viper, key string) []string {
