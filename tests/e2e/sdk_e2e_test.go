@@ -180,6 +180,7 @@ func newSDKTestConfig(t *testing.T) *config.Config {
 	cfg.P2P.ConnTimeout = 5 * time.Second
 	cfg.Wallet.ServerAddress = "127.0.0.1"
 	cfg.Wallet.ServerPort = uint(port)
+	cfg.Wallet.RequestTimeout = 5 * time.Second
 
 	return cfg
 }

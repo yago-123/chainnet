@@ -79,7 +79,7 @@ var sendCmd = &cobra.Command{
 			walletcommon.ClientConfig{
 				ServerAddress:  cfg.Wallet.ServerAddress,
 				ServerPort:     cfg.Wallet.ServerPort,
-				RequestTimeout: cfg.P2P.ConnTimeout,
+				RequestTimeout: cfg.Wallet.RequestTimeout,
 				Logger:         cfg.Logger,
 			},
 			1,
@@ -104,7 +104,7 @@ var sendCmd = &cobra.Command{
 			logger.Fatalf("error generating transaction: %v", err)
 		}
 
-		context, cancel := context.WithTimeout(context.Background(), cfg.P2P.ConnTimeout)
+		context, cancel := context.WithTimeout(context.Background(), cfg.Wallet.RequestTimeout)
 		defer cancel()
 
 		err = wallet.SendTransaction(context, *tx)
