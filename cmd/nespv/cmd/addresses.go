@@ -55,7 +55,7 @@ var addressesCmd = &cobra.Command{
 			walletcommon.ClientConfig{
 				ServerAddress:  cfg.Wallet.ServerAddress,
 				ServerPort:     cfg.Wallet.ServerPort,
-				RequestTimeout: cfg.P2P.ConnTimeout,
+				RequestTimeout: cfg.Wallet.RequestTimeout,
 				Logger:         cfg.Logger,
 			},
 			1,

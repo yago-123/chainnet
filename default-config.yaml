@@ -41,3 +41,4 @@ wallet:
   wallet-key-path: priv-key.pem           # ECDSA wallet private key path in PEM format
   server-address: "seed-1.chainnet.yago.ninja"
   server-port: 8080
+  request-timeout: "20s"                  # Timeout for wallet API requests

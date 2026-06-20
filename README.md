@@ -65,7 +65,11 @@ wallet:
   wallet-key-path: priv-key.pem           # ECDSA wallet private key path in PEM format
   server-address: "seed-1.chainnet.yago.ninja"
   server-port: 8080
+  request-timeout: "20s"                  # Timeout for wallet API requests
 ```
+
+Bot configuration lives separately from miner/node configuration. See `config/examples/bot-config.yaml` for the full set
+of bot parameters.
 
 ## Setup
 Install dependencies:
