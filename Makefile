@@ -25,7 +25,7 @@ NODE_PROTOBUF_PB_SOURCE := $(wildcard $(NODE_PROTOBUF_DIR)/*.pb.go)
 GCFLAGS := -gcflags "all=-N -l"
 
 # Docker image names and paths
-DOCKER            ?= docker
+DOCKER            ?= podman
 IMAGE_REPOSITORY  ?= ghcr.io/yago-123
 IMAGE_TAG         ?= latest
 DOCKERFILE        := ./build/docker/Dockerfile
