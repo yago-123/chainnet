@@ -8,6 +8,7 @@ MINER_BINARY_NAME := chainnet-miner
 NESPV_BINARY_NAME := chainnet-nespv
 NODE_BINARY_NAME  := chainnet-node
 BOT_BINARY_NAME   := chainnet-bot
+COMPONENTS        := miner node nespv cli bot
 
 # Define the source file for the CLI application
 CLI_SOURCE   := $(wildcard cmd/cli/*.go)
@@ -24,10 +25,20 @@ NODE_PROTOBUF_PB_SOURCE := $(wildcard $(NODE_PROTOBUF_DIR)/*.pb.go)
 GCFLAGS := -gcflags "all=-N -l"
 
 # Docker image names and paths
-DOCKER_IMAGE_MINER := yagoninja/chainnet-miner:latest
-DOCKER_IMAGE_NODE  := yagoninja/chainnet-node:latest
-DOCKERFILE_MINER   := ./build/docker/miner/Dockerfile
-DOCKERFILE_NODE    := ./build/docker/node/Dockerfile
+DOCKER            ?= docker
+IMAGE_REPOSITORY  ?= yagoninja
+IMAGE_TAG         ?= latest
+DOCKERFILE        := ./build/docker/Dockerfile
+DOCKER_IMAGE_MINER := $(IMAGE_REPOSITORY)/chainnet-miner:$(IMAGE_TAG)
+DOCKER_IMAGE_NODE  := $(IMAGE_REPOSITORY)/chainnet-node:$(IMAGE_TAG)
+DOCKER_IMAGE_NESPV := $(IMAGE_REPOSITORY)/chainnet-nespv:$(IMAGE_TAG)
+DOCKER_IMAGE_CLI   := $(IMAGE_REPOSITORY)/chainnet-cli:$(IMAGE_TAG)
+DOCKER_IMAGE_BOT   := $(IMAGE_REPOSITORY)/chainnet-bot:$(IMAGE_TAG)
+
+# Container build settings
+IMAGE_BUILD_GOOS   ?= linux
+IMAGE_BUILD_GOARCH ?= amd64
+IMAGE_BUILD_FLAGS  ?= -trimpath -ldflags "-s -w"
 
 .PHONY: all
 all: test lint miner node nespv cli bot
