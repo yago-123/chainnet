@@ -26,7 +26,7 @@ GCFLAGS := -gcflags "all=-N -l"
 
 # Docker image names and paths
 DOCKER            ?= docker
-IMAGE_REPOSITORY  ?= yagoninja
+IMAGE_REPOSITORY  ?= ghcr.io/yago-123
 IMAGE_TAG         ?= latest
 DOCKERFILE        := ./build/docker/Dockerfile
 DOCKER_IMAGE_MINER := $(IMAGE_REPOSITORY)/chainnet-miner:$(IMAGE_TAG)
@@ -138,7 +138,7 @@ images: $(addsuffix -image,$(COMPONENTS))
 
 .PHONY: push
 push: images
-	@echo "Pushing Docker images to Docker Hub..."
+	@echo "Pushing container images to GitHub Container Registry..."
 	@for component in $(COMPONENTS); do \
 		$(DOCKER) push $(IMAGE_REPOSITORY)/chainnet-$$component:$(IMAGE_TAG); \
 	done
