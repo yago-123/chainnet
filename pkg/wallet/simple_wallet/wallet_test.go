@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
-	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	"github.com/yago-123/chainnet/pkg/kernel"
 	"github.com/yago-123/chainnet/pkg/script"
+	walletcommon "github.com/yago-123/chainnet/pkg/wallet"
 	mockHash "github.com/yago-123/chainnet/tests/mocks/crypto/hash"
 	mockSign "github.com/yago-123/chainnet/tests/mocks/crypto/sign"
 
@@ -33,7 +33,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet(config.NewConfig(), 1, validator.NewLightValidator(&mockHash.FakeHashing{}), &signer, &mockHash.FakeHashing{}, encoding.NewProtobufEncoder())
+	wallet, err := NewWallet(walletcommon.ClientConfig{}, 1, validator.NewLightValidator(&mockHash.FakeHashing{}), &signer, &mockHash.FakeHashing{}, encoding.NewProtobufEncoder())
 	require.NoError(t, err)
 
 	// send transaction with a target amount bigger than utxos amount
@@ -64,7 +64,7 @@ func TestWallet_SendTransactionCheckOutputTx(t *testing.T) {
 		On("NewKeyPair").
 		Return([]byte("pubkey-2"), []byte("privkey-2"), nil)
 
-	wallet, err := NewWallet(config.NewConfig(), 1, validator.NewLightValidator(hasher), &signer, hasher, encoding.NewProtobufEncoder())
+	wallet, err := NewWallet(walletcommon.ClientConfig{}, 1, validator.NewLightValidator(hasher), &signer, hasher, encoding.NewProtobufEncoder())
 	require.NoError(t, err)
 	// send transaction with correct target and empty tx fee
 	tx, err := wallet.GenerateNewTransaction(script.P2PK, []byte("pubkey-1"), 10, 0, utxos)
