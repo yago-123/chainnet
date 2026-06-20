@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/yago-123/chainnet/config"
 	botconfig "github.com/yago-123/chainnet/config/bot"
+	walletcommon "github.com/yago-123/chainnet/pkg/wallet"
 )
 
 const (
@@ -16,7 +16,7 @@ var rootCmd = &cobra.Command{
 	Use: "chainnet-bot",
 	Run: func(cmd *cobra.Command, _ []string) {
 		botCfg = botconfig.InitConfig(cmd)
-		cfg = newChainConfigFromBotConfig(botCfg)
+		walletCfg = newWalletConfigFromBotConfig(botCfg)
 		applyLegacyBotFlags(cmd)
 	},
 }
@@ -39,7 +39,7 @@ func applyLegacyBotFlags(cmd *cobra.Command) {
 	if cmd.Flags().Changed(legacyBotKeyPathFlag) {
 		keyPath, err := cmd.Flags().GetString(legacyBotKeyPathFlag)
 		if err != nil {
-			cfg.Logger.Fatalf("error reading %s flag: %v", legacyBotKeyPathFlag, err)
+			botCfg.Logger.Fatalf("error reading %s flag: %v", legacyBotKeyPathFlag, err)
 		}
 
 		botCfg.Bot.KeyPath = keyPath
@@ -48,17 +48,16 @@ func applyLegacyBotFlags(cmd *cobra.Command) {
 	if cmd.Flags().Changed(legacyBotMetadataPathFlag) {
 		metadataPath, err := cmd.Flags().GetString(legacyBotMetadataPathFlag)
 		if err != nil {
-			cfg.Logger.Fatalf("error reading %s flag: %v", legacyBotMetadataPathFlag, err)
+			botCfg.Logger.Fatalf("error reading %s flag: %v", legacyBotMetadataPathFlag, err)
 		}
 
 		botCfg.Bot.MetadataPath = metadataPath
 	}
 }
 
-func newChainConfigFromBotConfig(botCfg *botconfig.Config) *config.Config {
-	cfg := config.NewConfig()
-	cfg.Logger = botCfg.Logger
-	cfg.Wallet = botCfg.Wallet
+func newWalletConfigFromBotConfig(botCfg *botconfig.Config) walletcommon.ClientConfig {
+	walletCfg := botCfg.Wallet
+	walletCfg.Logger = botCfg.Logger
 
-	return cfg
+	return walletCfg
 }

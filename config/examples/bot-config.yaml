@@ -1,6 +1,7 @@
 wallet:
   server-address: "seed-1.chainnet.yago.ninja"  # Server address for wallet API requests
   server-port: 8080                             # Server port for wallet API requests
+  request-timeout: "20s"                        # Timeout for wallet API requests
 
 bot:
   key-path: "wallet.pem"                  # HD wallet private key path in PEM format

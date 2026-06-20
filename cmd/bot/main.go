@@ -19,13 +19,13 @@ import (
 	"github.com/yago-123/chainnet/pkg/script"
 
 	"github.com/sirupsen/logrus"
-	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus/validator"
 	"github.com/yago-123/chainnet/pkg/crypto"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
 	"github.com/yago-123/chainnet/pkg/encoding"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
+	walletcommon "github.com/yago-123/chainnet/pkg/wallet"
 )
 
 const (
@@ -44,13 +44,13 @@ var (
 )
 
 var logger = logrus.New()
-var cfg = config.NewConfig()
 var botCfg = botconfig.NewConfig()
+var walletCfg = walletcommon.ClientConfig{}
 
 func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it's OK to be long here
 	Execute(logger)
 
-	cfg.Logger.SetLevel(logrus.DebugLevel)
+	botCfg.Logger.SetLevel(logrus.DebugLevel)
 	logger.SetLevel(logrus.DebugLevel)
 
 	var hdWallet *hd_wallet.Wallet
@@ -89,7 +89,7 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 	if metadata == nil {
 		// create the hierachical deterministic wallet and sync it
 		hdWallet, err = hd_wallet.NewHDWalletWithKeys(
-			cfg,
+			walletCfg,
 			1,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
@@ -110,7 +110,7 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 
 	if metadata != nil {
 		hdWallet, err = hd_wallet.NewHDWalletWithMetadata(
-			cfg,
+			walletCfg,
 			1,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
