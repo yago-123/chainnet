@@ -33,6 +33,8 @@ const (
 	KeyBotMaxOutputGroupsForCreatingTx = "bot.max-output-groups-for-creating-tx"
 )
 
+const EnvPrefix = "CHAINNET"
+
 const (
 	DefaultConfigFile = ""
 
@@ -50,6 +52,25 @@ const (
 	DefaultMaxInputGroupsForCreatingTx  = 4
 	DefaultMaxOutputGroupsForCreatingTx = uint(4)
 )
+
+var configKeys = []string{
+	KeyWalletServerAddress,
+	KeyWalletServerPort,
+	KeyWalletRequestTimeout,
+	KeyBotKeyPath,
+	KeyBotMetadataPath,
+	KeyBotMaxConcurrentAccounts,
+	KeyBotMaxWalletsPerAccount,
+	KeyBotMinimumTxBalance,
+	KeyBotMinStartupFundDistribution,
+	KeyBotMaxStartupFundDistribution,
+	KeyBotMinTimeBetweenTransactions,
+	KeyBotMaxTimeBetweenTransactions,
+	KeyBotSendTransactionTimeout,
+	KeyBotMetadataBackupPeriod,
+	KeyBotMaxInputGroupsForCreatingTx,
+	KeyBotMaxOutputGroupsForCreatingTx,
+}
 
 type BotConfig struct { //nolint:revive // BotConfig is a configuration struct for the bot.
 	KeyPath                      string        `mapstructure:"key-path"`
@@ -104,9 +125,8 @@ func LoadConfig(cfgFile string) (*Config, error) {
 		return nil, fmt.Errorf("config file not specified")
 	}
 
-	v := viper.New()
+	v := newConfigViper()
 	v.SetConfigFile(cfgFile)
-	v.AutomaticEnv()
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
@@ -122,6 +142,19 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	return cfg, nil
 }
 
+func newConfigViper() *viper.Viper {
+	v := viper.New()
+	v.SetEnvPrefix(EnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	for _, key := range configKeys {
+		_ = v.BindEnv(key)
+	}
+
+	return v
+}
+
 func InitConfig(cmd *cobra.Command) *Config {
 	cfg, err := LoadConfig(GetConfigFilePath(cmd))
 	if err != nil {
@@ -131,12 +164,71 @@ func InitConfig(cmd *cobra.Command) *Config {
 		cfg.Logger.Infof("relying on default bot configuration")
 	}
 
+	if err := ApplyEnvToConfig(cfg); err != nil {
+		cfg.Logger.Fatalf("error applying environment configuration: %v", err)
+	}
+
 	ApplyFlagsToConfig(cmd, cfg)
 	if err := cfg.Validate(); err != nil {
 		cfg.Logger.Fatalf("invalid bot configuration: %v", err)
 	}
 
 	return cfg
+}
+
+func ApplyEnvToConfig(cfg *Config) error {
+	v := newConfigViper()
+
+	if v.IsSet(KeyWalletServerAddress) {
+		cfg.Wallet.ServerAddress = v.GetString(KeyWalletServerAddress)
+	}
+	if v.IsSet(KeyWalletServerPort) {
+		cfg.Wallet.ServerPort = v.GetUint(KeyWalletServerPort)
+	}
+	if v.IsSet(KeyWalletRequestTimeout) {
+		cfg.Wallet.RequestTimeout = v.GetDuration(KeyWalletRequestTimeout)
+	}
+	if v.IsSet(KeyBotKeyPath) {
+		cfg.Bot.KeyPath = v.GetString(KeyBotKeyPath)
+	}
+	if v.IsSet(KeyBotMetadataPath) {
+		cfg.Bot.MetadataPath = v.GetString(KeyBotMetadataPath)
+	}
+	if v.IsSet(KeyBotMaxConcurrentAccounts) {
+		cfg.Bot.MaxConcurrentAccounts = v.GetUint(KeyBotMaxConcurrentAccounts)
+	}
+	if v.IsSet(KeyBotMaxWalletsPerAccount) {
+		cfg.Bot.MaxWalletsPerAccount = v.GetUint(KeyBotMaxWalletsPerAccount)
+	}
+	if v.IsSet(KeyBotMinimumTxBalance) {
+		cfg.Bot.MinimumTxBalance = v.GetUint(KeyBotMinimumTxBalance)
+	}
+	if v.IsSet(KeyBotMinStartupFundDistribution) {
+		cfg.Bot.MinStartupFundDistribution = v.GetDuration(KeyBotMinStartupFundDistribution)
+	}
+	if v.IsSet(KeyBotMaxStartupFundDistribution) {
+		cfg.Bot.MaxStartupFundDistribution = v.GetDuration(KeyBotMaxStartupFundDistribution)
+	}
+	if v.IsSet(KeyBotMinTimeBetweenTransactions) {
+		cfg.Bot.MinTimeBetweenTransactions = v.GetDuration(KeyBotMinTimeBetweenTransactions)
+	}
+	if v.IsSet(KeyBotMaxTimeBetweenTransactions) {
+		cfg.Bot.MaxTimeBetweenTransactions = v.GetDuration(KeyBotMaxTimeBetweenTransactions)
+	}
+	if v.IsSet(KeyBotSendTransactionTimeout) {
+		cfg.Bot.SendTransactionTimeout = v.GetDuration(KeyBotSendTransactionTimeout)
+	}
+	if v.IsSet(KeyBotMetadataBackupPeriod) {
+		cfg.Bot.MetadataBackupPeriod = v.GetDuration(KeyBotMetadataBackupPeriod)
+	}
+	if v.IsSet(KeyBotMaxInputGroupsForCreatingTx) {
+		cfg.Bot.MaxInputGroupsForCreatingTx = v.GetInt(KeyBotMaxInputGroupsForCreatingTx)
+	}
+	if v.IsSet(KeyBotMaxOutputGroupsForCreatingTx) {
+		cfg.Bot.MaxOutputGroupsForCreatingTx = v.GetUint(KeyBotMaxOutputGroupsForCreatingTx)
+	}
+
+	return nil
 }
 
 func (cfg *Config) Validate() error {

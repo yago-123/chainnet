@@ -46,6 +46,8 @@ const (
 	KeyWalletRequestTimeout = "wallet.request-timeout"
 )
 
+const EnvPrefix = "CHAINNET"
+
 // default config values
 const (
 	DefaultConfigFile = ""
@@ -77,6 +79,34 @@ const (
 	DefaultServerPort           = 8080
 	DefaultWalletRequestTimeout = 20 * time.Second
 )
+
+var configKeys = []string{
+	KeyNodeSeeds,
+	KeyStorageFile,
+	KeyMiningPubKeyReward,
+	KeyMiningInterval,
+	KeyMiningIntervalAdjustment,
+	KeyChainMaxTxsMempool,
+	KeyPrometheusEnabled,
+	KeyPrometheusPort,
+	KeyPrometheusLibp2pPort,
+	KeyPrometheusPath,
+	KeyPrometheusUpdateInterval,
+	KeyP2PEnabled,
+	KeyP2PPeerIdentityPath,
+	KeyP2PPeerPort,
+	KeyP2PRouterPort,
+	KeyP2PMinNumConn,
+	KeyP2PMaxNumConn,
+	KeyP2PConnTimeout,
+	KeyP2PWriteTimeout,
+	KeyP2PReadTimeout,
+	KeyP2PBufferSize,
+	KeyWalletKeyPairPath,
+	KeyWalletServerAddress,
+	KeyWalletServerPort,
+	KeyWalletRequestTimeout,
+}
 
 const (
 	SeedNodeNumberArguments = 3
@@ -185,7 +215,7 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	}
 
 	viper.SetConfigFile(cfgFile)
-	viper.AutomaticEnv()
+	configureEnv(viper.GetViper())
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
@@ -195,10 +225,30 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err := viper.Unmarshal(cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode into struct: %w", err)
 	}
+	if err := ApplyEnvToConfig(cfg); err != nil {
+		return nil, fmt.Errorf("error applying environment configuration: %w", err)
+	}
 
 	cfg.Logger = logrus.New()
 
 	return cfg, nil
+}
+
+func configureEnv(v *viper.Viper) {
+	v.SetEnvPrefix(EnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	for _, key := range configKeys {
+		_ = v.BindEnv(key)
+	}
+}
+
+func newEnvViper() *viper.Viper {
+	v := viper.New()
+	configureEnv(v)
+
+	return v
 }
 
 // InitConfig initializes configuration, loading from file and applying flags
@@ -211,9 +261,114 @@ func InitConfig(cmd *cobra.Command) *Config {
 		cfg.Logger.Infof("relying on default configuration")
 	}
 
+	if err := ApplyEnvToConfig(cfg); err != nil {
+		cfg.Logger.Fatalf("error applying environment configuration: %v", err)
+	}
+
 	ApplyFlagsToConfig(cmd, cfg)
 
 	return cfg
+}
+
+func ApplyEnvToConfig(cfg *Config) error {
+	v := newEnvViper()
+
+	if v.IsSet(KeyNodeSeeds) {
+		seeds, err := parseSeedNodes(getStringSlice(v, KeyNodeSeeds))
+		if err != nil {
+			return fmt.Errorf("error parsing seed nodes: %w", err)
+		}
+
+		cfg.SeedNodes = seeds
+	}
+	if v.IsSet(KeyStorageFile) {
+		cfg.StorageFile = v.GetString(KeyStorageFile)
+	}
+	if v.IsSet(KeyMiningPubKeyReward) {
+		cfg.Miner.PubKey = v.GetString(KeyMiningPubKeyReward)
+	}
+	if v.IsSet(KeyMiningInterval) {
+		cfg.Miner.MiningInterval = v.GetDuration(KeyMiningInterval)
+	}
+	if v.IsSet(KeyMiningIntervalAdjustment) {
+		cfg.Miner.AdjustmentInterval = v.GetUint(KeyMiningIntervalAdjustment)
+	}
+	if v.IsSet(KeyChainMaxTxsMempool) {
+		cfg.Chain.MaxTxsMempool = v.GetUint(KeyChainMaxTxsMempool)
+	}
+	if v.IsSet(KeyPrometheusEnabled) {
+		cfg.Prometheus.Enabled = v.GetBool(KeyPrometheusEnabled)
+	}
+	if v.IsSet(KeyPrometheusPort) {
+		cfg.Prometheus.Port = v.GetUint(KeyPrometheusPort)
+	}
+	if v.IsSet(KeyPrometheusLibp2pPort) {
+		cfg.Prometheus.PortLibp2p = v.GetUint(KeyPrometheusLibp2pPort)
+	}
+	if v.IsSet(KeyPrometheusPath) {
+		cfg.Prometheus.Path = v.GetString(KeyPrometheusPath)
+	}
+	if v.IsSet(KeyPrometheusUpdateInterval) {
+		cfg.Prometheus.UpdateInterval = v.GetDuration(KeyPrometheusUpdateInterval)
+	}
+	if v.IsSet(KeyP2PEnabled) {
+		cfg.P2P.Enabled = v.GetBool(KeyP2PEnabled)
+	}
+	if v.IsSet(KeyP2PPeerIdentityPath) {
+		cfg.P2P.IdentityPath = v.GetString(KeyP2PPeerIdentityPath)
+	}
+	if v.IsSet(KeyP2PPeerPort) {
+		cfg.P2P.PeerPort = v.GetUint(KeyP2PPeerPort)
+	}
+	if v.IsSet(KeyP2PRouterPort) {
+		cfg.P2P.RouterPort = v.GetUint(KeyP2PRouterPort)
+	}
+	if v.IsSet(KeyP2PMinNumConn) {
+		cfg.P2P.MinNumConn = v.GetUint(KeyP2PMinNumConn)
+	}
+	if v.IsSet(KeyP2PMaxNumConn) {
+		cfg.P2P.MaxNumConn = v.GetUint(KeyP2PMaxNumConn)
+	}
+	if v.IsSet(KeyP2PConnTimeout) {
+		cfg.P2P.ConnTimeout = v.GetDuration(KeyP2PConnTimeout)
+	}
+	if v.IsSet(KeyP2PWriteTimeout) {
+		cfg.P2P.WriteTimeout = v.GetDuration(KeyP2PWriteTimeout)
+	}
+	if v.IsSet(KeyP2PReadTimeout) {
+		cfg.P2P.ReadTimeout = v.GetDuration(KeyP2PReadTimeout)
+	}
+	if v.IsSet(KeyP2PBufferSize) {
+		cfg.P2P.BufferSize = v.GetUint(KeyP2PBufferSize)
+	}
+	if v.IsSet(KeyWalletKeyPairPath) {
+		cfg.Wallet.KeyPairPath = v.GetString(KeyWalletKeyPairPath)
+	}
+	if v.IsSet(KeyWalletServerAddress) {
+		cfg.Wallet.ServerAddress = v.GetString(KeyWalletServerAddress)
+	}
+	if v.IsSet(KeyWalletServerPort) {
+		cfg.Wallet.ServerPort = v.GetUint(KeyWalletServerPort)
+	}
+	if v.IsSet(KeyWalletRequestTimeout) {
+		cfg.Wallet.RequestTimeout = v.GetDuration(KeyWalletRequestTimeout)
+	}
+
+	return nil
+}
+
+func getStringSlice(v *viper.Viper, key string) []string {
+	value := v.GetString(key)
+	if value == "" {
+		return []string{}
+	}
+
+	parts := strings.Split(value, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+
+	return parts
 }
 
 // AddConfigFlags adds flags for configuration options to the command
