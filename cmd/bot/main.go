@@ -165,7 +165,7 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 		}
 
 		// retrieve account and start the generation of transactions among the wallets contained
-		account, errAcc := hdWallet.GetAccount(uint(i))
+		account, errAcc := hdWallet.GetAccount(i)
 		if errAcc != nil {
 			logger.Fatalf("error getting account: %v", errAcc)
 		}
@@ -235,7 +235,7 @@ func DistributeFundsAmongAccounts(hdWallet *hd_wallet.Wallet) error {
 		targetAmounts = append(targetAmounts, distributeFundsAmount)
 
 		// retrieve the account and choose the wallet to send the funds to
-		account, errAccount := hdWallet.GetAccount(uint(i))
+		account, errAccount := hdWallet.GetAccount(i)
 		if errAccount != nil {
 			return fmt.Errorf("error getting account: %w", errAccount)
 		}

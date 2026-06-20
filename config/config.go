@@ -217,7 +217,7 @@ func InitConfig(cmd *cobra.Command) *Config {
 }
 
 // AddConfigFlags adds flags for configuration options to the command
-func AddConfigFlags(cmd *cobra.Command) {
+func AddConfigFlags(cmd *cobra.Command) { //nolint:funlen // function is long but clear
 	// define flags
 	cmd.Flags().String(KeyConfigFile, DefaultConfigFile, "config file (default is $PWD/config.yaml)")
 	cmd.Flags().StringArray(KeyNodeSeeds, []string{}, "Node seeds used to synchronize during startup")
@@ -283,7 +283,6 @@ func AddConfigFlags(cmd *cobra.Command) {
 	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
 	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
 	_ = viper.BindPFlag(KeyWalletRequestTimeout, cmd.Flags().Lookup(KeyWalletRequestTimeout))
-
 }
 
 // GetConfigFilePath retrieves the configuration file path from command flags
