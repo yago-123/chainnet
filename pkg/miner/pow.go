@@ -69,7 +69,7 @@ func (pow *ProofOfWork) CalculateBlockHash() ([]byte, uint, error) {
 	// will have other tasks to do (like listening for new blocks) and we don't want to starve the system (in miner only
 	// scenarios, we could use all CPUs)
 	numGoroutines := int(math.Max(1, float64(runtime.NumCPU()/CPUDivisionFactor)))
-	nonceRange := MaxNonce / uint(numGoroutines) //nolint:gosec // int to uint is safe
+	nonceRange := MaxNonce / uint(numGoroutines)
 
 	// if one of the goroutines finds a block, use this context to propagate the cancellation. This cancellation
 	// is an overlap of the pow.externalCtx given that in case of block addition, the observer code will trigger

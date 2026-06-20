@@ -429,7 +429,7 @@ func (bc *Blockchain) RegisterMetrics(registry *prometheus.Registry) { //nolint:
 
 	monitor.NewMetric(registry, monitor.Gauge, "chain_circulating_supply", "Circulating supply of the chain", func() float64 {
 		totalSupply := 0
-		remainingHeight := int(bc.lastHeight) //nolint:gosec // no risk of overflow here
+		remainingHeight := int(bc.lastHeight)
 		reward := common.InitialCoinbaseReward
 
 		for remainingHeight > 0 {
