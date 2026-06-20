@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -130,8 +131,81 @@ func InitConfig(cmd *cobra.Command) *Config {
 	}
 
 	ApplyFlagsToConfig(cmd, cfg)
+	if err := cfg.Validate(); err != nil {
+		cfg.Logger.Fatalf("invalid bot configuration: %v", err)
+	}
 
 	return cfg
+}
+
+func (cfg *Config) Validate() error {
+	if cfg == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	var violations []string
+
+	if strings.TrimSpace(cfg.Wallet.ServerAddress) == "" {
+		violations = append(violations, "wallet server address must not be empty")
+	}
+	if cfg.Wallet.ServerPort == 0 {
+		violations = append(violations, "wallet server port must be greater than 0")
+	}
+	if cfg.Wallet.RequestTimeout <= 0 {
+		violations = append(violations, "wallet request timeout must be greater than 0")
+	}
+
+	if strings.TrimSpace(cfg.Bot.KeyPath) == "" {
+		violations = append(violations, "bot key path must not be empty")
+	}
+	if strings.TrimSpace(cfg.Bot.MetadataPath) == "" {
+		violations = append(violations, "bot metadata path must not be empty")
+	}
+	if cfg.Bot.MaxConcurrentAccounts == 0 {
+		violations = append(violations, "bot max concurrent accounts must be greater than 0")
+	}
+	if cfg.Bot.MaxWalletsPerAccount == 0 {
+		violations = append(violations, "bot max wallets per account must be greater than 0")
+	}
+	if cfg.Bot.MinStartupFundDistribution < 0 {
+		violations = append(violations, "bot min startup fund distribution must not be negative")
+	}
+	if cfg.Bot.MaxStartupFundDistribution < 0 {
+		violations = append(violations, "bot max startup fund distribution must not be negative")
+	}
+	if cfg.Bot.MaxStartupFundDistribution < cfg.Bot.MinStartupFundDistribution {
+		violations = append(violations, "bot max startup fund distribution must be greater than or equal to min startup fund distribution")
+	}
+	if cfg.Bot.MinTimeBetweenTransactions < 0 {
+		violations = append(violations, "bot min time between transactions must not be negative")
+	}
+	if cfg.Bot.MaxTimeBetweenTransactions < 0 {
+		violations = append(violations, "bot max time between transactions must not be negative")
+	}
+	if cfg.Bot.MaxTimeBetweenTransactions < cfg.Bot.MinTimeBetweenTransactions {
+		violations = append(violations, "bot max time between transactions must be greater than or equal to min time between transactions")
+	}
+	if cfg.Bot.SendTransactionTimeout <= 0 {
+		violations = append(violations, "bot send transaction timeout must be greater than 0")
+	}
+	if cfg.Bot.MetadataBackupPeriod <= 0 {
+		violations = append(violations, "bot metadata backup period must be greater than 0")
+	}
+	if cfg.Bot.MaxInputGroupsForCreatingTx <= 0 {
+		violations = append(violations, "bot max input groups for creating tx must be greater than 0")
+	}
+	if cfg.Bot.MaxOutputGroupsForCreatingTx == 0 {
+		violations = append(violations, "bot max output groups for creating tx must be greater than 0")
+	}
+	if cfg.Bot.MaxOutputGroupsForCreatingTx > cfg.Bot.MaxWalletsPerAccount {
+		violations = append(violations, "bot max output groups must be smaller or equal than bot max wallets per account")
+	}
+
+	if len(violations) > 0 {
+		return fmt.Errorf("%s", strings.Join(violations, "; "))
+	}
+
+	return nil
 }
 
 func AddConfigFlags(cmd *cobra.Command) {

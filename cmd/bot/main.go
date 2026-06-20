@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"golang.org/x/exp/rand"
 	"math/rand/v2"
 	"sort"
 	"time"
@@ -64,26 +65,6 @@ func main() { //nolint:funlen,gocognit,nolintlint // this is a main function, it
 	metadata, err := hd_wallet.LoadMetadata(botCfg.Bot.MetadataPath)
 	if err != nil {
 		logger.Warnf("error loading metadata: %v", err)
-	}
-
-	if botCfg.Bot.MaxOutputGroupsForCreatingTx > botCfg.Bot.MaxWalletsPerAccount {
-		logger.Fatalf("bot max output groups must be smaller or equal than bot max wallets per account")
-	}
-
-	if botCfg.Bot.MaxConcurrentAccounts == 0 {
-		logger.Fatalf("bot max concurrent accounts must be greater than 0")
-	}
-
-	if botCfg.Bot.MaxWalletsPerAccount == 0 {
-		logger.Fatalf("bot max wallets per account must be greater than 0")
-	}
-
-	if botCfg.Bot.MaxInputGroupsForCreatingTx <= 0 {
-		logger.Fatalf("bot max input groups for creating tx must be greater than 0")
-	}
-
-	if botCfg.Bot.MaxOutputGroupsForCreatingTx == 0 {
-		logger.Fatalf("bot max output groups for creating tx must be greater than 0")
 	}
 
 	if metadata == nil {
