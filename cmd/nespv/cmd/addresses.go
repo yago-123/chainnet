@@ -10,6 +10,7 @@ import (
 	cerror "github.com/yago-123/chainnet/pkg/errs"
 	util_crypto "github.com/yago-123/chainnet/pkg/util/crypto"
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
+	walletcommon "github.com/yago-123/chainnet/pkg/wallet"
 	wallt "github.com/yago-123/chainnet/pkg/wallet/simple_wallet"
 )
 
@@ -51,7 +52,12 @@ var addressesCmd = &cobra.Command{
 
 		// create wallet
 		wallet, err := wallt.NewWalletWithKeys(
-			cfg,
+			walletcommon.ClientConfig{
+				ServerAddress:  cfg.Wallet.ServerAddress,
+				ServerPort:     cfg.Wallet.ServerPort,
+				RequestTimeout: cfg.P2P.ConnTimeout,
+				Logger:         cfg.Logger,
+			},
 			1,
 			validator.NewLightValidator(hash.GetHasher(consensusHasherType)),
 			consensusSigner,
