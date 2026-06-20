@@ -104,15 +104,16 @@ func LoadConfig(cfgFile string) (*Config, error) {
 		return nil, fmt.Errorf("config file not specified")
 	}
 
-	viper.SetConfigFile(cfgFile)
-	viper.AutomaticEnv()
+	v := viper.New()
+	v.SetConfigFile(cfgFile)
+	v.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
 	cfg := NewConfig()
-	if err := viper.Unmarshal(cfg); err != nil {
+	if err := v.Unmarshal(cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode into struct: %w", err)
 	}
 
@@ -227,81 +228,103 @@ func AddConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Duration(KeyBotMetadataBackupPeriod, DefaultMetadataBackupPeriod, "Period for saving bot HD wallet metadata")
 	cmd.Flags().Int(KeyBotMaxInputGroupsForCreatingTx, DefaultMaxInputGroupsForCreatingTx, "Maximum number of input groups used when creating a bot transaction")
 	cmd.Flags().Uint(KeyBotMaxOutputGroupsForCreatingTx, DefaultMaxOutputGroupsForCreatingTx, "Maximum number of output groups used when creating a bot transaction")
-
-	_ = viper.BindPFlag(KeyConfigFile, cmd.Flags().Lookup(KeyConfigFile))
-	_ = viper.BindPFlag(KeyWalletServerAddress, cmd.Flags().Lookup(KeyWalletServerAddress))
-	_ = viper.BindPFlag(KeyWalletServerPort, cmd.Flags().Lookup(KeyWalletServerPort))
-	_ = viper.BindPFlag(KeyWalletRequestTimeout, cmd.Flags().Lookup(KeyWalletRequestTimeout))
-
-	_ = viper.BindPFlag(KeyBotKeyPath, cmd.Flags().Lookup(KeyBotKeyPath))
-	_ = viper.BindPFlag(KeyBotMetadataPath, cmd.Flags().Lookup(KeyBotMetadataPath))
-	_ = viper.BindPFlag(KeyBotMaxConcurrentAccounts, cmd.Flags().Lookup(KeyBotMaxConcurrentAccounts))
-	_ = viper.BindPFlag(KeyBotMaxWalletsPerAccount, cmd.Flags().Lookup(KeyBotMaxWalletsPerAccount))
-	_ = viper.BindPFlag(KeyBotMinimumTxBalance, cmd.Flags().Lookup(KeyBotMinimumTxBalance))
-	_ = viper.BindPFlag(KeyBotMinStartupFundDistribution, cmd.Flags().Lookup(KeyBotMinStartupFundDistribution))
-	_ = viper.BindPFlag(KeyBotMaxStartupFundDistribution, cmd.Flags().Lookup(KeyBotMaxStartupFundDistribution))
-	_ = viper.BindPFlag(KeyBotMinTimeBetweenTransactions, cmd.Flags().Lookup(KeyBotMinTimeBetweenTransactions))
-	_ = viper.BindPFlag(KeyBotMaxTimeBetweenTransactions, cmd.Flags().Lookup(KeyBotMaxTimeBetweenTransactions))
-	_ = viper.BindPFlag(KeyBotSendTransactionTimeout, cmd.Flags().Lookup(KeyBotSendTransactionTimeout))
-	_ = viper.BindPFlag(KeyBotMetadataBackupPeriod, cmd.Flags().Lookup(KeyBotMetadataBackupPeriod))
-	_ = viper.BindPFlag(KeyBotMaxInputGroupsForCreatingTx, cmd.Flags().Lookup(KeyBotMaxInputGroupsForCreatingTx))
-	_ = viper.BindPFlag(KeyBotMaxOutputGroupsForCreatingTx, cmd.Flags().Lookup(KeyBotMaxOutputGroupsForCreatingTx))
 }
 
 func GetConfigFilePath(cmd *cobra.Command) string {
 	if cmd.Flags().Changed(KeyConfigFile) {
-		return viper.GetString(KeyConfigFile)
+		cfgFile, err := cmd.Flags().GetString(KeyConfigFile)
+		if err != nil {
+			return ""
+		}
+
+		return cfgFile
 	}
 	return ""
 }
 
 func ApplyFlagsToConfig(cmd *cobra.Command, cfg *Config) {
 	if cmd.Flags().Changed(KeyWalletServerAddress) {
-		cfg.Wallet.ServerAddress = viper.GetString(KeyWalletServerAddress)
+		cfg.Wallet.ServerAddress = mustGetStringFlag(cmd, KeyWalletServerAddress)
 	}
 	if cmd.Flags().Changed(KeyWalletServerPort) {
-		cfg.Wallet.ServerPort = viper.GetUint(KeyWalletServerPort)
+		cfg.Wallet.ServerPort = mustGetUintFlag(cmd, KeyWalletServerPort)
 	}
 	if cmd.Flags().Changed(KeyWalletRequestTimeout) {
-		cfg.Wallet.RequestTimeout = viper.GetDuration(KeyWalletRequestTimeout)
+		cfg.Wallet.RequestTimeout = mustGetDurationFlag(cmd, KeyWalletRequestTimeout)
 	}
 	if cmd.Flags().Changed(KeyBotKeyPath) {
-		cfg.Bot.KeyPath = viper.GetString(KeyBotKeyPath)
+		cfg.Bot.KeyPath = mustGetStringFlag(cmd, KeyBotKeyPath)
 	}
 	if cmd.Flags().Changed(KeyBotMetadataPath) {
-		cfg.Bot.MetadataPath = viper.GetString(KeyBotMetadataPath)
+		cfg.Bot.MetadataPath = mustGetStringFlag(cmd, KeyBotMetadataPath)
 	}
 	if cmd.Flags().Changed(KeyBotMaxConcurrentAccounts) {
-		cfg.Bot.MaxConcurrentAccounts = viper.GetUint(KeyBotMaxConcurrentAccounts)
+		cfg.Bot.MaxConcurrentAccounts = mustGetUintFlag(cmd, KeyBotMaxConcurrentAccounts)
 	}
 	if cmd.Flags().Changed(KeyBotMaxWalletsPerAccount) {
-		cfg.Bot.MaxWalletsPerAccount = viper.GetUint(KeyBotMaxWalletsPerAccount)
+		cfg.Bot.MaxWalletsPerAccount = mustGetUintFlag(cmd, KeyBotMaxWalletsPerAccount)
 	}
 	if cmd.Flags().Changed(KeyBotMinimumTxBalance) {
-		cfg.Bot.MinimumTxBalance = viper.GetUint(KeyBotMinimumTxBalance)
+		cfg.Bot.MinimumTxBalance = mustGetUintFlag(cmd, KeyBotMinimumTxBalance)
 	}
 	if cmd.Flags().Changed(KeyBotMinStartupFundDistribution) {
-		cfg.Bot.MinStartupFundDistribution = viper.GetDuration(KeyBotMinStartupFundDistribution)
+		cfg.Bot.MinStartupFundDistribution = mustGetDurationFlag(cmd, KeyBotMinStartupFundDistribution)
 	}
 	if cmd.Flags().Changed(KeyBotMaxStartupFundDistribution) {
-		cfg.Bot.MaxStartupFundDistribution = viper.GetDuration(KeyBotMaxStartupFundDistribution)
+		cfg.Bot.MaxStartupFundDistribution = mustGetDurationFlag(cmd, KeyBotMaxStartupFundDistribution)
 	}
 	if cmd.Flags().Changed(KeyBotMinTimeBetweenTransactions) {
-		cfg.Bot.MinTimeBetweenTransactions = viper.GetDuration(KeyBotMinTimeBetweenTransactions)
+		cfg.Bot.MinTimeBetweenTransactions = mustGetDurationFlag(cmd, KeyBotMinTimeBetweenTransactions)
 	}
 	if cmd.Flags().Changed(KeyBotMaxTimeBetweenTransactions) {
-		cfg.Bot.MaxTimeBetweenTransactions = viper.GetDuration(KeyBotMaxTimeBetweenTransactions)
+		cfg.Bot.MaxTimeBetweenTransactions = mustGetDurationFlag(cmd, KeyBotMaxTimeBetweenTransactions)
 	}
 	if cmd.Flags().Changed(KeyBotSendTransactionTimeout) {
-		cfg.Bot.SendTransactionTimeout = viper.GetDuration(KeyBotSendTransactionTimeout)
+		cfg.Bot.SendTransactionTimeout = mustGetDurationFlag(cmd, KeyBotSendTransactionTimeout)
 	}
 	if cmd.Flags().Changed(KeyBotMetadataBackupPeriod) {
-		cfg.Bot.MetadataBackupPeriod = viper.GetDuration(KeyBotMetadataBackupPeriod)
+		cfg.Bot.MetadataBackupPeriod = mustGetDurationFlag(cmd, KeyBotMetadataBackupPeriod)
 	}
 	if cmd.Flags().Changed(KeyBotMaxInputGroupsForCreatingTx) {
-		cfg.Bot.MaxInputGroupsForCreatingTx = viper.GetInt(KeyBotMaxInputGroupsForCreatingTx)
+		cfg.Bot.MaxInputGroupsForCreatingTx = mustGetIntFlag(cmd, KeyBotMaxInputGroupsForCreatingTx)
 	}
 	if cmd.Flags().Changed(KeyBotMaxOutputGroupsForCreatingTx) {
-		cfg.Bot.MaxOutputGroupsForCreatingTx = viper.GetUint(KeyBotMaxOutputGroupsForCreatingTx)
+		cfg.Bot.MaxOutputGroupsForCreatingTx = mustGetUintFlag(cmd, KeyBotMaxOutputGroupsForCreatingTx)
 	}
+}
+
+func mustGetStringFlag(cmd *cobra.Command, name string) string {
+	value, err := cmd.Flags().GetString(name)
+	if err != nil {
+		panic(fmt.Sprintf("error reading %s flag: %v", name, err))
+	}
+
+	return value
+}
+
+func mustGetUintFlag(cmd *cobra.Command, name string) uint {
+	value, err := cmd.Flags().GetUint(name)
+	if err != nil {
+		panic(fmt.Sprintf("error reading %s flag: %v", name, err))
+	}
+
+	return value
+}
+
+func mustGetIntFlag(cmd *cobra.Command, name string) int {
+	value, err := cmd.Flags().GetInt(name)
+	if err != nil {
+		panic(fmt.Sprintf("error reading %s flag: %v", name, err))
+	}
+
+	return value
+}
+
+func mustGetDurationFlag(cmd *cobra.Command, name string) time.Duration {
+	value, err := cmd.Flags().GetDuration(name)
+	if err != nil {
+		panic(fmt.Sprintf("error reading %s flag: %v", name, err))
+	}
+
+	return value
 }
