@@ -33,7 +33,7 @@ jobs:
           go-version-file: chainnet-sdk-go/go.mod
 
       - name: Install mise tools
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v3
         with:
           working_directory: chainnet-sdk-go
 
