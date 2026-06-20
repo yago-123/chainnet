@@ -11,7 +11,6 @@ import (
 	util_p2pkh "github.com/yago-123/chainnet/pkg/util/p2pkh"
 
 	sdkv1beta "github.com/yago-123/chainnet-sdk-go/v1beta"
-	"github.com/yago-123/chainnet/config"
 	"github.com/yago-123/chainnet/pkg/consensus"
 	"github.com/yago-123/chainnet/pkg/crypto/hash"
 	"github.com/yago-123/chainnet/pkg/crypto/sign"
@@ -37,11 +36,11 @@ type Wallet struct {
 	consensusHasher hash.Hashing
 	interpreter     *rpnInter.RPNInterpreter
 
-	cfg *config.Config
+	cfg common.ClientConfig
 }
 
 func NewWallet(
-	cfg *config.Config,
+	cfg common.ClientConfig,
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
@@ -66,7 +65,7 @@ func NewWallet(
 }
 
 func NewWalletWithKeys(
-	cfg *config.Config,
+	cfg common.ClientConfig,
 	version byte,
 	validator consensus.LightValidator,
 	signer sign.Signature,
@@ -75,10 +74,7 @@ func NewWalletWithKeys(
 	privateKey []byte,
 	publicKey []byte,
 ) (*Wallet, error) {
-	nodeClient, err := sdkv1beta.NewClient(
-		fmt.Sprintf("%s:%d", cfg.Wallet.ServerAddress, cfg.Wallet.ServerPort),
-		nil,
-	)
+	nodeClient, err := sdkv1beta.NewClient(cfg.BaseURL(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not create wallet node client: %w", err)
 	}
@@ -131,7 +127,7 @@ func (w *Wallet) GetWalletUTXOS() ([]sdkv1beta.UTXO, error) {
 
 	utxos := make([]sdkv1beta.UTXO, 0)
 	for _, address := range addresses {
-		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.Timeout())
 		defer cancel()
 
 		// retrieve UTXOs for each address
@@ -155,7 +151,7 @@ func (w *Wallet) GetWalletTxs() ([]*sdkv1beta.Transaction, error) {
 
 	txs := make([]*sdkv1beta.Transaction, 0)
 	for _, address := range addresses {
-		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.Timeout())
 		defer cancel()
 
 		// retrieve txs for each address
@@ -178,7 +174,7 @@ func (w *Wallet) CheckIfWalletIsActive() (bool, error) {
 	}
 
 	for _, address := range addresses {
-		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.P2P.ConnTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), w.cfg.Timeout())
 		defer cancel()
 
 		// check if address is active
