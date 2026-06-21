@@ -3,6 +3,7 @@ name: Go
 on:
   push:
     branches: [ "master" ]
+    tags: [ "**" ]
   pull_request:
     branches: [ "master" ]
 
@@ -39,7 +40,7 @@ jobs:
         run: make test
 
   publish-images:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     needs: main-pipeline
     runs-on: ubuntu-latest
     permissions:
@@ -58,5 +59,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
 
+      - name: Select image tag
+        id: image-tag
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and publish images
-        run: make push DOCKER=docker IMAGE_REPOSITORY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=latest
+        run: make push DOCKER=docker IMAGE_REPOSITORY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=${{ steps.image-tag.outputs.tag }}
