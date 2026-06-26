@@ -16,12 +16,12 @@ jobs:
 
     steps:
       - name: Checkout chainnet
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: chainnet
 
       - name: Checkout chainnet-sdk-go
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: yago-123/chainnet-sdk-go
           path: chainnet-sdk-go
