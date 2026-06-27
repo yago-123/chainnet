@@ -1,6 +1,6 @@
 [tools]
 go = "1.26.4"
-podman = "4.9.3"
+podman = "5.8.3"
 goreleaser = "2.16.0"
 golangci-lint = "2.12.2"
 oapi-codegen = "2.7.1"
